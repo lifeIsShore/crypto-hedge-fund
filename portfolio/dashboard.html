@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quant Engine Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #000000;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 30px;
+            border-bottom: 3px solid #000000;
+            padding-bottom: 15px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            font-weight: 700;
+            color: #666;
+        }
+        
+        .refresh-btn {
+            background-color: #000000;
+            color: #FFFFFF;
+            border: 3px solid #000000;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 0;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #333333;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            border: 3px solid #000000;
+            padding: 15px;
+            background-color: #FFFFFF;
+            box-shadow: 4px 4px 0px #000000;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .kpi-title {
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-status {
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        
+        .status-good {
+            background-color: #00BFA5;
+            color: #000000;
+        }
+        
+        .status-warning {
+            background-color: #FFD600;
+            color: #000000;
+        }
+        
+        .status-neutral {
+            background-color: #E0E0E0;
+            color: #000000;
+        }
+        
+        .action-signal {
+            border: 3px solid #000000;
+            padding: 20px;
+            margin-bottom: 30px;
+            font-size: 18px;
+            font-weight: 900;
+            box-shadow: 4px 4px 0px #000000;
+        }
+        
+        .signal-hold {
+            background-color: #00BFA5;
+            color: #000000;
+        }
+        
+        .signal-action {
+            background-color: #FFD600;
+            color: #000000;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            border: 3px solid #000000;
+            padding: 20px;
+            box-shadow: 4px 4px 0px #000000;
+        }
+        
+        .panel h2 {
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #000000;
+            font-weight: 700;
+            font-size: 13px;
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+        
+        .form-submit {
+            background-color: #000000;
+            color: #FFFFFF;
+            border: 3px solid #000000;
+            padding: 10px 15px;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .form-submit:hover {
+            background-color: #333333;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            border: 2px solid #000000;
+            padding: 10px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        th {
+            background-color: #E0E0E0;
+            color: #000000;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #000000;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        .success {
+            background-color: #00BFA5;
+            color: #000000;
+        }
+        
+        .error {
+            background-color: #FFD600;
+            color: #000000;
+        }
+        
+        .loading {
+            text-align: center;
+            font-weight: 700;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #000000;
+        }
+        
+        .tab-button {
+            padding: 12px 20px;
+            background-color: #E0E0E0;
+            border: 3px solid #000000;
+            border-bottom: none;
+            font-weight: 900;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        .tab-button:hover {
+            background-color: #CCCCCC;
+        }
+        
+        .tab-button.active {
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .three-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            border: 2px solid #000000;
+            padding: 15px;
+            background-color: #F5F5F5;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: #666;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+        
+        /* Clickable stat boxes */
+        .stat-box-clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid #000000;
+        }
+        
+        .stat-box-clickable:hover {
+            box-shadow: 0px 0px 8px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeInOverlay 0.2s ease;
+        }
+        
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: #FFFFFF;
+            border: 4px solid #000000;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 8px 8px 0px #000000;
+            animation: slideIn 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #000000;
+            padding-bottom: 15px;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        
+        .modal-close {
+            background-color: #FFD600;
+            border: 2px solid #000000;
+            padding: 8px 12px;
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 0;
+        }
+        
+        .modal-close:hover {
+            background-color: #FFC600;
+        }
+        
+        .modal-section {
+            margin-bottom: 20px;
+        }
+        
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #000000;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #E0E0E0;
+            padding-bottom: 5px;
+        }
+        
+        .modal-section-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #F9F9F9;
+            padding: 12px;
+            border-left: 3px solid #000000;
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 900;
+            color: #000000;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #E0E0E0;
+            border: 2px solid #000000;
+        }
+        
+        .formula-box {
+            background-color: #F0F0F0;
+            border: 2px dashed #000000;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TRADE REPUBLIC QUANT ENGINE</h1>
+            <div class="timestamp" id="timestamp">Loading...</div>
+            <button class="refresh-btn" onclick="refreshData()">🔄 REFRESH NOW</button>
+            <div id="message"></div>
+        </header>
+        
+        <!-- TAB NAVIGATION -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('overview')">📊 Overview</button>
+            <button class="tab-button" onclick="switchTab('analytics')">📈 Analytics</button>
+            <button class="tab-button" onclick="switchTab('holdings')">💼 Holdings & Prices</button>
+            <button class="tab-button" onclick="switchTab('trades')">📝 Log Trades</button>
+        </div>
+        
+        <!-- TAB 1: OVERVIEW -->
+        <div id="overview" class="tab-content active">
+        
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="loading">Loading KPIs...</div>
+        </div>
+        
+        <div class="action-signal" id="actionSignal">
+            Loading action signal...
+        </div>
+        </div>
+        
+        <!-- TAB 2: ANALYTICS -->
+        <div id="analytics" class="tab-content">
+        <div class="panel">
+            <h2>📊 Detailed Performance Analysis</h2>
+            <div class="three-column" id="analyticsGrid">
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('sharpe')">
+                    <div class="stat-label">Sharpe Ratio</div>
+                    <div class="stat-value" id="stat-sharpe">0.00</div>
+                    <div style="font-size: 10px; color: #666;">Risk-adjusted return<br/>Target: > 1.0<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('calmar')">
+                    <div class="stat-label">Calmar Ratio</div>
+                    <div class="stat-value" id="stat-calmar">0.00</div>
+                    <div style="font-size: 10px; color: #666;">Return per unit pain<br/>Target: > 0.5<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('maxdd')">
+                    <div class="stat-label">Max Drawdown</div>
+                    <div class="stat-value" id="stat-maxdd">0.00%</div>
+                    <div style="font-size: 10px; color: #666;">Worst peak-to-trough<br/>Target: < 15%<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('info')">
+                    <div class="stat-label">Information Ratio</div>
+                    <div class="stat-value" id="stat-info">0.00</div>
+                    <div style="font-size: 10px; color: #666;">vs MSCI World<br/>Target: > 0.2<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('profit')">
+                    <div class="stat-label">Profit Factor</div>
+                    <div class="stat-value" id="stat-profit">0.00</div>
+                    <div style="font-size: 10px; color: #666;">Gross wins ÷ losses<br/>Target: > 1.5<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" onclick="showMetricInfo('return')">
+                    <div class="stat-label">Portfolio Return</div>
+                    <div class="stat-value" id="stat-return">0.00%</div>
+                    <div style="font-size: 10px; color: #666;">Cumulative performance<br/>Higher is better ↑<br/>💡 Click for details</div>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 30px;">💰 P&L Summary (Without Fees)</h2>
+            <div class="three-column">
+                <div class="stat-box stat-box-clickable" style="background-color: #f0f8f0;" onclick="showMetricInfo('current')">
+                    <div class="stat-label">Current Value</div>
+                    <div class="stat-value" id="stat-current">€0.00</div>
+                    <div style="font-size: 10px; color: #666;">Today's portfolio<br/>worth<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" style="background-color: #f0f8f0;" onclick="showMetricInfo('invested')">
+                    <div class="stat-label">Total Invested</div>
+                    <div class="stat-value" id="stat-invested">€0.00</div>
+                    <div style="font-size: 10px; color: #666;">Deposits +<br/>Purchases<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" style="background-color: #f0f8f0;" onclick="showMetricInfo('grosspnl')">
+                    <div class="stat-label">Gross P&L</div>
+                    <div class="stat-value" id="stat-grosspnl">€0.00</div>
+                    <div style="font-size: 10px; color: #666;">Current - Invested<br/>(No fees)<br/>💡 Click for details</div>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 30px;">💸 P&L Summary (With Fees)</h2>
+            <div class="three-column">
+                <div class="stat-box stat-box-clickable" style="background-color: #fff8f0;" onclick="showMetricInfo('fees')">
+                    <div class="stat-label">Total Fees Paid</div>
+                    <div class="stat-value" id="stat-fees">€0.00</div>
+                    <div style="font-size: 10px; color: #666;">Broker fees +<br/>Trading costs<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" style="background-color: #fff8f0;" onclick="showMetricInfo('netpnl')">
+                    <div class="stat-label">Net P&L</div>
+                    <div class="stat-value" id="stat-netpnl">€0.00</div>
+                    <div style="font-size: 10px; color: #666;">Gross P&L<br/>- Fees<br/>💡 Click for details</div>
+                </div>
+                <div class="stat-box stat-box-clickable" style="background-color: #fff8f0;" onclick="showMetricInfo('returnnet')">
+                    <div class="stat-label">Return % (Net)</div>
+                    <div class="stat-value" id="stat-returnnet">0.00%</div>
+                    <div style="font-size: 10px; color: #666;">Net P&L ÷ Invested<br/>Real return<br/>💡 Click for details</div>
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- TAB 3: HOLDINGS & PRICES -->
+        <div id="holdings" class="tab-content">
+        <div class="two-column">
+            <div class="panel">
+                <h2>📈 Current Holdings</h2>
+                <table id="holdings">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Value</th>
+                            <th>Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsBody">
+                        <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+                <div style="margin-top: 10px; font-weight: 700; font-size: 12px;">
+                    Cash: €<span id="cashValue">0.00</span>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>💹 Current Market Prices</h2>
+                <table id="pricesTable">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Current Price (€)</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pricesBody">
+                        <tr><td colspan="3" style="text-align:center;">Loading prices...</td></tr>
+                    </tbody>
+                </table>
+                <div style="margin-top: 10px; font-size: 11px; color: #666;">
+                    ℹ️ Prices update when you click 🔄 REFRESH NOW
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- TAB 4: LOG TRADES -->
+        <div id="trades" class="tab-content">
+            <div class="two-column">
+                <div class="panel">
+                    <h2>📊 Log a Trade</h2>
+                    <form id="tradeForm">
+                    <div class="form-group">
+                        <label>Action</label>
+                        <select id="action" onchange="updateTicker()">
+                            <option>Buy</option>
+                            <option>Sell</option>
+                            <option>Deposit</option>
+                            <option>Dividend</option>
+                            <option>Fee</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Asset</label>
+                        <select id="ticker">
+                            <option>CASH</option>
+                            <option>APC.DE</option>
+                            <option>MSF.DE</option>
+                            <option>SAP.DE</option>
+                            <option>ALV.DE</option>
+                            <option>MOH.DE</option>
+                            <option>EUNL.DE</option>
+                            <option>AMZN</option>
+                            <option>TSLA</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Quantity (Shares)</label>
+                        <input type="number" id="quantity" step="0.01" min="0" placeholder="0.00" onchange="debugField('quantity')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label id="priceLabel">Price / Amount (€)</label>
+                        <input type="number" id="price" step="0.01" min="0" placeholder="0.00" onchange="debugField('price')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes (Optional)</label>
+                        <input type="text" id="notes" placeholder="">
+                    </div>
+                    
+                    <button type="button" class="form-submit" onclick="logTransaction()">LOG TRANSACTION</button>
+                </form>
+                
+                <!-- Quick Fee Logger -->
+                <hr style="margin: 20px 0; border: 1px solid #000000;">
+                <h3 style="font-size: 14px; font-weight: 900; text-transform: uppercase;">⚡ Quick Fee Log</h3>
+                <div class="form-group">
+                    <label>Fee Amount (€)</label>
+                    <input type="number" id="feeAmount" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Fee Type (Optional)</label>
+                    <input type="text" id="feeType" placeholder="e.g., Trading fee, Account fee, Tax withholding">
+                </div>
+                <button type="button" class="form-submit" onclick="logFee()" style="background-color: #FF6B6B;">➖ LOG FEE</button>
+                </div>
+                
+                <div class="panel">
+                    <h2>💡 Tips</h2>
+                    <ul style="list-style: none; padding: 0; font-size: 12px; line-height: 1.6;">
+                        <li>✓ <strong>Buy/Sell:</strong> Use price per share (without fees)</li>
+                        <li>✓ <strong>Deposit:</strong> Total amount to add</li>
+                        <li>✓ <strong>Dividend:</strong> Total amount received</li>
+                        <li>✓ <strong>Fee:</strong> Use Quick Fee Log below</li>
+                        <li style="margin-top: 10px;">💼 Fees reduce your cash automatically</li>
+                        <li>🔄 Click REFRESH after logging to update</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <!-- METRIC INFO MODAL -->
+    <div id="metricModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Metric Name</div>
+                <button class="modal-close" onclick="closeMetricInfo()">✕</button>
+            </div>
+            
+            <div class="metric-value" id="modalMetricValue">€0.00</div>
+            
+            <div class="modal-section">
+                <div class="modal-section-title">📐 Formula / Calculation</div>
+                <div class="formula-box" id="modalFormula">Formula here...</div>
+            </div>
+            
+            <div class="modal-section">
+                <div class="modal-section-title">💡 What It Means</div>
+                <div class="modal-section-content" id="modalInterpretation">Explanation...</div>
+            </div>
+            
+            <div class="modal-section">
+                <div class="modal-section-title">⭐ Why It Matters</div>
+                <div class="modal-section-content" id="modalImportance">Why this matters for your portfolio...</div>
+            </div>
+            
+            <div class="modal-section">
+                <div class="modal-section-title">🎯 Target / Benchmark</div>
+                <div class="modal-section-content" id="modalTarget">Target value...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Metric Definitions with calculations and meanings
+        const metricDefinitions = {
+            'sharpe': {
+                title: 'Sharpe Ratio',
+                formula: '(Annualized Return - Risk-Free Rate)\n÷ Annualized Volatility\n\n• Risk-free rate: 2.0% per year\n• Annualization factor: √252 (trading days)',
+                meaning: 'Measures how much return you get for each unit of risk taken. Higher values indicate better risk-adjusted returns.',
+                importance: 'Helps you understand if your profits come from taking smart risks or just from market volatility. A high Sharpe Ratio means your strategy is efficient.',
+                target: '🎯 Target: > 1.0 (Good) | > 2.0 (Excellent)\n📚 Benchmark vs market index typically: 0.5 - 1.0'
+            },
+            'calmar': {
+                title: 'Calmar Ratio',
+                formula: 'Annualized Return\n÷ Absolute Maximum Drawdown\n\n• Focuses on worst-case scenarios\n• Measures return per unit of downside pain',
+                meaning: 'Shows how much annual return you earn per 1% of maximum loss experienced. Ignores volatility, focuses on worst drawdown.',
+                importance: 'Critical for risk management. Tells you if gains are worth the worst pain you\'ll experience. High Calmar = resilient strategy.',
+                target: '🎯 Target: > 0.5 (Acceptable) | > 1.0 (Strong)\n📚 Variable but > 0.5 shows good risk-adjusted returns'
+            },
+            'maxdd': {
+                title: 'Maximum Drawdown',
+                formula: '(Lowest Value - Highest Peak Value)\n÷ Highest Peak Value\n× 100%\n\n• Tracks peak-to-trough decline\n• Expressed as negative percentage',
+                meaning: 'The worst peak-to-trough percentage drop your portfolio has experienced from its highest point. Your cumulative "pain threshold".',
+                importance: 'Most critical metric for psychological resilience. Shows what investors actually experience - the biggest loss before recovery. Determines if you can stay invested.',
+                target: '🎯 Target: < -15% (Acceptable) | > -10% (Excellent)\n📚 Most investors uncomfortable with > -30%'
+            },
+            'info': {
+                title: 'Information Ratio',
+                formula: '(Portfolio Return - Benchmark Return)\n÷ Tracking Error\n\n• Benchmark: MSCI World (EUNL.DE)\n• Tracking Error = volatility of active return',
+                meaning: 'Measures whether your active trading strategy outperforms a simple index hold, per unit of active risk taken.',
+                importance: 'Answers: "Am I better off rebalancing manually or just buying MSCI World ETF?" Proves if your strategy has edge vs passive.',
+                target: '🎯 Target: > 0.2 (Beating benchmark) | > 0.5 (Strong alpha)\n📚 < 0 means you\'re underperforming passive holding'
+            },
+            'profit': {
+                title: 'Profit Factor',
+                formula: 'Sum of All Winning Trades\n÷ Absolute Sum of All Losing Trades\n\n• Only counts realized P&L\n• > 1.0 means profits exceed losses',
+                meaning: 'How many euros you make for every euro you lose on realized trades. Simple risk/reward metric for complete trades.',
+                importance: 'Pragmatic view of trading success. If you make €3 for every €1 lost, your strategy is profitable before fees.',
+                target: '🎯 Target: > 1.5 (Winning edge) | > 2.0 (Strong edge)\n📚 Professional traders aim for 2.0+, amateur < 1.2'
+            },
+            'return': {
+                title: 'Portfolio Return %',
+                formula: '((Current Portfolio Value / Initial Value) - 1)\n× 100%\n\n• Cumulative return from day 1\n• Accounts for all price movements',
+                meaning: 'Your total cumulative return percentage from first deposit until today. Shows overall portfolio performance.',
+                importance: 'The main number investors track. Shows if strategy is working over time. Combine with drawdown for full picture.',
+                target: '🎯 Target: > 5% annually (reasonable) | > 10% (strong)\n📚 Benchmark index returns ~7-8% annually'
+            },
+            'current': {
+                title: 'Current Value',
+                formula: 'Current Cash Balance\n+ Current Holdings Value\n\n• Holdings = (Shares Held × Current Price)\n• Updated daily from yfinance',
+                meaning: 'Total market value of your portfolio today. What your account is worth right now in euros.',
+                importance: 'Your actual wealth. The number that matters. Combine with Total Invested to see if you\'re ahead or behind.',
+                target: '🎯 No fixed target\n📚 Track month-over-month growth\n📊 Watch for drawdowns < -15%'
+            },
+            'invested': {
+                title: 'Total Invested',
+                formula: 'Sum of All Deposits\n+ Sum of All Purchases\n\n• Historical record of money put in\n• Excludes fees already paid',
+                meaning: 'Total amount of your own money you\'ve deposited and used to buy assets. Your "cost basis" or capital deployed.',
+                importance: 'Baseline reference. Gross P&L = Current Value - Total Invested shows if strategy is profitable ignoring fees.',
+                target: '🎯 Typically growing over time\n📚 Compare Gross P&L to understand trading performance'
+            },
+            'grosspnl': {
+                title: 'Gross P&L (Without Fees)',
+                formula: '(Current Value + Total Fees Back)\n- Total Invested\n\n• Simulates: "If I had no fees"\n• Pure trading profitability',
+                meaning: 'Pure trading profit/loss before any fees paid. Shows what your strategy actually produces before broker/transaction costs.',
+                importance: 'Separates trading skill from fee drag. If this is positive, your trades work. If fees kill it, optimize fee strategy.',
+                target: '🎯 Target: > €0 (profitable trades)\n📚 Good vs benchmark: comparing to index gains'
+            },
+            'fees': {
+                title: 'Total Fees Paid',
+                formula: 'Sum of All Fee Entries\nin Ledger\n\n• Includes broker fees, trading costs\n• Historical cumulative fees',
+                meaning: 'Total fees you\'ve paid to your broker and for transactions. Cumulative cost drag on your profits.',
+                importance: 'Hidden wealth erosion! €100 in fees over a year is 1% drag. Shows if you need lower-fee broker or fewer trades.',
+                target: '🎯 Target: < 0.5% of portfolio annually\n📚 TradeRepublic: usually €0-1 per active trade'
+            },
+            'netpnl': {
+                title: 'Net P&L (With Fees)',
+                formula: 'Current Value\n- Total Invested\n\n• Your actual reality\n• What\'s really in your pocket',
+                meaning: 'Real world profit/loss after all fees paid. The actual money you made or lost. Most important metric.',
+                importance: 'This is the number that matters for your taxes and retirement. Gross P&L looks good? Fees change everything!',
+                target: '🎯 Target: > €0 (profitable)\n📚 Growing portfolio value over time means strategy works'
+            },
+            'returnnet': {
+                title: 'Return % (Net)',
+                formula: '(Net P&L / Total Invested)\n× 100%\n\n• Your actual return percentage\n• After ALL costs',
+                meaning: 'Your true return percentage after fees. What percentage gain/loss you achieved on your invested capital.',
+                importance: 'Reality check! Looks like 5% gross? Maybe 3% net after fees. This is what your tax return uses.',
+                target: '🎯 Target: > 5% annually (reasonable)\n📚 Better than savings account (0.5%) or bonds (2%)'
+            }
+        };
+        
+        function showMetricInfo(metricKey) {
+            const definition = metricDefinitions[metricKey];
+            if (!definition) return;
+            
+            // Update modal content
+            document.getElementById('modalTitle').textContent = definition.title;
+            document.getElementById('modalFormula').textContent = definition.formula;
+            document.getElementById('modalInterpretation').textContent = definition.meaning;
+            document.getElementById('modalImportance').textContent = definition.importance;
+            document.getElementById('modalTarget').textContent = definition.target;
+            
+            // Get current metric value from the page
+            let valueText = '—';
+            const mapping = {
+                'sharpe': 'stat-sharpe',
+                'calmar': 'stat-calmar',
+                'maxdd': 'stat-maxdd',
+                'info': 'stat-info',
+                'profit': 'stat-profit',
+                'return': 'stat-return',
+                'current': 'stat-current',
+                'invested': 'stat-invested',
+                'grosspnl': 'stat-grosspnl',
+                'fees': 'stat-fees',
+                'netpnl': 'stat-netpnl',
+                'returnnet': 'stat-returnnet'
+            };
+            
+            const element = document.getElementById(mapping[metricKey]);
+            if (element) {
+                valueText = element.textContent;
+            }
+            
+            document.getElementById('modalMetricValue').textContent = valueText;
+            
+            // Show modal
+            document.getElementById('metricModal').classList.add('active');
+        }
+        
+        function closeMetricInfo() {
+            document.getElementById('metricModal').classList.remove('active');
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('metricModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeMetricInfo();
+                    }
+                });
+            }
+        });
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        function debugField(fieldId) {
+            const el = document.getElementById(fieldId);
+            const value = el.value;
+            const num = Number(value);
+            console.log(`🔍 Field "${fieldId}":`, { value, parsed: num, isNaN: isNaN(num), type: typeof num });
+        }
+        
+        async function loadData() {
+            try {
+                const response = await fetch('data/engine_state.json');
+                if (!response.ok) {
+                    throw new Error('Engine state not found. Run engine first.');
+                }
+                return await response.json();
+            } catch (error) {
+                document.getElementById('message').innerHTML = `<div class="message error">❌ ${error.message}</div>`;
+                return null;
+            }
+        }
+        
+        async function renderDashboard() {
+            const data = await loadData();
+            if (!data) return;
+            
+            // Update timestamp
+            document.getElementById('timestamp').textContent = `Last updated: ${data.last_run} | Next Rebalance: ${data.next_rebalance}`;
+            
+            // Render KPIs
+            renderKPIs(data.kpis);
+            
+            // Render analytics
+            renderAnalytics(data.kpis, data.current_values);
+            
+            // Render action signal
+            renderActionSignal(data.action_signal, data.reasons);
+            
+            // Render holdings
+            renderHoldings(data.current_values, data.current_weights);
+            
+            // Render current market prices
+            if (data.latest_prices) {
+                renderPrices(data.latest_prices, data.last_run);
+            }
+        }
+        
+        function renderAnalytics(kpis, values) {
+            // Update analytics tab with detailed KPIs
+            document.getElementById('stat-sharpe').textContent = (kpis.sharpe_ratio || 0).toFixed(2);
+            document.getElementById('stat-calmar').textContent = (kpis.calmar_ratio || 0).toFixed(2);
+            document.getElementById('stat-maxdd').textContent = ((kpis.max_drawdown || 0) * 100).toFixed(2) + '%';
+            document.getElementById('stat-info').textContent = (kpis.information_ratio || 0).toFixed(2);
+            document.getElementById('stat-profit').textContent = (kpis.profit_factor || 0).toFixed(2);
+            
+            // Portfolio performance metrics
+            document.getElementById('stat-return').textContent = (kpis.portfolio_return_pct || 0).toFixed(2) + '%';
+            
+            // P&L metrics (without fees)
+            const currentValue = kpis.current_value || values.total_portfolio || 0;
+            const invested = kpis.initial_investment || 0;
+            const grossPnl = kpis.gross_pnl || 0;
+            
+            document.getElementById('stat-current').textContent = '€' + currentValue.toFixed(2);
+            document.getElementById('stat-invested').textContent = '€' + invested.toFixed(2);
+            document.getElementById('stat-grosspnl').textContent = '€' + grossPnl.toFixed(2);
+            
+            // P&L metrics (with fees)
+            const totalFees = kpis.total_fees || 0;
+            const netPnl = kpis.net_pnl || 0;
+            const returnNet = invested > 0 ? (netPnl / invested * 100) : 0;
+            
+            document.getElementById('stat-fees').textContent = '€' + totalFees.toFixed(2);
+            document.getElementById('stat-netpnl').textContent = '€' + netPnl.toFixed(2);
+            document.getElementById('stat-returnnet').textContent = returnNet.toFixed(2) + '%';
+        }
+        
+        function renderKPIs(kpis) {
+            const kpiGrid = document.getElementById('kpiGrid');
+            
+            const kpiConfigs = [
+                {
+                    title: '💰 Total Value',
+                    value: `€${kpis.total_value || 100.00}`,
+                    status: 'Your portfolio worth',
+                    direction: 'Higher is better ↑',
+                    meaning: 'Total portfolio value (stocks + cash)',
+                    class: 'status-neutral'
+                },
+                {
+                    title: '📈 Sharpe Ratio',
+                    value: kpis.sharpe_ratio.toFixed(2),
+                    status: kpis.sharpe_ratio > 1.0 ? '✅ EXCELLENT' : (kpis.sharpe_ratio < 0.5 ? '⚠️ LOW' : '⏳ WARMING'),
+                    direction: 'Higher is better ↑',
+                    meaning: 'Risk-adjusted returns. Target: >1.0',
+                    class: kpis.sharpe_ratio > 1.0 ? 'status-good' : (kpis.sharpe_ratio < 0.5 ? 'status-warning' : 'status-neutral')
+                },
+                {
+                    title: '📉 Max Drawdown',
+                    value: (kpis.max_drawdown * 100).toFixed(1) + '%',
+                    status: kpis.max_drawdown < 0.15 ? '✅ MINIMAL' : '⚠️ NOTABLE',
+                    direction: 'Lower is better ↓',
+                    meaning: 'Worst loss from peak. <15% is safe',
+                    class: kpis.max_drawdown < 0.15 ? 'status-good' : 'status-warning'
+                },
+                {
+                    title: '🌍 Info Ratio',
+                    value: kpis.information_ratio.toFixed(2),
+                    status: kpis.information_ratio > 0.5 ? '✅ BEATING' : (kpis.information_ratio < -0.5 ? '⚠️ LAGGING' : '⏳ BUILDING'),
+                    direction: 'Higher is better ↑',
+                    meaning: 'Performance vs MSCI World benchmark',
+                    class: kpis.information_ratio > 0.5 ? 'status-good' : (kpis.information_ratio < -0.5 ? 'status-warning' : 'status-neutral')
+                },
+                {
+                    title: '✅ Profit Factor',
+                    value: kpis.profit_factor.toFixed(2),
+                    status: kpis.profit_factor > 1.5 ? '✅ WINNING' : (kpis.profit_factor > 0.8 ? '⏳ NEUTRAL' : '❌ LOSING'),
+                    direction: 'Higher is better ↑',
+                    meaning: 'Gross wins ÷ gross losses. >1.5 = solid',
+                    class: kpis.profit_factor > 1.5 ? 'status-good' : (kpis.profit_factor > 0.8 ? 'status-neutral' : 'status-warning')
+                }
+            ];
+            
+            kpiGrid.innerHTML = kpiConfigs.map(kpi => `
+                <div class="kpi-card">
+                    <div class="kpi-title">${kpi.title}</div>
+                    <div class="kpi-value">${kpi.value}</div>
+                    <div class="kpi-status ${kpi.class}">${kpi.status}</div>
+                    <div style="font-size:11px; margin-top:8px; line-height:1.3; border-top:1px solid #000; padding-top:8px;">
+                        <div style="font-weight:700; color:#666;">${kpi.direction}</div>
+                        <div>${kpi.meaning}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderActionSignal(signal, reasons) {
+            const signalEl = document.getElementById('actionSignal');
+            const isHold = signal.includes('✅');
+            signalEl.className = `action-signal ${isHold ? 'signal-hold' : 'signal-action'}`;
+            signalEl.innerHTML = signal + (reasons.length > 0 ? `<div style="font-size:12px; margin-top:10px;">${reasons.join('<br>')}</div>` : '');
+        }
+        
+        function renderHoldings(values, weights) {
+            const tbody = document.getElementById('holdingsBody');
+            const holdings = values.holdings || {};
+            const total = values.total_portfolio || 0;
+            
+            if (Object.keys(holdings).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;font-size:12px;">No assets held yet</td></tr>';
+            } else {
+                tbody.innerHTML = Object.entries(holdings).map(([ticker, value]) => `
+                    <tr>
+                        <td>${ticker}</td>
+                        <td>€${value.toFixed(2)}</td>
+                        <td>${((weights[ticker] || 0) * 100).toFixed(1)}%</td>
+                    </tr>
+                `).join('');
+            }
+            
+            document.getElementById('cashValue').textContent = (values.cash || 0).toFixed(2);
+        }
+        
+        function renderPrices(prices, lastUpdated) {
+            const tbody = document.getElementById('pricesBody');
+            
+            if (!prices || Object.keys(prices).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;font-size:12px;">No price data available</td></tr>';
+            } else {
+                tbody.innerHTML = Object.entries(prices).map(([ticker, price]) => `
+                    <tr>
+                        <td>${ticker}</td>
+                        <td>€${parseFloat(price).toFixed(2)}</td>
+                        <td>${lastUpdated}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        function updateTicker() {
+            const action = document.getElementById('action').value;
+            const ticker = document.getElementById('ticker');
+            const quantityEl = document.getElementById('quantity');
+            const priceLabel = document.getElementById('priceLabel');
+            
+            // Update label based on action
+            if (['Buy', 'Sell'].includes(action)) {
+                priceLabel.textContent = 'Price per Share (€) - without fees';
+                if (quantityEl) quantityEl.parentElement.style.display = 'block';
+            } else if (['Deposit', 'Dividend'].includes(action)) {
+                priceLabel.textContent = 'Amount (€) - total to deposit/receive';
+                if (quantityEl) quantityEl.parentElement.style.display = 'none';
+            } else if (action === 'Fee') {
+                priceLabel.textContent = 'Total Fee (€) - use Quick Fee Log below instead';
+                if (quantityEl) quantityEl.parentElement.style.display = 'none';
+            }
+            
+            // For Deposit/Dividend/Fee - force CASH and disable selector
+            if (['Deposit', 'Fee'].includes(action)) {
+                ticker.value = 'CASH';
+                ticker.disabled = true;
+            } else if (action === 'Dividend') {
+                ticker.value = 'CASH';
+                ticker.disabled = true;
+            } else {
+                // For Buy/Sell - enable ticker selector
+                ticker.disabled = false;
+            }
+        }
+        
+        async function logTransaction() {
+            console.log('🔷 logTransaction() called');
+            try {
+                // Get form values with explicit parsing
+                const actionEl = document.getElementById('action');
+                const tickerEl = document.getElementById('ticker');
+                const quantityEl = document.getElementById('quantity');
+                const priceEl = document.getElementById('price');
+                const notesEl = document.getElementById('notes');
+                
+                if (!actionEl || !tickerEl || !quantityEl || !priceEl) {
+                    console.error('❌ Form elements missing!', { actionEl, tickerEl, quantityEl, priceEl });
+                    showMessage('❌ Form structure error - elements not found', 'error');
+                    return;
+                }
+                
+                // Get raw values directly from DOM
+                const action = actionEl.value.trim();
+                const ticker = tickerEl.value.trim();
+                const quantityStr = quantityEl.value.trim();
+                const priceStr = priceEl.value.trim();
+                const notes = notesEl ? notesEl.value.trim() : '';
+                
+                console.log('📍 Raw values from DOM:', { action, ticker, quantityStr, priceStr, notes, quantityElType: quantityEl.type });
+                
+                // Parse numbers safely using Number() constructor
+                let quantity = NaN;
+                let price = NaN;
+                
+                if (quantityStr !== '') {
+                    quantity = Number(quantityStr);
+                    console.log(`📊 Quantity parsing: "${quantityStr}" → ${quantity} (isNaN: ${isNaN(quantity)})`);
+                }
+                
+                if (priceStr !== '') {
+                    price = Number(priceStr);
+                    console.log(`📊 Price parsing: "${priceStr}" → ${price} (isNaN: ${isNaN(price)})`);
+                }
+                
+                console.log('📝 Parsed values:', { quantity, price, action, ticker });
+                
+                // === VALIDATION LAYER ===
+                
+                // Validation 1: Action required
+                if (!action) {
+                    showMessage('❌ Action is required', 'error');
+                    return;
+                }
+                
+                // Validation 2: For Buy/Sell - Quantity is mandatory and > 0
+                if (['Buy', 'Sell'].includes(action)) {
+                    if (quantityStr === '' || isNaN(quantity) || quantity <= 0) {
+                        console.error('❌ Buy/Sell validation failed:', { quantityStr, quantity, isNaN: isNaN(quantity) });
+                        const msg = `❌ For Buy/Sell: Quantity required and must be > 0 (entered: "${quantityStr}", parsed: ${quantity})`;
+                        showMessage(msg, 'error');
+                        return;
+                    }
+                }
+                
+                // Validation 3: All actions need price/amount > 0
+                if (priceStr === '' || isNaN(price) || price <= 0) {
+                    console.error('❌ Price validation failed:', { priceStr, price, isNaN: isNaN(price) });
+                    const msg = `❌ Price/Amount required and must be > 0 (entered: "${priceStr}", parsed: ${price})`;
+                    showMessage(msg, 'error');
+                    return;
+                }
+                
+                // Validation 4: Deposit/Dividend/Fee must use CASH
+                if (['Deposit', 'Dividend', 'Fee'].includes(action)) {
+                    if (ticker !== 'CASH') {
+                        const msg = '❌ Deposits, Dividends, and Fees must use CASH ticker';
+                        console.warn(msg);
+                        showMessage(msg, 'error');
+                        return;
+                    }
+                }
+                
+                // Validation 5: Buy/Sell must not use CASH
+                if (['Buy', 'Sell'].includes(action)) {
+                    if (ticker === 'CASH') {
+                        const msg = '❌ Buy/Sell must use an asset ticker, not CASH';
+                        console.warn(msg);
+                        showMessage(msg, 'error');
+                        return;
+                    }
+                }
+                
+                
+                // Calculate total
+                const total = ['Deposit', 'Dividend', 'Fee'].includes(action) ? price : (quantity * price);
+                
+                // Create CSV row
+                const date = new Date().toISOString().split('T')[0];
+                const qty_str = ['Buy', 'Sell'].includes(action) ? String(quantity) : '';
+                const price_str = ['Buy', 'Sell'].includes(action) ? String(price) : '';
+                const total_str = String(total);
+                const csvRow = `${date},${action},${ticker},${qty_str},${price_str},${total_str},${notes}`;
+                
+                console.log('✅ Validation passed!');
+                console.log('CSV Row:', csvRow);
+                console.log('Parsed values for CSV:', { date, action, ticker, qty_str, price_str, total_str, notes });
+                
+                // Save to ledger (via API call to Python backend)
+                console.log('📤 Sending POST to api/log_transaction...');
+                const response = await fetch('api/log_transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csvRow })
+                });
+                
+                console.log('📥 Response status:', response.status, response.statusText);
+                const responseData = await response.json();
+                console.log('📥 Response data:', responseData);
+                
+                if (response.ok) {
+                    const msg = `✅ Logged ${action} for ${ticker}. Click 🔄 Refresh to update engine.`;
+                    console.log(msg);
+                    showMessage(msg, 'success');
+                    document.getElementById('tradeForm').reset();
+                    updateTicker();
+                } else {
+                    const errorMsg = responseData.error || 'Failed to save transaction';
+                    console.error('❌ Server error:', errorMsg);
+                    showMessage(`❌ Server: ${errorMsg}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Exception thrown:', error);
+                console.error('Stack:', error.stack);
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function showMessage(text, type) {
+            const msgEl = document.getElementById('message');
+            msgEl.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => msgEl.innerHTML = '', 5000);
+        }
+        
+        async function logFee() {
+            console.log('💸 logFee() called');
+            try {
+                const feeAmountEl = document.getElementById('feeAmount');
+                const feeTypeEl = document.getElementById('feeType');
+                
+                if (!feeAmountEl) {
+                    showMessage('❌ Fee field not found', 'error');
+                    return;
+                }
+                
+                const feeAmountStr = feeAmountEl.value.trim();
+                const feeType = feeTypeEl ? feeTypeEl.value.trim() : 'Fee';
+                
+                console.log('💸 Fee inputs:', { feeAmountStr, feeType });
+                
+                // Parse fee amount
+                const feeAmount = feeAmountStr !== '' ? Number(feeAmountStr) : NaN;
+                
+                // Validation
+                if (feeAmountStr === '' || isNaN(feeAmount) || feeAmount <= 0) {
+                    const msg = `❌ Fee amount required and must be > 0 (entered: "${feeAmountStr}", parsed: ${feeAmount})`;
+                    console.warn(msg);
+                    showMessage(msg, 'error');
+                    return;
+                }
+                
+                // Create CSV row for Fee
+                const date = new Date().toISOString().split('T')[0];
+                const csvRow = `${date},Fee,CASH,,,${feeAmount},${feeType}`;
+                
+                console.log('✅ Fee validation passed!');
+                console.log('Fee CSV Row:', csvRow);
+                
+                // Save to ledger
+                console.log('📤 Sending POST to api/log_transaction...');
+                const response = await fetch('api/log_transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csvRow })
+                });
+                
+                console.log('📥 Response status:', response.status);
+                const responseData = await response.json();
+                console.log('📥 Response data:', responseData);
+                
+                if (response.ok) {
+                    const msg = `✅ Fee logged: €${feeAmount}. Click 🔄 Refresh to update portfolio.`;
+                    console.log(msg);
+                    showMessage(msg, 'success');
+                    feeAmountEl.value = '';
+                    feeTypeEl.value = '';
+                } else {
+                    const errorMsg = responseData.error || 'Failed to save fee';
+                    console.error('❌ Server error:', errorMsg);
+                    showMessage(`❌ Server: ${errorMsg}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Exception thrown:', error);
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function refreshData() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ RECALCULATING...';
+            
+            try {
+                const response = await fetch('api/refresh_engine', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    await new Promise(r => setTimeout(r, 1000)); // Wait for file write
+                    await renderDashboard();
+                    showMessage('✅ Portfolio updated!', 'success');
+                } else {
+                    const errorMsg = data.error || 'Refresh failed';
+                    showMessage(`❌ ${errorMsg}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 REFRESH NOW';
+            }
+        }
+        
+        // Initial load
+        updateTicker();  // Initialize ticker field state
+        renderDashboard();
+        setInterval(renderDashboard, 10000); // Auto-refresh every 10s
+    </script>
+</body>
+</html>

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Risk Engine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #07080a;
+    --surface: #0d0f13;
+    --surface2: #131720;
+    --border: #1e2535;
+    --accent: #00e5a0;
+    --accent2: #ff4d6d;
+    --accent3: #f5a623;
+    --text: #c8d4e8;
+    --muted: #4a5568;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 28px; height: 28px;
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo-mark::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: var(--accent);
+    opacity: 0.15;
+  }
+
+  .logo-text { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; color: #fff; }
+  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; margin-top: 1px; }
+
+  .header-right { display: flex; align-items: center; gap: 20px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--accent); letter-spacing: 0.1em;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .timestamp { font-size: 10px; color: var(--muted); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 24px;
+  }
+
+  .tab {
+    padding: 10px 18px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    font-family: var(--mono);
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Main grid */
+  .dashboard {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: auto;
+    gap: 14px;
+  }
+
+  /* KPI strip */
+  .kpi-strip {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--accent));
+  }
+
+  .kpi-label { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 600; color: var(--kpi-color, #fff); line-height: 1; }
+  .kpi-sub { font-size: 9px; color: var(--muted); margin-top: 4px; }
+
+  .kpi.danger { --accent-color: var(--accent2); --kpi-color: var(--accent2); }
+  .kpi.warn   { --accent-color: var(--accent3); --kpi-color: var(--accent3); }
+  .kpi.good   { --accent-color: var(--accent);  --kpi-color: var(--accent);  }
+  .kpi.neutral { --accent-color: #6c7a9c; --kpi-color: #fff; }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title { font-size: 10px; letter-spacing: 0.1em; color: var(--text); }
+  .panel-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .panel-body { padding: 16px; flex: 1; }
+
+  /* Chart containers */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Returns chart */
+  .col-8 { grid-column: span 8; }
+  .col-6 { grid-column: span 6; }
+  .col-4 { grid-column: span 4; }
+  .col-3 { grid-column: span 3; }
+  .col-5 { grid-column: span 5; }
+  .col-7 { grid-column: span 7; }
+
+  /* Risk table */
+  .risk-table { width: 100%; border-collapse: collapse; }
+  .risk-table th {
+    font-size: 9px; letter-spacing: 0.1em; color: var(--muted);
+    text-align: left; padding: 0 8px 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .risk-table td {
+    padding: 9px 8px 9px 0;
+    font-size: 11px;
+    border-bottom: 1px solid rgba(30,37,53,0.5);
+  }
+  .risk-table tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+  .tag-green { background: rgba(0,229,160,0.1); color: var(--accent); }
+  .tag-red   { background: rgba(255,77,109,0.1); color: var(--accent2); }
+  .tag-yellow{ background: rgba(245,166,35,0.1); color: var(--accent3); }
+
+  /* Regime bars */
+  .regime-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .regime-label { font-size: 10px; width: 80px; color: var(--text); }
+  .regime-bar-bg { flex: 1; height: 6px; background: var(--border); position: relative; overflow: hidden; }
+  .regime-bar-fill { height: 100%; transition: width 0.6s ease; }
+  .regime-pct { font-size: 10px; width: 35px; text-align: right; }
+
+  /* Violations list */
+  .violation-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30,37,53,0.5);
+    font-size: 11px;
+  }
+  .violation-item:last-child { border-bottom: none; }
+
+  /* Mini sparklines */
+  .sparkline-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .sparkline-asset { font-size: 10px; width: 60px; }
+  .sparkline-canvas { width: 100px; height: 28px; }
+  .sparkline-val { font-size: 10px; text-align: right; width: 60px; }
+
+  /* Footer status bar */
+  footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 24px;
+    display: flex; gap: 24px; align-items: center;
+    z-index: 900;
+  }
+  .status-item { font-size: 9px; color: var(--muted); letter-spacing: 0.08em; }
+  .status-item span { color: var(--text); }
+
+  /* Loading animation for charts */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .panel { animation: fadeIn 0.4s ease both; }
+  .panel:nth-child(2) { animation-delay: 0.05s; }
+  .panel:nth-child(3) { animation-delay: 0.1s; }
+  .panel:nth-child(4) { animation-delay: 0.15s; }
+  .panel:nth-child(5) { animation-delay: 0.2s; }
+  .panel:nth-child(6) { animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">Ψ</div>
+    <div>
+      <div class="logo-text">RISK ENGINE</div>
+      <div class="logo-sub">PORTFOLIO ANALYTICS · MVP</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> MOCK DATA</div>
+    <div class="timestamp" id="clock"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active">OVERVIEW</div>
+  <div class="tab">VaR ANALYSIS</div>
+  <div class="tab">SIMULATION</div>
+  <div class="tab">BACKTESTING</div>
+</div>
+
+<div class="dashboard">
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi danger">
+      <div class="kpi-label">VAR (95%, 1D)</div>
+      <div class="kpi-value">-2.34%</div>
+      <div class="kpi-sub">Normal model</div>
+    </div>
+    <div class="kpi danger">
+      <div class="kpi-label">EXPECTED SHORTFALL</div>
+      <div class="kpi-value">-3.61%</div>
+      <div class="kpi-sub">ES > VaR ✓</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-label">GARCH VOL (1D)</div>
+      <div class="kpi-value">1.47%</div>
+      <div class="kpi-sub">GARCH(1,1) forecast</div>
+    </div>
+    <div class="kpi neutral">
+      <div class="kpi-label">PORTFOLIO RETURN (YTD)</div>
+      <div class="kpi-value">+8.2%</div>
+      <div class="kpi-sub">Ann. log returns</div>
+    </div>
+    <div class="kpi neutral">
+      <div class="kpi-label">SHARPE RATIO</div>
+      <div class="kpi-value">1.18</div>
+      <div class="kpi-sub">Risk-free 4.5%</div>
+    </div>
+    <div class="kpi good">
+      <div class="kpi-label">VAR VIOLATIONS</div>
+      <div class="kpi-value">4 / 250</div>
+      <div class="kpi-sub">Expected ~12.5 (95%)</div>
+    </div>
+  </div>
+
+  <!-- Portfolio Returns Chart -->
+  <div class="panel col-8">
+    <div class="panel-header">
+      <span class="panel-title">PORTFOLIO DAILY RETURNS</span>
+      <span class="panel-badge">252 TRADING DAYS</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="returnsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Metrics Table -->
+  <div class="panel col-4">
+    <div class="panel-header">
+      <span class="panel-title">RISK METRICS</span>
+      <span class="panel-badge">MODELED</span>
+    </div>
+    <div class="panel-body">
+      <table class="risk-table">
+        <thead>
+          <tr>
+            <th>METRIC</th>
+            <th>NORMAL</th>
+            <th>T-DIST</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>VaR 95%</td>
+            <td style="color:var(--accent2)">-2.34%</td>
+            <td style="color:var(--accent2)">-2.71%</td>
+            <td><span class="tag tag-red">FAT TAIL</span></td>
+          </tr>
+          <tr>
+            <td>VaR 99%</td>
+            <td style="color:var(--accent2)">-3.31%</td>
+            <td style="color:var(--accent2)">-4.12%</td>
+            <td><span class="tag tag-red">FAT TAIL</span></td>
+          </tr>
+          <tr>
+            <td>ES 95%</td>
+            <td style="color:var(--accent2)">-3.61%</td>
+            <td style="color:var(--accent2)">-4.44%</td>
+            <td><span class="tag tag-yellow">TAIL</span></td>
+          </tr>
+          <tr>
+            <td>Volatility</td>
+            <td>14.2%</td>
+            <td>14.2%</td>
+            <td><span class="tag tag-green">ANN</span></td>
+          </tr>
+          <tr>
+            <td>Skewness</td>
+            <td colspan="2">-0.18</td>
+            <td><span class="tag tag-green">OK</span></td>
+          </tr>
+          <tr>
+            <td>Kurtosis</td>
+            <td colspan="2">3.72</td>
+            <td><span class="tag tag-yellow">LEPTOK.</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Return Distribution -->
+  <div class="panel col-5">
+    <div class="panel-header">
+      <span class="panel-title">RETURN DISTRIBUTION</span>
+      <span class="panel-badge">NORMAL + T-DIST OVERLAY</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:190px">
+        <canvas id="distChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- GARCH Volatility -->
+  <div class="panel col-7">
+    <div class="panel-header">
+      <span class="panel-title">GARCH(1,1) VOLATILITY</span>
+      <span class="panel-badge">CONDITIONAL VOL</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:190px">
+        <canvas id="garchChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Regime Detection -->
+  <div class="panel col-4">
+    <div class="panel-header">
+      <span class="panel-title">REGIME DETECTION</span>
+      <span class="panel-badge">HMM · 2 STATES</span>
+    </div>
+    <div class="panel-body">
+      <div style="margin-bottom:18px">
+        <div class="regime-row">
+          <div class="regime-label">BULL / LOW VOL</div>
+          <div class="regime-bar-bg"><div class="regime-bar-fill" style="width:63%;background:var(--accent)"></div></div>
+          <div class="regime-pct" style="color:var(--accent)">63%</div>
+        </div>
+        <div class="regime-row">
+          <div class="regime-label">BEAR / HIGH VOL</div>
+          <div class="regime-bar-bg"><div class="regime-bar-fill" style="width:37%;background:var(--accent2)"></div></div>
+          <div class="regime-pct" style="color:var(--accent2)">37%</div>
+        </div>
+      </div>
+      <div style="font-size:10px; color:var(--muted); margin-bottom:12px; border-top:1px solid var(--border); padding-top:12px;">VOLATILITY BY REGIME</div>
+      <div style="display:flex; gap:12px;">
+        <div style="flex:1; background:var(--surface2); padding:10px; border:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">LOW VOL REGIME</div>
+          <div style="font-size:16px;color:var(--accent);font-weight:600">0.71%</div>
+          <div style="font-size:9px;color:var(--muted)">daily σ</div>
+        </div>
+        <div style="flex:1; background:var(--surface2); padding:10px; border:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">HIGH VOL REGIME</div>
+          <div style="font-size:16px;color:var(--accent2);font-weight:600">1.94%</div>
+          <div style="font-size:9px;color:var(--muted)">daily σ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monte Carlo -->
+  <div class="panel col-5">
+    <div class="panel-header">
+      <span class="panel-title">MONTE CARLO (1000 PATHS)</span>
+      <span class="panel-badge">30-DAY HORIZON</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:185px">
+        <canvas id="mcChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backtesting -->
+  <div class="panel col-3">
+    <div class="panel-header">
+      <span class="panel-title">VAR BACKTESTING</span>
+      <span class="panel-badge">250D WINDOW</span>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:9px;color:var(--muted);margin-bottom:12px">VIOLATION HISTORY</div>
+      <div class="violation-item">
+        <span style="color:var(--muted)">2024-02-14</span>
+        <span style="color:var(--accent2)">-3.12%</span>
+        <span class="tag tag-red">BREACH</span>
+      </div>
+      <div class="violation-item">
+        <span style="color:var(--muted)">2024-05-03</span>
+        <span style="color:var(--accent2)">-2.67%</span>
+        <span class="tag tag-red">BREACH</span>
+      </div>
+      <div class="violation-item">
+        <span style="color:var(--muted)">2024-08-22</span>
+        <span style="color:var(--accent2)">-2.89%</span>
+        <span class="tag tag-red">BREACH</span>
+      </div>
+      <div class="violation-item">
+        <span style="color:var(--muted)">2024-11-09</span>
+        <span style="color:var(--accent2)">-2.41%</span>
+        <span class="tag tag-red">BREACH</span>
+      </div>
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border)">
+        <div style="font-size:9px; color:var(--muted); margin-bottom:6px">KUPIEC TEST (p-value)</div>
+        <div style="font-size:18px; font-weight:600; color:var(--accent)">0.347</div>
+        <div style="font-size:9px; color:var(--muted); margin-top:3px">p > 0.05 → Model ACCEPTED ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asset Weights -->
+  <div class="panel col-3">
+    <div class="panel-header">
+      <span class="panel-title">PORTFOLIO WEIGHTS</span>
+      <span class="panel-badge">5 ASSETS</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:170px">
+        <canvas id="weightsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asset table -->
+  <div class="panel col-6">
+    <div class="panel-header">
+      <span class="panel-title">ASSET BREAKDOWN</span>
+      <span class="panel-badge">INDIVIDUAL RISK</span>
+    </div>
+    <div class="panel-body">
+      <table class="risk-table">
+        <thead>
+          <tr>
+            <th>ASSET</th>
+            <th>WEIGHT</th>
+            <th>μ (ANN)</th>
+            <th>σ (ANN)</th>
+            <th>MARGINAL VaR</th>
+            <th>CONTRIBUTION</th>
+          </tr>
+        </thead>
+        <tbody id="assetTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stress test -->
+  <div class="panel col-6">
+    <div class="panel-header">
+      <span class="panel-title">STRESS SCENARIOS</span>
+      <span class="panel-badge">HISTORICAL SHOCKS</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:170px">
+        <canvas id="stressChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="status-item">MODEL <span>NORMAL + t-DIST + GARCH</span></div>
+  <div class="status-item">CONFIDENCE <span>95% / 99%</span></div>
+  <div class="status-item">HORIZON <span>1D</span></div>
+  <div class="status-item">SIMULATION <span>1,000 PATHS</span></div>
+  <div class="status-item">DATA <span>MOCK · 252 DAYS</span></div>
+  <div class="status-item" style="margin-left:auto">ASSUMPTIONS: log-normality, IID returns, constant weights</div>
+</footer>
+
+<script>
+// ─── Mock Data Generator ───────────────────────────────────────────────
+function seedRng(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+const rng = seedRng(42);
+
+function normalRng() {
+  // Box-Muller
+  const u1 = rng(), u2 = rng();
+  return Math.sqrt(-2 * Math.log(u1 + 1e-10)) * Math.cos(2 * Math.PI * u2);
+}
+
+// Generate 252 daily returns
+const N = 252;
+const mu = 0.0003, sigma = 0.009;
+const returns = [];
+let garchVol = [], h = sigma * sigma;
+const alpha = 0.08, beta = 0.88, omega = sigma * sigma * (1 - alpha - beta);
+
+for (let i = 0; i < N; i++) {
+  const r = mu + Math.sqrt(h) * normalRng();
+  returns.push(r);
+  garchVol.push(Math.sqrt(h) * 100);
+  h = omega + alpha * r * r + beta * h;
+}
+
+// Labels: approximate trading dates
+const labels = [];
+const start = new Date('2024-01-02');
+for (let i = 0; i < N; i++) {
+  const d = new Date(start);
+  d.setDate(start.getDate() + Math.floor(i * 365 / 252));
+  labels.push(d.toISOString().slice(5, 10));
+}
+
+// VaR line
+const sortedR = [...returns].sort((a, b) => a - b);
+const var95 = sortedR[Math.floor(0.05 * N)] * 100;
+const varLine = new Array(N).fill(var95);
+
+// ─── Chart defaults ────────────────────────────────────────────────────
+Chart.defaults.color = '#4a5568';
+Chart.defaults.borderColor = '#1e2535';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 10;
+
+// ─── 1. Daily Returns Chart ────────────────────────────────────────────
+new Chart(document.getElementById('returnsChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Daily Return',
+        data: returns.map(r => r * 100),
+        backgroundColor: returns.map(r => r < 0 ? 'rgba(255,77,109,0.65)' : 'rgba(0,229,160,0.55)'),
+        borderWidth: 0,
+        barPercentage: 0.9,
+      },
+      {
+        label: 'VaR 95%',
+        data: varLine,
+        type: 'line',
+        borderColor: 'rgba(245,166,35,0.8)',
+        borderDash: [4, 3],
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw.toFixed(3) + '%' } } },
+    scales: {
+      x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+      y: { ticks: { callback: v => v.toFixed(1) + '%' } }
+    }
+  }
+});
+
+// ─── 2. Distribution Chart ─────────────────────────────────────────────
+function normalPdf(x, m, s) { return Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI)); }
+function tPdf(x, df) {
+  const num = Math.pow(1 + x * x / df, -(df + 1) / 2);
+  return num * 0.89; // approx scaling
+}
+
+const bins = 40, binMin = -4, binMax = 4;
+const binSize = (binMax - binMin) / bins;
+const histCounts = new Array(bins).fill(0);
+const mean = returns.reduce((a, b) => a + b, 0) / N;
+const std = Math.sqrt(returns.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+
+returns.forEach(r => {
+  const z = (r - mean) / std;
+  const idx = Math.floor((z - binMin) / binSize);
+  if (idx >= 0 && idx < bins) histCounts[idx]++;
+});
+
+const histLabels = Array.from({ length: bins }, (_, i) => (binMin + i * binSize + binSize / 2).toFixed(2));
+const normCurve = histLabels.map(x => normalPdf(+x, 0, 1) * binSize * N);
+const tCurve = histLabels.map(x => tPdf(+x, 4) * binSize * N * 1.05);
+
+new Chart(document.getElementById('distChart'), {
+  type: 'bar',
+  data: {
+    labels: histLabels,
+    datasets: [
+      { label: 'Returns', data: histCounts, backgroundColor: 'rgba(108,122,156,0.4)', borderWidth: 0 },
+      { label: 'Normal', data: normCurve, type: 'line', borderColor: 'rgba(0,229,160,0.8)', borderWidth: 1.5, pointRadius: 0, fill: false },
+      { label: 't-dist', data: tCurve, type: 'line', borderColor: 'rgba(245,166,35,0.8)', borderDash: [4, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 10 } } },
+    scales: {
+      x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
+      y: { ticks: { maxTicksLimit: 5 } }
+    }
+  }
+});
+
+// ─── 3. GARCH Chart ────────────────────────────────────────────────────
+new Chart(document.getElementById('garchChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Conditional Vol',
+        data: garchVol,
+        borderColor: 'rgba(245,166,35,0.9)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        backgroundColor: 'rgba(245,166,35,0.06)',
+      },
+      {
+        label: 'Unconditional σ',
+        data: new Array(N).fill(sigma * 100),
+        borderColor: 'rgba(0,229,160,0.5)',
+        borderDash: [5, 4],
+        borderWidth: 1,
+        pointRadius: 0,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 10 } } },
+    scales: {
+      x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+      y: { ticks: { callback: v => v.toFixed(2) + '%' } }
+    }
+  }
+});
+
+// ─── 4. Monte Carlo Chart ──────────────────────────────────────────────
+const horizon = 30;
+const nPaths = 12; // display 12 paths visually
+const mcData = [];
+for (let p = 0; p < nPaths; p++) {
+  let cum = 0;
+  const path = [0];
+  for (let d = 0; d < horizon; d++) {
+    cum += mu + sigma * normalRng();
+    path.push(cum * 100);
+  }
+  mcData.push(path);
+}
+
+// Compute percentile bands from 1000 simulated paths
+const fullPaths = [];
+for (let p = 0; p < 1000; p++) {
+  let cum = 0;
+  const path = [0];
+  for (let d = 0; d < horizon; d++) {
+    cum += mu + sigma * normalRng();
+    path.push(cum * 100);
+  }
+  fullPaths.push(path);
+}
+const p5 = [], p50 = [], p95 = [];
+for (let d = 0; d <= horizon; d++) {
+  const vals = fullPaths.map(p => p[d]).sort((a, b) => a - b);
+  p5.push(vals[50]);
+  p50.push(vals[500]);
+  p95.push(vals[950]);
+}
+
+const mcLabels = Array.from({ length: horizon + 1 }, (_, i) => 'D' + i);
+const mcDatasets = mcData.map((path, i) => ({
+  label: '', data: path,
+  borderColor: `rgba(108,122,156,${0.15 + (i % 3) * 0.05})`,
+  borderWidth: 1, pointRadius: 0, fill: false
+}));
+mcDatasets.push(
+  { label: 'P95', data: p95, borderColor: 'rgba(0,229,160,0.8)', borderWidth: 1.5, borderDash: [5, 3], pointRadius: 0, fill: false },
+  { label: 'P50', data: p50, borderColor: 'rgba(245,166,35,0.9)', borderWidth: 2, pointRadius: 0, fill: false },
+  { label: 'P5', data: p5, borderColor: 'rgba(255,77,109,0.8)', borderWidth: 1.5, borderDash: [5, 3], pointRadius: 0, fill: false }
+);
+
+new Chart(document.getElementById('mcChart'), {
+  type: 'line',
+  data: { labels: mcLabels, datasets: mcDatasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { filter: i => ['P95','P50','P5'].includes(i.text), boxWidth: 10, padding: 8 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { ticks: { callback: v => v.toFixed(1) + '%' } }
+    }
+  }
+});
+
+// ─── 5. Weights Donut ─────────────────────────────────────────────────
+const assets = [
+  { name: 'SPY', weight: 0.35, mu: 0.118, sigma: 0.162 },
+  { name: 'TLT', weight: 0.20, mu: 0.042, sigma: 0.128 },
+  { name: 'GLD', weight: 0.15, mu: 0.068, sigma: 0.143 },
+  { name: 'QQQ', weight: 0.20, mu: 0.142, sigma: 0.198 },
+  { name: 'VWO', weight: 0.10, mu: 0.089, sigma: 0.221 },
+];
+
+new Chart(document.getElementById('weightsChart'), {
+  type: 'doughnut',
+  data: {
+    labels: assets.map(a => a.name),
+    datasets: [{
+      data: assets.map(a => a.weight * 100),
+      backgroundColor: ['rgba(0,229,160,0.8)', 'rgba(108,122,156,0.8)', 'rgba(245,166,35,0.8)', 'rgba(100,149,237,0.8)', 'rgba(255,77,109,0.8)'],
+      borderColor: '#07080a',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { padding: 10, font: { size: 10 } } },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw.toFixed(0) + '%' } }
+    },
+    cutout: '62%'
+  }
+});
+
+// ─── 6. Asset Table ────────────────────────────────────────────────────
+const tbody = document.getElementById('assetTableBody');
+const colors = ['var(--accent)', '#6495ed', 'var(--accent3)', '#a78bfa', 'var(--accent2)'];
+assets.forEach((a, i) => {
+  const mVaR = -(a.sigma / Math.sqrt(252) * 1.645 * a.weight * 100).toFixed(2);
+  const contrib = (Math.abs(mVaR) * a.weight).toFixed(3);
+  tbody.innerHTML += `
+    <tr>
+      <td style="color:${colors[i]};font-weight:500">${a.name}</td>
+      <td>${(a.weight * 100).toFixed(0)}%</td>
+      <td style="color:var(--accent)">${(a.mu * 100).toFixed(1)}%</td>
+      <td style="color:var(--accent3)">${(a.sigma * 100).toFixed(1)}%</td>
+      <td style="color:var(--accent2)">${mVaR}%</td>
+      <td>${contrib}%</td>
+    </tr>`;
+});
+
+// ─── 7. Stress Test Chart ─────────────────────────────────────────────
+const stressScenarios = [
+  { label: 'COVID Crash', loss: -18.4 },
+  { label: 'GFC 2008',   loss: -31.2 },
+  { label: '2022 Rate',  loss: -14.7 },
+  { label: 'Flash 2010', loss: -6.3  },
+  { label: '1987 Black', loss: -22.6 },
+  { label: 'LTCM 1998',  loss: -9.1  },
+];
+
+new Chart(document.getElementById('stressChart'), {
+  type: 'bar',
+  data: {
+    labels: stressScenarios.map(s => s.label),
+    datasets: [
+      {
+        label: 'Scenario Loss',
+        data: stressScenarios.map(s => s.loss),
+        backgroundColor: 'rgba(255,77,109,0.65)',
+        borderWidth: 0,
+      },
+      {
+        label: 'VaR 95%',
+        data: stressScenarios.map(() => var95),
+        type: 'line',
+        borderColor: 'rgba(245,166,35,0.8)',
+        borderDash: [4, 3],
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, padding: 8 } } },
+    scales: {
+      x: { ticks: { callback: v => v + '%' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// ─── Clock ────────────────────────────────────────────────────────────
+function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

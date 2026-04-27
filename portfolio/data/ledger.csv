@@ -1,0 +1,31 @@
+# LEDGER FORMAT GUIDE
+# Date (YYYY-MM-DD) | Action (Deposit/Buy/Sell/Dividend/Fee) | Ticker | Quantity | Price | Total | Notes
+# 
+# ALLOWED ACTIONS:
+#   - Deposit  : Add cash to portfolio (Quantity & Price leave blank)
+#   - Buy      : Purchase shares (Total = Quantity × Price)
+#   - Sell     : Sell shares (Total = Quantity × Price)
+#   - Dividend : Cash received from stocks (Quantity & Price leave blank)
+#   - Fee      : Trading/broker fees (Quantity & Price leave blank)
+#
+# VALID TICKERS: APC.DE, MSF.DE, SAP.DE, ALV.DE, MOH.DE, EUNL.DE, AMZN, TSLA
+# CASH is only used for Deposit/Dividend/Fee actions
+#
+# EXAMPLES:
+# 2026-03-26,Deposit,CASH,,,100.0,Initial investment
+# 2026-03-27,Buy,APC.DE,5,195.50,977.50,Bought Apple shares
+# 2026-03-28,Sell,MSF.DE,2,365.25,730.50,Sold Microsoft shares
+# 2026-03-29,Dividend,MSF.DE,,,15.00,Q1 dividend payout
+# 2026-03-30,Fee,CASH,,,5.00,Trading fees
+#
+# === DATA STARTS BELOW ===
+Date,Action,Ticker,Quantity,Price,Total,Notes
+2026-03-26,Deposit,CASH,,,100.0,Initial investment
+2026-03-30,Buy,APC.DE,0.115393,216.65,24.99989345,ohne fee
+2026-03-30,Fee,CASH,,,1.0,buy fee
+2026-04-08,Buy,MSF.DE,0.077351,323.15,24.99597565,
+2026-04-08,Fee,CASH,,,1,
+2026-04-08,Buy,AMZN,0.115868,181.24,20.99991632,
+2026-04-08,Fee,CASH,,,1,
+2026-04-08,Buy,TSLA,0.078876,316.95,24.9997482,
+2026-04-08,Fee,CASH,,,1,
