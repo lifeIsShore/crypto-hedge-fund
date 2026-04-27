@@ -9,17 +9,133 @@ with mathematical or logical justification.
 # ==========================================
 # 1. ASSET UNIVERSE
 # ==========================================
-# All tickers must use the Xetra/Frankfurt (.DE) suffix to match EUR 
+# All tickers must use the Xetra/Frankfurt (.DE) suffix to match EUR
 # pricing on the Trade Republic app (routed via Lang & Schwarz).
+# US-only tickers fall back to NASDAQ/NYSE quotes via yfinance.
+# EUR/USD FX conversion is applied automatically by the engine.
 ASSET_UNIVERSE = [
+    # --- US Big Tech ---
     'APC.DE',   # Apple Inc.
     'MSF.DE',   # Microsoft Corp.
+    'AMZN',     # Amazon Inc.
+    'NVDA',     # NVIDIA Corp.
+    'GOOGL',    # Alphabet Inc. (Class A)
+    'META',     # Meta Platforms
+    'TSLA',     # Tesla Inc.
+    'CRM',      # Salesforce Inc.
+    'ADBE',     # Adobe Inc.
+    'NFLX',     # Netflix Inc.
+
+    # --- US Semiconductors & Hardware ---
+    'AMD',      # Advanced Micro Devices
+    'INTC',     # Intel Corp.
+    'QCOM',     # Qualcomm Inc.
+    'AMAT',     # Applied Materials
+    'MU',       # Micron Technology
+    'TXN',      # Texas Instruments
+    'ORCL',     # Oracle Corp.
+
+    # --- US Software & Internet ---
+    'NOW',      # ServiceNow
+    'SNOW',     # Snowflake
+    'UBER',     # Uber Technologies
+    'PYPL',     # PayPal Holdings
+    'SPOT',     # Spotify Technology
+    'SHOP',     # Shopify Inc.
+
+    # --- European Blue Chips — DAX (.DE) ---
     'SAP.DE',   # SAP SE
     'ALV.DE',   # Allianz SE
-    'MOH.DE',   # LVMH
+    'SIE.DE',   # Siemens AG
+    'BAYN.DE',  # Bayer AG
+    'BMW.DE',   # BMW AG
+    'DTE.DE',   # Deutsche Telekom AG
+    'BAS.DE',   # BASF SE
+    'MBG.DE',   # Mercedes-Benz Group AG
+    'ADS.DE',   # adidas AG
+    'MUV2.DE',  # Munich Re (Münchener Rück)
+    'DBK.DE',   # Deutsche Bank AG
+    'ENR.DE',   # Siemens Energy AG
+    'IFX.DE',   # Infineon Technologies AG
+    'VOW3.DE',  # Volkswagen AG (Pref.)
+    'RWE.DE',   # RWE AG
+    'CON.DE',   # Continental AG
+    'FRE.DE',   # Fresenius SE
+    'VNA.DE',   # Vonovia SE
+    'HEN3.DE',  # Henkel AG (Pref.)
+    'BEI.DE',   # Beiersdorf AG
+    'ZAL.DE',   # Zalando SE
+    'MTX.DE',   # MTU Aero Engines AG
+
+    # --- European Blue Chips — Other (primary exchange) ---
+    'AIR.DE',   # Airbus SE (Xetra)
+    'AZN.L',    # AstraZeneca PLC (London — no Xetra data via yfinance)
+    'SHELL.AS', # Shell PLC (Amsterdam Euronext)
+    'TTE.PA',   # TotalEnergies SE (Paris Euronext)
+    'BP.L',     # BP PLC (London — no Xetra data via yfinance)
+    'ASML.AS',  # ASML Holding NV (Amsterdam Euronext)
+    'NOV.DE',   # Novo Nordisk A/S (Xetra)
+
+    # --- US Financials ---
+    'V',        # Visa Inc.
+    'MA',       # Mastercard Inc.
+    'JPM',      # JPMorgan Chase & Co.
+    'BAC',      # Bank of America Corp.
+    'GS',       # Goldman Sachs Group
+    'MS',       # Morgan Stanley
+    'BRK-B',    # Berkshire Hathaway Class B
+    'AXP',      # American Express Co.
+    'BLK',      # BlackRock Inc.
+
+    # --- US Healthcare ---
+    'UNH',      # UnitedHealth Group Inc.
+    'JNJ',      # Johnson & Johnson
+    'PFE',      # Pfizer Inc.
+    'LLY',      # Eli Lilly and Company
+    'ABBV',     # AbbVie Inc.
+    'MRK',      # Merck & Co. Inc.
+    'AMGN',     # Amgen Inc.
+    'GILD',     # Gilead Sciences Inc.
+    'TMO',      # Thermo Fisher Scientific
+
+    # --- US Consumer & Retail ---
+    'KO',       # Coca-Cola Co.
+    'MCD',      # McDonald's Corp.
+    'WMT',      # Walmart Inc.
+    'HD',       # Home Depot Inc.
+    'COST',     # Costco Wholesale Corp.
+    'NKE',      # Nike Inc.
+    'SBUX',     # Starbucks Corp.
+    'DIS',      # Walt Disney Co.
+    'LOW',      # Lowe's Companies Inc.
+
+    # --- US Energy ---
+    'XOM',      # ExxonMobil Corp.
+    'CVX',      # Chevron Corp.
+    'NEE',      # NextEra Energy Inc.
+
+    # --- US Industrials & Defense ---
+    'BA',       # Boeing Co.
+    'CAT',      # Caterpillar Inc.
+    'LMT',      # Lockheed Martin Corp.
+    'RTX',      # RTX Corp. (Raytheon)
+    'GE',       # GE Aerospace
+    'HON',      # Honeywell International
+    'UPS',      # United Parcel Service
+    'DE',       # Deere & Company
+
+    # --- ETFs (Xetra) ---
     'EUNL.DE',  # iShares Core MSCI World ETF
-    'AMZN',     # Amazon Inc.
-    'TSLA'      # Tesla Inc.
+    'VUSA.DE',  # Vanguard S&P 500 UCITS ETF
+    'VWCE.DE',  # Vanguard FTSE All-World UCITS ETF
+    'EXS1.DE',  # iShares Core DAX UCITS ETF
+    'EXXT.DE',  # iShares Nasdaq-100 UCITS ETF
+    'SPPW.DE',  # SPDR MSCI World UCITS ETF
+    'IS3N.DE',  # iShares Core MSCI EM IMI UCITS ETF
+    'IUSN.DE',  # iShares MSCI World Small Cap UCITS ETF
+    'XDWD.DE',  # Xtrackers MSCI World Swap UCITS ETF
+    'ZPRV.DE',  # SPDR MSCI USA Small Cap Value ETF
+    'DBXD.DE',  # Xtrackers DAX UCITS ETF
 ]
 
 BENCHMARK_TICKER = 'EUNL.DE'
