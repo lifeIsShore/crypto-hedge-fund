@@ -6,16 +6,21 @@
 
 import sys
 import os
+import importlib.util
 
-# Allow importing from the portfolio layer
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'portfolio'))
-
-from src.config import (
-    ASSET_UNIVERSE,
-    BENCHMARK_TICKER,
-    LOOKBACK_DAYS,
-    RISK_FREE_RATE,
+# Use dynamic loading to import from the portfolio layer without
+# causing sys.path conflicts or circular imports (since both are src.config).
+_portfolio_config_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'portfolio', 'src', 'config.py')
 )
+_spec = importlib.util.spec_from_file_location("portfolio_config", _portfolio_config_path)
+_portfolio_config = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_portfolio_config)
+
+# Proxy all variables from portfolio config to this module
+for _k, _v in _portfolio_config.__dict__.items():
+    if not _k.startswith('_'):
+        globals()[_k] = _v
 
 # ==========================================
 # CORRELATION ENGINE PARAMETERS

@@ -1,0 +1,135 @@
+{
+  "generated_at": "2026-04-29T20:14:42.639542",
+  "data_end_date": "2026-04-28",
+  "held_tickers": [
+    "APC.DE",
+    "MSF.DE",
+    "AMZN",
+    "TSLA"
+  ],
+  "alpha_tstat_threshold": 2.0,
+  "factor_regressions": [
+    {
+      "ticker": "TSLA",
+      "annualised_alpha_pct": 11.124,
+      "alpha_tstat": 0.278,
+      "alpha_pvalue": 0.781,
+      "beta_mkt": 2.1907,
+      "beta_smb": 0.1945,
+      "beta_hml": -0.3293,
+      "r_squared": 0.4117,
+      "alpha_sig": false,
+      "return_source": "beta",
+      "n_obs": 372
+    },
+    {
+      "ticker": "APC.DE",
+      "annualised_alpha_pct": -1.837,
+      "alpha_tstat": -0.082,
+      "alpha_pvalue": 0.9346,
+      "beta_mkt": 0.4346,
+      "beta_smb": -0.0501,
+      "beta_hml": 0.3344,
+      "r_squared": 0.0669,
+      "alpha_sig": false,
+      "return_source": "mixed",
+      "n_obs": 372
+    },
+    {
+      "ticker": "AMZN",
+      "annualised_alpha_pct": -8.666,
+      "alpha_tstat": -0.464,
+      "alpha_pvalue": 0.6429,
+      "beta_mkt": 1.273,
+      "beta_smb": -0.0334,
+      "beta_hml": -0.3926,
+      "r_squared": 0.5306,
+      "alpha_sig": false,
+      "return_source": "beta",
+      "n_obs": 372
+    },
+    {
+      "ticker": "MSF.DE",
+      "annualised_alpha_pct": -11.323,
+      "alpha_tstat": -0.536,
+      "alpha_pvalue": 0.592,
+      "beta_mkt": 0.2206,
+      "beta_smb": -0.0837,
+      "beta_hml": -0.4063,
+      "r_squared": 0.0689,
+      "alpha_sig": false,
+      "return_source": "mixed",
+      "n_obs": 372
+    }
+  ],
+  "summary": {
+    "n_tickers_regressed": 4,
+    "n_significant_alpha": 0,
+    "avg_market_beta": 1.0297,
+    "avg_alpha_pct": -2.675
+  },
+  "bl_generated_at": "2026-04-29T20:15:10.353067",
+  "regime_used": "low_stress",
+  "stress_score_used": 0.2056,
+  "bl_views": [],
+  "equilibrium_returns": {
+    "APC.DE": 0.082265,
+    "MSF.DE": 0.080424,
+    "AMZN": 0.141741,
+    "TSLA": 0.301892
+  },
+  "bl_posterior_returns": {
+    "APC.DE": 0.082265,
+    "MSF.DE": 0.080424,
+    "AMZN": 0.141741,
+    "TSLA": 0.301892
+  },
+  "bl_weights": {
+    "APC.DE": 0.25,
+    "MSF.DE": 0.25,
+    "AMZN": 0.25,
+    "TSLA": 0.25
+  },
+  "markowitz_weights": {
+    "APC.DE": 0.25,
+    "MSF.DE": 0.25,
+    "AMZN": 0.25,
+    "TSLA": 0.25
+  },
+  "current_weights": {
+    "APC.DE": 0.2514,
+    "MSF.DE": 0.2657,
+    "AMZN": 0.2432,
+    "TSLA": 0.2397
+  },
+  "weight_comparison": [
+    {
+      "ticker": null,
+      "Markowitz": 0.25,
+      "Black-Litterman": 0.25,
+      "Current (actual)": 0.2514,
+      "BL - Markowitz": 0.0
+    },
+    {
+      "ticker": null,
+      "Markowitz": 0.25,
+      "Black-Litterman": 0.25,
+      "Current (actual)": 0.2657,
+      "BL - Markowitz": 0.0
+    },
+    {
+      "ticker": null,
+      "Markowitz": 0.25,
+      "Black-Litterman": 0.25,
+      "Current (actual)": 0.2432,
+      "BL - Markowitz": 0.0
+    },
+    {
+      "ticker": null,
+      "Markowitz": 0.25,
+      "Black-Litterman": 0.25,
+      "Current (actual)": 0.2397,
+      "BL - Markowitz": 0.0
+    }
+  ]
+}
