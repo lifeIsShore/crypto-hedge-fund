@@ -1,0 +1,52 @@
+<!-- ── HOLDINGS ──────────────────────────────────────── -->
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">HOLDINGS</span>
+      <span class="panel-tag" id="holdingsTag">—</span>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead><tr><th>ASSET</th><th>VALUE</th><th>WEIGHT</th></tr></thead>
+        <tbody id="holdingsBody2"><tr><td colspan="3" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+      <div style="margin-top:12px;font-size:10px;color:var(--muted);">
+        CASH <span style="color:var(--text);margin-left:8px;">€<span id="cashValue2">0.00</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">MARKET PRICES</span>
+      <span class="panel-tag">LAST REFRESH</span>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead><tr><th>TICKER</th><th>PRICE (€)</th><th>UPDATED</th></tr></thead>
+        <tbody id="pricesBody2"><tr><td colspan="3" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+      <div style="margin-top:10px;font-size:9px;color:var(--muted);">Prices update on ⟳ REFRESH</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">OPTIMAL WEIGHTS — MAX SHARPE</span>
+    <span class="panel-tag">MPT OPTIMIZER</span>
+  </div>
+  <div class="panel-body">
+    <table class="data-table">
+      <thead><tr><th>ASSET</th><th>CURRENT WEIGHT</th><th>OPTIMAL WEIGHT</th><th>DRIFT</th><th>ACTION</th></tr></thead>
+      <tbody id="weightsBody"><tr><td colspan="5" style="color:var(--muted)">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+window._pageInit = function(data) {
+  renderHoldings(data);
+  renderPrices(data);
+  renderWeightsTable(data);
+};
+</script>

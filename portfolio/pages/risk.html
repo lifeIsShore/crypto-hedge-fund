@@ -1,0 +1,531 @@
+<!-- ── RISK ───────────────────────────────────────────── -->
+
+<!-- Risk KPI Strip -->
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;">
+  <div class="kpi c-red"><div class="kpi-label">VaR 95% (1D)</div><div class="kpi-value" id="rk-var95">—</div><div class="kpi-sub">Historical</div></div>
+  <div class="kpi c-red"><div class="kpi-label">VaR 99% (1D)</div><div class="kpi-value" id="rk-var99">—</div><div class="kpi-sub">Tail risk</div></div>
+  <div class="kpi c-amber"><div class="kpi-label">CVaR / ES 95%</div><div class="kpi-value" id="rk-cvar">—</div><div class="kpi-sub">Expected Shortfall</div></div>
+  <div class="kpi c-amber"><div class="kpi-label">GARCH Vol (1D)</div><div class="kpi-value" id="rk-gvol">—</div><div class="kpi-sub">Conditional σ</div></div>
+  <div class="kpi c-blue"><div class="kpi-label">Ann. Volatility</div><div class="kpi-value" id="rk-avol">—</div><div class="kpi-sub">Historical σ × √252</div></div>
+  <div class="kpi c-green"><div class="kpi-label">Skew / Kurtosis</div><div class="kpi-value" id="rk-sk">—</div><div class="kpi-sub">Return shape</div></div>
+</div>
+
+<!-- Row 1: Daily Returns + Risk Metrics Table -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">PORTFOLIO DAILY RETURNS</span>
+      <span class="panel-tag" id="rk-daycount">— TRADING DAYS</span>
+    </div>
+    <div class="panel-body"><div style="position:relative;height:200px;"><canvas id="riskReturnsChart"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">RISK METRICS TABLE</span>
+      <span class="panel-tag">FULL DETAIL</span>
+    </div>
+    <div class="panel-body">
+      <table class="data-table">
+        <thead><tr><th>METRIC</th><th>VALUE</th><th>STATUS</th></tr></thead>
+        <tbody id="riskMetricsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Distribution + GARCH -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RETURN DISTRIBUTION</span><span class="panel-tag">NORMAL OVERLAY</span></div>
+    <div class="panel-body"><div style="position:relative;height:190px;"><canvas id="riskDistChart"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">GARCH(1,1) CONDITIONAL VOLATILITY</span><span class="panel-tag">ROLLING FORECAST</span></div>
+    <div class="panel-body"><div style="position:relative;height:190px;"><canvas id="riskGarchChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- Row 3: Monte Carlo + Regime + Stress -->
+<div style="display:grid;grid-template-columns:5fr 3fr 4fr;gap:14px;margin-bottom:14px;">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">MONTE CARLO SIMULATION</span><span class="panel-tag">1 000 PATHS · 30D HORIZON</span></div>
+    <div class="panel-body"><div style="position:relative;height:185px;"><canvas id="riskMcChart"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">REGIME DETECTION</span><span class="panel-tag">200D MA FILTER</span></div>
+    <div class="panel-body">
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-size:10px;width:90px;color:var(--text);">BULL / LOW VOL</div>
+          <div style="flex:1;height:6px;background:var(--border);overflow:hidden;">
+            <div id="rk-bull-bar" style="height:100%;background:var(--accent);transition:width .6s ease;width:0%"></div>
+          </div>
+          <div id="rk-bull-pct" style="font-size:10px;width:35px;text-align:right;color:var(--accent);">—</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:10px;width:90px;color:var(--text);">BEAR / HIGH VOL</div>
+          <div style="flex:1;height:6px;background:var(--border);overflow:hidden;">
+            <div id="rk-bear-bar" style="height:100%;background:var(--red);transition:width .6s ease;width:0%"></div>
+          </div>
+          <div id="rk-bear-pct" style="font-size:10px;width:35px;text-align:right;color:var(--red);">—</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">CURRENT REGIME SIGNAL</div>
+      <div id="rk-regime-signal" style="font-size:13px;font-weight:600;letter-spacing:.06em;">—</div>
+      <div id="rk-regime-sub" style="font-size:9px;color:var(--muted);margin-top:3px;">—</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">STRESS SCENARIOS</span><span class="panel-tag">HISTORICAL SHOCKS</span></div>
+    <div class="panel-body"><div style="position:relative;height:185px;"><canvas id="riskStressChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- Row 4: Correlation Matrix -->
+<div class="panel" style="margin-bottom:14px;">
+  <div class="panel-header">
+    <span class="panel-title">HOLDINGS CORRELATION MATRIX</span>
+    <span class="panel-tag">PEARSON · 252D · REAL PRICE HISTORY</span>
+  </div>
+  <div class="panel-body" id="riskCorrMatrix">
+    <div style="color:var(--muted);font-size:11px;">Run &#x27f3; REFRESH to compute correlation from real price history.</div>
+  </div>
+</div>
+
+<!-- Row 4b: Equity Curve + Drawdown -->
+<div class="panel" style="margin-bottom:14px;">
+  <div class="panel-header">
+    <span class="panel-title">EQUITY CURVE &amp; DRAWDOWN</span>
+    <span class="panel-tag" id="rk-eqdd-tag">CUMULATIVE LOG-RETURN</span>
+  </div>
+  <div class="panel-body"><div style="position:relative;height:220px;"><canvas id="riskEquityChart"></canvas></div></div>
+</div>
+
+<!-- Row 5: Asset Risk Breakdown -->
+<div class="panel" style="margin-bottom:14px;">
+  <div class="panel-header">
+    <span class="panel-title">ASSET RISK BREAKDOWN</span>
+    <span class="panel-tag">INDIVIDUAL CONTRIBUTION TO VaR</span>
+  </div>
+  <div class="panel-body">
+    <table class="data-table">
+      <thead><tr><th>ASSET</th><th>WEIGHT</th><th>VALUE</th><th>MU (ANN)</th><th>SIGMA (ANN)</th><th>MARGINAL VaR</th><th>CONTRIB VaR</th><th>STATUS</th></tr></thead>
+      <tbody id="riskAssetTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Row 6: Capital Flow + Ledger KPIs -->
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px;">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">CAPITAL FLOW TIMELINE</span><span class="panel-tag">FROM LEDGER · REAL DEPOSITS</span></div>
+    <div class="panel-body"><div style="position:relative;height:200px;"><canvas id="riskDepositChart"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">LEDGER KPIs</span><span class="panel-tag">REAL CASH FLOWS</span></div>
+    <div class="panel-body" id="riskLedgerKpis"><div style="color:var(--muted);font-size:11px;">Loading ledger...</div></div>
+  </div>
+</div>
+
+<!-- Row 7: Transaction History -->
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">FULL TRANSACTION HISTORY</span>
+    <span class="panel-tag" id="rk-tx-count">— ENTRIES</span>
+  </div>
+  <div class="panel-body">
+    <table class="data-table">
+      <thead><tr><th>DATE</th><th>ACTION</th><th>TICKER</th><th>QTY</th><th>PRICE (€)</th><th>TOTAL (€)</th><th>NOTES</th><th>TYPE</th></tr></thead>
+      <tbody id="riskTxTbody"><tr><td colspan="8" style="color:var(--muted)">Loading ledger...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+  let _charts = {};
+
+  function destroyAll() {
+    Object.values(_charts).forEach(c => { try { c.destroy(); } catch(e){} });
+    _charts = {};
+  }
+
+  window._pageInit = function(data) {
+    destroyAll();
+    _buildRisk(data);
+  };
+
+  function _buildRisk(engineData) {
+    const k        = engineData.kpis || {};
+    const cur      = engineData.current_weights || {};
+    const holdings = (engineData.current_values || {}).holdings || {};
+    const total    = (engineData.current_values || {}).total_portfolio || 1;
+
+    // PRNG
+    let _seed = 12345;
+    const prng  = () => { _seed = (_seed * 1664525 + 1013904223) & 0xffffffff; return (_seed >>> 0) / 0xffffffff; };
+    const randn = () => { const u = Math.max(1e-10, prng()); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*prng()); };
+    const resetSeed = s => { _seed = s; };
+
+    // Returns series
+    const realReturns = engineData.portfolio_returns;
+    const hasReal     = Array.isArray(realReturns) && realReturns.length >= 30;
+    let returns, garchVol, sigmaD, muD;
+    const N = hasReal ? realReturns.length : 252;
+
+    if (hasReal) {
+      returns = realReturns;
+      sigmaD  = k.ann_volatility_pct ? k.ann_volatility_pct / 100 / Math.sqrt(252) : 0.01;
+      muD     = returns.reduce((s, r) => s + r, 0) / N;
+      garchVol = [];
+      let h = sigmaD * sigmaD;
+      const a = 0.08, b = 0.87, w = h * (1 - a - b);
+      returns.forEach(r => { garchVol.push(Math.sqrt(h) * 100); h = Math.max(1e-8, w + a*r*r + b*h); });
+      document.getElementById('rk-daycount').textContent = N + ' REAL TRADING DAYS';
+    } else {
+      sigmaD = k.sharpe_ratio ? Math.max(0.004, Math.min(0.03, 0.01 + Math.abs(k.max_drawdown || 0) * 0.05)) : 0.012;
+      muD    = sigmaD * (k.sharpe_ratio || 0) / Math.sqrt(252) + 0.0001;
+      returns = []; garchVol = [];
+      let h = sigmaD * sigmaD;
+      const a = 0.08, b = 0.87, w = h * (1 - a - b);
+      for (let i = 0; i < N; i++) {
+        const r = muD + Math.sqrt(h) * randn();
+        returns.push(r); garchVol.push(Math.sqrt(h) * 100);
+        h = Math.max(1e-8, w + a*r*r + b*h);
+      }
+      document.getElementById('rk-daycount').textContent = N + ' DAYS (SYNTHETIC — hit ⟳ REFRESH)';
+    }
+
+    // Statistics
+    const lastGarchVol = garchVol[garchVol.length - 1];
+    const sorted   = [...returns].sort((a, b) => a - b);
+    const mean     = returns.reduce((s, r) => s + r, 0) / N;
+    const variance = returns.reduce((s, r) => s + (r - mean)**2, 0) / N;
+    const std      = Math.sqrt(variance);
+
+    const var95  = hasReal && k.var95_daily_pct  ? k.var95_daily_pct  : sorted[Math.max(0, Math.floor(0.05*N)-1)] * 100;
+    const var99  = hasReal && k.var99_daily_pct  ? k.var99_daily_pct  : sorted[Math.max(0, Math.floor(0.01*N)-1)] * 100;
+    const cvar95 = hasReal && k.cvar95_daily_pct ? k.cvar95_daily_pct : (() => { const t = sorted.slice(0, Math.max(1, Math.floor(0.05*N))); return t.reduce((s,r)=>s+r,0)/t.length*100; })();
+    const skew   = hasReal && k.skewness         ? k.skewness         : returns.reduce((s,r)=>s+((r-mean)/std)**3,0)/N;
+    const kurt   = hasReal && k.excess_kurtosis  ? k.excess_kurtosis  : returns.reduce((s,r)=>s+((r-mean)/std)**4,0)/N - 3;
+    const annVol = hasReal && k.ann_volatility_pct ? k.ann_volatility_pct : std * Math.sqrt(252) * 100;
+
+    // KPI cards
+    document.getElementById('rk-var95').textContent = var95.toFixed(2) + '%';
+    document.getElementById('rk-var99').textContent = var99.toFixed(2) + '%';
+    document.getElementById('rk-cvar').textContent  = cvar95.toFixed(2) + '%';
+    document.getElementById('rk-gvol').textContent  = lastGarchVol.toFixed(3) + '%';
+    document.getElementById('rk-avol').textContent  = annVol.toFixed(1) + '%';
+    document.getElementById('rk-sk').textContent    = skew.toFixed(2) + ' / ' + kurt.toFixed(2);
+
+    // Risk metrics table
+    const rows = [
+      ['VaR 95% (1D)',    var95.toFixed(2)+'%',             var95>-3?'OK':'HIGH',                    var95>-3?'green':'red'],
+      ['VaR 99% (1D)',    var99.toFixed(2)+'%',             var99>-5?'OK':'HIGH',                    var99>-5?'amber':'red'],
+      ['CVaR / ES 95%',   cvar95.toFixed(2)+'%',            'TAIL LOSS',                             'red'],
+      ['Ann. Volatility', annVol.toFixed(1)+'%',            annVol<15?'LOW':annVol<25?'MED':'HIGH',  annVol<15?'green':annVol<25?'amber':'red'],
+      ['GARCH σ (curr.)', lastGarchVol.toFixed(3)+'%',      'FORECAST',                              'amber'],
+      ['Skewness',        skew.toFixed(3),                  Math.abs(skew)<0.5?'OK':'SKEWED',        Math.abs(skew)<0.5?'green':'amber'],
+      ['Excess Kurtosis', kurt.toFixed(3),                  kurt>1?'FAT TAILS':'OK',                 kurt>1?'amber':'green'],
+      ['Max Drawdown',    ((k.max_drawdown||0)*100).toFixed(2)+'%', 'HISTORICAL',                    'red'],
+      ['Sharpe Ratio',    (k.sharpe_ratio||0).toFixed(2),   (k.sharpe_ratio||0)>=1?'GOOD':'LOW',     (k.sharpe_ratio||0)>=1?'green':'amber'],
+      ['Calmar Ratio',    (k.calmar_ratio||0).toFixed(2),   (k.calmar_ratio||0)>=0.5?'GOOD':'LOW',   (k.calmar_ratio||0)>=0.5?'green':'amber'],
+      ['Info. Ratio',     (k.information_ratio||0).toFixed(2),(k.information_ratio||0)>=0.2?'ALPHA':'LOW',(k.information_ratio||0)>=0.2?'green':'amber'],
+      ['Data Source',     hasReal?'REAL':'SYNTHETIC',       hasReal?'LIVE':'REFRESH!',               hasReal?'green':'amber'],
+    ];
+    document.getElementById('riskMetricsTbody').innerHTML = rows.map(([m,v,s,cls]) =>
+      `<tr><td>${m}</td><td style="color:var(--${cls});font-weight:500">${v}</td><td><span class="tag tag-${cls}">${s}</span></td></tr>`
+    ).join('');
+
+    // Date labels
+    const labels = [];
+    const startD = new Date(Date.now() - N * 86400000);
+    for (let i = 0; i < N; i++) {
+      const d = new Date(startD);
+      d.setDate(startD.getDate() + Math.floor(i * 365 / 252));
+      labels.push(d.toISOString().slice(0, 10));
+    }
+
+    // Chart 1: Daily Returns
+    _charts.returns = new Chart(document.getElementById('riskReturnsChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'Daily Return %', data:returns.map(r=>+(r*100).toFixed(4)),
+            backgroundColor:returns.map(r=>r<0?'rgba(255,77,109,0.65)':'rgba(0,229,160,0.55)'),
+            borderWidth:0, barPercentage:0.95 },
+          { label:'VaR 95%', data:new Array(N).fill(var95), type:'line',
+            borderColor:'rgba(245,166,35,0.9)', borderDash:[5,3], borderWidth:1.5, pointRadius:0, fill:false }
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(3)+'%'}} },
+        scales:{ x:{ticks:{maxTicksLimit:10,maxRotation:0},grid:{display:false}}, y:{ticks:{callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.04)'}} }
+      }
+    });
+
+    // Chart 2: Distribution
+    const bins=40, binMin=-4, binMax=4, binSize=(binMax-binMin)/bins;
+    const histCounts=new Array(bins).fill(0);
+    returns.forEach(r=>{ const z=(r-mean)/(std||1); const idx=Math.floor((z-binMin)/binSize); if(idx>=0&&idx<bins) histCounts[idx]++; });
+    const histLabels=Array.from({length:bins},(_,i)=>((binMin+(i+0.5)*binSize)).toFixed(2)+'σ');
+    const normCurve=Array.from({length:bins},(_,i)=>{ const z=binMin+(i+0.5)*binSize; return Math.exp(-0.5*z*z)/Math.sqrt(2*Math.PI)*binSize*N; });
+    _charts.dist = new Chart(document.getElementById('riskDistChart'), {
+      type:'bar', data:{ labels:histLabels, datasets:[
+        {label:'Empirical', data:histCounts, backgroundColor:'rgba(108,122,156,0.45)', borderWidth:0},
+        {label:'Normal fit', data:normCurve, type:'line', borderColor:'rgba(0,229,160,0.85)', borderWidth:1.8, pointRadius:0, fill:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:10}}},
+        scales:{x:{ticks:{maxTicksLimit:9},grid:{display:false}},y:{ticks:{maxTicksLimit:5},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    });
+
+    // Chart 3: GARCH
+    _charts.garch = new Chart(document.getElementById('riskGarchChart'), {
+      type:'line', data:{ labels, datasets:[
+        {label:'GARCH(1,1) σ', data:garchVol.map(v=>+v.toFixed(4)), borderColor:'rgba(245,166,35,0.9)', borderWidth:1.5, pointRadius:0, fill:true, backgroundColor:'rgba(245,166,35,0.07)'},
+        {label:'Unconditional σ', data:new Array(N).fill(+(std*100).toFixed(4)), borderColor:'rgba(0,229,160,0.5)', borderDash:[6,4], borderWidth:1.2, pointRadius:0, fill:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(4)+'%'}}},
+        scales:{x:{ticks:{maxTicksLimit:8},grid:{display:false}},y:{ticks:{callback:v=>v.toFixed(3)+'%'},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    });
+
+    // Chart 4: Monte Carlo
+    const horizon=30, nDisplay=20, nFull=1000;
+    resetSeed(99999);
+    function runPaths(n) {
+      const paths=[];
+      for(let p=0;p<n;p++){let cum=0;const path=[0];for(let d=0;d<horizon;d++){cum+=muD+std*randn();path.push(+(cum*100).toFixed(4));}paths.push(path);}
+      return paths;
+    }
+    const displayPaths=runPaths(nDisplay), fullPaths=runPaths(nFull);
+    const p5=[],p50=[],p95mc=[];
+    for(let d=0;d<=horizon;d++){const vals=fullPaths.map(p=>p[d]).sort((a,b)=>a-b);p5.push(vals[Math.floor(0.05*nFull)]);p50.push(vals[Math.floor(0.50*nFull)]);p95mc.push(vals[Math.floor(0.95*nFull)]);}
+    const mcDatasets=displayPaths.map(path=>({data:path,borderColor:'rgba(108,122,156,0.15)',borderWidth:1,pointRadius:0,fill:false,label:''}));
+    mcDatasets.push(
+      {label:'P95 (Bull)',data:p95mc,borderColor:'rgba(0,229,160,0.90)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:'Median',    data:p50,  borderColor:'rgba(245,166,35,0.95)',borderWidth:2.5,pointRadius:0,fill:false},
+      {label:'P5 (Bear)', data:p5,   borderColor:'rgba(255,77,109,0.90)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false}
+    );
+    _charts.mc = new Chart(document.getElementById('riskMcChart'), {
+      type:'line', data:{labels:Array.from({length:horizon+1},(_,i)=>'D+'+i),datasets:mcDatasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{filter:i=>['P95 (Bull)','Median','P5 (Bear)'].includes(i.text),boxWidth:10,padding:8}},
+          tooltip:{callbacks:{label:ctx=>['P95 (Bull)','Median','P5 (Bear)'].includes(ctx.dataset.label)?ctx.dataset.label+': '+ctx.raw.toFixed(2)+'%':null}}},
+        scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.04)'}}}}
+    });
+
+    // Chart 5: Equity Curve + Drawdown
+    const equityCurve=[], drawdownCurve=[];
+    let cumLogSum=0, runMax=0;
+    returns.forEach(r=>{ cumLogSum+=r; const eq=Math.exp(cumLogSum)-1; equityCurve.push(+(eq*100).toFixed(4)); runMax=Math.max(runMax,eq); drawdownCurve.push(+(runMax>0?((eq-runMax)/(1+runMax))*100:0).toFixed(4)); });
+    document.getElementById('rk-eqdd-tag').textContent = hasReal ? N+' REAL TRADING DAYS' : N+' DAYS (SYNTHETIC)';
+    _charts.equity = new Chart(document.getElementById('riskEquityChart'), {
+      type:'line', data:{ labels, datasets:[
+        {label:'Equity Curve (%)', data:equityCurve, borderColor:'rgba(0,229,160,0.9)', borderWidth:1.8, pointRadius:0, fill:false, yAxisID:'yEq'},
+        {label:'Drawdown (%)', data:drawdownCurve, borderColor:'rgba(255,77,109,0.7)', borderWidth:1.2, pointRadius:0, fill:true, backgroundColor:'rgba(255,77,109,0.12)', yAxisID:'yDd'}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(2)+'%'}}},
+        scales:{x:{ticks:{maxTicksLimit:10,maxRotation:0},grid:{display:false}},
+          yEq:{type:'linear',position:'left',ticks:{callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.04)'},title:{display:true,text:'Equity %',color:'rgba(0,229,160,0.7)',font:{size:9}}},
+          yDd:{type:'linear',position:'right',ticks:{callback:v=>v.toFixed(1)+'%'},grid:{display:false},title:{display:true,text:'Drawdown %',color:'rgba(255,77,109,0.7)',font:{size:9}}}}}
+    });
+
+    // Regime Detection — equity level vs 200D SMA
+    const equityLevel=[]; let cumLS=0;
+    returns.forEach(r=>{ cumLS+=r; equityLevel.push(Math.exp(cumLS)); });
+    const smaPeriod=Math.min(200,equityLevel.length);
+    const equitySMA200=equityLevel.slice(-smaPeriod).reduce((s,v)=>s+v,0)/smaPeriod;
+    const currentEquity=equityLevel[equityLevel.length-1];
+    const currentBull=currentEquity>equitySMA200;
+    let bullDays=0;
+    for(let i=smaPeriod-1;i<equityLevel.length;i++){
+      const wSMA=equityLevel.slice(i-smaPeriod+1,i+1).reduce((s,v)=>s+v,0)/smaPeriod;
+      if(equityLevel[i]>wSMA) bullDays++;
+    }
+    const compDays=equityLevel.length-smaPeriod+1;
+    const bullPct=compDays>0?Math.round(bullDays/compDays*100):50;
+    const driftAnn=((currentEquity/equityLevel[0])**(252/equityLevel.length)-1)*100;
+    document.getElementById('rk-bull-bar').style.width=bullPct+'%';
+    document.getElementById('rk-bear-bar').style.width=(100-bullPct)+'%';
+    document.getElementById('rk-bull-pct').textContent=bullPct+'%';
+    document.getElementById('rk-bear-pct').textContent=(100-bullPct)+'%';
+    document.getElementById('rk-regime-signal').textContent=currentBull?'🟢 BULL REGIME':'🔴 BEAR REGIME';
+    document.getElementById('rk-regime-signal').style.color=currentBull?'var(--accent)':'var(--red)';
+    document.getElementById('rk-regime-sub').textContent=currentBull
+      ?'Equity ('+currentEquity.toFixed(3)+') > 200D SMA ('+equitySMA200.toFixed(3)+') · ann. drift +'+driftAnn.toFixed(1)+'%'
+      :'Equity ('+currentEquity.toFixed(3)+') < 200D SMA ('+equitySMA200.toFixed(3)+') · ann. drift '+driftAnn.toFixed(1)+'%';
+
+    // Chart 6: Stress Scenarios
+    const portfolioVal=total||100, volScale=annVol/16;
+    const stress=[
+      {label:"COVID Crash '20",shock:-33.9},{label:'GFC 2008',shock:-50.9},{label:'2022 Rate Shock',shock:-25.4},
+      {label:"Flash Crash '10",shock:-9.8},{label:"Black Monday '87",shock:-33.5},{label:'Dot-com Bust',shock:-49.1},
+      {label:"LTCM '98",shock:-14.6},{label:'Ukraine Shock',shock:-17.0}
+    ];
+    const scaledPct=stress.map(s=>+(s.shock*volScale).toFixed(1));
+    const scaledEUR=stress.map(s=>+(portfolioVal*s.shock*volScale/100).toFixed(0));
+    _charts.stress = new Chart(document.getElementById('riskStressChart'), {
+      type:'bar', data:{labels:stress.map(s=>s.label),datasets:[
+        {label:'Portfolio Impact (%)',data:scaledPct,backgroundColor:scaledPct.map(v=>v<var95?'rgba(255,77,109,0.75)':'rgba(245,166,35,0.65)'),borderWidth:0},
+        {label:'VaR 95% reference',data:stress.map(()=>+var95.toFixed(2)),type:'line',borderColor:'rgba(245,166,35,0.85)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:8}},
+          tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===0?'Impact: '+ctx.raw.toFixed(1)+'%  (approx. EUR '+Math.abs(scaledEUR[ctx.dataIndex]).toLocaleString()+')':null}}},
+        scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{display:false}}}}
+    });
+
+    // Asset Risk Breakdown
+    const assetColors=['var(--accent)','var(--blue)','var(--amber)','var(--red)','#a78bfa','#f472b6','#34d399','#fb923c'];
+    const assetStats=engineData.asset_risk_stats||{};
+    const tbody=document.getElementById('riskAssetTbody');
+    const assetEntries=Object.entries(holdings);
+    if(!assetEntries.length){
+      tbody.innerHTML='<tr><td colspan="8" style="color:var(--muted)">No holdings yet</td></tr>';
+    } else {
+      tbody.innerHTML=assetEntries.map(([ticker,value],i)=>{
+        const w=cur[ticker]||0, wPct=(w*100).toFixed(1);
+        const stats=assetStats[ticker]||{};
+        const muAnn=stats.mu_ann_pct!=null?stats.mu_ann_pct:+(muD*252*100).toFixed(2);
+        const sigAnn=stats.sigma_ann_pct!=null?stats.sigma_ann_pct:+(std*1.5*Math.sqrt(252)*100).toFixed(1);
+        const sigD=sigAnn/100/Math.sqrt(252);
+        const mVaR=-(sigD*1.645*w*100).toFixed(3);
+        const contrib=(Math.abs(parseFloat(mVaR))*w).toFixed(3);
+        const status=w>0.25?'<span class="tag tag-red">OVER-WEIGHT</span>':w>0.15?'<span class="tag tag-amber">CONCENTRATED</span>':'<span class="tag tag-green">OK</span>';
+        const src=stats.mu_ann_pct!=null?'<span class="tag tag-green">REAL</span>':'<span class="tag tag-amber">EST.</span>';
+        return '<tr>'
+          +'<td style="color:'+assetColors[i%assetColors.length]+';font-weight:500">'+ticker+'</td>'
+          +'<td>'+wPct+'%</td><td>€'+parseFloat(value).toFixed(2)+'</td>'
+          +'<td style="color:'+(muAnn>=0?'var(--accent)':'var(--red)')+'">'+( muAnn>=0?'+':'')+muAnn.toFixed(2)+'%</td>'
+          +'<td style="color:var(--amber)">'+sigAnn.toFixed(1)+'%</td>'
+          +'<td style="color:var(--red)">'+mVaR+'%</td>'
+          +'<td>'+contrib+'%</td><td>'+status+' '+src+'</td>'
+          +'</tr>';
+      }).join('');
+    }
+
+    // Correlation Matrix
+    const corr=engineData.correlation_matrix||{};
+    const tickers=Object.keys(corr);
+    const corrEl=document.getElementById('riskCorrMatrix');
+    if(!tickers.length){
+      corrEl.innerHTML='<div style="color:var(--muted);font-size:11px;">Run &#x27f3; REFRESH to compute correlation from real price history.</div>';
+    } else {
+      function corrColor(v){if(isNaN(v))return'rgba(30,37,53,0.5)';if(v>=0.7)return'rgba(0,229,160,0.25)';if(v>=0.3)return'rgba(0,229,160,0.10)';if(v<=-0.3)return'rgba(255,77,109,0.20)';return'rgba(30,37,53,0.3)';}
+      const cs='padding:4px 6px;font-size:9px;text-align:center;border:1px solid var(--border);';
+      const ch=cs+'color:var(--muted);font-weight:500;background:var(--surface2);';
+      let html='<div style="overflow-x:auto;max-height:320px;overflow-y:auto;"><table style="border-collapse:collapse;font-family:var(--mono);">';
+      html+='<thead><tr><th style="'+ch+'"></th>';
+      tickers.forEach(t=>{html+='<th style="'+ch+'">'+t+'</th>';});
+      html+='</tr></thead><tbody>';
+      tickers.forEach(rowT=>{
+        html+='<tr><td style="'+ch+'">'+rowT+'</td>';
+        tickers.forEach(colT=>{
+          const v=(corr[rowT]||{})[colT];
+          const bg=corrColor(v), tc=rowT===colT?'var(--muted)':v>=0.7?'var(--accent)':v<=-0.3?'var(--red)':'var(--text)';
+          html+='<td style="'+cs+'background:'+bg+';color:'+tc+';">'+(v!=null?v.toFixed(2):'--')+'</td>';
+        });
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+      corrEl.innerHTML=html;
+    }
+
+    _loadLedger(engineData);
+  }
+
+  function _loadLedger(engineData) {
+    fetch('data/ledger.csv')
+      .then(r=>{ if(!r.ok) throw new Error('CSV not found'); return r.text(); })
+      .then(csv=>{
+        const rawLines=csv.split('\n').filter(l=>l.trim()&&!l.trim().startsWith('#'));
+        if(!rawLines.length) throw new Error('Empty ledger');
+        const headers=rawLines[0].split(',').map(h=>h.trim());
+        const rows=rawLines.slice(1).map(line=>{
+          const vals=line.split(',').map(v=>v.trim()), obj={};
+          headers.forEach((h,i)=>obj[h]=vals[i]||'');
+          return obj;
+        }).filter(r=>r.Date&&r.Action);
+        if(!rows.length) throw new Error('No data rows');
+
+        const byAction=a=>rows.filter(r=>r.Action?.trim().toLowerCase()===a);
+        const deposits=byAction('deposit').sort((a,b)=>new Date(a.Date)-new Date(b.Date));
+        const fees=byAction('fee'), buys=byAction('buy'), sells=byAction('sell');
+
+        const totalDeposited=deposits.reduce((s,d)=>s+Math.abs(parseFloat(d.Total)||0),0);
+        const totalFees=fees.reduce((s,f)=>s+Math.abs(parseFloat(f.Total)||0),0);
+        const totalPortfolio=(engineData?.current_values?.total_portfolio)||0;
+        const netPnL=totalPortfolio-totalDeposited;
+        const feeDragPct=totalDeposited>0?(totalFees/totalDeposited*100).toFixed(2):'0.00';
+        const firstDeposit=deposits.length?new Date(deposits[0].Date):new Date();
+        const today=new Date();
+        const holdingDays=Math.max(1,Math.round((today-firstDeposit)/86400000));
+        const holdingYears=holdingDays/365;
+        const weightedCash=deposits.reduce((s,d)=>{const t=new Date(d.Date);const w=Math.max(0,(today-t)/(today-firstDeposit));return s+Math.abs(parseFloat(d.Total)||0)*w;},0);
+        const mdReturn=weightedCash>0?((totalPortfolio-totalDeposited)/weightedCash*100).toFixed(2):'0.00';
+        const annReturn=holdingYears>0&&totalDeposited>0?((Math.pow(totalPortfolio/totalDeposited,1/holdingYears)-1)*100).toFixed(2):'0.00';
+
+        const kpiItems=[
+          ['TOTAL DEPOSITED',    'EUR '+totalDeposited.toFixed(2),                                                '#fff'],
+          ['CURRENT PORTFOLIO',  'EUR '+totalPortfolio.toFixed(2),                                               totalPortfolio>=totalDeposited?'var(--accent)':'var(--red)'],
+          ['NET P&L',            (netPnL>=0?'+':'')+' EUR '+netPnL.toFixed(2),                                   netPnL>=0?'var(--accent)':'var(--red)'],
+          ['TOTAL FEES PAID',    'EUR '+totalFees.toFixed(2),                                                     'var(--red)'],
+          ['FEE DRAG',           feeDragPct+'%',                                                                  'var(--amber)'],
+          ['HOLDING PERIOD',     holdingDays+'d',                                                                 '#fff'],
+          ['MODIFIED DIETZ',     (parseFloat(mdReturn)>=0?'+':'')+mdReturn+'%',                                   parseFloat(mdReturn)>=0?'var(--accent)':'var(--red)'],
+          ['ANN. RETURN (REAL)', (parseFloat(annReturn)>=0?'+':'')+annReturn+'% p.a.',                            parseFloat(annReturn)>=0?'var(--accent)':'var(--red)'],
+        ];
+        document.getElementById('riskLedgerKpis').innerHTML=
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+          +kpiItems.map(([label,val,col])=>'<div style="background:var(--surface2);padding:10px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">'+label+'</div><div style="font-size:16px;font-weight:600;color:'+col+'">'+val+'</div></div>').join('')
+          +'</div>'
+          +'<div style="margin-top:10px;font-size:9px;color:var(--muted);">'+deposits.length+' deposit(s) · '+buys.length+' buy(s) · '+sells.length+' sell(s) · '+fees.length+' fee(s)</div>';
+
+        // Capital Flow chart
+        let cumDep=0;
+        const stepData=[{x:firstDeposit.toISOString().slice(0,10),y:0}];
+        deposits.forEach(d=>{cumDep+=Math.abs(parseFloat(d.Total)||0);stepData.push({x:d.Date,y:+cumDep.toFixed(2)});});
+        stepData.push({x:today.toISOString().slice(0,10),y:+cumDep.toFixed(2)});
+        if(_charts.deposit){try{_charts.deposit.destroy();}catch(e){}}
+        _charts.deposit=new Chart(document.getElementById('riskDepositChart'),{
+          type:'line', data:{datasets:[
+            {label:'Cumulative Deposited',data:stepData,borderColor:'rgba(74,158,255,0.85)',backgroundColor:'rgba(74,158,255,0.07)',borderWidth:2,pointRadius:5,stepped:'before',fill:true},
+            {label:'Portfolio Value Now',data:stepData.map(pt=>({x:pt.x,y:totalPortfolio})),borderColor:totalPortfolio>=cumDep?'rgba(0,229,160,0.7)':'rgba(255,77,109,0.7)',borderDash:[6,3],borderWidth:1.5,pointRadius:0,fill:false}
+          ]},
+          options:{responsive:true,maintainAspectRatio:false,parsing:{xAxisKey:'x',yAxisKey:'y'},
+            plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': EUR '+(ctx.raw?.y??ctx.raw).toFixed(2)}}},
+            scales:{x:{type:'category',grid:{display:false},ticks:{maxTicksLimit:8}},y:{ticks:{callback:v=>'EUR '+v.toFixed(0)}}}}
+        });
+
+        // Transaction table
+        const sortedRows=[...rows].sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+        document.getElementById('rk-tx-count').textContent=sortedRows.length+' ENTRIES';
+        const aStyle={buy:'color:var(--accent)',sell:'color:var(--red)',deposit:'color:var(--blue)',fee:'color:var(--amber)',dividend:'color:#a78bfa'};
+        const aTag={buy:'tag-green',sell:'tag-red',deposit:'tag-muted',fee:'tag-amber',dividend:'tag-muted'};
+        const aLabel={buy:'RISK ON',sell:'RISK OFF',deposit:'CAPITAL',fee:'COST',dividend:'INCOME'};
+        document.getElementById('riskTxTbody').innerHTML=sortedRows.map(r=>{
+          const act=(r.Action||'').trim().toLowerCase();
+          return '<tr>'
+            +'<td style="color:var(--muted)">'+(r.Date||'—')+'</td>'
+            +'<td style="'+(aStyle[act]||'color:var(--text)')+';font-weight:500;text-transform:capitalize">'+(r.Action||'—')+'</td>'
+            +'<td style="font-weight:500">'+(r.Ticker||'—')+'</td>'
+            +'<td>'+(r.Quantity?parseFloat(r.Quantity).toFixed(4):'—')+'</td>'
+            +'<td>'+(r.Price?'EUR '+parseFloat(r.Price).toFixed(2):'—')+'</td>'
+            +'<td>'+(r.Total?'EUR '+Math.abs(parseFloat(r.Total)).toFixed(2):'—')+'</td>'
+            +'<td style="color:var(--muted);font-size:10px">'+(r.Notes||'—')+'</td>'
+            +'<td><span class="tag '+(aTag[act]||'tag-muted')+'">'+(aLabel[act]||act.toUpperCase())+'</span></td>'
+            +'</tr>';
+        }).join('');
+      })
+      .catch(err=>{
+        const msg='<div style="color:var(--muted);font-size:11px;">Ledger unavailable — '+err.message+'</div>';
+        document.getElementById('riskLedgerKpis').innerHTML=msg;
+        document.getElementById('riskTxTbody').innerHTML='<tr><td colspan="8" style="color:var(--muted)">'+err.message+'</td></tr>';
+      });
+  }
+})();
+</script>

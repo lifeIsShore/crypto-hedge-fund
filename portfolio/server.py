@@ -176,6 +176,50 @@ def start_scheduler():
     
     return scheduler
 
+# --- RESEARCH LAYER ENDPOINTS ---
+
+@app.route('/data/research_state.json', methods=['GET'])
+def get_research_state():
+    """
+    Merges outputs from the research notebooks into a single response.
+    Returns { available: false } gracefully if notebooks haven't been run yet.
+    Files are written by research/notebooks/ and live in research/outputs/.
+    """
+    RESEARCH_OUTPUTS = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'research', 'outputs'
+    )
+
+    files = {
+        'correlation': os.path.join(RESEARCH_OUTPUTS, 'correlation_state.json'),
+        'regime':      os.path.join(RESEARCH_OUTPUTS, 'regime_state.json'),
+        'factor':      os.path.join(RESEARCH_OUTPUTS, 'factor_state.json'),
+    }
+
+    # Check if any research outputs exist at all
+    any_available = any(os.path.exists(p) for p in files.values())
+    if not any_available:
+        return jsonify({
+            'available': False,
+            'message':   'No research outputs found. Run the notebooks in research/notebooks/ first.'
+        })
+
+    merged = {'available': True}
+
+    for key, path in files.items():
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    merged[key] = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                logging.warning(f'Could not read {path}: {e}')
+                merged[key] = None
+        else:
+            merged[key] = None  # Notebook not run yet — not an error
+
+    return jsonify(merged)
+
+
 # --- STARTUP ---
 
 if __name__ == '__main__':

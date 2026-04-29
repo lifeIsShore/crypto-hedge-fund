@@ -1,0 +1,100 @@
+<!-- ── ANALYTICS ─────────────────────────────────────── -->
+<div class="panel" style="margin-bottom:14px;">
+  <div class="panel-header">
+    <span class="panel-title">PERFORMANCE METRICS</span>
+    <span class="panel-tag">CLICK ANY CARD FOR FORMULA</span>
+  </div>
+  <div class="panel-body">
+    <div class="grid-3" style="margin-bottom:0">
+      <div class="stat-box" onclick="showModal('sharpe')">
+        <div class="stat-label">Sharpe Ratio</div>
+        <div class="stat-value" id="s-sharpe">—</div>
+        <div class="stat-sub">Risk-adjusted return<br>Target &gt; 1.0</div>
+      </div>
+      <div class="stat-box" onclick="showModal('calmar')">
+        <div class="stat-label">Calmar Ratio</div>
+        <div class="stat-value" id="s-calmar">—</div>
+        <div class="stat-sub">Return per unit pain<br>Target &gt; 0.5</div>
+      </div>
+      <div class="stat-box" onclick="showModal('maxdd')">
+        <div class="stat-label">Max Drawdown</div>
+        <div class="stat-value" id="s-maxdd">—</div>
+        <div class="stat-sub">Worst peak-to-trough<br>Target &lt; 15%</div>
+      </div>
+      <div class="stat-box" onclick="showModal('info')">
+        <div class="stat-label">Information Ratio</div>
+        <div class="stat-value" id="s-info">—</div>
+        <div class="stat-sub">vs MSCI World<br>Target &gt; 0.2</div>
+      </div>
+      <div class="stat-box" onclick="showModal('profit')">
+        <div class="stat-label">Profit Factor</div>
+        <div class="stat-value" id="s-profit">—</div>
+        <div class="stat-sub">Gross wins ÷ losses<br>Target &gt; 1.5</div>
+      </div>
+      <div class="stat-box" onclick="showModal('return')">
+        <div class="stat-label">Portfolio Return</div>
+        <div class="stat-value" id="s-return">—</div>
+        <div class="stat-sub">Cumulative total<br>Higher is better</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">P&amp;L — GROSS (NO FEES)</span>
+      <span class="panel-tag">TRADING EDGE</span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-3" style="margin-bottom:0;">
+        <div class="stat-box" onclick="showModal('current')">
+          <div class="stat-label">Current Value</div>
+          <div class="stat-value" id="s-current">—</div>
+          <div class="stat-sub">Portfolio today</div>
+        </div>
+        <div class="stat-box" onclick="showModal('invested')">
+          <div class="stat-label">Total Invested</div>
+          <div class="stat-value" id="s-invested">—</div>
+          <div class="stat-sub">Deposits + buys</div>
+        </div>
+        <div class="stat-box" onclick="showModal('grosspnl')">
+          <div class="stat-label">Gross P&amp;L</div>
+          <div class="stat-value" id="s-grosspnl">—</div>
+          <div class="stat-sub">Before fees</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">P&amp;L — NET (WITH FEES)</span>
+      <span class="panel-tag">REAL RETURN</span>
+    </div>
+    <div class="panel-body">
+      <div class="grid-3" style="margin-bottom:0;">
+        <div class="stat-box" onclick="showModal('fees')">
+          <div class="stat-label">Total Fees</div>
+          <div class="stat-value" id="s-fees">—</div>
+          <div class="stat-sub">Broker costs</div>
+        </div>
+        <div class="stat-box" onclick="showModal('netpnl')">
+          <div class="stat-label">Net P&amp;L</div>
+          <div class="stat-value" id="s-netpnl">—</div>
+          <div class="stat-sub">Gross − fees</div>
+        </div>
+        <div class="stat-box" onclick="showModal('returnnet')">
+          <div class="stat-label">Return % Net</div>
+          <div class="stat-value" id="s-returnnet">—</div>
+          <div class="stat-sub">Real return %</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window._pageInit = function(data) {
+  renderAnalytics(data);
+};
+</script>
