@@ -178,12 +178,19 @@ def compute_tradeability_scores(
     if stability_df.empty:
         return pd.DataFrame()
 
+    from src.config import ETF_TICKERS
+
     # Compute annualised volatility per ticker
     ann_vol = (log_returns.std() * np.sqrt(252)).to_dict()
 
     rows = []
     for _, row in stability_df.iterrows():
         a, b = row['ticker_a'], row['ticker_b']
+        
+        # Skip pairs where either asset is a broad-market ETF
+        if a in ETF_TICKERS or b in ETF_TICKERS:
+            continue
+
         mean_corr = row['mean_corr']
 
         if abs(mean_corr) < min_abs_corr:
@@ -227,8 +234,8 @@ def compute_tradeability_scores(
     if not df.empty:
         df = df.sort_values('tradeability', ascending=False).reset_index(drop=True)
 
-    logger.info(f"Tradeability scores: {len(df)} pairs scored, {len(df[df.tag=='hedge'])} hedge, "
-                f"{len(df[df.tag=='stat-arb'])} stat-arb")
+    logger.info(f"Tradeability scores: {len(df)} pairs scored, {len(df[df.tag=='hedge']) if not df.empty else 0} hedge, "
+                f"{len(df[df.tag=='stat-arb']) if not df.empty else 0} stat-arb")
     return df
 
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-29T20:11:15.836973",
+  "generated_at": "2026-04-29T23:43:35.167748",
   "data_end_date": "2026-04-28",
   "n_tickers": 101,
   "held_tickers": [
@@ -88,127 +88,6 @@
   },
   "top_pairs": [
     {
-      "ticker_a": "EUNL.DE",
-      "ticker_b": "XDWD.DE",
-      "mean_corr": 0.9992,
-      "stability_score": 0.9998,
-      "vol_a_ann": 0.1503,
-      "vol_b_ann": 0.1501,
-      "vol_compat": 0.9984,
-      "tradeability": 9.99,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "SPPW.DE",
-      "ticker_b": "XDWD.DE",
-      "mean_corr": 0.9989,
-      "stability_score": 0.9997,
-      "vol_a_ann": 0.1496,
-      "vol_b_ann": 0.1501,
-      "vol_compat": 0.9968,
-      "tradeability": 9.99,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "EUNL.DE",
-      "ticker_b": "SPPW.DE",
-      "mean_corr": 0.9992,
-      "stability_score": 0.9998,
-      "vol_a_ann": 0.1503,
-      "vol_b_ann": 0.1496,
-      "vol_compat": 0.9952,
-      "tradeability": 9.98,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "EXS1.DE",
-      "ticker_b": "DBXD.DE",
-      "mean_corr": 0.9917,
-      "stability_score": 0.9869,
-      "vol_a_ann": 0.171,
-      "vol_b_ann": 0.1711,
-      "vol_compat": 0.9998,
-      "tradeability": 9.93,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "VWCE.DE",
-      "ticker_b": "XDWD.DE",
-      "mean_corr": 0.9948,
-      "stability_score": 0.9975,
-      "vol_a_ann": 0.1467,
-      "vol_b_ann": 0.1501,
-      "vol_compat": 0.9779,
-      "tradeability": 9.91,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "VWCE.DE",
-      "ticker_b": "SPPW.DE",
-      "mean_corr": 0.9945,
-      "stability_score": 0.9974,
-      "vol_a_ann": 0.1467,
-      "vol_b_ann": 0.1496,
-      "vol_compat": 0.981,
-      "tradeability": 9.91,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "EUNL.DE",
-      "ticker_b": "VWCE.DE",
-      "mean_corr": 0.9949,
-      "stability_score": 0.9972,
-      "vol_a_ann": 0.1503,
-      "vol_b_ann": 0.1467,
-      "vol_compat": 0.9763,
-      "tradeability": 9.9,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "VUSA.DE",
-      "ticker_b": "XDWD.DE",
-      "mean_corr": 0.9851,
-      "stability_score": 0.9927,
-      "vol_a_ann": 0.1621,
-      "vol_b_ann": 0.1501,
-      "vol_compat": 0.9259,
-      "tradeability": 9.7,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "EUNL.DE",
-      "ticker_b": "VUSA.DE",
-      "mean_corr": 0.9857,
-      "stability_score": 0.9924,
-      "vol_a_ann": 0.1503,
-      "vol_b_ann": 0.1621,
-      "vol_compat": 0.9275,
-      "tradeability": 9.7,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "VUSA.DE",
-      "ticker_b": "SPPW.DE",
-      "mean_corr": 0.9853,
-      "stability_score": 0.9923,
-      "vol_a_ann": 0.1621,
-      "vol_b_ann": 0.1496,
-      "vol_compat": 0.923,
-      "tradeability": 9.69,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "VUSA.DE",
-      "ticker_b": "VWCE.DE",
-      "mean_corr": 0.9754,
-      "stability_score": 0.9844,
-      "vol_a_ann": 0.1621,
-      "vol_b_ann": 0.1467,
-      "vol_compat": 0.9055,
-      "tradeability": 9.57,
-      "tag": "stat-arb"
-    },
-    {
       "ticker_a": "V",
       "ticker_b": "MA",
       "mean_corr": 0.8791,
@@ -231,50 +110,6 @@
       "tag": "stat-arb"
     },
     {
-      "ticker_a": "VUSA.DE",
-      "ticker_b": "IUSN.DE",
-      "mean_corr": 0.8731,
-      "stability_score": 0.9482,
-      "vol_a_ann": 0.1621,
-      "vol_b_ann": 0.1686,
-      "vol_compat": 0.9611,
-      "tradeability": 9.22,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "EUNL.DE",
-      "ticker_b": "IUSN.DE",
-      "mean_corr": 0.9076,
-      "stability_score": 0.9598,
-      "vol_a_ann": 0.1503,
-      "vol_b_ann": 0.1686,
-      "vol_compat": 0.8914,
-      "tradeability": 9.18,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "SPPW.DE",
-      "ticker_b": "IUSN.DE",
-      "mean_corr": 0.9085,
-      "stability_score": 0.959,
-      "vol_a_ann": 0.1496,
-      "vol_b_ann": 0.1686,
-      "vol_compat": 0.8871,
-      "tradeability": 9.17,
-      "tag": "stat-arb"
-    },
-    {
-      "ticker_a": "IUSN.DE",
-      "ticker_b": "XDWD.DE",
-      "mean_corr": 0.9065,
-      "stability_score": 0.9592,
-      "vol_a_ann": 0.1686,
-      "vol_b_ann": 0.1501,
-      "vol_compat": 0.8899,
-      "tradeability": 9.17,
-      "tag": "stat-arb"
-    },
-    {
       "ticker_a": "HD",
       "ticker_b": "LOW",
       "mean_corr": 0.8744,
@@ -286,25 +121,190 @@
       "tag": "stat-arb"
     },
     {
-      "ticker_a": "VWCE.DE",
-      "ticker_b": "IUSN.DE",
-      "mean_corr": 0.9083,
-      "stability_score": 0.9596,
-      "vol_a_ann": 0.1467,
-      "vol_b_ann": 0.1686,
-      "vol_compat": 0.8703,
-      "tradeability": 9.12,
+      "ticker_a": "XOM",
+      "ticker_b": "CVX",
+      "mean_corr": 0.81,
+      "stability_score": 0.9177,
+      "vol_a_ann": 0.239,
+      "vol_b_ann": 0.2365,
+      "vol_compat": 0.9892,
+      "tradeability": 8.96,
       "tag": "stat-arb"
     },
     {
-      "ticker_a": "IUSN.DE",
-      "ticker_b": "ZPRV.DE",
-      "mean_corr": 0.9362,
-      "stability_score": 0.9635,
-      "vol_a_ann": 0.1686,
-      "vol_b_ann": 0.2076,
-      "vol_compat": 0.8123,
-      "tradeability": 9.07,
+      "ticker_a": "JPM",
+      "ticker_b": "BAC",
+      "mean_corr": 0.7759,
+      "stability_score": 0.922,
+      "vol_a_ann": 0.2544,
+      "vol_b_ann": 0.2575,
+      "vol_compat": 0.9881,
+      "tradeability": 8.83,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BMW.DE",
+      "ticker_b": "MBG.DE",
+      "mean_corr": 0.8452,
+      "stability_score": 0.9347,
+      "vol_a_ann": 0.3123,
+      "vol_b_ann": 0.2734,
+      "vol_compat": 0.8755,
+      "tradeability": 8.81,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "SHELL.AS",
+      "ticker_b": "TTE.PA",
+      "mean_corr": 0.7378,
+      "stability_score": 0.8947,
+      "vol_a_ann": 0.2183,
+      "vol_b_ann": 0.2191,
+      "vol_compat": 0.9964,
+      "tradeability": 8.62,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "MBG.DE",
+      "ticker_b": "VOW3.DE",
+      "mean_corr": 0.7284,
+      "stability_score": 0.8701,
+      "vol_a_ann": 0.2734,
+      "vol_b_ann": 0.2701,
+      "vol_compat": 0.9881,
+      "tradeability": 8.49,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BAC",
+      "ticker_b": "MS",
+      "mean_corr": 0.7823,
+      "stability_score": 0.9272,
+      "vol_a_ann": 0.2575,
+      "vol_b_ann": 0.307,
+      "vol_compat": 0.8389,
+      "tradeability": 8.43,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "JPM",
+      "ticker_b": "GS",
+      "mean_corr": 0.7915,
+      "stability_score": 0.8943,
+      "vol_a_ann": 0.2544,
+      "vol_b_ann": 0.3121,
+      "vol_compat": 0.8152,
+      "tradeability": 8.29,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "JPM",
+      "ticker_b": "MS",
+      "mean_corr": 0.7748,
+      "stability_score": 0.8929,
+      "vol_a_ann": 0.2544,
+      "vol_b_ann": 0.307,
+      "vol_compat": 0.8289,
+      "tradeability": 8.26,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BAC",
+      "ticker_b": "AXP",
+      "mean_corr": 0.7217,
+      "stability_score": 0.9002,
+      "vol_a_ann": 0.2575,
+      "vol_b_ann": 0.3005,
+      "vol_compat": 0.8569,
+      "tradeability": 8.16,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "GS",
+      "ticker_b": "AXP",
+      "mean_corr": 0.7066,
+      "stability_score": 0.8109,
+      "vol_a_ann": 0.3121,
+      "vol_b_ann": 0.3005,
+      "vol_compat": 0.9628,
+      "tradeability": 8.15,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BMW.DE",
+      "ticker_b": "VOW3.DE",
+      "mean_corr": 0.7257,
+      "stability_score": 0.8766,
+      "vol_a_ann": 0.3123,
+      "vol_b_ann": 0.2701,
+      "vol_compat": 0.865,
+      "tradeability": 8.13,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "MS",
+      "ticker_b": "AXP",
+      "mean_corr": 0.6847,
+      "stability_score": 0.8104,
+      "vol_a_ann": 0.307,
+      "vol_b_ann": 0.3005,
+      "vol_compat": 0.979,
+      "tradeability": 8.11,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "SHELL.AS",
+      "ticker_b": "BP.L",
+      "mean_corr": 0.7601,
+      "stability_score": 0.9264,
+      "vol_a_ann": 0.2183,
+      "vol_b_ann": 0.2892,
+      "vol_compat": 0.755,
+      "tradeability": 8.08,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "CRM",
+      "ticker_b": "NOW",
+      "mean_corr": 0.7269,
+      "stability_score": 0.9277,
+      "vol_a_ann": 0.3452,
+      "vol_b_ann": 0.4363,
+      "vol_compat": 0.7912,
+      "tradeability": 8.06,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "CRM",
+      "ticker_b": "ADBE",
+      "mean_corr": 0.6029,
+      "stability_score": 0.8657,
+      "vol_a_ann": 0.3452,
+      "vol_b_ann": 0.3446,
+      "vol_compat": 0.9982,
+      "tradeability": 8.0,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BAS.DE",
+      "ticker_b": "MBG.DE",
+      "mean_corr": 0.6051,
+      "stability_score": 0.8962,
+      "vol_a_ann": 0.285,
+      "vol_b_ann": 0.2734,
+      "vol_compat": 0.9593,
+      "tradeability": 7.99,
+      "tag": "stat-arb"
+    },
+    {
+      "ticker_a": "BAC",
+      "ticker_b": "BLK",
+      "mean_corr": 0.6037,
+      "stability_score": 0.8741,
+      "vol_a_ann": 0.2575,
+      "vol_b_ann": 0.2645,
+      "vol_compat": 0.9735,
+      "tradeability": 7.96,
       "tag": "stat-arb"
     }
   ],
@@ -15207,1564 +15207,12 @@
   ],
   "lead_lag_pairs": [],
   "summary": {
-    "n_pairs_scored": 434,
+    "n_pairs_scored": 251,
     "n_hedge_pairs": 0,
-    "n_stat_arb_pairs": 183,
+    "n_stat_arb_pairs": 84,
     "n_breakdown_alerts": 1655,
     "n_lead_lag_pairs": 0,
-    "top_pair": "EUNL.DE / XDWD.DE",
-    "top_pair_score": 9.99
-  },
-  "leadlag_generated_at": "2026-04-29T20:15:40.748507",
-  "leadlag_universe_size": 40,
-  "lead_lag_pairs_full": [
-    {
-      "leader": "QCOM",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1973,
-      "corr_at_0": 0.0309,
-      "lead_strength": 0.1664
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "NOW",
-      "lag_days": 3,
-      "corr_at_lag": -0.165,
-      "corr_at_0": -0.0017,
-      "lead_strength": 0.1633
-    },
-    {
-      "leader": "NVDA",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1765,
-      "corr_at_0": 0.0141,
-      "lead_strength": 0.1625
-    },
-    {
-      "leader": "AMAT",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1594,
-      "corr_at_0": 0.0117,
-      "lead_strength": 0.1477
-    },
-    {
-      "leader": "ALV.DE",
-      "follower": "NOW",
-      "lag_days": 2,
-      "corr_at_lag": -0.1699,
-      "corr_at_0": 0.0237,
-      "lead_strength": 0.1463
-    },
-    {
-      "leader": "INTC",
-      "follower": "FRE.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.172,
-      "corr_at_0": -0.0291,
-      "lead_strength": 0.1429
-    },
-    {
-      "leader": "CRM",
-      "follower": "BAYN.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1683,
-      "corr_at_0": 0.0282,
-      "lead_strength": 0.1402
-    },
-    {
-      "leader": "NFLX",
-      "follower": "DTE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.1406,
-      "corr_at_0": -0.0042,
-      "lead_strength": 0.1364
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "SHOP",
-      "lag_days": 3,
-      "corr_at_lag": -0.1498,
-      "corr_at_0": -0.0148,
-      "lead_strength": 0.1349
-    },
-    {
-      "leader": "META",
-      "follower": "FRE.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.1376,
-      "corr_at_0": -0.0042,
-      "lead_strength": 0.1334
-    },
-    {
-      "leader": "TXN",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1504,
-      "corr_at_0": -0.0203,
-      "lead_strength": 0.1301
-    },
-    {
-      "leader": "QCOM",
-      "follower": "MUV2.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1736,
-      "corr_at_0": -0.0452,
-      "lead_strength": 0.1284
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "AMZN",
-      "lag_days": 2,
-      "corr_at_lag": -0.1284,
-      "corr_at_0": -0.0002,
-      "lead_strength": 0.1282
-    },
-    {
-      "leader": "SPOT",
-      "follower": "MUV2.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1792,
-      "corr_at_0": 0.0524,
-      "lead_strength": 0.1267
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "TSLA",
-      "lag_days": 3,
-      "corr_at_lag": -0.1396,
-      "corr_at_0": -0.0157,
-      "lead_strength": 0.1239
-    },
-    {
-      "leader": "IFX.DE",
-      "follower": "DTE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.1313,
-      "corr_at_0": 0.0103,
-      "lead_strength": 0.1209
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "CRM",
-      "lag_days": 3,
-      "corr_at_lag": -0.1398,
-      "corr_at_0": 0.0199,
-      "lead_strength": 0.1198
-    },
-    {
-      "leader": "TSLA",
-      "follower": "RWE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.13,
-      "corr_at_0": 0.0123,
-      "lead_strength": 0.1176
-    },
-    {
-      "leader": "TXN",
-      "follower": "RWE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1262,
-      "corr_at_0": -0.0098,
-      "lead_strength": 0.1164
-    },
-    {
-      "leader": "NOW",
-      "follower": "BAYN.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1349,
-      "corr_at_0": -0.0189,
-      "lead_strength": 0.116
-    },
-    {
-      "leader": "TSLA",
-      "follower": "ALV.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.1318,
-      "corr_at_0": 0.0172,
-      "lead_strength": 0.1146
-    },
-    {
-      "leader": "SHOP",
-      "follower": "MUV2.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1358,
-      "corr_at_0": -0.0221,
-      "lead_strength": 0.1137
-    },
-    {
-      "leader": "SPOT",
-      "follower": "APC.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.1153,
-      "corr_at_0": -0.0025,
-      "lead_strength": 0.1128
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "AMD",
-      "lag_days": 2,
-      "corr_at_lag": -0.1322,
-      "corr_at_0": -0.0206,
-      "lead_strength": 0.1116
-    },
-    {
-      "leader": "NFLX",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.15,
-      "corr_at_0": 0.0395,
-      "lead_strength": 0.1105
-    },
-    {
-      "leader": "SPOT",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.1109,
-      "corr_at_0": -0.0013,
-      "lead_strength": 0.1096
-    },
-    {
-      "leader": "MSF.DE",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.1151,
-      "corr_at_0": 0.0061,
-      "lead_strength": 0.109
-    },
-    {
-      "leader": "INTC",
-      "follower": "DTE.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.1448,
-      "corr_at_0": 0.0386,
-      "lead_strength": 0.1062
-    },
-    {
-      "leader": "MU",
-      "follower": "MUV2.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1485,
-      "corr_at_0": -0.0424,
-      "lead_strength": 0.1061
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "NVDA",
-      "lag_days": 2,
-      "corr_at_lag": -0.1509,
-      "corr_at_0": -0.045,
-      "lead_strength": 0.1059
-    },
-    {
-      "leader": "AMAT",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1176,
-      "corr_at_0": -0.0117,
-      "lead_strength": 0.1059
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "AMZN",
-      "lag_days": 2,
-      "corr_at_lag": -0.1147,
-      "corr_at_0": 0.009,
-      "lead_strength": 0.1057
-    },
-    {
-      "leader": "MSF.DE",
-      "follower": "PYPL",
-      "lag_days": 3,
-      "corr_at_lag": 0.2387,
-      "corr_at_0": 0.1331,
-      "lead_strength": 0.1056
-    },
-    {
-      "leader": "CON.DE",
-      "follower": "AMD",
-      "lag_days": 5,
-      "corr_at_lag": 0.1199,
-      "corr_at_0": -0.0161,
-      "lead_strength": 0.1038
-    },
-    {
-      "leader": "MU",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1895,
-      "corr_at_0": 0.0868,
-      "lead_strength": 0.1027
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "SHOP",
-      "lag_days": 5,
-      "corr_at_lag": 0.1138,
-      "corr_at_0": 0.0111,
-      "lead_strength": 0.1027
-    },
-    {
-      "leader": "GOOGL",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1338,
-      "corr_at_0": 0.0317,
-      "lead_strength": 0.1021
-    },
-    {
-      "leader": "MSF.DE",
-      "follower": "TXN",
-      "lag_days": 1,
-      "corr_at_lag": 0.1451,
-      "corr_at_0": -0.0443,
-      "lead_strength": 0.1008
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "UBER",
-      "lag_days": 1,
-      "corr_at_lag": 0.1408,
-      "corr_at_0": 0.0418,
-      "lead_strength": 0.0991
-    },
-    {
-      "leader": "META",
-      "follower": "SAP.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.165,
-      "corr_at_0": 0.0666,
-      "lead_strength": 0.0984
-    },
-    {
-      "leader": "BAS.DE",
-      "follower": "NFLX",
-      "lag_days": 2,
-      "corr_at_lag": 0.1035,
-      "corr_at_0": -0.0051,
-      "lead_strength": 0.0983
-    },
-    {
-      "leader": "GOOGL",
-      "follower": "RWE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.0983,
-      "corr_at_0": 0.0003,
-      "lead_strength": 0.098
-    },
-    {
-      "leader": "SPOT",
-      "follower": "BMW.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.1026,
-      "corr_at_0": -0.0054,
-      "lead_strength": 0.0972
-    },
-    {
-      "leader": "SAP.DE",
-      "follower": "TXN",
-      "lag_days": 1,
-      "corr_at_lag": 0.1015,
-      "corr_at_0": -0.0056,
-      "lead_strength": 0.0959
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "UBER",
-      "lag_days": 3,
-      "corr_at_lag": -0.1037,
-      "corr_at_0": 0.0078,
-      "lead_strength": 0.0959
-    },
-    {
-      "leader": "NOW",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1515,
-      "corr_at_0": 0.0558,
-      "lead_strength": 0.0957
-    },
-    {
-      "leader": "SPOT",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1378,
-      "corr_at_0": 0.043,
-      "lead_strength": 0.0948
-    },
-    {
-      "leader": "ALV.DE",
-      "follower": "ORCL",
-      "lag_days": 3,
-      "corr_at_lag": -0.1027,
-      "corr_at_0": -0.008,
-      "lead_strength": 0.0947
-    },
-    {
-      "leader": "ADBE",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1146,
-      "corr_at_0": 0.0201,
-      "lead_strength": 0.0944
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "NFLX",
-      "lag_days": 1,
-      "corr_at_lag": 0.104,
-      "corr_at_0": 0.011,
-      "lead_strength": 0.0929
-    },
-    {
-      "leader": "QCOM",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.168,
-      "corr_at_0": 0.0754,
-      "lead_strength": 0.0926
-    },
-    {
-      "leader": "CON.DE",
-      "follower": "SNOW",
-      "lag_days": 4,
-      "corr_at_lag": 0.1176,
-      "corr_at_0": 0.0253,
-      "lead_strength": 0.0923
-    },
-    {
-      "leader": "QCOM",
-      "follower": "DTE.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.1273,
-      "corr_at_0": -0.0353,
-      "lead_strength": 0.092
-    },
-    {
-      "leader": "SPOT",
-      "follower": "ADS.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.11,
-      "corr_at_0": 0.0183,
-      "lead_strength": 0.0917
-    },
-    {
-      "leader": "MU",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1193,
-      "corr_at_0": 0.0284,
-      "lead_strength": 0.0909
-    },
-    {
-      "leader": "QCOM",
-      "follower": "RWE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.1248,
-      "corr_at_0": 0.034,
-      "lead_strength": 0.0908
-    },
-    {
-      "leader": "SAP.DE",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.0953,
-      "corr_at_0": 0.0049,
-      "lead_strength": 0.0904
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "NOW",
-      "lag_days": 4,
-      "corr_at_lag": -0.1356,
-      "corr_at_0": 0.0455,
-      "lead_strength": 0.0901
-    },
-    {
-      "leader": "MSF.DE",
-      "follower": "DTE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1067,
-      "corr_at_0": 0.0169,
-      "lead_strength": 0.0899
-    },
-    {
-      "leader": "META",
-      "follower": "DTE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1352,
-      "corr_at_0": -0.0459,
-      "lead_strength": 0.0893
-    },
-    {
-      "leader": "SPOT",
-      "follower": "MBG.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.0934,
-      "corr_at_0": 0.0042,
-      "lead_strength": 0.0892
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "PYPL",
-      "lag_days": 2,
-      "corr_at_lag": -0.1024,
-      "corr_at_0": 0.0133,
-      "lead_strength": 0.0891
-    },
-    {
-      "leader": "BAS.DE",
-      "follower": "SPOT",
-      "lag_days": 3,
-      "corr_at_lag": -0.1004,
-      "corr_at_0": 0.013,
-      "lead_strength": 0.0875
-    },
-    {
-      "leader": "INTC",
-      "follower": "MSF.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.0892,
-      "corr_at_0": 0.0019,
-      "lead_strength": 0.0874
-    },
-    {
-      "leader": "UBER",
-      "follower": "FRE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1054,
-      "corr_at_0": 0.018,
-      "lead_strength": 0.0874
-    },
-    {
-      "leader": "DTE.DE",
-      "follower": "UBER",
-      "lag_days": 1,
-      "corr_at_lag": 0.1478,
-      "corr_at_0": -0.061,
-      "lead_strength": 0.0867
-    },
-    {
-      "leader": "ENR.DE",
-      "follower": "CRM",
-      "lag_days": 3,
-      "corr_at_lag": 0.1095,
-      "corr_at_0": 0.0232,
-      "lead_strength": 0.0864
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "DTE.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.1132,
-      "corr_at_0": 0.0269,
-      "lead_strength": 0.0863
-    },
-    {
-      "leader": "NOW",
-      "follower": "BAS.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1018,
-      "corr_at_0": 0.0156,
-      "lead_strength": 0.0862
-    },
-    {
-      "leader": "META",
-      "follower": "BAYN.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1041,
-      "corr_at_0": 0.0181,
-      "lead_strength": 0.0859
-    },
-    {
-      "leader": "NVDA",
-      "follower": "ADS.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.127,
-      "corr_at_0": 0.0411,
-      "lead_strength": 0.0858
-    },
-    {
-      "leader": "NFLX",
-      "follower": "MBG.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.1141,
-      "corr_at_0": -0.0291,
-      "lead_strength": 0.0851
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "UBER",
-      "lag_days": 1,
-      "corr_at_lag": 0.1093,
-      "corr_at_0": 0.0244,
-      "lead_strength": 0.0849
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "MU",
-      "lag_days": 2,
-      "corr_at_lag": -0.1806,
-      "corr_at_0": 0.0961,
-      "lead_strength": 0.0845
-    },
-    {
-      "leader": "TXN",
-      "follower": "ENR.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1289,
-      "corr_at_0": 0.045,
-      "lead_strength": 0.0839
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "TSLA",
-      "lag_days": 2,
-      "corr_at_lag": -0.137,
-      "corr_at_0": 0.0536,
-      "lead_strength": 0.0834
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "AMZN",
-      "lag_days": 3,
-      "corr_at_lag": -0.1022,
-      "corr_at_0": -0.019,
-      "lead_strength": 0.0832
-    },
-    {
-      "leader": "AMD",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1375,
-      "corr_at_0": 0.0551,
-      "lead_strength": 0.0824
-    },
-    {
-      "leader": "NOW",
-      "follower": "RWE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.1569,
-      "corr_at_0": -0.0747,
-      "lead_strength": 0.0822
-    },
-    {
-      "leader": "CRM",
-      "follower": "FRE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1154,
-      "corr_at_0": 0.0356,
-      "lead_strength": 0.0798
-    },
-    {
-      "leader": "META",
-      "follower": "MUV2.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.1058,
-      "corr_at_0": -0.0264,
-      "lead_strength": 0.0794
-    },
-    {
-      "leader": "ADBE",
-      "follower": "SIE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1563,
-      "corr_at_0": 0.0769,
-      "lead_strength": 0.0794
-    },
-    {
-      "leader": "ENR.DE",
-      "follower": "NOW",
-      "lag_days": 3,
-      "corr_at_lag": 0.1179,
-      "corr_at_0": 0.0387,
-      "lead_strength": 0.0792
-    },
-    {
-      "leader": "SHOP",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1368,
-      "corr_at_0": 0.058,
-      "lead_strength": 0.0788
-    },
-    {
-      "leader": "NFLX",
-      "follower": "MUV2.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1463,
-      "corr_at_0": 0.0689,
-      "lead_strength": 0.0775
-    },
-    {
-      "leader": "MSF.DE",
-      "follower": "BAYN.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1231,
-      "corr_at_0": 0.0457,
-      "lead_strength": 0.0774
-    },
-    {
-      "leader": "NFLX",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.0966,
-      "corr_at_0": 0.0192,
-      "lead_strength": 0.0774
-    },
-    {
-      "leader": "BAS.DE",
-      "follower": "ADBE",
-      "lag_days": 2,
-      "corr_at_lag": 0.0934,
-      "corr_at_0": 0.0168,
-      "lead_strength": 0.0766
-    },
-    {
-      "leader": "NOW",
-      "follower": "DTE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1123,
-      "corr_at_0": -0.0361,
-      "lead_strength": 0.0761
-    },
-    {
-      "leader": "META",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1346,
-      "corr_at_0": 0.059,
-      "lead_strength": 0.0756
-    },
-    {
-      "leader": "MBG.DE",
-      "follower": "AMD",
-      "lag_days": 5,
-      "corr_at_lag": 0.1197,
-      "corr_at_0": 0.0441,
-      "lead_strength": 0.0756
-    },
-    {
-      "leader": "BAS.DE",
-      "follower": "SNOW",
-      "lag_days": 1,
-      "corr_at_lag": -0.0884,
-      "corr_at_0": 0.0131,
-      "lead_strength": 0.0753
-    },
-    {
-      "leader": "NFLX",
-      "follower": "CON.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.0902,
-      "corr_at_0": 0.0151,
-      "lead_strength": 0.0751
-    },
-    {
-      "leader": "NFLX",
-      "follower": "BMW.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.0909,
-      "corr_at_0": -0.0159,
-      "lead_strength": 0.075
-    },
-    {
-      "leader": "INTC",
-      "follower": "BAYN.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.1378,
-      "corr_at_0": 0.064,
-      "lead_strength": 0.0738
-    },
-    {
-      "leader": "NVDA",
-      "follower": "BMW.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.09,
-      "corr_at_0": 0.0165,
-      "lead_strength": 0.0735
-    },
-    {
-      "leader": "ORCL",
-      "follower": "VOW3.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.0861,
-      "corr_at_0": 0.0126,
-      "lead_strength": 0.0735
-    },
-    {
-      "leader": "ALV.DE",
-      "follower": "PYPL",
-      "lag_days": 5,
-      "corr_at_lag": 0.1104,
-      "corr_at_0": 0.0372,
-      "lead_strength": 0.0732
-    },
-    {
-      "leader": "AMD",
-      "follower": "MSF.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.202,
-      "corr_at_0": 0.1297,
-      "lead_strength": 0.0722
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "PYPL",
-      "lag_days": 2,
-      "corr_at_lag": -0.1189,
-      "corr_at_0": -0.0469,
-      "lead_strength": 0.0719
-    },
-    {
-      "leader": "NFLX",
-      "follower": "ALV.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1383,
-      "corr_at_0": 0.067,
-      "lead_strength": 0.0713
-    },
-    {
-      "leader": "INTC",
-      "follower": "VOW3.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1393,
-      "corr_at_0": 0.0682,
-      "lead_strength": 0.0711
-    },
-    {
-      "leader": "CON.DE",
-      "follower": "NVDA",
-      "lag_days": 5,
-      "corr_at_lag": 0.093,
-      "corr_at_0": -0.0223,
-      "lead_strength": 0.0707
-    },
-    {
-      "leader": "QCOM",
-      "follower": "MSF.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.163,
-      "corr_at_0": 0.0929,
-      "lead_strength": 0.0702
-    },
-    {
-      "leader": "MU",
-      "follower": "MSF.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1521,
-      "corr_at_0": 0.0824,
-      "lead_strength": 0.0696
-    },
-    {
-      "leader": "PYPL",
-      "follower": "IFX.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1936,
-      "corr_at_0": 0.1242,
-      "lead_strength": 0.0694
-    },
-    {
-      "leader": "PYPL",
-      "follower": "SIE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.2171,
-      "corr_at_0": 0.1478,
-      "lead_strength": 0.0693
-    },
-    {
-      "leader": "ORCL",
-      "follower": "RWE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.0723,
-      "corr_at_0": -0.0032,
-      "lead_strength": 0.0691
-    },
-    {
-      "leader": "ADBE",
-      "follower": "ENR.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.0691,
-      "corr_at_0": 0.0001,
-      "lead_strength": 0.069
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "TXN",
-      "lag_days": 2,
-      "corr_at_lag": -0.1697,
-      "corr_at_0": -0.1014,
-      "lead_strength": 0.0684
-    },
-    {
-      "leader": "SNOW",
-      "follower": "MBG.DE",
-      "lag_days": 4,
-      "corr_at_lag": 0.0789,
-      "corr_at_0": 0.0111,
-      "lead_strength": 0.0678
-    },
-    {
-      "leader": "DBK.DE",
-      "follower": "ORCL",
-      "lag_days": 5,
-      "corr_at_lag": 0.1595,
-      "corr_at_0": 0.0924,
-      "lead_strength": 0.0671
-    },
-    {
-      "leader": "DTE.DE",
-      "follower": "SPOT",
-      "lag_days": 4,
-      "corr_at_lag": 0.1331,
-      "corr_at_0": -0.066,
-      "lead_strength": 0.0671
-    },
-    {
-      "leader": "TXN",
-      "follower": "DTE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.0979,
-      "corr_at_0": 0.0314,
-      "lead_strength": 0.0665
-    },
-    {
-      "leader": "NOW",
-      "follower": "VOW3.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.0994,
-      "corr_at_0": 0.033,
-      "lead_strength": 0.0664
-    },
-    {
-      "leader": "CRM",
-      "follower": "BAS.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1371,
-      "corr_at_0": 0.0709,
-      "lead_strength": 0.0662
-    },
-    {
-      "leader": "ADBE",
-      "follower": "DTE.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.0846,
-      "corr_at_0": -0.0185,
-      "lead_strength": 0.066
-    },
-    {
-      "leader": "BAS.DE",
-      "follower": "ORCL",
-      "lag_days": 5,
-      "corr_at_lag": 0.0938,
-      "corr_at_0": -0.0281,
-      "lead_strength": 0.0657
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "SNOW",
-      "lag_days": 2,
-      "corr_at_lag": -0.1121,
-      "corr_at_0": 0.0466,
-      "lead_strength": 0.0656
-    },
-    {
-      "leader": "CON.DE",
-      "follower": "SPOT",
-      "lag_days": 4,
-      "corr_at_lag": 0.0852,
-      "corr_at_0": 0.0207,
-      "lead_strength": 0.0645
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "NVDA",
-      "lag_days": 2,
-      "corr_at_lag": -0.1425,
-      "corr_at_0": 0.079,
-      "lead_strength": 0.0635
-    },
-    {
-      "leader": "FRE.DE",
-      "follower": "ORCL",
-      "lag_days": 5,
-      "corr_at_lag": 0.0703,
-      "corr_at_0": -0.0075,
-      "lead_strength": 0.0628
-    },
-    {
-      "leader": "ADS.DE",
-      "follower": "NFLX",
-      "lag_days": 1,
-      "corr_at_lag": 0.1213,
-      "corr_at_0": 0.0586,
-      "lead_strength": 0.0627
-    },
-    {
-      "leader": "SIE.DE",
-      "follower": "DTE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.1181,
-      "corr_at_0": 0.0555,
-      "lead_strength": 0.0626
-    },
-    {
-      "leader": "AMAT",
-      "follower": "MSF.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1301,
-      "corr_at_0": 0.0678,
-      "lead_strength": 0.0623
-    },
-    {
-      "leader": "NVDA",
-      "follower": "SAP.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1664,
-      "corr_at_0": 0.1041,
-      "lead_strength": 0.0623
-    },
-    {
-      "leader": "ADBE",
-      "follower": "MBG.DE",
-      "lag_days": 2,
-      "corr_at_lag": 0.1011,
-      "corr_at_0": 0.0388,
-      "lead_strength": 0.0623
-    },
-    {
-      "leader": "NOW",
-      "follower": "SIE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1314,
-      "corr_at_0": 0.0698,
-      "lead_strength": 0.0616
-    },
-    {
-      "leader": "SPOT",
-      "follower": "VOW3.DE",
-      "lag_days": 5,
-      "corr_at_lag": -0.0651,
-      "corr_at_0": 0.004,
-      "lead_strength": 0.0612
-    },
-    {
-      "leader": "BAYN.DE",
-      "follower": "UBER",
-      "lag_days": 4,
-      "corr_at_lag": 0.0729,
-      "corr_at_0": 0.0117,
-      "lead_strength": 0.0611
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "AMAT",
-      "lag_days": 2,
-      "corr_at_lag": -0.1336,
-      "corr_at_0": -0.073,
-      "lead_strength": 0.0607
-    },
-    {
-      "leader": "META",
-      "follower": "APC.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1501,
-      "corr_at_0": 0.0895,
-      "lead_strength": 0.0606
-    },
-    {
-      "leader": "VOW3.DE",
-      "follower": "SNOW",
-      "lag_days": 1,
-      "corr_at_lag": -0.0853,
-      "corr_at_0": 0.0255,
-      "lead_strength": 0.0598
-    },
-    {
-      "leader": "ADS.DE",
-      "follower": "AMD",
-      "lag_days": 5,
-      "corr_at_lag": 0.1212,
-      "corr_at_0": 0.0617,
-      "lead_strength": 0.0594
-    },
-    {
-      "leader": "ENR.DE",
-      "follower": "UBER",
-      "lag_days": 1,
-      "corr_at_lag": 0.1421,
-      "corr_at_0": 0.0829,
-      "lead_strength": 0.0593
-    },
-    {
-      "leader": "PYPL",
-      "follower": "DBK.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.192,
-      "corr_at_0": 0.1328,
-      "lead_strength": 0.0592
-    },
-    {
-      "leader": "ADS.DE",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.1062,
-      "corr_at_0": 0.0473,
-      "lead_strength": 0.059
-    },
-    {
-      "leader": "APC.DE",
-      "follower": "AMD",
-      "lag_days": 1,
-      "corr_at_lag": 0.1509,
-      "corr_at_0": 0.0932,
-      "lead_strength": 0.0578
-    },
-    {
-      "leader": "SNOW",
-      "follower": "RWE.DE",
-      "lag_days": 3,
-      "corr_at_lag": -0.0865,
-      "corr_at_0": -0.029,
-      "lead_strength": 0.0575
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "INTC",
-      "lag_days": 2,
-      "corr_at_lag": -0.0957,
-      "corr_at_0": -0.0386,
-      "lead_strength": 0.0571
-    },
-    {
-      "leader": "ADBE",
-      "follower": "DBK.DE",
-      "lag_days": 2,
-      "corr_at_lag": 0.0858,
-      "corr_at_0": 0.0289,
-      "lead_strength": 0.057
-    },
-    {
-      "leader": "TSLA",
-      "follower": "DTE.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.1445,
-      "corr_at_0": -0.0881,
-      "lead_strength": 0.0564
-    },
-    {
-      "leader": "QCOM",
-      "follower": "APC.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1913,
-      "corr_at_0": 0.136,
-      "lead_strength": 0.0553
-    },
-    {
-      "leader": "AMAT",
-      "follower": "RWE.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1047,
-      "corr_at_0": 0.0499,
-      "lead_strength": 0.0548
-    },
-    {
-      "leader": "DTE.DE",
-      "follower": "GOOGL",
-      "lag_days": 5,
-      "corr_at_lag": -0.1417,
-      "corr_at_0": -0.0879,
-      "lead_strength": 0.0538
-    },
-    {
-      "leader": "AMZN",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.113,
-      "corr_at_0": 0.0594,
-      "lead_strength": 0.0537
-    },
-    {
-      "leader": "BMW.DE",
-      "follower": "DTE.DE",
-      "lag_days": 5,
-      "corr_at_lag": 0.0998,
-      "corr_at_0": 0.0466,
-      "lead_strength": 0.0532
-    },
-    {
-      "leader": "GOOGL",
-      "follower": "ALV.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.0907,
-      "corr_at_0": 0.0375,
-      "lead_strength": 0.0531
-    },
-    {
-      "leader": "BMW.DE",
-      "follower": "SNOW",
-      "lag_days": 1,
-      "corr_at_lag": -0.0809,
-      "corr_at_0": -0.0283,
-      "lead_strength": 0.0526
-    },
-    {
-      "leader": "TSLA",
-      "follower": "BAYN.DE",
-      "lag_days": 2,
-      "corr_at_lag": -0.0894,
-      "corr_at_0": 0.0371,
-      "lead_strength": 0.0523
-    },
-    {
-      "leader": "INTC",
-      "follower": "ADS.DE",
-      "lag_days": 1,
-      "corr_at_lag": 0.1185,
-      "corr_at_0": 0.0663,
-      "lead_strength": 0.0523
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "ORCL",
-      "lag_days": 3,
-      "corr_at_lag": -0.1568,
-      "corr_at_0": -0.1049,
-      "lead_strength": 0.0519
-    },
-    {
-      "leader": "DTE.DE",
-      "follower": "PYPL",
-      "lag_days": 3,
-      "corr_at_lag": -0.0751,
-      "corr_at_0": -0.0232,
-      "lead_strength": 0.0519
-    },
-    {
-      "leader": "TXN",
-      "follower": "FRE.DE",
-      "lag_days": 3,
-      "corr_at_lag": 0.099,
-      "corr_at_0": -0.0476,
-      "lead_strength": 0.0513
-    },
-    {
-      "leader": "CRM",
-      "follower": "DTE.DE",
-      "lag_days": 4,
-      "corr_at_lag": -0.1042,
-      "corr_at_0": -0.0539,
-      "lead_strength": 0.0502
-    }
-  ],
-  "granger_results": [
-    {
-      "leader": "QCOM",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 4e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1664
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "NOW",
-      "best_lag_days": "3",
-      "granger_pvalue": 9e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1633
-    },
-    {
-      "leader": "NVDA",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00026,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1625
-    },
-    {
-      "leader": "AMAT",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00097,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1477
-    },
-    {
-      "leader": "ALV.DE",
-      "follower": "NOW",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00049,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1463
-    },
-    {
-      "leader": "INTC",
-      "follower": "FRE.DE",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00112,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1429
-    },
-    {
-      "leader": "CRM",
-      "follower": "BAYN.DE",
-      "best_lag_days": "4",
-      "granger_pvalue": 0.01778,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1402
-    },
-    {
-      "leader": "NFLX",
-      "follower": "DTE.DE",
-      "best_lag_days": "5",
-      "granger_pvalue": 0.00786,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1364
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "SHOP",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00794,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1349
-    },
-    {
-      "leader": "META",
-      "follower": "FRE.DE",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00782,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1334
-    },
-    {
-      "leader": "TXN",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00202,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1301
-    },
-    {
-      "leader": "QCOM",
-      "follower": "MUV2.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00041,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1284
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "AMZN",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00194,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1282
-    },
-    {
-      "leader": "SPOT",
-      "follower": "MUV2.DE",
-      "best_lag_days": "4",
-      "granger_pvalue": 3e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1267
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "TSLA",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00232,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1239
-    },
-    {
-      "leader": "IFX.DE",
-      "follower": "DTE.DE",
-      "best_lag_days": "5",
-      "granger_pvalue": 0.05774,
-      "granger_sig": "False",
-      "xcorr_strength": 0.1209
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "CRM",
-      "best_lag_days": "4",
-      "granger_pvalue": 0.00269,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1198
-    },
-    {
-      "leader": "TSLA",
-      "follower": "RWE.DE",
-      "best_lag_days": "5",
-      "granger_pvalue": 0.02222,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1176
-    },
-    {
-      "leader": "TXN",
-      "follower": "RWE.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.0093,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1164
-    },
-    {
-      "leader": "NOW",
-      "follower": "BAYN.DE",
-      "best_lag_days": "4",
-      "granger_pvalue": 0.06141,
-      "granger_sig": "False",
-      "xcorr_strength": 0.116
-    }
-  ],
-  "granger_significant": [
-    {
-      "leader": "QCOM",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 4e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1664
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "NOW",
-      "best_lag_days": "3",
-      "granger_pvalue": 9e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1633
-    },
-    {
-      "leader": "NVDA",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00026,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1625
-    },
-    {
-      "leader": "AMAT",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00097,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1477
-    },
-    {
-      "leader": "ALV.DE",
-      "follower": "NOW",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00049,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1463
-    },
-    {
-      "leader": "INTC",
-      "follower": "FRE.DE",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00112,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1429
-    },
-    {
-      "leader": "CRM",
-      "follower": "BAYN.DE",
-      "best_lag_days": "4",
-      "granger_pvalue": 0.01778,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1402
-    },
-    {
-      "leader": "NFLX",
-      "follower": "DTE.DE",
-      "best_lag_days": "5",
-      "granger_pvalue": 0.00786,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1364
-    },
-    {
-      "leader": "RWE.DE",
-      "follower": "SHOP",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00794,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1349
-    },
-    {
-      "leader": "META",
-      "follower": "FRE.DE",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00782,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1334
-    },
-    {
-      "leader": "TXN",
-      "follower": "ALV.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00202,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1301
-    },
-    {
-      "leader": "QCOM",
-      "follower": "MUV2.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.00041,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1284
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "AMZN",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00194,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1282
-    },
-    {
-      "leader": "SPOT",
-      "follower": "MUV2.DE",
-      "best_lag_days": "4",
-      "granger_pvalue": 3e-05,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1267
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "TSLA",
-      "best_lag_days": "3",
-      "granger_pvalue": 0.00232,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1239
-    },
-    {
-      "leader": "MUV2.DE",
-      "follower": "CRM",
-      "best_lag_days": "4",
-      "granger_pvalue": 0.00269,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1198
-    },
-    {
-      "leader": "TSLA",
-      "follower": "RWE.DE",
-      "best_lag_days": "5",
-      "granger_pvalue": 0.02222,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1176
-    },
-    {
-      "leader": "TXN",
-      "follower": "RWE.DE",
-      "best_lag_days": "1",
-      "granger_pvalue": 0.0093,
-      "granger_sig": "True",
-      "xcorr_strength": 0.1164
-    }
-  ]
+    "top_pair": "V / MA",
+    "top_pair_score": 9.33
+  }
 }

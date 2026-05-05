@@ -12,7 +12,7 @@ from datetime import datetime
 import pandas as pd
 import logging
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 
 # --- API ENDPOINTS ---
 
@@ -86,7 +86,8 @@ def refresh_engine():
             capture_output=True,
             timeout=60,
             text=True,
-            cwd=os.getcwd()
+            cwd=os.getcwd(),
+            encoding='utf-8'
         )
         
         # Log output for debugging
@@ -135,7 +136,8 @@ def run_scheduled_refresh():
             capture_output=True,
             timeout=60,
             text=True,
-            cwd=os.getcwd()
+            cwd=os.getcwd(),
+            encoding='utf-8'
         )
         
         if result.returncode == 0:

@@ -114,7 +114,7 @@ ASSET_UNIVERSE = [
     'CVX',      # Chevron Corp.
     'NEE',      # NextEra Energy Inc.
 
-    # --- US Industrials & Defense ---
+    # --- Industrials & Defense ---
     'BA',       # Boeing Co.
     'CAT',      # Caterpillar Inc.
     'LMT',      # Lockheed Martin Corp.
@@ -123,8 +123,11 @@ ASSET_UNIVERSE = [
     'HON',      # Honeywell International
     'UPS',      # United Parcel Service
     'DE',       # Deere & Company
+]
 
-    # --- ETFs (Xetra) ---
+# List of broad-market ETFs. These are excluded from "Tradeable Pairs" scoring 
+# because they structurally have 99% correlation with each other, muddying the signals.
+ETF_TICKERS = [
     'EUNL.DE',  # iShares Core MSCI World ETF
     'VUSA.DE',  # Vanguard S&P 500 UCITS ETF
     'VWCE.DE',  # Vanguard FTSE All-World UCITS ETF
@@ -137,6 +140,8 @@ ASSET_UNIVERSE = [
     'ZPRV.DE',  # SPDR MSCI USA Small Cap Value ETF
     'DBXD.DE',  # Xtrackers DAX UCITS ETF
 ]
+
+ASSET_UNIVERSE.extend(ETF_TICKERS)
 
 BENCHMARK_TICKER = 'EUNL.DE'
 

@@ -51,7 +51,7 @@
 
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">REGIME PROBABILITIES</span>
+        <span class="panel-title" title="Classifies current market into Bull/Bear regimes using moving averages and volatility. Used to adjust strategy aggression.">REGIME PROBABILITIES ⓘ</span>
         <span class="panel-tag" id="rs-regime-lookback-tag">60D LOOKBACK</span>
       </div>
       <div class="panel-body">
@@ -67,7 +67,7 @@
 
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">STRESS SCORE HISTORY</span>
+        <span class="panel-title" title="A combined metric of market turbulence, derived from volatility spikes and correlation compression. High stress = capital protection mode.">STRESS SCORE HISTORY ⓘ</span>
         <span class="panel-tag">COMPOSITE · 252D</span>
       </div>
       <div class="panel-body">
@@ -80,7 +80,7 @@
   <!-- Row 2: Correlation heatmap + window switcher -->
   <div class="panel" style="margin-bottom:14px;">
     <div class="panel-header">
-      <span class="panel-title">CORRELATION HEATMAP — HELD TICKERS</span>
+      <span class="panel-title" title="Measures how closely assets move together. +1.0 = perfect match, -1.0 = perfect inverse. Green = high, Red = inverse.">CORRELATION HEATMAP — HELD TICKERS ⓘ</span>
       <div style="display:flex;gap:6px;">
         <button class="btn rs-corr-btn active-corr-btn" onclick="switchCorrWindow(30,  this)">30D</button>
         <button class="btn rs-corr-btn"                 onclick="switchCorrWindow(90,  this)">90D</button>
@@ -97,7 +97,7 @@
 
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">TOP TRADEABLE PAIRS</span>
+        <span class="panel-title" title="Identifies the best candidates for Pairs Trading or Hedging. Scores are based on correlation strength, historical stability, and matching volatility.">TOP TRADEABLE PAIRS ⓘ</span>
         <span class="panel-tag" id="rs-pairs-tag">— PAIRS SCORED</span>
       </div>
       <div class="panel-body">
@@ -119,7 +119,7 @@
 
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">BREAKDOWN ALERTS</span>
+        <span class="panel-title" title="Alerts you when a historically stable pair suddenly decouples or compresses, indicating a potential regime shift or broken relationship.">BREAKDOWN ALERTS ⓘ</span>
         <span class="panel-tag">30D vs 90D SHIFT</span>
       </div>
       <div class="panel-body" id="rs-alerts-body">
@@ -132,7 +132,7 @@
   <!-- Row 4: Factor decomposition -->
   <div class="panel" style="margin-bottom:14px;">
     <div class="panel-header">
-      <span class="panel-title">FAMA-FRENCH FACTOR DECOMPOSITION — HELD TICKERS</span>
+      <span class="panel-title" title="Separates an asset's returns into 'Beta' (market tailwinds) and 'Alpha' (true outperformance). Helps identify if a stock is just riding the market or actually beating it.">FAMA-FRENCH FACTOR DECOMPOSITION — HELD TICKERS ⓘ</span>
       <span class="panel-tag" id="rs-ff-tag">3-FACTOR OLS</span>
     </div>
     <div class="panel-body">
@@ -159,7 +159,7 @@
   <!-- Row 5: BL vs Markowitz weight comparison -->
   <div class="panel" style="margin-bottom:14px;">
     <div class="panel-header">
-      <span class="panel-title">BLACK-LITTERMAN vs MARKOWITZ WEIGHTS</span>
+      <span class="panel-title" title="Compares pure mathematical Markowitz optimisation vs Black-Litterman (which blends market equilibrium with your custom views/regime adjustments).">BLACK-LITTERMAN vs MARKOWITZ WEIGHTS ⓘ</span>
       <span class="panel-tag" id="rs-bl-regime-tag">REGIME: —</span>
     </div>
     <div class="panel-body">
@@ -171,7 +171,7 @@
   <!-- Row 6: Lead-lag pairs -->
   <div class="panel" style="margin-bottom:14px;">
     <div class="panel-header">
-      <span class="panel-title">LEAD-LAG RELATIONSHIPS</span>
+      <span class="panel-title" title="Detects if one asset historically 'leads' another by a few days. Useful for predictive models and momentum trading.">LEAD-LAG RELATIONSHIPS ⓘ</span>
       <span class="panel-tag">CROSS-CORRELATION · HELD TICKERS</span>
     </div>
     <div class="panel-body" id="rs-leadlag-body">
@@ -211,7 +211,7 @@
     document.querySelectorAll('.rs-corr-btn').forEach(b => b.classList.remove('active-corr-btn'));
     btn.classList.add('active-corr-btn');
     _activeWindow = w;
-    if (_rsData) _renderHeatmap(_rsData, w);
+    if (_rsData && _rsData.correlation) _renderHeatmap(_rsData.correlation, w);
   };
 
   async function _loadResearch() {
@@ -591,7 +591,6 @@
     ).join('');
   }
 
-  // Initial load
-  _loadResearch();
+  // Initial load relies on window._pageInit being called by dashboard.html
 })();
 </script>

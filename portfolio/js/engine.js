@@ -20,6 +20,7 @@ async function renderDashboard() {
   const data = await loadData();
   if (!data) return;
   window.engineData = data;
+  window._lastEngineRun = data.last_run;
   updateFooter(data);
   if (typeof window._pageInit === 'function') window._pageInit(data);
 }

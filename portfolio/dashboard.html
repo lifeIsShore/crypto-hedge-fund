@@ -134,6 +134,7 @@
     .tag-red   { background:rgba(255,77,109,.1); color:var(--red); }
     .tag-amber { background:rgba(245,166,35,.1); color:var(--amber); }
     .tag-muted { background:rgba(74,85,104,.15); color:var(--muted); }
+    .tag-blue  { background:rgba(74,158,255,.12); color:var(--blue); }
 
     .tips li { list-style:none; font-size:11px; color:var(--muted); padding:6px 0; border-bottom:1px solid rgba(30,37,53,.5); line-height:1.5; }
     .tips li:last-child { border-bottom:none; }
@@ -185,6 +186,7 @@
     <button class="tab"        onclick="switchTab('risk',      this)">RISK ⚡</button>
     <button class="tab"        onclick="switchTab('holdings',  this)">HOLDINGS</button>
     <button class="tab"        onclick="switchTab('trades',    this)">LOG TRADE</button>
+    <button class="tab"        onclick="switchTab('research',  this)">RESEARCH</button>
   </div>
 
   <div id="msgGlobal" style="padding:0 24px;"></div>
@@ -261,9 +263,14 @@
     tickClock();
     setInterval(tickClock, 1000);
 
+    window._lastEngineRun = null;
     (async () => {
       const data = await loadData();
-      if (data) { window.engineData = data; updateFooter(data); }
+      if (data) { 
+        window.engineData = data; 
+        window._lastEngineRun = data.last_run;
+        updateFooter(data); 
+      }
       await switchTab('overview', document.querySelector('.tab.active'));
     })();
 
@@ -272,7 +279,10 @@
       if (!data) return;
       window.engineData = data;
       updateFooter(data);
-      if (typeof window._pageInit === 'function') window._pageInit(data);
+      if (data.last_run !== window._lastEngineRun) {
+        window._lastEngineRun = data.last_run;
+        if (typeof window._pageInit === 'function') window._pageInit(data);
+      }
     }, 10000);
   </script>
 </body>

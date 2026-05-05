@@ -16,7 +16,7 @@ def main():
     
     # Step 1: Initialize engine
     print("\n📊 Initializing engine...")
-    result = subprocess.run(['python', 'recalculate_engine.py'], capture_output=True, text=True)
+    result = subprocess.run(['python', 'recalculate_engine.py'], capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
         print(f"❌ Engine initialization failed:\n{result.stderr}")
         return 1
