@@ -121,3 +121,97 @@ The instinct to buy a falling stock "because the index is fine" is the most comm
 - Prioritize large-cap components of major ETFs first (Mag 7, S&P top 50) — these are where the divergence signal is clearest and most liquid
 - Define a minimum divergence threshold before triggering the checklist (e.g., stock down 5%+ while ETF up 3%+ over same 4-week window)
 - Short-term divergences (under 1 week) are noise unless accompanied by very high volume — filter those out initially
+
+---
+
+## Human-in-the-Loop Labeling System
+
+### The Idea
+
+When a divergence is detected for a ticker, instead of just logging it, the UI presents the analyst (you) with the four scenarios as **interactive checkboxes** — one per scenario — along with a short explanation of each inline. You select which scenario best fits, optionally add a free-text note, and that labeled observation is saved to the database with a timestamp.
+
+This creates a structured, time-stamped journal of every divergence event you've evaluated — not just what you saw, but what you *thought* it was at the time, and what happened after.
+
+---
+
+### UI Behavior Per Ticker
+
+When a divergence threshold is triggered for a ticker (e.g., META), the interface should show:
+
+```
+TICKER: META  |  Detected: 2025-11-04  |  ETF: +4.2%  |  Stock: -3.8%  (28-day window)
+
+Select Scenario:
+  ○ Scenario 1 — Temporary Rotation
+      Capital rotating to other ETF components. Fundamentals intact. Potential buy candidate.
+  ○ Scenario 2 — Stock-Specific Bad News
+      Identifiable negative catalyst. ETF is masking it. Watch list only — wait for resolution.
+  ○ Scenario 3 — Valuation Compression
+      Prior large run, now mean-reverting. Wait for valuation to normalize before re-evaluating.
+  ○ Scenario 4 — Thesis Break
+      Sustained divergence, possible structural problem. Exit signal if holding. Avoid otherwise.
+
+Notes: [free text field]
+Confidence: Low / Medium / High
+
+[ Save Label ]   [ Skip for Now ]   [ Flag for Review ]
+```
+
+The explanations are always visible — you never have to remember what each scenario means while working.
+
+---
+
+### Database Schema (What to Store)
+
+Each labeled observation is one row. Fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Unique record ID |
+| `ticker` | string | Stock symbol (e.g., META) |
+| `etf_reference` | string | Which ETF triggered the divergence (e.g., QQQ, SPY) |
+| `detected_at` | timestamp | When the divergence was first flagged |
+| `labeled_at` | timestamp | When you applied the scenario label |
+| `window_days` | integer | Lookback window used (e.g., 28 days) |
+| `etf_return_pct` | float | ETF return over the window |
+| `stock_return_pct` | float | Stock return over the window |
+| `divergence_pct` | float | Difference (etf_return - stock_return) |
+| `scenario_label` | enum | 1 / 2 / 3 / 4 |
+| `confidence` | enum | low / medium / high |
+| `notes` | text | Free-text analyst note |
+| `checklist_answers` | JSON | Optional: answers to the 5 detection checklist questions stored as structured data |
+| `outcome_30d` | float | *Auto-filled later:* stock return 30 days after labeling |
+| `outcome_90d` | float | *Auto-filled later:* stock return 90 days after labeling |
+| `outcome_label_correct` | boolean | *Filled in retrospect:* did the stock behave as the scenario predicted? |
+
+The `outcome_*` fields are filled automatically by a scheduled job that looks back after 30 and 90 days — no manual work needed. This is what makes the dataset useful for ML later.
+
+---
+
+### How This Becomes ML Training Data
+
+Over time, each row in the database is a labeled example:
+
+- **Features (X):** divergence magnitude, window length, ETF, prior stock run, volume pattern, short interest level, checklist answers, market conditions at the time
+- **Label (y):** the scenario you assigned + whether it turned out to be correct
+
+This gives a future ML model two things to learn:
+1. **Scenario classification** — given the signals, which scenario is this likely to be? (reduces your manual work over time)
+2. **Outcome prediction** — given the scenario label + features, what is the expected return at 30/90 days?
+
+The human labeling is the expensive, high-quality signal that no scraped dataset has. Every observation you label is a data point a model couldn't generate on its own — it contains your reasoning, not just the price data.
+
+**Minimum viable dataset for early ML experiments:** ~150–200 labeled observations across all four scenarios with outcome data filled in. At that point a simple classifier is worth trying.
+
+---
+
+### Retrospective Review Feature
+
+The UI should also have a **"Review Past Labels"** view where you can:
+
+- Filter by scenario, ticker, time period, or confidence level
+- See the outcome columns filled in next to your original label
+- Mark `outcome_label_correct` manually if auto-fill logic isn't enough
+- Spot patterns in your own labeling (e.g., "I keep mislabeling Scenario 2 as Scenario 1")
+
+This closes the feedback loop and is also how you'll develop intuition faster than reading alone would allow.
