@@ -1,24 +1,24 @@
 {
-  "generated_at": "2026-05-05T14:32:34.256392",
-  "data_end_date": "2026-05-04",
+  "generated_at": "2026-05-08T12:25:19.938192",
+  "data_end_date": "2026-05-07",
   "current_regime": "low_stress",
-  "stress_score": 0.19,
-  "realised_vol_ann": 0.0697,
-  "corr_compression": 0.3088,
-  "vol_component": 0.0,
-  "corr_component": 0.475,
+  "stress_score": 0.2796,
+  "realised_vol_ann": 0.1351,
+  "corr_compression": 0.3067,
+  "vol_component": 0.1514,
+  "corr_component": 0.4718,
   "regime_probabilities": {
-    "low_stress": 1.0,
-    "medium": 0.0,
+    "low_stress": 0.3667,
+    "medium": 0.6333,
     "high_stress": 0.0
   },
   "transition_stats": {
     "current_regime": "low_stress",
-    "days_in_current_regime": 257,
+    "days_in_current_regime": 8,
     "avg_duration_per_regime": {
-      "low_stress": 186.5,
-      "medium": 22.0,
-      "high_stress": 0.0
+      "low_stress": 10.5,
+      "medium": 7.7,
+      "high_stress": 11.1
     }
   },
   "thresholds": {
@@ -30,1767 +30,1767 @@
   },
   "regime_history": [
     {
-      "date": "2025-05-13",
-      "realised_vol": 0.1229,
-      "corr_compression": 0.3934,
-      "stress_score": 0.2596,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-05-14",
-      "realised_vol": 0.1228,
-      "corr_compression": 0.393,
-      "stress_score": 0.2588,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-05-15",
-      "realised_vol": 0.1233,
-      "corr_compression": 0.3897,
-      "stress_score": 0.2597,
-      "regime": "low_stress"
-    },
-    {
       "date": "2025-05-16",
-      "realised_vol": 0.1119,
-      "corr_compression": 0.3762,
-      "stress_score": 0.2315,
-      "regime": "low_stress"
+      "realised_vol": 0.1593,
+      "corr_compression": 0.3745,
+      "stress_score": 0.4665,
+      "regime": "medium"
     },
     {
       "date": "2025-05-19",
-      "realised_vol": 0.1114,
-      "corr_compression": 0.4018,
-      "stress_score": 0.2473,
-      "regime": "low_stress"
+      "realised_vol": 0.1618,
+      "corr_compression": 0.3998,
+      "stress_score": 0.4966,
+      "regime": "medium"
     },
     {
       "date": "2025-05-20",
-      "realised_vol": 0.1049,
-      "corr_compression": 0.418,
-      "stress_score": 0.2572,
-      "regime": "low_stress"
+      "realised_vol": 0.1513,
+      "corr_compression": 0.4156,
+      "stress_score": 0.4435,
+      "regime": "medium"
     },
     {
       "date": "2025-05-21",
-      "realised_vol": 0.1092,
-      "corr_compression": 0.4074,
-      "stress_score": 0.2507,
-      "regime": "low_stress"
+      "realised_vol": 0.1698,
+      "corr_compression": 0.405,
+      "stress_score": 0.5479,
+      "regime": "medium"
     },
     {
       "date": "2025-05-22",
-      "realised_vol": 0.1004,
-      "corr_compression": 0.3029,
-      "stress_score": 0.1864,
-      "regime": "low_stress"
+      "realised_vol": 0.1612,
+      "corr_compression": 0.3015,
+      "stress_score": 0.4326,
+      "regime": "medium"
     },
     {
       "date": "2025-05-23",
-      "realised_vol": 0.1014,
-      "corr_compression": 0.3169,
-      "stress_score": 0.195,
-      "regime": "low_stress"
+      "realised_vol": 0.1619,
+      "corr_compression": 0.3144,
+      "stress_score": 0.4449,
+      "regime": "medium"
     },
     {
       "date": "2025-05-26",
-      "realised_vol": 0.0973,
-      "corr_compression": 0.3252,
-      "stress_score": 0.2001,
-      "regime": "low_stress"
+      "realised_vol": 0.1621,
+      "corr_compression": 0.3225,
+      "stress_score": 0.4509,
+      "regime": "medium"
     },
     {
       "date": "2025-05-27",
-      "realised_vol": 0.1004,
-      "corr_compression": 0.3271,
-      "stress_score": 0.2013,
-      "regime": "low_stress"
+      "realised_vol": 0.1703,
+      "corr_compression": 0.3244,
+      "stress_score": 0.5014,
+      "regime": "medium"
     },
     {
       "date": "2025-05-28",
-      "realised_vol": 0.1005,
-      "corr_compression": 0.3319,
-      "stress_score": 0.2043,
-      "regime": "low_stress"
+      "realised_vol": 0.1686,
+      "corr_compression": 0.329,
+      "stress_score": 0.494,
+      "regime": "medium"
     },
     {
       "date": "2025-05-29",
-      "realised_vol": 0.0989,
-      "corr_compression": 0.3257,
-      "stress_score": 0.2004,
-      "regime": "low_stress"
+      "realised_vol": 0.1697,
+      "corr_compression": 0.323,
+      "stress_score": 0.4969,
+      "regime": "medium"
     },
     {
       "date": "2025-05-30",
-      "realised_vol": 0.1006,
-      "corr_compression": 0.3327,
-      "stress_score": 0.2047,
-      "regime": "low_stress"
+      "realised_vol": 0.1716,
+      "corr_compression": 0.3299,
+      "stress_score": 0.5124,
+      "regime": "medium"
     },
     {
       "date": "2025-06-02",
-      "realised_vol": 0.0968,
-      "corr_compression": 0.3238,
-      "stress_score": 0.1993,
-      "regime": "low_stress"
+      "realised_vol": 0.1708,
+      "corr_compression": 0.3208,
+      "stress_score": 0.502,
+      "regime": "medium"
     },
     {
       "date": "2025-06-03",
-      "realised_vol": 0.0932,
-      "corr_compression": 0.3316,
-      "stress_score": 0.2041,
-      "regime": "low_stress"
+      "realised_vol": 0.1683,
+      "corr_compression": 0.3283,
+      "stress_score": 0.4917,
+      "regime": "medium"
     },
     {
       "date": "2025-06-04",
-      "realised_vol": 0.0931,
-      "corr_compression": 0.3228,
-      "stress_score": 0.1986,
-      "regime": "low_stress"
+      "realised_vol": 0.1563,
+      "corr_compression": 0.3197,
+      "stress_score": 0.4145,
+      "regime": "medium"
     },
     {
       "date": "2025-06-05",
-      "realised_vol": 0.105,
-      "corr_compression": 0.3163,
-      "stress_score": 0.1946,
-      "regime": "low_stress"
+      "realised_vol": 0.1678,
+      "corr_compression": 0.3134,
+      "stress_score": 0.4794,
+      "regime": "medium"
     },
     {
       "date": "2025-06-06",
-      "realised_vol": 0.103,
-      "corr_compression": 0.3203,
-      "stress_score": 0.1971,
-      "regime": "low_stress"
+      "realised_vol": 0.1672,
+      "corr_compression": 0.3171,
+      "stress_score": 0.4786,
+      "regime": "medium"
     },
     {
       "date": "2025-06-09",
-      "realised_vol": 0.1034,
-      "corr_compression": 0.3198,
-      "stress_score": 0.1968,
-      "regime": "low_stress"
+      "realised_vol": 0.1697,
+      "corr_compression": 0.3166,
+      "stress_score": 0.4928,
+      "regime": "medium"
     },
     {
       "date": "2025-06-10",
-      "realised_vol": 0.076,
-      "corr_compression": 0.3168,
-      "stress_score": 0.1949,
-      "regime": "low_stress"
+      "realised_vol": 0.1498,
+      "corr_compression": 0.3139,
+      "stress_score": 0.3722,
+      "regime": "medium"
     },
     {
       "date": "2025-06-11",
-      "realised_vol": 0.0729,
-      "corr_compression": 0.3153,
-      "stress_score": 0.194,
-      "regime": "low_stress"
+      "realised_vol": 0.1518,
+      "corr_compression": 0.3123,
+      "stress_score": 0.3828,
+      "regime": "medium"
     },
     {
       "date": "2025-06-12",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.3143,
-      "stress_score": 0.1934,
-      "regime": "low_stress"
+      "realised_vol": 0.1561,
+      "corr_compression": 0.3113,
+      "stress_score": 0.4085,
+      "regime": "medium"
     },
     {
       "date": "2025-06-13",
-      "realised_vol": 0.0732,
-      "corr_compression": 0.3065,
-      "stress_score": 0.1886,
+      "realised_vol": 0.1459,
+      "corr_compression": 0.3039,
+      "stress_score": 0.3427,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-16",
-      "realised_vol": 0.0742,
-      "corr_compression": 0.3074,
-      "stress_score": 0.1892,
-      "regime": "low_stress"
+      "realised_vol": 0.1508,
+      "corr_compression": 0.305,
+      "stress_score": 0.3724,
+      "regime": "medium"
     },
     {
       "date": "2025-06-17",
-      "realised_vol": 0.0743,
-      "corr_compression": 0.3057,
-      "stress_score": 0.1881,
+      "realised_vol": 0.1464,
+      "corr_compression": 0.3031,
+      "stress_score": 0.3448,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-18",
-      "realised_vol": 0.0743,
-      "corr_compression": 0.3097,
-      "stress_score": 0.1906,
+      "realised_vol": 0.1384,
+      "corr_compression": 0.3069,
+      "stress_score": 0.2993,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-19",
-      "realised_vol": 0.0723,
-      "corr_compression": 0.3085,
-      "stress_score": 0.1899,
+      "realised_vol": 0.1245,
+      "corr_compression": 0.3059,
+      "stress_score": 0.2155,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-20",
-      "realised_vol": 0.0724,
-      "corr_compression": 0.3093,
-      "stress_score": 0.1903,
+      "realised_vol": 0.1257,
+      "corr_compression": 0.3066,
+      "stress_score": 0.2226,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-23",
-      "realised_vol": 0.0735,
-      "corr_compression": 0.2485,
-      "stress_score": 0.153,
-      "regime": "low_stress"
+      "realised_vol": 0.1544,
+      "corr_compression": 0.2462,
+      "stress_score": 0.3582,
+      "regime": "medium"
     },
     {
       "date": "2025-06-24",
-      "realised_vol": 0.0735,
-      "corr_compression": 0.2619,
-      "stress_score": 0.1611,
-      "regime": "low_stress"
+      "realised_vol": 0.1566,
+      "corr_compression": 0.2593,
+      "stress_score": 0.379,
+      "regime": "medium"
     },
     {
       "date": "2025-06-25",
-      "realised_vol": 0.0676,
-      "corr_compression": 0.2649,
-      "stress_score": 0.163,
+      "realised_vol": 0.1405,
+      "corr_compression": 0.2623,
+      "stress_score": 0.2845,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-26",
-      "realised_vol": 0.0676,
-      "corr_compression": 0.2664,
-      "stress_score": 0.1639,
+      "realised_vol": 0.139,
+      "corr_compression": 0.2639,
+      "stress_score": 0.2765,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-27",
-      "realised_vol": 0.0685,
-      "corr_compression": 0.2715,
-      "stress_score": 0.1671,
+      "realised_vol": 0.139,
+      "corr_compression": 0.2688,
+      "stress_score": 0.2795,
       "regime": "low_stress"
     },
     {
       "date": "2025-06-30",
-      "realised_vol": 0.0692,
-      "corr_compression": 0.2717,
-      "stress_score": 0.1672,
+      "realised_vol": 0.1393,
+      "corr_compression": 0.2691,
+      "stress_score": 0.2817,
       "regime": "low_stress"
     },
     {
       "date": "2025-07-01",
-      "realised_vol": 0.0695,
-      "corr_compression": 0.2695,
-      "stress_score": 0.1658,
-      "regime": "low_stress"
+      "realised_vol": 0.1724,
+      "corr_compression": 0.267,
+      "stress_score": 0.4785,
+      "regime": "medium"
     },
     {
       "date": "2025-07-02",
-      "realised_vol": 0.0717,
-      "corr_compression": 0.2608,
-      "stress_score": 0.1605,
-      "regime": "low_stress"
+      "realised_vol": 0.1721,
+      "corr_compression": 0.2582,
+      "stress_score": 0.4713,
+      "regime": "medium"
     },
     {
       "date": "2025-07-03",
-      "realised_vol": 0.0722,
-      "corr_compression": 0.2648,
-      "stress_score": 0.1629,
-      "regime": "low_stress"
+      "realised_vol": 0.1718,
+      "corr_compression": 0.2622,
+      "stress_score": 0.4721,
+      "regime": "medium"
     },
     {
       "date": "2025-07-04",
-      "realised_vol": 0.0554,
-      "corr_compression": 0.258,
-      "stress_score": 0.1588,
-      "regime": "low_stress"
+      "realised_vol": 0.1648,
+      "corr_compression": 0.2556,
+      "stress_score": 0.4262,
+      "regime": "medium"
     },
     {
       "date": "2025-07-07",
-      "realised_vol": 0.0556,
-      "corr_compression": 0.2569,
-      "stress_score": 0.1581,
-      "regime": "low_stress"
+      "realised_vol": 0.1672,
+      "corr_compression": 0.2546,
+      "stress_score": 0.4401,
+      "regime": "medium"
     },
     {
       "date": "2025-07-08",
-      "realised_vol": 0.0533,
-      "corr_compression": 0.2422,
-      "stress_score": 0.149,
-      "regime": "low_stress"
+      "realised_vol": 0.1698,
+      "corr_compression": 0.24,
+      "stress_score": 0.4464,
+      "regime": "medium"
     },
     {
       "date": "2025-07-09",
-      "realised_vol": 0.0513,
-      "corr_compression": 0.2414,
-      "stress_score": 0.1486,
-      "regime": "low_stress"
+      "realised_vol": 0.1698,
+      "corr_compression": 0.2394,
+      "stress_score": 0.4462,
+      "regime": "medium"
     },
     {
       "date": "2025-07-10",
-      "realised_vol": 0.0552,
-      "corr_compression": 0.2417,
-      "stress_score": 0.1487,
-      "regime": "low_stress"
+      "realised_vol": 0.172,
+      "corr_compression": 0.2397,
+      "stress_score": 0.4592,
+      "regime": "medium"
     },
     {
       "date": "2025-07-11",
-      "realised_vol": 0.0529,
-      "corr_compression": 0.247,
-      "stress_score": 0.152,
-      "regime": "low_stress"
+      "realised_vol": 0.1702,
+      "corr_compression": 0.245,
+      "stress_score": 0.4518,
+      "regime": "medium"
     },
     {
       "date": "2025-07-14",
-      "realised_vol": 0.0529,
-      "corr_compression": 0.247,
-      "stress_score": 0.152,
-      "regime": "low_stress"
+      "realised_vol": 0.1693,
+      "corr_compression": 0.2452,
+      "stress_score": 0.4464,
+      "regime": "medium"
     },
     {
       "date": "2025-07-15",
-      "realised_vol": 0.0522,
-      "corr_compression": 0.243,
-      "stress_score": 0.1496,
-      "regime": "low_stress"
+      "realised_vol": 0.166,
+      "corr_compression": 0.2415,
+      "stress_score": 0.4246,
+      "regime": "medium"
     },
     {
       "date": "2025-07-16",
-      "realised_vol": 0.0504,
-      "corr_compression": 0.2373,
-      "stress_score": 0.146,
-      "regime": "low_stress"
+      "realised_vol": 0.1645,
+      "corr_compression": 0.2358,
+      "stress_score": 0.4122,
+      "regime": "medium"
     },
     {
       "date": "2025-07-17",
-      "realised_vol": 0.0504,
-      "corr_compression": 0.2355,
-      "stress_score": 0.1449,
-      "regime": "low_stress"
+      "realised_vol": 0.1635,
+      "corr_compression": 0.2342,
+      "stress_score": 0.4054,
+      "regime": "medium"
     },
     {
       "date": "2025-07-18",
-      "realised_vol": 0.0502,
-      "corr_compression": 0.2332,
-      "stress_score": 0.1435,
-      "regime": "low_stress"
+      "realised_vol": 0.1816,
+      "corr_compression": 0.2316,
+      "stress_score": 0.5119,
+      "regime": "medium"
     },
     {
       "date": "2025-07-21",
-      "realised_vol": 0.0502,
-      "corr_compression": 0.2339,
-      "stress_score": 0.144,
-      "regime": "low_stress"
+      "realised_vol": 0.1841,
+      "corr_compression": 0.2324,
+      "stress_score": 0.5278,
+      "regime": "medium"
     },
     {
       "date": "2025-07-22",
-      "realised_vol": 0.0457,
-      "corr_compression": 0.2363,
-      "stress_score": 0.1454,
+      "realised_vol": 0.1542,
+      "corr_compression": 0.2346,
+      "stress_score": 0.3495,
       "regime": "low_stress"
     },
     {
       "date": "2025-07-23",
-      "realised_vol": 0.0458,
-      "corr_compression": 0.2341,
-      "stress_score": 0.1441,
-      "regime": "low_stress"
+      "realised_vol": 0.1573,
+      "corr_compression": 0.2328,
+      "stress_score": 0.3669,
+      "regime": "medium"
     },
     {
       "date": "2025-07-24",
-      "realised_vol": 0.0469,
-      "corr_compression": 0.2275,
-      "stress_score": 0.14,
-      "regime": "low_stress"
+      "realised_vol": 0.1656,
+      "corr_compression": 0.2263,
+      "stress_score": 0.4127,
+      "regime": "medium"
     },
     {
       "date": "2025-07-25",
-      "realised_vol": 0.048,
-      "corr_compression": 0.2157,
-      "stress_score": 0.1328,
-      "regime": "low_stress"
+      "realised_vol": 0.1678,
+      "corr_compression": 0.2148,
+      "stress_score": 0.4192,
+      "regime": "medium"
     },
     {
       "date": "2025-07-28",
-      "realised_vol": 0.0491,
-      "corr_compression": 0.2134,
-      "stress_score": 0.1313,
-      "regime": "low_stress"
+      "realised_vol": 0.1708,
+      "corr_compression": 0.2125,
+      "stress_score": 0.4358,
+      "regime": "medium"
     },
     {
       "date": "2025-07-29",
-      "realised_vol": 0.0463,
-      "corr_compression": 0.2023,
-      "stress_score": 0.1245,
-      "regime": "low_stress"
+      "realised_vol": 0.1693,
+      "corr_compression": 0.2015,
+      "stress_score": 0.4196,
+      "regime": "medium"
     },
     {
       "date": "2025-07-30",
-      "realised_vol": 0.0456,
-      "corr_compression": 0.2042,
-      "stress_score": 0.1257,
+      "realised_vol": 0.1388,
+      "corr_compression": 0.2033,
+      "stress_score": 0.2381,
       "regime": "low_stress"
     },
     {
       "date": "2025-07-31",
-      "realised_vol": 0.043,
-      "corr_compression": 0.2032,
-      "stress_score": 0.125,
-      "regime": "low_stress"
+      "realised_vol": 0.1641,
+      "corr_compression": 0.2019,
+      "stress_score": 0.3889,
+      "regime": "medium"
     },
     {
       "date": "2025-08-01",
-      "realised_vol": 0.0692,
-      "corr_compression": 0.2216,
-      "stress_score": 0.1364,
-      "regime": "low_stress"
+      "realised_vol": 0.1737,
+      "corr_compression": 0.2198,
+      "stress_score": 0.4577,
+      "regime": "medium"
     },
     {
       "date": "2025-08-04",
-      "realised_vol": 0.07,
-      "corr_compression": 0.2264,
-      "stress_score": 0.1393,
-      "regime": "low_stress"
+      "realised_vol": 0.1735,
+      "corr_compression": 0.2247,
+      "stress_score": 0.4595,
+      "regime": "medium"
     },
     {
       "date": "2025-08-05",
-      "realised_vol": 0.0675,
-      "corr_compression": 0.222,
-      "stress_score": 0.1366,
-      "regime": "low_stress"
+      "realised_vol": 0.1725,
+      "corr_compression": 0.2204,
+      "stress_score": 0.4505,
+      "regime": "medium"
     },
     {
       "date": "2025-08-06",
-      "realised_vol": 0.0734,
-      "corr_compression": 0.2198,
-      "stress_score": 0.1353,
-      "regime": "low_stress"
+      "realised_vol": 0.169,
+      "corr_compression": 0.2183,
+      "stress_score": 0.4285,
+      "regime": "medium"
     },
     {
       "date": "2025-08-07",
-      "realised_vol": 0.0739,
-      "corr_compression": 0.2146,
-      "stress_score": 0.1321,
-      "regime": "low_stress"
+      "realised_vol": 0.1691,
+      "corr_compression": 0.2132,
+      "stress_score": 0.4258,
+      "regime": "medium"
     },
     {
       "date": "2025-08-08",
-      "realised_vol": 0.0715,
-      "corr_compression": 0.2105,
-      "stress_score": 0.1295,
-      "regime": "low_stress"
+      "realised_vol": 0.1677,
+      "corr_compression": 0.2091,
+      "stress_score": 0.4148,
+      "regime": "medium"
     },
     {
       "date": "2025-08-11",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.2116,
-      "stress_score": 0.1302,
-      "regime": "low_stress"
+      "realised_vol": 0.1657,
+      "corr_compression": 0.2102,
+      "stress_score": 0.4038,
+      "regime": "medium"
     },
     {
       "date": "2025-08-12",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.2113,
-      "stress_score": 0.13,
-      "regime": "low_stress"
+      "realised_vol": 0.1658,
+      "corr_compression": 0.2097,
+      "stress_score": 0.4041,
+      "regime": "medium"
     },
     {
       "date": "2025-08-13",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.212,
-      "stress_score": 0.1304,
-      "regime": "low_stress"
+      "realised_vol": 0.1655,
+      "corr_compression": 0.2105,
+      "stress_score": 0.4025,
+      "regime": "medium"
     },
     {
       "date": "2025-08-14",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.2085,
-      "stress_score": 0.1283,
-      "regime": "low_stress"
+      "realised_vol": 0.1659,
+      "corr_compression": 0.207,
+      "stress_score": 0.403,
+      "regime": "medium"
     },
     {
       "date": "2025-08-15",
-      "realised_vol": 0.0743,
-      "corr_compression": 0.2025,
-      "stress_score": 0.1246,
-      "regime": "low_stress"
+      "realised_vol": 0.1708,
+      "corr_compression": 0.2012,
+      "stress_score": 0.4285,
+      "regime": "medium"
     },
     {
       "date": "2025-08-18",
-      "realised_vol": 0.074,
-      "corr_compression": 0.2014,
-      "stress_score": 0.1239,
+      "realised_vol": 0.1518,
+      "corr_compression": 0.2001,
+      "stress_score": 0.3138,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-19",
-      "realised_vol": 0.0754,
-      "corr_compression": 0.2029,
-      "stress_score": 0.1249,
+      "realised_vol": 0.1478,
+      "corr_compression": 0.2015,
+      "stress_score": 0.2905,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-20",
-      "realised_vol": 0.0778,
-      "corr_compression": 0.2032,
-      "stress_score": 0.125,
+      "realised_vol": 0.1494,
+      "corr_compression": 0.2017,
+      "stress_score": 0.3004,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-21",
-      "realised_vol": 0.0779,
-      "corr_compression": 0.2035,
-      "stress_score": 0.1253,
+      "realised_vol": 0.1494,
+      "corr_compression": 0.202,
+      "stress_score": 0.3009,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-22",
-      "realised_vol": 0.0805,
-      "corr_compression": 0.2096,
-      "stress_score": 0.129,
+      "realised_vol": 0.1502,
+      "corr_compression": 0.208,
+      "stress_score": 0.3093,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-25",
-      "realised_vol": 0.08,
-      "corr_compression": 0.2121,
-      "stress_score": 0.1305,
+      "realised_vol": 0.1498,
+      "corr_compression": 0.2104,
+      "stress_score": 0.308,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-26",
-      "realised_vol": 0.0787,
-      "corr_compression": 0.2132,
-      "stress_score": 0.1312,
+      "realised_vol": 0.1464,
+      "corr_compression": 0.2117,
+      "stress_score": 0.2884,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-27",
-      "realised_vol": 0.0786,
-      "corr_compression": 0.2164,
-      "stress_score": 0.1332,
+      "realised_vol": 0.1493,
+      "corr_compression": 0.2147,
+      "stress_score": 0.308,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-28",
-      "realised_vol": 0.0784,
-      "corr_compression": 0.2174,
-      "stress_score": 0.1338,
+      "realised_vol": 0.1488,
+      "corr_compression": 0.2158,
+      "stress_score": 0.3058,
       "regime": "low_stress"
     },
     {
       "date": "2025-08-29",
-      "realised_vol": 0.0798,
-      "corr_compression": 0.2188,
-      "stress_score": 0.1346,
+      "realised_vol": 0.1199,
+      "corr_compression": 0.2171,
+      "stress_score": 0.1336,
       "regime": "low_stress"
     },
     {
       "date": "2025-09-01",
-      "realised_vol": 0.0563,
-      "corr_compression": 0.2202,
-      "stress_score": 0.1355,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-02",
-      "realised_vol": 0.0585,
-      "corr_compression": 0.2254,
-      "stress_score": 0.1387,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-03",
-      "realised_vol": 0.0605,
-      "corr_compression": 0.2209,
-      "stress_score": 0.136,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-04",
-      "realised_vol": 0.0567,
-      "corr_compression": 0.2262,
-      "stress_score": 0.1392,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-05",
-      "realised_vol": 0.056,
-      "corr_compression": 0.2246,
-      "stress_score": 0.1382,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-08",
-      "realised_vol": 0.0557,
-      "corr_compression": 0.2279,
-      "stress_score": 0.1402,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-09",
-      "realised_vol": 0.0531,
-      "corr_compression": 0.2321,
-      "stress_score": 0.1428,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-10",
-      "realised_vol": 0.0576,
-      "corr_compression": 0.2295,
-      "stress_score": 0.1412,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-11",
-      "realised_vol": 0.061,
-      "corr_compression": 0.2272,
-      "stress_score": 0.1398,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-12",
-      "realised_vol": 0.0684,
-      "corr_compression": 0.2041,
-      "stress_score": 0.1256,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-15",
-      "realised_vol": 0.0689,
-      "corr_compression": 0.202,
-      "stress_score": 0.1243,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-16",
-      "realised_vol": 0.0693,
-      "corr_compression": 0.2031,
-      "stress_score": 0.125,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-17",
-      "realised_vol": 0.0676,
-      "corr_compression": 0.2057,
-      "stress_score": 0.1266,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-18",
-      "realised_vol": 0.0641,
-      "corr_compression": 0.2078,
-      "stress_score": 0.1279,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-19",
-      "realised_vol": 0.0641,
-      "corr_compression": 0.2074,
-      "stress_score": 0.1276,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-22",
-      "realised_vol": 0.0604,
-      "corr_compression": 0.207,
-      "stress_score": 0.1274,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-23",
-      "realised_vol": 0.0608,
-      "corr_compression": 0.2029,
-      "stress_score": 0.1249,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-24",
-      "realised_vol": 0.0609,
-      "corr_compression": 0.1979,
-      "stress_score": 0.1218,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-25",
-      "realised_vol": 0.0628,
-      "corr_compression": 0.2024,
-      "stress_score": 0.1245,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-26",
-      "realised_vol": 0.0637,
-      "corr_compression": 0.2053,
-      "stress_score": 0.1263,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-29",
-      "realised_vol": 0.0605,
-      "corr_compression": 0.2045,
-      "stress_score": 0.1259,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-09-30",
-      "realised_vol": 0.0605,
-      "corr_compression": 0.2029,
-      "stress_score": 0.1249,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-01",
-      "realised_vol": 0.0576,
-      "corr_compression": 0.2066,
-      "stress_score": 0.1271,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-02",
-      "realised_vol": 0.0588,
-      "corr_compression": 0.2056,
-      "stress_score": 0.1265,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-03",
-      "realised_vol": 0.057,
-      "corr_compression": 0.1983,
-      "stress_score": 0.1221,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-06",
-      "realised_vol": 0.0591,
-      "corr_compression": 0.1952,
-      "stress_score": 0.1201,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-07",
-      "realised_vol": 0.0612,
-      "corr_compression": 0.1957,
-      "stress_score": 0.1204,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-08",
-      "realised_vol": 0.0617,
-      "corr_compression": 0.1934,
-      "stress_score": 0.119,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-09",
-      "realised_vol": 0.056,
-      "corr_compression": 0.1933,
-      "stress_score": 0.119,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-10",
-      "realised_vol": 0.0716,
-      "corr_compression": 0.223,
-      "stress_score": 0.1372,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-13",
-      "realised_vol": 0.0678,
-      "corr_compression": 0.2279,
-      "stress_score": 0.1403,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-14",
-      "realised_vol": 0.068,
-      "corr_compression": 0.2172,
-      "stress_score": 0.1337,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-15",
-      "realised_vol": 0.0676,
-      "corr_compression": 0.2187,
-      "stress_score": 0.1346,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-16",
-      "realised_vol": 0.0683,
-      "corr_compression": 0.2202,
-      "stress_score": 0.1355,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-17",
-      "realised_vol": 0.0682,
-      "corr_compression": 0.2204,
-      "stress_score": 0.1356,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-20",
-      "realised_vol": 0.0741,
-      "corr_compression": 0.23,
-      "stress_score": 0.1415,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-21",
-      "realised_vol": 0.0743,
-      "corr_compression": 0.2276,
-      "stress_score": 0.1401,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-22",
-      "realised_vol": 0.0752,
-      "corr_compression": 0.232,
-      "stress_score": 0.1428,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-23",
-      "realised_vol": 0.0759,
-      "corr_compression": 0.2337,
-      "stress_score": 0.1438,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-24",
-      "realised_vol": 0.0749,
-      "corr_compression": 0.2276,
-      "stress_score": 0.1401,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-27",
-      "realised_vol": 0.0771,
-      "corr_compression": 0.2264,
-      "stress_score": 0.1393,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-28",
-      "realised_vol": 0.0784,
-      "corr_compression": 0.2248,
-      "stress_score": 0.1383,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-29",
-      "realised_vol": 0.0783,
-      "corr_compression": 0.2221,
-      "stress_score": 0.1367,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-10-30",
-      "realised_vol": 0.0813,
+      "realised_vol": 0.1089,
       "corr_compression": 0.2185,
       "stress_score": 0.1345,
       "regime": "low_stress"
     },
     {
-      "date": "2025-10-31",
-      "realised_vol": 0.0875,
-      "corr_compression": 0.2168,
-      "stress_score": 0.1334,
+      "date": "2025-09-02",
+      "realised_vol": 0.109,
+      "corr_compression": 0.2236,
+      "stress_score": 0.1376,
       "regime": "low_stress"
     },
     {
-      "date": "2025-11-03",
-      "realised_vol": 0.0878,
-      "corr_compression": 0.2158,
-      "stress_score": 0.1328,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-04",
-      "realised_vol": 0.0891,
-      "corr_compression": 0.2237,
-      "stress_score": 0.1377,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-05",
-      "realised_vol": 0.0882,
-      "corr_compression": 0.223,
-      "stress_score": 0.1372,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-06",
-      "realised_vol": 0.0932,
-      "corr_compression": 0.2224,
-      "stress_score": 0.1368,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-07",
-      "realised_vol": 0.0937,
-      "corr_compression": 0.2216,
-      "stress_score": 0.1364,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-10",
-      "realised_vol": 0.0823,
-      "corr_compression": 0.2229,
-      "stress_score": 0.1372,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-11",
-      "realised_vol": 0.0801,
-      "corr_compression": 0.2251,
-      "stress_score": 0.1385,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-12",
-      "realised_vol": 0.0792,
-      "corr_compression": 0.2227,
-      "stress_score": 0.137,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-13",
-      "realised_vol": 0.084,
-      "corr_compression": 0.2254,
-      "stress_score": 0.1387,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-14",
-      "realised_vol": 0.0834,
-      "corr_compression": 0.227,
-      "stress_score": 0.1397,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-17",
-      "realised_vol": 0.0836,
-      "corr_compression": 0.2298,
-      "stress_score": 0.1414,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-18",
-      "realised_vol": 0.0822,
-      "corr_compression": 0.2351,
-      "stress_score": 0.1447,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-19",
-      "realised_vol": 0.0821,
-      "corr_compression": 0.2375,
-      "stress_score": 0.1462,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-20",
-      "realised_vol": 0.0824,
-      "corr_compression": 0.2371,
-      "stress_score": 0.1459,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-21",
-      "realised_vol": 0.081,
-      "corr_compression": 0.2183,
-      "stress_score": 0.1343,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-24",
-      "realised_vol": 0.089,
-      "corr_compression": 0.2162,
-      "stress_score": 0.1331,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-25",
-      "realised_vol": 0.0855,
-      "corr_compression": 0.2224,
-      "stress_score": 0.1369,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-26",
-      "realised_vol": 0.0847,
-      "corr_compression": 0.2237,
-      "stress_score": 0.1377,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-27",
-      "realised_vol": 0.0847,
-      "corr_compression": 0.2279,
-      "stress_score": 0.1402,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-11-28",
-      "realised_vol": 0.0822,
-      "corr_compression": 0.2336,
-      "stress_score": 0.1438,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-01",
-      "realised_vol": 0.0724,
-      "corr_compression": 0.2258,
-      "stress_score": 0.1389,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-02",
-      "realised_vol": 0.0713,
-      "corr_compression": 0.2273,
-      "stress_score": 0.1399,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-03",
-      "realised_vol": 0.0692,
-      "corr_compression": 0.2233,
-      "stress_score": 0.1374,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-04",
-      "realised_vol": 0.0681,
+      "date": "2025-09-03",
+      "realised_vol": 0.107,
       "corr_compression": 0.2195,
       "stress_score": 0.1351,
       "regime": "low_stress"
     },
     {
+      "date": "2025-09-04",
+      "realised_vol": 0.1039,
+      "corr_compression": 0.2247,
+      "stress_score": 0.1383,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-05",
+      "realised_vol": 0.1039,
+      "corr_compression": 0.2232,
+      "stress_score": 0.1373,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-08",
+      "realised_vol": 0.1044,
+      "corr_compression": 0.2267,
+      "stress_score": 0.1395,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-09",
+      "realised_vol": 0.1109,
+      "corr_compression": 0.231,
+      "stress_score": 0.1421,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-10",
+      "realised_vol": 0.1188,
+      "corr_compression": 0.2281,
+      "stress_score": 0.1404,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-11",
+      "realised_vol": 0.1186,
+      "corr_compression": 0.2253,
+      "stress_score": 0.1386,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-12",
+      "realised_vol": 0.123,
+      "corr_compression": 0.2027,
+      "stress_score": 0.1428,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-15",
+      "realised_vol": 0.1185,
+      "corr_compression": 0.2008,
+      "stress_score": 0.1236,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-16",
+      "realised_vol": 0.117,
+      "corr_compression": 0.2019,
+      "stress_score": 0.1242,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-17",
+      "realised_vol": 0.1136,
+      "corr_compression": 0.2044,
+      "stress_score": 0.1258,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-18",
+      "realised_vol": 0.1103,
+      "corr_compression": 0.2064,
+      "stress_score": 0.127,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-19",
+      "realised_vol": 0.1077,
+      "corr_compression": 0.2059,
+      "stress_score": 0.1267,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-22",
+      "realised_vol": 0.1001,
+      "corr_compression": 0.2056,
+      "stress_score": 0.1265,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-23",
+      "realised_vol": 0.1187,
+      "corr_compression": 0.2016,
+      "stress_score": 0.1241,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-24",
+      "realised_vol": 0.1192,
+      "corr_compression": 0.1966,
+      "stress_score": 0.121,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-25",
+      "realised_vol": 0.1262,
+      "corr_compression": 0.2011,
+      "stress_score": 0.1607,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-26",
+      "realised_vol": 0.1275,
+      "corr_compression": 0.2038,
+      "stress_score": 0.1704,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-29",
+      "realised_vol": 0.124,
+      "corr_compression": 0.2031,
+      "stress_score": 0.1491,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-09-30",
+      "realised_vol": 0.1266,
+      "corr_compression": 0.2015,
+      "stress_score": 0.1639,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-01",
+      "realised_vol": 0.1244,
+      "corr_compression": 0.2049,
+      "stress_score": 0.1526,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-02",
+      "realised_vol": 0.1275,
+      "corr_compression": 0.2041,
+      "stress_score": 0.1709,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-03",
+      "realised_vol": 0.1263,
+      "corr_compression": 0.1969,
+      "stress_score": 0.1587,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-06",
+      "realised_vol": 0.1315,
+      "corr_compression": 0.1939,
+      "stress_score": 0.1882,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-07",
+      "realised_vol": 0.1314,
+      "corr_compression": 0.1944,
+      "stress_score": 0.1883,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-08",
+      "realised_vol": 0.1271,
+      "corr_compression": 0.1922,
+      "stress_score": 0.1606,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-09",
+      "realised_vol": 0.1192,
+      "corr_compression": 0.1921,
+      "stress_score": 0.1182,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-10",
+      "realised_vol": 0.1484,
+      "corr_compression": 0.222,
+      "stress_score": 0.3067,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-13",
+      "realised_vol": 0.1528,
+      "corr_compression": 0.2272,
+      "stress_score": 0.3363,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-10-14",
+      "realised_vol": 0.1561,
+      "corr_compression": 0.2166,
+      "stress_score": 0.35,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-15",
+      "realised_vol": 0.1561,
+      "corr_compression": 0.218,
+      "stress_score": 0.3509,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-16",
+      "realised_vol": 0.1675,
+      "corr_compression": 0.2197,
+      "stress_score": 0.42,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-17",
+      "realised_vol": 0.1883,
+      "corr_compression": 0.2197,
+      "stress_score": 0.5448,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-20",
+      "realised_vol": 0.1866,
+      "corr_compression": 0.2291,
+      "stress_score": 0.5408,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-21",
+      "realised_vol": 0.1926,
+      "corr_compression": 0.2266,
+      "stress_score": 0.5749,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-22",
+      "realised_vol": 0.1832,
+      "corr_compression": 0.2308,
+      "stress_score": 0.5211,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-23",
+      "realised_vol": 0.1831,
+      "corr_compression": 0.2326,
+      "stress_score": 0.522,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-24",
+      "realised_vol": 0.1773,
+      "corr_compression": 0.2266,
+      "stress_score": 0.4834,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-27",
+      "realised_vol": 0.1862,
+      "corr_compression": 0.2256,
+      "stress_score": 0.5359,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-28",
+      "realised_vol": 0.1858,
+      "corr_compression": 0.224,
+      "stress_score": 0.5326,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-29",
+      "realised_vol": 0.1848,
+      "corr_compression": 0.2215,
+      "stress_score": 0.5252,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-30",
+      "realised_vol": 0.1883,
+      "corr_compression": 0.2179,
+      "stress_score": 0.5442,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-10-31",
+      "realised_vol": 0.1906,
+      "corr_compression": 0.2162,
+      "stress_score": 0.5567,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-03",
+      "realised_vol": 0.1946,
+      "corr_compression": 0.2153,
+      "stress_score": 0.5799,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-04",
+      "realised_vol": 0.1922,
+      "corr_compression": 0.2232,
+      "stress_score": 0.5707,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-05",
+      "realised_vol": 0.2075,
+      "corr_compression": 0.2221,
+      "stress_score": 0.6614,
+      "regime": "high_stress"
+    },
+    {
+      "date": "2025-11-06",
+      "realised_vol": 0.211,
+      "corr_compression": 0.2215,
+      "stress_score": 0.6822,
+      "regime": "high_stress"
+    },
+    {
+      "date": "2025-11-07",
+      "realised_vol": 0.2107,
+      "corr_compression": 0.2207,
+      "stress_score": 0.6799,
+      "regime": "high_stress"
+    },
+    {
+      "date": "2025-11-10",
+      "realised_vol": 0.1961,
+      "corr_compression": 0.222,
+      "stress_score": 0.5933,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-11",
+      "realised_vol": 0.1886,
+      "corr_compression": 0.2242,
+      "stress_score": 0.5496,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-12",
+      "realised_vol": 0.1841,
+      "corr_compression": 0.2218,
+      "stress_score": 0.5211,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-13",
+      "realised_vol": 0.1895,
+      "corr_compression": 0.2245,
+      "stress_score": 0.555,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-14",
+      "realised_vol": 0.1835,
+      "corr_compression": 0.226,
+      "stress_score": 0.5202,
+      "regime": "medium"
+    },
+    {
+      "date": "2025-11-17",
+      "realised_vol": 0.1529,
+      "corr_compression": 0.2287,
+      "stress_score": 0.3382,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-18",
+      "realised_vol": 0.1478,
+      "corr_compression": 0.2339,
+      "stress_score": 0.3109,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-19",
+      "realised_vol": 0.1451,
+      "corr_compression": 0.2363,
+      "stress_score": 0.296,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-20",
+      "realised_vol": 0.1457,
+      "corr_compression": 0.2359,
+      "stress_score": 0.2994,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-21",
+      "realised_vol": 0.1468,
+      "corr_compression": 0.2175,
+      "stress_score": 0.2946,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-24",
+      "realised_vol": 0.1536,
+      "corr_compression": 0.2155,
+      "stress_score": 0.3339,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-25",
+      "realised_vol": 0.1317,
+      "corr_compression": 0.2214,
+      "stress_score": 0.2066,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-26",
+      "realised_vol": 0.134,
+      "corr_compression": 0.2226,
+      "stress_score": 0.2212,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-27",
+      "realised_vol": 0.1347,
+      "corr_compression": 0.2266,
+      "stress_score": 0.2275,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-11-28",
+      "realised_vol": 0.1394,
+      "corr_compression": 0.2319,
+      "stress_score": 0.2589,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-01",
+      "realised_vol": 0.1279,
+      "corr_compression": 0.2241,
+      "stress_score": 0.1856,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-02",
+      "realised_vol": 0.1289,
+      "corr_compression": 0.226,
+      "stress_score": 0.1925,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-03",
+      "realised_vol": 0.1334,
+      "corr_compression": 0.2222,
+      "stress_score": 0.2169,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-04",
+      "realised_vol": 0.1195,
+      "corr_compression": 0.2182,
+      "stress_score": 0.1343,
+      "regime": "low_stress"
+    },
+    {
       "date": "2025-12-05",
-      "realised_vol": 0.0623,
-      "corr_compression": 0.2203,
-      "stress_score": 0.1356,
+      "realised_vol": 0.1107,
+      "corr_compression": 0.2191,
+      "stress_score": 0.1348,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-08",
-      "realised_vol": 0.0621,
-      "corr_compression": 0.2227,
-      "stress_score": 0.1371,
+      "realised_vol": 0.1108,
+      "corr_compression": 0.2211,
+      "stress_score": 0.1361,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-09",
-      "realised_vol": 0.0609,
+      "realised_vol": 0.1102,
+      "corr_compression": 0.2191,
+      "stress_score": 0.1348,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-10",
+      "realised_vol": 0.1094,
+      "corr_compression": 0.2231,
+      "stress_score": 0.1373,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-11",
+      "realised_vol": 0.107,
+      "corr_compression": 0.2238,
+      "stress_score": 0.1377,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-12",
+      "realised_vol": 0.0942,
+      "corr_compression": 0.2242,
+      "stress_score": 0.1379,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-15",
+      "realised_vol": 0.0932,
+      "corr_compression": 0.2223,
+      "stress_score": 0.1368,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2025-12-16",
+      "realised_vol": 0.0934,
       "corr_compression": 0.2207,
       "stress_score": 0.1358,
       "regime": "low_stress"
     },
     {
-      "date": "2025-12-10",
-      "realised_vol": 0.0609,
-      "corr_compression": 0.2248,
-      "stress_score": 0.1384,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-11",
-      "realised_vol": 0.0612,
-      "corr_compression": 0.2254,
-      "stress_score": 0.1387,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-12",
-      "realised_vol": 0.0557,
-      "corr_compression": 0.2258,
-      "stress_score": 0.139,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-15",
-      "realised_vol": 0.0557,
-      "corr_compression": 0.2241,
-      "stress_score": 0.1379,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2025-12-16",
-      "realised_vol": 0.0555,
-      "corr_compression": 0.2226,
-      "stress_score": 0.137,
-      "regime": "low_stress"
-    },
-    {
       "date": "2025-12-17",
-      "realised_vol": 0.0486,
-      "corr_compression": 0.2252,
-      "stress_score": 0.1386,
+      "realised_vol": 0.0945,
+      "corr_compression": 0.2246,
+      "stress_score": 0.1382,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-18",
-      "realised_vol": 0.0511,
-      "corr_compression": 0.2225,
-      "stress_score": 0.1369,
+      "realised_vol": 0.0938,
+      "corr_compression": 0.2215,
+      "stress_score": 0.1363,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-19",
-      "realised_vol": 0.0485,
-      "corr_compression": 0.2221,
-      "stress_score": 0.1367,
+      "realised_vol": 0.0847,
+      "corr_compression": 0.2211,
+      "stress_score": 0.1361,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-22",
-      "realised_vol": 0.0473,
-      "corr_compression": 0.2218,
-      "stress_score": 0.1365,
+      "realised_vol": 0.0955,
+      "corr_compression": 0.221,
+      "stress_score": 0.136,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-23",
-      "realised_vol": 0.0345,
-      "corr_compression": 0.2188,
-      "stress_score": 0.1346,
+      "realised_vol": 0.0885,
+      "corr_compression": 0.218,
+      "stress_score": 0.1341,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-24",
-      "realised_vol": 0.0345,
-      "corr_compression": 0.2205,
-      "stress_score": 0.1357,
+      "realised_vol": 0.0907,
+      "corr_compression": 0.2198,
+      "stress_score": 0.1352,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-26",
-      "realised_vol": 0.0334,
-      "corr_compression": 0.2173,
-      "stress_score": 0.1337,
+      "realised_vol": 0.0942,
+      "corr_compression": 0.2163,
+      "stress_score": 0.1331,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-29",
-      "realised_vol": 0.0351,
-      "corr_compression": 0.2164,
-      "stress_score": 0.1332,
+      "realised_vol": 0.0968,
+      "corr_compression": 0.2154,
+      "stress_score": 0.1325,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-30",
-      "realised_vol": 0.0342,
-      "corr_compression": 0.2147,
-      "stress_score": 0.1321,
+      "realised_vol": 0.0932,
+      "corr_compression": 0.2137,
+      "stress_score": 0.1315,
       "regime": "low_stress"
     },
     {
       "date": "2025-12-31",
-      "realised_vol": 0.0346,
-      "corr_compression": 0.2129,
-      "stress_score": 0.131,
+      "realised_vol": 0.0932,
+      "corr_compression": 0.2118,
+      "stress_score": 0.1303,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-02",
-      "realised_vol": 0.0404,
-      "corr_compression": 0.2121,
-      "stress_score": 0.1305,
+      "realised_vol": 0.1072,
+      "corr_compression": 0.2107,
+      "stress_score": 0.1297,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-05",
-      "realised_vol": 0.0449,
-      "corr_compression": 0.2142,
-      "stress_score": 0.1318,
+      "realised_vol": 0.1047,
+      "corr_compression": 0.2126,
+      "stress_score": 0.1308,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-06",
-      "realised_vol": 0.0453,
-      "corr_compression": 0.2125,
-      "stress_score": 0.1307,
+      "realised_vol": 0.0974,
+      "corr_compression": 0.211,
+      "stress_score": 0.1299,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-07",
-      "realised_vol": 0.0462,
-      "corr_compression": 0.2106,
-      "stress_score": 0.1296,
+      "realised_vol": 0.098,
+      "corr_compression": 0.2091,
+      "stress_score": 0.1287,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-08",
-      "realised_vol": 0.0456,
-      "corr_compression": 0.2086,
-      "stress_score": 0.1284,
+      "realised_vol": 0.0974,
+      "corr_compression": 0.2072,
+      "stress_score": 0.1275,
       "regime": "low_stress"
     },
     {
       "date": "2026-01-09",
-      "realised_vol": 0.0463,
-      "corr_compression": 0.2054,
-      "stress_score": 0.1264,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-12",
-      "realised_vol": 0.0465,
-      "corr_compression": 0.2015,
-      "stress_score": 0.124,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-13",
-      "realised_vol": 0.0458,
-      "corr_compression": 0.1985,
-      "stress_score": 0.1222,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-14",
-      "realised_vol": 0.0501,
-      "corr_compression": 0.1978,
-      "stress_score": 0.1217,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-15",
-      "realised_vol": 0.0503,
-      "corr_compression": 0.1988,
-      "stress_score": 0.1224,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-16",
-      "realised_vol": 0.0501,
-      "corr_compression": 0.1978,
-      "stress_score": 0.1217,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-19",
-      "realised_vol": 0.0497,
-      "corr_compression": 0.2007,
-      "stress_score": 0.1235,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-20",
-      "realised_vol": 0.0517,
-      "corr_compression": 0.2067,
-      "stress_score": 0.1272,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-21",
-      "realised_vol": 0.0509,
-      "corr_compression": 0.2091,
-      "stress_score": 0.1287,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-22",
-      "realised_vol": 0.0548,
-      "corr_compression": 0.2101,
-      "stress_score": 0.1293,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-23",
-      "realised_vol": 0.0574,
-      "corr_compression": 0.2115,
-      "stress_score": 0.1302,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-26",
-      "realised_vol": 0.0573,
-      "corr_compression": 0.2123,
-      "stress_score": 0.1307,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-27",
-      "realised_vol": 0.0589,
-      "corr_compression": 0.2097,
-      "stress_score": 0.129,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-28",
-      "realised_vol": 0.0585,
-      "corr_compression": 0.2086,
-      "stress_score": 0.1283,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-29",
-      "realised_vol": 0.0753,
-      "corr_compression": 0.2034,
-      "stress_score": 0.1252,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-01-30",
-      "realised_vol": 0.0781,
-      "corr_compression": 0.1997,
-      "stress_score": 0.1229,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-02",
-      "realised_vol": 0.0756,
-      "corr_compression": 0.1983,
-      "stress_score": 0.122,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-03",
-      "realised_vol": 0.0731,
-      "corr_compression": 0.1999,
-      "stress_score": 0.123,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-04",
-      "realised_vol": 0.073,
-      "corr_compression": 0.2091,
-      "stress_score": 0.1287,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-05",
-      "realised_vol": 0.077,
-      "corr_compression": 0.2089,
-      "stress_score": 0.1286,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-06",
-      "realised_vol": 0.077,
-      "corr_compression": 0.2081,
-      "stress_score": 0.1281,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-09",
-      "realised_vol": 0.076,
-      "corr_compression": 0.2078,
-      "stress_score": 0.1279,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-10",
-      "realised_vol": 0.0768,
+      "realised_vol": 0.099,
       "corr_compression": 0.2042,
       "stress_score": 0.1257,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-11",
-      "realised_vol": 0.0767,
-      "corr_compression": 0.2014,
-      "stress_score": 0.124,
+      "date": "2026-01-12",
+      "realised_vol": 0.0995,
+      "corr_compression": 0.2003,
+      "stress_score": 0.1233,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-12",
-      "realised_vol": 0.0793,
-      "corr_compression": 0.202,
-      "stress_score": 0.1243,
+      "date": "2026-01-13",
+      "realised_vol": 0.1013,
+      "corr_compression": 0.1975,
+      "stress_score": 0.1215,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-13",
-      "realised_vol": 0.0786,
-      "corr_compression": 0.2019,
-      "stress_score": 0.1243,
+      "date": "2026-01-14",
+      "realised_vol": 0.1012,
+      "corr_compression": 0.1967,
+      "stress_score": 0.121,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-16",
-      "realised_vol": 0.0788,
-      "corr_compression": 0.1986,
-      "stress_score": 0.1222,
-      "regime": "low_stress"
-    },
-    {
-      "date": "2026-02-17",
-      "realised_vol": 0.0788,
-      "corr_compression": 0.1978,
+      "date": "2026-01-15",
+      "realised_vol": 0.1009,
+      "corr_compression": 0.1977,
       "stress_score": 0.1217,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-18",
-      "realised_vol": 0.0783,
-      "corr_compression": 0.1979,
-      "stress_score": 0.1218,
+      "date": "2026-01-16",
+      "realised_vol": 0.0993,
+      "corr_compression": 0.1969,
+      "stress_score": 0.1211,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-19",
-      "realised_vol": 0.0783,
-      "corr_compression": 0.1982,
-      "stress_score": 0.122,
+      "date": "2026-01-19",
+      "realised_vol": 0.0943,
+      "corr_compression": 0.1998,
+      "stress_score": 0.1229,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-20",
-      "realised_vol": 0.0755,
-      "corr_compression": 0.1983,
-      "stress_score": 0.122,
+      "date": "2026-01-20",
+      "realised_vol": 0.0946,
+      "corr_compression": 0.2056,
+      "stress_score": 0.1265,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-23",
-      "realised_vol": 0.0748,
-      "corr_compression": 0.2048,
-      "stress_score": 0.126,
+      "date": "2026-01-21",
+      "realised_vol": 0.0936,
+      "corr_compression": 0.2079,
+      "stress_score": 0.1279,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-24",
-      "realised_vol": 0.079,
+      "date": "2026-01-22",
+      "realised_vol": 0.0825,
+      "corr_compression": 0.2087,
+      "stress_score": 0.1284,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-01-23",
+      "realised_vol": 0.0929,
+      "corr_compression": 0.2102,
+      "stress_score": 0.1293,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-01-26",
+      "realised_vol": 0.098,
+      "corr_compression": 0.2108,
+      "stress_score": 0.1297,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-01-27",
+      "realised_vol": 0.0976,
+      "corr_compression": 0.2082,
+      "stress_score": 0.1282,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-01-28",
+      "realised_vol": 0.0964,
       "corr_compression": 0.2071,
-      "stress_score": 0.1274,
+      "stress_score": 0.1275,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-25",
-      "realised_vol": 0.0805,
-      "corr_compression": 0.2091,
-      "stress_score": 0.1287,
+      "date": "2026-01-29",
+      "realised_vol": 0.1094,
+      "corr_compression": 0.2018,
+      "stress_score": 0.1242,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-26",
-      "realised_vol": 0.0806,
-      "corr_compression": 0.2104,
-      "stress_score": 0.1295,
+      "date": "2026-01-30",
+      "realised_vol": 0.1091,
+      "corr_compression": 0.1985,
+      "stress_score": 0.1221,
       "regime": "low_stress"
     },
     {
-      "date": "2026-02-27",
-      "realised_vol": 0.0659,
-      "corr_compression": 0.2081,
+      "date": "2026-02-02",
+      "realised_vol": 0.0988,
+      "corr_compression": 0.197,
+      "stress_score": 0.1212,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-03",
+      "realised_vol": 0.0966,
+      "corr_compression": 0.1985,
+      "stress_score": 0.1222,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-04",
+      "realised_vol": 0.1047,
+      "corr_compression": 0.2082,
       "stress_score": 0.1281,
       "regime": "low_stress"
     },
     {
-      "date": "2026-03-02",
-      "realised_vol": 0.063,
-      "corr_compression": 0.2085,
-      "stress_score": 0.1283,
+      "date": "2026-02-05",
+      "realised_vol": 0.1174,
+      "corr_compression": 0.2076,
+      "stress_score": 0.1278,
       "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-06",
+      "realised_vol": 0.1296,
+      "corr_compression": 0.207,
+      "stress_score": 0.1851,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-09",
+      "realised_vol": 0.1324,
+      "corr_compression": 0.2068,
+      "stress_score": 0.2014,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-10",
+      "realised_vol": 0.132,
+      "corr_compression": 0.2032,
+      "stress_score": 0.1969,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-11",
+      "realised_vol": 0.131,
+      "corr_compression": 0.2005,
+      "stress_score": 0.1896,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-12",
+      "realised_vol": 0.1551,
+      "corr_compression": 0.2015,
+      "stress_score": 0.3348,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-13",
+      "realised_vol": 0.1549,
+      "corr_compression": 0.2016,
+      "stress_score": 0.3332,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-16",
+      "realised_vol": 0.1548,
+      "corr_compression": 0.1984,
+      "stress_score": 0.3309,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-17",
+      "realised_vol": 0.16,
+      "corr_compression": 0.1974,
+      "stress_score": 0.3617,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-18",
+      "realised_vol": 0.1653,
+      "corr_compression": 0.1979,
+      "stress_score": 0.3935,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-19",
+      "realised_vol": 0.1658,
+      "corr_compression": 0.1982,
+      "stress_score": 0.3966,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-20",
+      "realised_vol": 0.1633,
+      "corr_compression": 0.1987,
+      "stress_score": 0.3819,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-23",
+      "realised_vol": 0.1569,
+      "corr_compression": 0.2047,
+      "stress_score": 0.3476,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-02-24",
+      "realised_vol": 0.1718,
+      "corr_compression": 0.2071,
+      "stress_score": 0.438,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-25",
+      "realised_vol": 0.172,
+      "corr_compression": 0.209,
+      "stress_score": 0.4406,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-26",
+      "realised_vol": 0.1934,
+      "corr_compression": 0.21,
+      "stress_score": 0.5694,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-02-27",
+      "realised_vol": 0.1877,
+      "corr_compression": 0.2078,
+      "stress_score": 0.5344,
+      "regime": "medium"
+    },
+    {
+      "date": "2026-03-02",
+      "realised_vol": 0.188,
+      "corr_compression": 0.2081,
+      "stress_score": 0.5358,
+      "regime": "medium"
     },
     {
       "date": "2026-03-03",
-      "realised_vol": 0.062,
-      "corr_compression": 0.2124,
-      "stress_score": 0.1307,
-      "regime": "low_stress"
+      "realised_vol": 0.1865,
+      "corr_compression": 0.212,
+      "stress_score": 0.5294,
+      "regime": "medium"
     },
     {
       "date": "2026-03-04",
-      "realised_vol": 0.0682,
-      "corr_compression": 0.2158,
-      "stress_score": 0.1328,
-      "regime": "low_stress"
+      "realised_vol": 0.189,
+      "corr_compression": 0.2153,
+      "stress_score": 0.5464,
+      "regime": "medium"
     },
     {
       "date": "2026-03-05",
-      "realised_vol": 0.068,
-      "corr_compression": 0.2181,
-      "stress_score": 0.1342,
-      "regime": "low_stress"
+      "realised_vol": 0.1847,
+      "corr_compression": 0.2176,
+      "stress_score": 0.5218,
+      "regime": "medium"
     },
     {
       "date": "2026-03-06",
-      "realised_vol": 0.0633,
-      "corr_compression": 0.2192,
-      "stress_score": 0.1349,
-      "regime": "low_stress"
+      "realised_vol": 0.1789,
+      "corr_compression": 0.2189,
+      "stress_score": 0.4882,
+      "regime": "medium"
     },
     {
       "date": "2026-03-09",
-      "realised_vol": 0.0629,
-      "corr_compression": 0.2155,
-      "stress_score": 0.1326,
-      "regime": "low_stress"
+      "realised_vol": 0.1883,
+      "corr_compression": 0.215,
+      "stress_score": 0.5422,
+      "regime": "medium"
     },
     {
       "date": "2026-03-10",
-      "realised_vol": 0.0629,
-      "corr_compression": 0.2196,
-      "stress_score": 0.1351,
-      "regime": "low_stress"
+      "realised_vol": 0.1902,
+      "corr_compression": 0.2192,
+      "stress_score": 0.5563,
+      "regime": "medium"
     },
     {
       "date": "2026-03-11",
-      "realised_vol": 0.0624,
-      "corr_compression": 0.2222,
-      "stress_score": 0.1368,
-      "regime": "low_stress"
+      "realised_vol": 0.1903,
+      "corr_compression": 0.2218,
+      "stress_score": 0.5584,
+      "regime": "medium"
     },
     {
       "date": "2026-03-12",
-      "realised_vol": 0.0638,
-      "corr_compression": 0.2316,
-      "stress_score": 0.1425,
-      "regime": "low_stress"
+      "realised_vol": 0.1965,
+      "corr_compression": 0.2313,
+      "stress_score": 0.6013,
+      "regime": "medium"
     },
     {
       "date": "2026-03-13",
-      "realised_vol": 0.0575,
-      "corr_compression": 0.2328,
-      "stress_score": 0.1432,
-      "regime": "low_stress"
+      "realised_vol": 0.1786,
+      "corr_compression": 0.2324,
+      "stress_score": 0.4948,
+      "regime": "medium"
     },
     {
       "date": "2026-03-16",
-      "realised_vol": 0.0572,
-      "corr_compression": 0.233,
-      "stress_score": 0.1434,
-      "regime": "low_stress"
+      "realised_vol": 0.1782,
+      "corr_compression": 0.2326,
+      "stress_score": 0.4923,
+      "regime": "medium"
     },
     {
       "date": "2026-03-17",
-      "realised_vol": 0.0578,
-      "corr_compression": 0.2327,
-      "stress_score": 0.1432,
-      "regime": "low_stress"
+      "realised_vol": 0.1783,
+      "corr_compression": 0.2324,
+      "stress_score": 0.493,
+      "regime": "medium"
     },
     {
       "date": "2026-03-18",
-      "realised_vol": 0.0619,
-      "corr_compression": 0.2389,
-      "stress_score": 0.147,
-      "regime": "low_stress"
+      "realised_vol": 0.1783,
+      "corr_compression": 0.2387,
+      "stress_score": 0.4969,
+      "regime": "medium"
     },
     {
       "date": "2026-03-19",
-      "realised_vol": 0.062,
-      "corr_compression": 0.2429,
-      "stress_score": 0.1495,
-      "regime": "low_stress"
+      "realised_vol": 0.1741,
+      "corr_compression": 0.2425,
+      "stress_score": 0.4739,
+      "regime": "medium"
     },
     {
       "date": "2026-03-20",
-      "realised_vol": 0.0648,
-      "corr_compression": 0.24,
-      "stress_score": 0.1477,
-      "regime": "low_stress"
+      "realised_vol": 0.176,
+      "corr_compression": 0.2393,
+      "stress_score": 0.483,
+      "regime": "medium"
     },
     {
       "date": "2026-03-23",
-      "realised_vol": 0.0677,
-      "corr_compression": 0.2444,
-      "stress_score": 0.1504,
-      "regime": "low_stress"
+      "realised_vol": 0.1753,
+      "corr_compression": 0.2435,
+      "stress_score": 0.4816,
+      "regime": "medium"
     },
     {
       "date": "2026-03-24",
-      "realised_vol": 0.0649,
-      "corr_compression": 0.245,
-      "stress_score": 0.1507,
-      "regime": "low_stress"
+      "realised_vol": 0.1753,
+      "corr_compression": 0.244,
+      "stress_score": 0.4818,
+      "regime": "medium"
     },
     {
       "date": "2026-03-25",
-      "realised_vol": 0.062,
-      "corr_compression": 0.2514,
-      "stress_score": 0.1547,
-      "regime": "low_stress"
+      "realised_vol": 0.1613,
+      "corr_compression": 0.2505,
+      "stress_score": 0.4018,
+      "regime": "medium"
     },
     {
       "date": "2026-03-26",
-      "realised_vol": 0.0602,
-      "corr_compression": 0.2556,
-      "stress_score": 0.1573,
-      "regime": "low_stress"
+      "realised_vol": 0.1599,
+      "corr_compression": 0.2544,
+      "stress_score": 0.3962,
+      "regime": "medium"
     },
     {
       "date": "2026-03-27",
-      "realised_vol": 0.0662,
-      "corr_compression": 0.2635,
-      "stress_score": 0.1621,
+      "realised_vol": 0.1466,
+      "corr_compression": 0.2623,
+      "stress_score": 0.3211,
       "regime": "low_stress"
     },
     {
       "date": "2026-03-30",
-      "realised_vol": 0.0659,
-      "corr_compression": 0.2609,
-      "stress_score": 0.1606,
+      "realised_vol": 0.1457,
+      "corr_compression": 0.2598,
+      "stress_score": 0.3142,
       "regime": "low_stress"
     },
     {
       "date": "2026-03-31",
-      "realised_vol": 0.0714,
-      "corr_compression": 0.2701,
-      "stress_score": 0.1662,
-      "regime": "low_stress"
+      "realised_vol": 0.1541,
+      "corr_compression": 0.2689,
+      "stress_score": 0.3701,
+      "regime": "medium"
     },
     {
       "date": "2026-04-01",
-      "realised_vol": 0.0746,
-      "corr_compression": 0.2766,
-      "stress_score": 0.1702,
-      "regime": "low_stress"
+      "realised_vol": 0.161,
+      "corr_compression": 0.2756,
+      "stress_score": 0.4158,
+      "regime": "medium"
     },
     {
       "date": "2026-04-02",
-      "realised_vol": 0.0697,
-      "corr_compression": 0.2771,
-      "stress_score": 0.1705,
-      "regime": "low_stress"
+      "realised_vol": 0.1584,
+      "corr_compression": 0.276,
+      "stress_score": 0.4001,
+      "regime": "medium"
     },
     {
       "date": "2026-04-06",
-      "realised_vol": 0.0694,
-      "corr_compression": 0.2766,
-      "stress_score": 0.1702,
-      "regime": "low_stress"
+      "realised_vol": 0.1577,
+      "corr_compression": 0.2755,
+      "stress_score": 0.3956,
+      "regime": "medium"
     },
     {
       "date": "2026-04-07",
-      "realised_vol": 0.069,
-      "corr_compression": 0.2741,
-      "stress_score": 0.1687,
-      "regime": "low_stress"
+      "realised_vol": 0.1542,
+      "corr_compression": 0.2732,
+      "stress_score": 0.3735,
+      "regime": "medium"
     },
     {
       "date": "2026-04-08",
-      "realised_vol": 0.0736,
-      "corr_compression": 0.3289,
-      "stress_score": 0.2024,
+      "realised_vol": 0.1347,
+      "corr_compression": 0.3265,
+      "stress_score": 0.2893,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-09",
-      "realised_vol": 0.0746,
-      "corr_compression": 0.3276,
-      "stress_score": 0.2016,
+      "realised_vol": 0.128,
+      "corr_compression": 0.3252,
+      "stress_score": 0.248,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-10",
-      "realised_vol": 0.076,
-      "corr_compression": 0.3298,
-      "stress_score": 0.2029,
+      "realised_vol": 0.1284,
+      "corr_compression": 0.3276,
+      "stress_score": 0.2519,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-13",
-      "realised_vol": 0.0752,
-      "corr_compression": 0.3402,
-      "stress_score": 0.2093,
+      "realised_vol": 0.1243,
+      "corr_compression": 0.338,
+      "stress_score": 0.2338,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-14",
-      "realised_vol": 0.0791,
-      "corr_compression": 0.3481,
-      "stress_score": 0.2142,
+      "realised_vol": 0.1253,
+      "corr_compression": 0.3459,
+      "stress_score": 0.2449,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-15",
-      "realised_vol": 0.0875,
-      "corr_compression": 0.3413,
-      "stress_score": 0.21,
+      "realised_vol": 0.1385,
+      "corr_compression": 0.3394,
+      "stress_score": 0.3197,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-16",
-      "realised_vol": 0.0875,
-      "corr_compression": 0.3364,
-      "stress_score": 0.207,
+      "realised_vol": 0.1392,
+      "corr_compression": 0.3346,
+      "stress_score": 0.3212,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-17",
-      "realised_vol": 0.0875,
-      "corr_compression": 0.343,
-      "stress_score": 0.2111,
+      "realised_vol": 0.1335,
+      "corr_compression": 0.3405,
+      "stress_score": 0.2903,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-20",
-      "realised_vol": 0.0872,
-      "corr_compression": 0.3454,
-      "stress_score": 0.2126,
-      "regime": "low_stress"
+      "realised_vol": 0.1522,
+      "corr_compression": 0.3414,
+      "stress_score": 0.4035,
+      "regime": "medium"
     },
     {
       "date": "2026-04-21",
-      "realised_vol": 0.0833,
-      "corr_compression": 0.3565,
-      "stress_score": 0.2194,
-      "regime": "low_stress"
+      "realised_vol": 0.1456,
+      "corr_compression": 0.3526,
+      "stress_score": 0.3709,
+      "regime": "medium"
     },
     {
       "date": "2026-04-22",
-      "realised_vol": 0.0834,
-      "corr_compression": 0.3558,
-      "stress_score": 0.2189,
-      "regime": "low_stress"
+      "realised_vol": 0.1458,
+      "corr_compression": 0.3518,
+      "stress_score": 0.3712,
+      "regime": "medium"
     },
     {
       "date": "2026-04-23",
-      "realised_vol": 0.0852,
-      "corr_compression": 0.3478,
-      "stress_score": 0.214,
-      "regime": "low_stress"
+      "realised_vol": 0.1459,
+      "corr_compression": 0.3438,
+      "stress_score": 0.3672,
+      "regime": "medium"
     },
     {
       "date": "2026-04-24",
-      "realised_vol": 0.0852,
-      "corr_compression": 0.3371,
-      "stress_score": 0.2075,
-      "regime": "low_stress"
+      "realised_vol": 0.1461,
+      "corr_compression": 0.3329,
+      "stress_score": 0.3618,
+      "regime": "medium"
     },
     {
       "date": "2026-04-27",
-      "realised_vol": 0.0829,
-      "corr_compression": 0.3374,
-      "stress_score": 0.2076,
-      "regime": "low_stress"
+      "realised_vol": 0.1526,
+      "corr_compression": 0.3332,
+      "stress_score": 0.4008,
+      "regime": "medium"
     },
     {
       "date": "2026-04-28",
-      "realised_vol": 0.0735,
-      "corr_compression": 0.3341,
-      "stress_score": 0.2056,
+      "realised_vol": 0.1332,
+      "corr_compression": 0.33,
+      "stress_score": 0.2821,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-29",
-      "realised_vol": 0.0732,
-      "corr_compression": 0.3268,
-      "stress_score": 0.2011,
+      "realised_vol": 0.1391,
+      "corr_compression": 0.323,
+      "stress_score": 0.3133,
       "regime": "low_stress"
     },
     {
       "date": "2026-04-30",
-      "realised_vol": 0.0722,
-      "corr_compression": 0.3175,
-      "stress_score": 0.1954,
+      "realised_vol": 0.135,
+      "corr_compression": 0.3137,
+      "stress_score": 0.2833,
       "regime": "low_stress"
     },
     {
       "date": "2026-05-01",
-      "realised_vol": 0.0712,
-      "corr_compression": 0.3147,
-      "stress_score": 0.1936,
+      "realised_vol": 0.1307,
+      "corr_compression": 0.311,
+      "stress_score": 0.2553,
       "regime": "low_stress"
     },
     {
       "date": "2026-05-04",
-      "realised_vol": 0.0697,
-      "corr_compression": 0.3088,
-      "stress_score": 0.19,
+      "realised_vol": 0.1318,
+      "corr_compression": 0.3051,
+      "stress_score": 0.2588,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-05-05",
+      "realised_vol": 0.1368,
+      "corr_compression": 0.3033,
+      "stress_score": 0.2873,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-05-06",
+      "realised_vol": 0.1347,
+      "corr_compression": 0.3117,
+      "stress_score": 0.2802,
+      "regime": "low_stress"
+    },
+    {
+      "date": "2026-05-07",
+      "realised_vol": 0.1351,
+      "corr_compression": 0.3067,
+      "stress_score": 0.2796,
       "regime": "low_stress"
     }
   ]

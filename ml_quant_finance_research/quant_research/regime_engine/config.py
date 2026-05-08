@@ -45,8 +45,11 @@ EW_RATE_REPRICE_WINDOW   = 28    # days
 EW_TRIGGER_COUNT         = 2     # how many EW signals must fire to raise warning
 
 # ── Output / Cache ───────────────────────────────────────────────────────────
-REGIME_DB_PATH     = "data/regime_history.csv"
-REGIME_STATE_PATH  = "data/regime_state.json"
+import os
+_base = os.path.join(os.path.dirname(__file__), "data")
+
+REGIME_DB_PATH     = os.path.join(_base, "regime_history.csv")
+REGIME_STATE_PATH  = os.path.join(_base, "regime_state.json")
 LOOKBACK_DAYS      = 504   # match main engine
-FRED_CACHE_PATH    = "data/fred_cache.csv"
+FRED_CACHE_PATH    = os.path.join(_base, "fred_cache.csv")
 FRED_CACHE_TTL_HRS = 6     # refresh FRED data every 6 hours

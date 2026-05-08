@@ -89,11 +89,14 @@ SECTOR_DRIFT_WINDOWS = {
 }
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-PEAD_DB_PATH         = "data/pead_setups.csv"
-PEAD_STATE_PATH      = "data/pead_state.json"
-EARNINGS_CACHE_PATH  = "data/earnings_cache.csv"
-PRICE_CACHE_PATH     = "data/pead_prices.csv"
-REGRESSION_CACHE_PATH = "data/regression_models.json"
+import os
+_base = os.path.join(os.path.dirname(__file__), "data")
+
+PEAD_DB_PATH         = os.path.join(_base, "pead_setups.csv")
+PEAD_STATE_PATH      = os.path.join(_base, "pead_state.json")
+EARNINGS_CACHE_PATH  = os.path.join(_base, "earnings_cache.csv")
+PRICE_CACHE_PATH     = os.path.join(_base, "pead_prices.csv")
+REGRESSION_CACHE_PATH = os.path.join(_base, "regression_models.json")
 
 EARNINGS_CACHE_TTL_HRS = 12   # refresh earnings calendar every 12 hours
 PRICE_CACHE_TTL_HRS    = 6

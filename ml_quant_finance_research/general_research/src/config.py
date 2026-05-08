@@ -11,7 +11,7 @@ import importlib.util
 # Use dynamic loading to import from the portfolio layer without
 # causing sys.path conflicts or circular imports (since both are src.config).
 _portfolio_config_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', '..', 'portfolio', 'src', 'config.py')
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'portfolio', 'src', 'config.py')
 )
 _spec = importlib.util.spec_from_file_location("portfolio_config", _portfolio_config_path)
 _portfolio_config = importlib.util.module_from_spec(_spec)

@@ -123,8 +123,9 @@ def _attach_regime_labels(setups_df):
     Non-fatal — PEAD runs fine without regime context.
     """
     import os, sys
-    regime_state_path = "../regime_engine/data/regime_state.json"
-    regime_history_path = "../regime_engine/data/regime_history.csv"
+    base_dir = os.path.dirname(__file__)
+    regime_state_path = os.path.join(base_dir, "..", "regime_engine", "data", "regime_state.json")
+    regime_history_path = os.path.join(base_dir, "..", "regime_engine", "data", "regime_history.csv")
 
     if not os.path.exists(regime_history_path):
         log.info("  Regime history not found — skipping regime tagging (run regime_engine first)")
