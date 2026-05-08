@@ -131,9 +131,10 @@ def _attach_regime_labels(setups_df):
         return
 
     try:
-        sys.path.insert(0, "../regime_engine")
-        from regime_db import load_regime_history
-        regime = load_regime_history()[["regime_risk", "regime_rates", "regime_growth", "regime_composite"]]
+        import pandas as pd
+        # Read the CSV directly to avoid sys.path manipulation and module collisions
+        regime = pd.read_csv(regime_history_path, index_col=0, parse_dates=True)
+        regime = regime[["regime_risk", "regime_rates", "regime_growth", "regime_composite"]]
 
         setups_df["earnings_date_ts"] = pd.to_datetime(setups_df["earnings_date"])
         # Join on nearest date
@@ -156,16 +157,16 @@ def _print_summary(state: dict) -> None:
     """Prints human-readable PEAD summary."""
     import pandas as pd
 
-    print("\n" + "─" * 60)
+    print("\n" + "-" * 60)
     print(f"  PEAD ENGINE SUMMARY — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("─" * 60)
+    print("-" * 60)
 
     active = state.get("active_setups", [])
     if active:
-        print(f"\n  🎯 ACTIVE SETUPS ({len(active)}) — Enter within next 3 days:\n")
+        print(f"\n  [ACTIVE SETUPS] ({len(active)}) — Enter within next 3 days:\n")
         for s in active:
-            icon = "📈" if s["direction"] == "bullish" else "📉"
-            ew   = "⚡" if s.get("underreaction") else "  "
+            icon = "[BULL]" if s["direction"] == "bullish" else "[BEAR]"
+            ew   = "[!]" if s.get("underreaction") else "   "
             print(f"  {icon} {ew} {s['ticker']:<10} {s['quality']:<8} "
                   f"Surprise: {s['surprise_pct']:+.1f}%  "
                   f"Entry: {s['entry_date']}  "
@@ -175,7 +176,7 @@ def _print_summary(state: dict) -> None:
 
     perf = state.get("performance", {})
     if perf.get("total_setups"):
-        print(f"\n  📊 PERFORMANCE (all-time, {perf['total_setups']} setups):")
+        print(f"\n  [PERFORMANCE] (all-time, {perf['total_setups']} setups):")
         print(f"     Overall 21d hit rate : {_fmt_pct(perf.get('overall_hit_rate_21d'))}")
         print(f"     Overall avg drift 21d: {_fmt_pct(perf.get('overall_avg_drift_21d'), is_return=True)}")
         print(f"     High quality 21d HR  : {_fmt_pct(perf.get('high_hit_rate_21d'))}")
@@ -187,7 +188,7 @@ def _print_summary(state: dict) -> None:
                 regime_name = key.replace("hit_rate_21d_", "").title()
                 print(f"     {regime_name:<20} 21d HR: {_fmt_pct(val)}")
 
-    print("\n" + "─" * 60 + "\n")
+    print("\n" + "-" * 60 + "\n")
 
 
 def _fmt_pct(val, is_return=False) -> str:

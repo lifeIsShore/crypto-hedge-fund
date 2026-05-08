@@ -1,0 +1,185 @@
+{
+  "generated_at": "2026-05-08T12:17:02.153822",
+  "active_setups": [],
+  "recent_setups": [
+    {
+      "ticker": "MRK",
+      "direction": "bullish",
+      "quality": "High",
+      "surprise_pct": 13.15,
+      "drift_21d": -6.42,
+      "drift_63d": null
+    },
+    {
+      "ticker": "NKE",
+      "direction": "bullish",
+      "quality": "Medium",
+      "surprise_pct": 24.27,
+      "drift_21d": -24.642,
+      "drift_63d": null
+    },
+    {
+      "ticker": "GOOGL",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 91.59,
+      "drift_21d": 29.577,
+      "drift_63d": null
+    },
+    {
+      "ticker": "BA",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 70.26,
+      "drift_21d": 6.282,
+      "drift_63d": null
+    },
+    {
+      "ticker": "AMZN",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 68.18,
+      "drift_21d": 29.69,
+      "drift_63d": null
+    },
+    {
+      "ticker": "META",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 56.79,
+      "drift_21d": 6.258,
+      "drift_63d": null
+    },
+    {
+      "ticker": "MU",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 33.21,
+      "drift_21d": -8.578,
+      "drift_63d": null
+    },
+    {
+      "ticker": "LLY",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 25.9,
+      "drift_21d": 3.458,
+      "drift_63d": null
+    },
+    {
+      "ticker": "TXN",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 22.76,
+      "drift_21d": 44.142,
+      "drift_63d": null
+    },
+    {
+      "ticker": "CAT",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 19.3,
+      "drift_21d": 22.2,
+      "drift_63d": null
+    },
+    {
+      "ticker": "SPOT",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 17.99,
+      "drift_21d": -10.371,
+      "drift_63d": null
+    },
+    {
+      "ticker": "TSLA",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 17.15,
+      "drift_21d": 8.852,
+      "drift_63d": null
+    },
+    {
+      "ticker": "RTX",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 16.95,
+      "drift_21d": -11.88,
+      "drift_63d": null
+    },
+    {
+      "ticker": "GE",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 16.31,
+      "drift_21d": -0.228,
+      "drift_63d": null
+    },
+    {
+      "ticker": "SBUX",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 14.51,
+      "drift_21d": 16.156,
+      "drift_63d": null
+    },
+    {
+      "ticker": "MS",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 13.66,
+      "drift_21d": 13.998,
+      "drift_63d": null
+    },
+    {
+      "ticker": "UNH",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 9.52,
+      "drift_21d": 33.719,
+      "drift_63d": null
+    },
+    {
+      "ticker": "BAC",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 8.78,
+      "drift_21d": 5.691,
+      "drift_63d": null
+    },
+    {
+      "ticker": "AMGN",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 8.04,
+      "drift_21d": -6.924,
+      "drift_63d": null
+    },
+    {
+      "ticker": "JPM",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 7.78,
+      "drift_21d": 4.964,
+      "drift_63d": null
+    }
+  ],
+  "performance": {
+    "total_setups": 159,
+    "high_quality_setups": 2,
+    "medium_quality_setups": 11,
+    "overall_avg_drift_21d": 4.084,
+    "overall_avg_drift_63d": 4.094,
+    "overall_hit_rate_21d": 0.61,
+    "high_avg_drift_21d": -6.42,
+    "high_avg_drift_63d": null,
+    "high_hit_rate_21d": 0.0,
+    "bullish_avg_drift_21d": 5.076,
+    "bearish_avg_drift_21d": -3.226,
+    "stats_computed_at": "2026-05-08T12:17:02.147402",
+    "hit_rate_21d_slowdown": 0.714,
+    "avg_drift_21d_slowdown": 9.919,
+    "hit_rate_21d_expansion": 0.0,
+    "avg_drift_21d_expansion": -12.384
+  },
+  "total_in_db": 159
+}

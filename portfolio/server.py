@@ -178,6 +178,110 @@ def start_scheduler():
     
     return scheduler
 
+# --- PEAD / QUANT RESEARCH ENDPOINTS ---
+
+@app.route('/api/run_pead_engine', methods=['POST'])
+def run_pead_engine():
+    """
+    Runs the PEAD engine with the options sent in the JSON body.
+    Body (all optional):
+      { "refresh": bool, "backfill": bool, "lookback": int, "outcomes_only": bool }
+    """
+    try:
+        body      = request.get_json(silent=True) or {}
+        refresh   = bool(body.get('refresh', False))
+        backfill  = bool(body.get('backfill', False))
+        lookback  = int(body.get('lookback', 90))
+        outcomes  = bool(body.get('outcomes_only', False))
+
+        cmd = ['python', 'run_engine.py']
+        if refresh:  cmd.append('--refresh')
+        if backfill: cmd.append('--backfill')
+        if outcomes: cmd.append('--outcomes')
+        cmd += ['--lookback', str(lookback)]
+
+        pead_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'ml_quant_finance_research', 'quant_research', 'pead_engine'
+        )
+
+        print(f"[PEAD ENGINE] Running: {' '.join(cmd)} in {pead_dir}")
+        import os
+        env = dict(os.environ)
+        env["PYTHONUTF8"] = "1"
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=300,
+            text=True,
+            cwd=pead_dir,
+            encoding='utf-8',
+            env=env,
+        )
+
+        stdout = result.stdout or ''
+        stderr = result.stderr or ''
+
+        if result.returncode == 0:
+            state_path = os.path.join(pead_dir, 'data', 'pead_state.json')
+            pead_state = None
+            if os.path.exists(state_path):
+                try:
+                    import re as _re
+                    with open(state_path, 'r', encoding='utf-8') as f:
+                        raw = _re.sub(r'\bNaN\b', 'null', f.read())
+                        pead_state = json.loads(raw)
+                except Exception as e:
+                    print(f"[PEAD ENGINE] Could not read pead_state.json: {e}")
+            return jsonify({'success': True, 'log': stdout + stderr, 'pead_state': pead_state})
+        else:
+            print(f"[PEAD ENGINE] Failed (rc={result.returncode}): {stderr}")
+            return jsonify({'success': False, 'error': stderr or stdout or 'Unknown error', 'log': stdout + stderr}), 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'PEAD engine timed out (>5 min)'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/run_regime_engine', methods=['POST'])
+def run_regime_engine():
+    """Runs the regime engine. Pass { "backfill": true } to rebuild from scratch."""
+    try:
+        body     = request.get_json(silent=True) or {}
+        backfill = bool(body.get('backfill', False))
+
+        cmd = ['python', 'run_engine.py']
+        if backfill: cmd.append('--backfill')
+
+        regime_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'ml_quant_finance_research', 'quant_research', 'regime_engine'
+        )
+
+        import os
+        env = dict(os.environ)
+        env["PYTHONUTF8"] = "1"
+
+        result = subprocess.run(
+            cmd, capture_output=True, timeout=180,
+            text=True, cwd=regime_dir, encoding='utf-8', env=env,
+        )
+        stdout = result.stdout or ''
+        stderr = result.stderr or ''
+        return jsonify({
+            'success': result.returncode == 0,
+            'log':     stdout + stderr,
+            'error':   stderr if result.returncode != 0 else None,
+        }), 200 if result.returncode == 0 else 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'Regime engine timed out (>3 min)'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # --- RESEARCH LAYER ENDPOINTS ---
 
 @app.route('/data/research_state.json', methods=['GET'])
@@ -189,7 +293,7 @@ def get_research_state():
     """
     RESEARCH_OUTPUTS = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        '..', 'research', 'outputs'
+        '..', 'ml_quant_finance_research', 'general_research', 'outputs'
     )
 
     files = {

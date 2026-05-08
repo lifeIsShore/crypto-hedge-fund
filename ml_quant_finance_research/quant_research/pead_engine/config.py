@@ -36,6 +36,7 @@ PEAD_UNIVERSE = [
 # Minimum EPS surprise % to qualify as a meaningful beat
 EPS_SURPRISE_BEAT_MIN    =  5.0   # +5% beat minimum
 EPS_SURPRISE_MISS_MAX    = -5.0   # -5% miss minimum
+EPS_SURPRISE_MAX_VALID   = 200.0  # cap — above this the % is mathematically meaningless
 
 # Revenue surprise threshold (weaker signal alone, strong in combination)
 REV_SURPRISE_BEAT_MIN    =  3.0   # +3% revenue beat

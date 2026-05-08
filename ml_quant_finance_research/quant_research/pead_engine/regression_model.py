@@ -24,6 +24,7 @@ from config import (
     REGRESSION_LOOKBACK_QUARTERS,
     UNDERREACTION_MARGIN_PCT,
     REGRESSION_CACHE_PATH,
+    EPS_SURPRISE_MAX_VALID,
 )
 
 
@@ -101,6 +102,11 @@ def fit_regression(ticker: str, earnings_df: pd.DataFrame, prices_df: pd.DataFra
         return None
 
     obs_df = pd.DataFrame(observations)
+    obs_df = obs_df[obs_df["surprise_pct"].abs() <= EPS_SURPRISE_MAX_VALID]
+    if len(obs_df) < MIN_QUARTERS_FOR_REGRESSION:
+        log.debug(f"  {ticker}: only {len(obs_df)} valid observations after capping. Skipping.")
+        return None
+
     x = obs_df["surprise_pct"].values
     y = obs_df["same_day_return"].values
 

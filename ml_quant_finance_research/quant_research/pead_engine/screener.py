@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 from config import (
     EPS_SURPRISE_BEAT_MIN, EPS_SURPRISE_MISS_MAX,
+    EPS_SURPRISE_MAX_VALID,
     REV_SURPRISE_BEAT_MIN,
     VOLUME_CONFIRMATION_MULTIPLE,
     ENTRY_DAYS_AFTER_EARNINGS,
@@ -51,18 +52,18 @@ def _volume_confirmed(ticker: str, earnings_date: pd.Timestamp) -> bool:
     """
     vol = get_volume_data(ticker, lookback_days=30)
     if vol.empty or len(vol) < 5:
-        return True  # insufficient data → don't penalise
+        return False  # insufficient data → treat as unconfirmed
 
     # Find earnings day volume
     e_matches = vol.index[vol.index >= earnings_date.normalize()]
     if not len(e_matches):
-        return True
+        return False
 
     e_vol  = vol[e_matches[0]]
     avg_20 = vol[vol.index < e_matches[0]].tail(20).mean()
 
     if pd.isna(avg_20) or avg_20 == 0:
-        return True
+        return False
 
     return float(e_vol) >= float(avg_20) * VOLUME_CONFIRMATION_MULTIPLE
 
@@ -132,6 +133,10 @@ def screen_recent_earnings(
 
         surprise     = float(surprise)
         rev_surprise = float(rev_surprise) if not pd.isna(rev_surprise) else None
+
+        # Skip nonsense surprise values (loss→profit flips etc.)
+        if abs(surprise) > EPS_SURPRISE_MAX_VALID:
+            continue
 
         # ── Step 1: EPS surprise threshold ───────────────────────────────────
         is_beat = surprise >= EPS_SURPRISE_BEAT_MIN
