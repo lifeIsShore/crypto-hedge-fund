@@ -12,7 +12,8 @@
 #                SAP.DE, ALV.DE, SIE.DE, BAYN.DE, BMW.DE, DTE.DE, BAS.DE, MBG.DE, ADS.DE, MUV2.DE,
 #                DBK.DE, ENR.DE, IFX.DE, VOW3.DE, RWE.DE,
 #                V, JPM, UNH, JNJ, PFE, LLY, KO, MCD, WMT, BA, CAT,
-#                EUNL.DE, VUSA.DE, EXS1.DE, EXXT.DE, SPPW.DE, ZPRV.DE
+#                EUNL.DE, VUSA.DE, EXS1.DE, EXXT.DE, SPPW.DE, ZPRV.DE,
+#                ATAI
 # CASH is only used for Deposit/Dividend/Fee actions
 #
 # EXAMPLES:
@@ -34,3 +35,5 @@ Date,Action,Ticker,Quantity,Price,Total,Notes
 2026-04-08,Buy,TSLA,0.078876,316.95,24.9997482,
 2026-04-08,Fee,CASH,,,1,
 2026-04-27,Deposit,CASH,,,200,
+2026-05-08,Buy,ATAI,14,3.47,48.580000000000005,
+2026-05-08,Fee,CASH,,,1,Trading fee

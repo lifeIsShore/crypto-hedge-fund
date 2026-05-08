@@ -1,0 +1,399 @@
+<!-- ── BENCHMARK COMPARISON ───────────────────────────── -->
+
+<style>
+  .bm-section { border:1px solid var(--border); background:var(--surface); margin-bottom:10px; overflow:hidden; }
+  .bm-header  { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; user-select:none; transition:background .15s; }
+  .bm-header:hover { background:var(--surface2); }
+  .bm-title   { display:flex; align-items:center; gap:10px; font-size:10px; letter-spacing:.1em; color:var(--text); }
+  .bm-meta    { display:flex; align-items:center; gap:8px; }
+  .bm-body    { border-top:1px solid var(--border); padding:16px; display:none; }
+  .bm-body.open { display:block; }
+  .bm-chevron { font-size:10px; color:var(--muted); transition:transform .2s; }
+  .bm-chevron.open { transform:rotate(180deg); }
+
+  .bm-grid    { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-bottom:14px; }
+  .bm-kpi     { background:var(--surface2); border:1px solid var(--border); padding:10px 12px; }
+  .bm-kpi-lbl { font-size:9px; color:var(--muted); letter-spacing:.08em; margin-bottom:4px; }
+  .bm-kpi-val { font-size:16px; font-weight:600; line-height:1.1; }
+  .bm-kpi-sub { font-size:9px; color:var(--muted); margin-top:3px; }
+
+  .bm-bar-row  { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(30,37,53,.5); }
+  .bm-bar-row:last-child { border-bottom:none; }
+  .bm-bar-name  { font-size:10px; width:160px; flex-shrink:0; color:var(--text); }
+  .bm-bar-track { flex:1; height:7px; background:var(--surface2); overflow:hidden; border:1px solid var(--border); }
+  .bm-bar-fill  { height:100%; transition:width .6s ease; }
+  .bm-bar-val   { font-size:10px; font-weight:500; width:52px; text-align:right; }
+  .bm-bar-vs    { font-size:9px; width:72px; text-align:right; }
+
+  .bm-col-hdr { display:flex; align-items:center; gap:10px; padding:0 0 6px; }
+  .bm-ch      { font-size:9px; color:var(--muted); letter-spacing:.06em; }
+  .bm-note    { background:var(--surface2); border-left:2px solid var(--amber); padding:8px 12px; font-size:10px; color:var(--muted); line-height:1.6; margin-top:12px; }
+
+  .your-port  { display:flex; align-items:center; gap:6px; font-size:9px; color:var(--blue); }
+  .your-dot   { width:7px; height:7px; background:var(--blue); flex-shrink:0; }
+</style>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+  <div>
+    <div style="font-size:12px;letter-spacing:.1em;color:#fff;margin-bottom:2px;">BENCHMARK COMPARISON</div>
+    <div style="font-size:9px;color:var(--muted);">Your portfolio vs major indices & strategies · click any section to expand</div>
+  </div>
+  <div class="your-port"><div class="your-dot"></div>YOUR PORTFOLIO · €96 INVESTED · 38d</div>
+</div>
+
+<!-- 01 BROAD MARKET -->
+<div class="bm-section" id="bm-broad">
+  <div class="bm-header" onclick="bmToggle('broad')">
+    <div class="bm-title">01 · BROAD MARKET INDICES <span class="tag tag-muted">S&P 500 · NASDAQ · MSCI WORLD · DAX</span></div>
+    <div class="bm-meta"><span class="tag tag-blue">MOST IMPORTANT</span><span class="bm-chevron" id="ch-broad">▼</span></div>
+  </div>
+  <div class="bm-body open" id="bb-broad">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">YOUR RETURN</div><div class="bm-kpi-val" style="color:var(--blue)" id="bm-own-ret">—</div><div class="bm-kpi-sub">since first buy</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">S&P 500 (YTD)</div><div class="bm-kpi-val" style="color:var(--red)">–4.7%</div><div class="bm-kpi-sub">tariff shock YTD</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">NASDAQ 100 (YTD)</div><div class="bm-kpi-val" style="color:var(--red)">–6.1%</div><div class="bm-kpi-sub">tech-heavy drag</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">MSCI WORLD (YTD)</div><div class="bm-kpi-val" style="color:var(--red)">–3.9%</div><div class="bm-kpi-sub">global equities</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">DAX 40 (YTD)</div><div class="bm-kpi-val" style="color:var(--amber)">–1.8%</div><div class="bm-kpi-sub">European outperform</div></div>
+    </div>
+    <div class="bm-col-hdr">
+      <div style="width:160px" class="bm-ch">INDEX</div>
+      <div style="flex:1" class="bm-ch">relative bar</div>
+      <div style="width:52px;text-align:right" class="bm-ch">YTD</div>
+      <div style="width:72px;text-align:right" class="bm-ch">vs yours</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name" style="color:var(--blue);font-weight:500">▶ YOUR PORTFOLIO</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" id="bar-own" style="background:var(--blue);width:0%"></div></div>
+      <div class="bm-bar-val" style="color:var(--blue)" id="bm-bar-own-val">—</div>
+      <div class="bm-bar-vs"><span class="tag tag-muted">BASELINE</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">S&P 500 (SPX)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:47%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–4.7%</div>
+      <div class="bm-bar-vs" id="bm-vs-sp500">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Nasdaq 100 (QQQ)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:61%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–6.1%</div>
+      <div class="bm-bar-vs" id="bm-vs-qqq">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">MSCI World (URTH)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:39%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–3.9%</div>
+      <div class="bm-bar-vs" id="bm-vs-msci">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">DAX 40</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:18%"></div></div>
+      <div class="bm-bar-val" style="color:var(--amber)">–1.8%</div>
+      <div class="bm-bar-vs" id="bm-vs-dax">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">EURO STOXX 50</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:22%"></div></div>
+      <div class="bm-bar-val" style="color:var(--amber)">–2.2%</div>
+      <div class="bm-bar-vs" id="bm-vs-stoxx">—</div>
+    </div>
+    <div class="bm-note">⚠ YTD figures are approximate for 2026 (Jan 1 → May 7). The Apr 8 tariff shock dragged most indices. Your portfolio started Mar 30 so it absorbed the shock directly.</div>
+  </div>
+</div>
+
+<!-- 02 MAG 7 -->
+<div class="bm-section" id="bm-mag7">
+  <div class="bm-header" onclick="bmToggle('mag7')">
+    <div class="bm-title">02 · MAGNIFICENT 7 <span class="tag tag-muted">AAPL · MSFT · AMZN · NVDA · GOOGL · META · TSLA</span></div>
+    <div class="bm-meta"><span class="tag tag-amber">YOU HOLD 2 OF 7</span><span class="bm-chevron" id="ch-mag7">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-mag7">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">MAG7 AVG YTD</div><div class="bm-kpi-val" style="color:var(--red)">–9.4%</div><div class="bm-kpi-sub">equal-weight avg</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">TSLA (YOURS)</div><div class="bm-kpi-val" style="color:var(--red)">–29%</div><div class="bm-kpi-sub">worst Mag7 YTD</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">AMZN (YOURS)</div><div class="bm-kpi-val" style="color:var(--red)">–16%</div><div class="bm-kpi-sub">AWS concerns</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">BEST MAG7 YTD</div><div class="bm-kpi-val" style="color:var(--accent)">META +1%</div><div class="bm-kpi-sub">only green in group</div></div>
+    </div>
+    <div class="bm-col-hdr">
+      <div style="width:160px" class="bm-ch">STOCK</div>
+      <div style="flex:1" class="bm-ch">YTD performance bar</div>
+      <div style="width:52px;text-align:right" class="bm-ch">YTD</div>
+      <div style="width:72px;text-align:right" class="bm-ch">in portfolio?</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">META Platforms</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:10%"></div></div>
+      <div class="bm-bar-val" style="color:var(--accent)">+1.0%</div>
+      <div class="bm-bar-vs"><span class="tag tag-muted">NOT HELD</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Alphabet (GOOGL)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:18%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–18%</div>
+      <div class="bm-bar-vs"><span class="tag tag-muted">NOT HELD</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Microsoft (APC.DE*)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:7%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–7%</div>
+      <div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD*</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Apple (MSF.DE*)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:11%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–11%</div>
+      <div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD*</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Amazon (AMZN)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--red);width:16%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–16%</div>
+      <div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">NVIDIA (NVDA)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:20%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–20%</div>
+      <div class="bm-bar-vs"><span class="tag tag-muted">NOT HELD</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">Tesla (TSLA)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--red);width:29%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–29%</div>
+      <div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD</span></div>
+    </div>
+    <div class="bm-note">* APC.DE = Apple on XETRA · MSF.DE = Microsoft on XETRA. You effectively hold 4 of the Mag7 via Xetra-listed shares. XETRA versions also carry EUR/USD FX impact on top of the stock move.</div>
+  </div>
+</div>
+
+<!-- 03 TECH ETFs -->
+<div class="bm-section" id="bm-tech">
+  <div class="bm-header" onclick="bmToggle('tech')">
+    <div class="bm-title">03 · TECH SECTOR ETFs <span class="tag tag-muted">QQQ · XLK · VGT · SOXX · ARKK</span></div>
+    <div class="bm-meta"><span class="tag tag-amber">YOUR PORT. IS 100% TECH</span><span class="bm-chevron" id="ch-tech">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-tech">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">QQQ NASDAQ ETF</div><div class="bm-kpi-val" style="color:var(--red)">–6.1%</div><div class="bm-kpi-sub">YTD 2026</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">XLK TECH SELECT</div><div class="bm-kpi-val" style="color:var(--red)">–7.3%</div><div class="bm-kpi-sub">S&P tech sector</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">VGT VANGUARD TECH</div><div class="bm-kpi-val" style="color:var(--red)">–7.1%</div><div class="bm-kpi-sub">broad tech</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">SOXX SEMIS</div><div class="bm-kpi-val" style="color:var(--red)">–14%</div><div class="bm-kpi-sub">semiconductors</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">ARKK INNOVATION</div><div class="bm-kpi-val" style="color:var(--red)">–22%</div><div class="bm-kpi-sub">disruptive tech</div></div>
+    </div>
+    <div class="bm-col-hdr">
+      <div style="width:160px" class="bm-ch">ETF / FUND</div>
+      <div style="flex:1" class="bm-ch">YTD bar</div>
+      <div style="width:52px;text-align:right" class="bm-ch">YTD</div>
+      <div style="width:72px;text-align:right" class="bm-ch">vs yours</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name" style="color:var(--blue);font-weight:500">▶ YOUR PORTFOLIO</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" id="bar-tech-own" style="background:var(--blue);width:0%"></div></div>
+      <div class="bm-bar-val" style="color:var(--blue)" id="bm-bar-tech-own">—</div>
+      <div class="bm-bar-vs"><span class="tag tag-muted">BASELINE</span></div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">QQQ (Nasdaq 100)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:28%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–6.1%</div>
+      <div class="bm-bar-vs" id="bm-vs-qqq2">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">XLK (Tech Select)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:33%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–7.3%</div>
+      <div class="bm-bar-vs" id="bm-vs-xlk">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">VGT (Vanguard Tech)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:32%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–7.1%</div>
+      <div class="bm-bar-vs" id="bm-vs-vgt">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">SOXX (Semiconductors)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:64%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–14%</div>
+      <div class="bm-bar-vs" id="bm-vs-soxx">—</div>
+    </div>
+    <div class="bm-bar-row">
+      <div class="bm-bar-name">ARKK (Innovation)</div>
+      <div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--red);width:100%"></div></div>
+      <div class="bm-bar-val" style="color:var(--red)">–22%</div>
+      <div class="bm-bar-vs" id="bm-vs-arkk">—</div>
+    </div>
+    <div class="bm-note">Your portfolio is 100% tech/growth with no defensive cushion. Consider adding EUNL.DE or ALV.DE from your allowed tickers to reduce concentration.</div>
+  </div>
+</div>
+
+<!-- 04 RISK-ADJUSTED -->
+<div class="bm-section" id="bm-sharpe">
+  <div class="bm-header" onclick="bmToggle('sharpe')">
+    <div class="bm-title">04 · RISK-ADJUSTED COMPARISON <span class="tag tag-muted">SHARPE · BETA · VOLATILITY</span></div>
+    <div class="bm-meta"><span class="tag tag-red">DATA TOO SHORT</span><span class="bm-chevron" id="ch-sharpe">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-sharpe">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">YOUR SHARPE</div><div class="bm-kpi-val" style="color:var(--amber)" id="bm-sharpe-yours">—</div><div class="bm-kpi-sub">38d window · unreliable</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">S&P 500 SHARPE</div><div class="bm-kpi-val" style="color:var(--amber)">0.65</div><div class="bm-kpi-sub">1Y rolling avg</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">QQQ SHARPE</div><div class="bm-kpi-val" style="color:var(--amber)">0.58</div><div class="bm-kpi-sub">1Y rolling avg</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">WORLD-CLASS HF</div><div class="bm-kpi-val" style="color:var(--accent)">1.5–2.5</div><div class="bm-kpi-sub">top quant funds</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">YOUR BETA</div><div class="bm-kpi-val" style="color:var(--amber)" id="bm-beta-yours">—</div><div class="bm-kpi-sub">vs SPX · unreliable</div></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);padding:14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px;">SHARPE RATIO BENCHMARK TABLE (1-YEAR REFERENCE)</div>
+      <div class="bm-bar-row" style="padding:5px 0;"><div class="bm-bar-name">Berkshire Hathaway</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:35%"></div></div><div class="bm-bar-val" style="color:var(--accent)">0.87</div><div class="bm-bar-vs"><span class="tag tag-green">SOLID</span></div></div>
+      <div class="bm-bar-row" style="padding:5px 0;"><div class="bm-bar-name">S&P 500 (1Y avg)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:26%"></div></div><div class="bm-bar-val" style="color:var(--accent)">0.65</div><div class="bm-bar-vs"><span class="tag tag-green">MARKET</span></div></div>
+      <div class="bm-bar-row" style="padding:5px 0;"><div class="bm-bar-name">Ray Dalio All-Weather</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:48%"></div></div><div class="bm-bar-val" style="color:var(--accent)">1.20</div><div class="bm-bar-vs"><span class="tag tag-green">EXCELLENT</span></div></div>
+      <div class="bm-bar-row" style="padding:5px 0;"><div class="bm-bar-name">Renaissance Medallion</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:100%"></div></div><div class="bm-bar-val" style="color:var(--accent)">~2.5</div><div class="bm-bar-vs"><span class="tag tag-green">LEGENDARY</span></div></div>
+      <div class="bm-bar-row" style="padding:5px 0;"><div class="bm-bar-name" style="color:var(--amber)">Your dashboard shows</div><div class="bm-bar-track"><div class="bm-bar-fill" id="bar-sharpe-yours" style="background:var(--amber);width:0%"></div></div><div class="bm-bar-val" style="color:var(--amber)" id="bm-bar-sharpe-val">—</div><div class="bm-bar-vs"><span class="tag tag-amber">38D NOISE</span></div></div>
+    </div>
+    <div class="bm-note">⚠ A Sharpe of 6.0 on 38 days is statistically meaningless — it will normalise to 0.5–1.5 range once you have 252+ trading days. Compare back here after Jun 2026.</div>
+  </div>
+</div>
+
+<!-- 05 PASSIVE PORTFOLIOS -->
+<div class="bm-section" id="bm-passive">
+  <div class="bm-header" onclick="bmToggle('passive')">
+    <div class="bm-title">05 · PASSIVE / LAZY PORTFOLIOS <span class="tag tag-muted">60/40 · ALL-WEATHER · 3-FUND</span></div>
+    <div class="bm-meta"><span class="tag tag-muted">STRATEGY CONTEXT</span><span class="bm-chevron" id="ch-passive">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-passive">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">60/40 YTD</div><div class="bm-kpi-val" style="color:var(--amber)">–2.8%</div><div class="bm-kpi-sub">stocks + bonds</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">ALL-WEATHER YTD</div><div class="bm-kpi-val" style="color:var(--amber)">–1.2%</div><div class="bm-kpi-sub">Dalio risk parity</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">3-FUND BOGLE YTD</div><div class="bm-kpi-val" style="color:var(--amber)">–3.1%</div><div class="bm-kpi-sub">US+Intl+Bonds</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">EUNL.DE (MSCI W)</div><div class="bm-kpi-val" style="color:var(--amber)">–3.9%</div><div class="bm-kpi-sub">in your ticker list</div></div>
+    </div>
+    <div class="bm-bar-row"><div class="bm-bar-name" style="color:var(--blue);font-weight:500">▶ YOUR PORTFOLIO</div><div class="bm-bar-track"><div class="bm-bar-fill" id="bar-pass-own" style="background:var(--blue);width:0%"></div></div><div class="bm-bar-val" style="color:var(--blue)" id="bm-bar-pass-own">—</div><div class="bm-bar-vs"><span class="tag tag-amber">CONCENTRATED</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">60/40 Classic</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:20%"></div></div><div class="bm-bar-val" style="color:var(--amber)">–2.8%</div><div class="bm-bar-vs" id="bm-vs-6040">—</div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">All-Weather (Dalio)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:9%"></div></div><div class="bm-bar-val" style="color:var(--amber)">–1.2%</div><div class="bm-bar-vs" id="bm-vs-aw">—</div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">3-Fund (Bogle)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:22%"></div></div><div class="bm-bar-val" style="color:var(--amber)">–3.1%</div><div class="bm-bar-vs" id="bm-vs-3fund">—</div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">EUNL.DE (MSCI World)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:28%"></div></div><div class="bm-bar-val" style="color:var(--amber)">–3.9%</div><div class="bm-bar-vs" id="bm-vs-eunl">—</div></div>
+    <div class="bm-note">All-Weather held up best in 2026's tariff shock thanks to gold + bond exposure. EUNL.DE is already in your allowed ticker list — a natural hedge for your €200 cash.</div>
+  </div>
+</div>
+
+<!-- 06 XETRA CONTEXT -->
+<div class="bm-section" id="bm-xetra">
+  <div class="bm-header" onclick="bmToggle('xetra')">
+    <div class="bm-title">06 · XETRA / GERMAN MARKET CONTEXT <span class="tag tag-muted">APC.DE · MSF.DE · SAP.DE · ALV.DE</span></div>
+    <div class="bm-meta"><span class="tag tag-blue">YOU HOLD 2 XETRA</span><span class="bm-chevron" id="ch-xetra">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-xetra">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">APC.DE (YOUR APPLE)</div><div class="bm-kpi-val" style="color:var(--amber)">~–11%</div><div class="bm-kpi-sub">XETRA · YTD approx</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">MSF.DE (YOUR MSFT)</div><div class="bm-kpi-val" style="color:var(--amber)">~–7%</div><div class="bm-kpi-sub">XETRA · YTD approx</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">SAP.DE</div><div class="bm-kpi-val" style="color:var(--accent)">+4%</div><div class="bm-kpi-sub">European tech winner</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">DAX 40 YTD</div><div class="bm-kpi-val" style="color:var(--amber)">–1.8%</div><div class="bm-kpi-sub">XETRA outperforms</div></div>
+    </div>
+    <div class="bm-bar-row"><div class="bm-bar-name">SAP.DE (European tech)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:40%"></div></div><div class="bm-bar-val" style="color:var(--accent)">+4%</div><div class="bm-bar-vs"><span class="tag tag-muted">NOT HELD</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">ALV.DE (Allianz)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:20%"></div></div><div class="bm-bar-val" style="color:var(--accent)">+2%</div><div class="bm-bar-vs"><span class="tag tag-muted">NOT HELD</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">MSF.DE (your MSFT)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:35%"></div></div><div class="bm-bar-val" style="color:var(--amber)">~–7%</div><div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">APC.DE (your Apple)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--muted);width:55%"></div></div><div class="bm-bar-val" style="color:var(--red)">~–11%</div><div class="bm-bar-vs"><span class="tag tag-blue">YOU HOLD</span></div></div>
+    <div class="bm-note">Xetra-listed US stocks carry EUR/USD FX risk on top of the share price move. SAP.DE and ALV.DE are EUR-native and avoid this FX drag entirely.</div>
+  </div>
+</div>
+
+<!-- 07 CONCENTRATION -->
+<div class="bm-section" id="bm-conc">
+  <div class="bm-header" onclick="bmToggle('conc')">
+    <div class="bm-title">07 · CONCENTRATION & DIVERSIFICATION SCORE <span class="tag tag-muted">HHI · SECTOR · GEOGRAPHY</span></div>
+    <div class="bm-meta"><span class="tag tag-red">HIGH CONCENTRATION</span><span class="bm-chevron" id="ch-conc">▼</span></div>
+  </div>
+  <div class="bm-body" id="bb-conc">
+    <div class="bm-grid">
+      <div class="bm-kpi"><div class="bm-kpi-lbl">YOUR HHI SCORE</div><div class="bm-kpi-val" style="color:var(--red)">0.265</div><div class="bm-kpi-sub">1.0 = 1 stock only</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">S&P 500 HHI</div><div class="bm-kpi-val" style="color:var(--accent)">0.004</div><div class="bm-kpi-sub">highly diversified</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">SECTORS (YOURS)</div><div class="bm-kpi-val" style="color:var(--red)">1 of 11</div><div class="bm-kpi-sub">tech only</div></div>
+      <div class="bm-kpi"><div class="bm-kpi-lbl">GEOGRAPHY (YOURS)</div><div class="bm-kpi-val" style="color:var(--amber)">2 of ~50</div><div class="bm-kpi-sub">US + Germany</div></div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);letter-spacing:.08em;margin:0 0 8px;">HERFINDAHL-HIRSCHMAN INDEX — lower = more diversified</div>
+    <div class="bm-bar-row"><div class="bm-bar-name">YOUR PORTFOLIO</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--red);width:100%"></div></div><div class="bm-bar-val" style="color:var(--red)">0.265</div><div class="bm-bar-vs"><span class="tag tag-red">CONCENTRATED</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">Equal 10-stock port.</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--amber);width:38%"></div></div><div class="bm-bar-val" style="color:var(--amber)">0.100</div><div class="bm-bar-vs"><span class="tag tag-amber">BETTER</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">ETF (EUNL.DE ~100co)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:4%"></div></div><div class="bm-bar-val" style="color:var(--accent)">0.010</div><div class="bm-bar-vs"><span class="tag tag-green">DIVERSIFIED</span></div></div>
+    <div class="bm-bar-row"><div class="bm-bar-name">S&P 500 (500 stocks)</div><div class="bm-bar-track"><div class="bm-bar-fill" style="background:var(--accent);width:1%"></div></div><div class="bm-bar-val" style="color:var(--accent)">0.004</div><div class="bm-bar-vs"><span class="tag tag-green">VERY DIVERSE</span></div></div>
+    <div class="bm-note">With 4 stocks all in tech, your HHI is 0.265 — 66x more concentrated than the S&P 500. Adding EUNL.DE with your €200 cash would immediately improve this score to ~0.18.</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function bmToggle(id) {
+    const body = document.getElementById('bb-' + id);
+    const chev = document.getElementById('ch-' + id);
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (chev) chev.classList.toggle('open', isOpen);
+  }
+  window.bmToggle = bmToggle;
+
+  // Open chevron for section 01 which starts open
+  const ch = document.getElementById('ch-broad');
+  if (ch) ch.classList.add('open');
+
+  window._pageInit = function(data) {
+    const kpis   = data.kpis || {};
+    const sharpe = kpis.sharpe_ratio;
+    const beta   = kpis.beta;
+    const ret    = kpis.total_return_pct != null
+      ? kpis.total_return_pct
+      : (kpis.net_pnl && kpis.total_invested ? kpis.net_pnl / kpis.total_invested * 100 : null);
+
+    function sign(v) { return v >= 0 ? '+' : ''; }
+    function vs(yourRet, benchRet) {
+      if (yourRet == null) return '<span class="tag tag-muted">—</span>';
+      const diff = yourRet - benchRet;
+      if (diff > 0.05)  return '<span class="tag tag-green">YOU +' + diff.toFixed(1) + '%</span>';
+      if (diff < -0.05) return '<span class="tag tag-red">YOU ' + diff.toFixed(1) + '%</span>';
+      return '<span class="tag tag-muted">EVEN</span>';
+    }
+
+    if (ret != null) {
+      const retStr  = sign(ret) + ret.toFixed(1) + '%';
+      const retCol  = ret >= 0 ? 'var(--accent)' : 'var(--red)';
+      const retBarW = Math.min(100, Math.abs(ret) / 22 * 100).toFixed(1);
+
+      ['bm-own-ret'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = retStr; el.style.color = retCol; }
+      });
+      [['bar-own', retBarW], ['bar-tech-own', retBarW], ['bar-pass-own', retBarW]].forEach(([id, w]) => {
+        const el = document.getElementById(id);
+        if (el) { el.style.width = w + '%'; el.style.background = ret >= 0 ? 'var(--accent)' : 'var(--red)'; }
+      });
+      ['bm-bar-own-val','bm-bar-tech-own','bm-bar-pass-own'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = retStr; el.style.color = retCol; }
+      });
+
+      const comps = {
+        'bm-vs-sp500': -4.7, 'bm-vs-qqq': -6.1,  'bm-vs-msci':  -3.9,
+        'bm-vs-dax':   -1.8, 'bm-vs-stoxx': -2.2,
+        'bm-vs-qqq2':  -6.1, 'bm-vs-xlk':  -7.3,  'bm-vs-vgt':   -7.1,
+        'bm-vs-soxx': -14.0, 'bm-vs-arkk': -22.0,
+        'bm-vs-6040':  -2.8, 'bm-vs-aw':   -1.2,  'bm-vs-3fund': -3.1, 'bm-vs-eunl': -3.9
+      };
+      Object.entries(comps).forEach(([id, bench]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = vs(ret, bench);
+      });
+    }
+
+    if (sharpe != null) {
+      const el  = document.getElementById('bm-sharpe-yours');
+      const bar = document.getElementById('bar-sharpe-yours');
+      const val = document.getElementById('bm-bar-sharpe-val');
+      if (el)  { el.textContent = sharpe.toFixed(2); el.style.color = sharpe >= 1 ? 'var(--accent)' : 'var(--amber)'; }
+      if (bar) bar.style.width = Math.min(100, sharpe / 2.5 * 100).toFixed(1) + '%';
+      if (val) val.textContent = sharpe.toFixed(2);
+    }
+    if (beta != null) {
+      const el = document.getElementById('bm-beta-yours');
+      if (el) { el.textContent = beta.toFixed(3); el.style.color = beta < 0.5 ? 'var(--accent)' : beta < 1 ? 'var(--amber)' : 'var(--red)'; }
+    }
+  };
+
+  if (window.engineData) window._pageInit(window.engineData);
+})();
+</script>

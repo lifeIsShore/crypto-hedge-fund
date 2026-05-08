@@ -1,0 +1,91 @@
+﻿python : 10:54:42  INFO     ═══════════════════════════════════════
+At line:1 char:22
++ $env:PYTHONUTF8="1"; python run_engine.py 2>&1 | Out-File -FilePath p ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (10:54:42  INFO ...═══════════════:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+10:54:42  INFO       PEAD ENGINE — START
+10:54:42  INFO     ═══════════════════════════════════════
+10:54:42  INFO     Step 1/5 — Fetching price history...
+10:54:42  INFO     Loading prices from cache: data/pead_prices.csv
+10:54:42  INFO       Prices: 577 rows × 61 tickers
+10:54:42  INFO     Step 2/5 — Backfilling drift outcomes...
+10:54:42  WARNING  No PEAD DB at data/pead_setups.csv. Run the engine first.
+10:54:42  INFO       DB has 0 total setups after backfill
+10:54:42  INFO     Step 3/5 — Fetching earnings history...
+10:54:42  INFO     Loading earnings from cache: data/earnings_cache.csv
+10:54:42  INFO       Earnings: 216 events across 54 tickers
+10:54:42  INFO     Step 4/5 — Fitting surprise→reaction regression models...
+10:54:42  INFO       Loaded 53 cached regression models
+10:54:42  INFO     Step 5/5 — Screening earnings events (last 90d)...
+10:54:42  INFO     Screening 47 earnings events (last 90d)...
+Traceback (most recent call last):
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimelike.py", line 536, in _validate_comparison_value
+    self._check_compatible_with(other)
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimes.py", line 540, in _check_compatible_with
+    self._assert_tzawareness_compat(other)
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimes.py", line 786, in _assert_tzawareness_compat
+    raise TypeError(
+TypeError: Cannot compare tz-naive and tz-aware datetime-like objects
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimelike.py", line 983, in _cmp_method
+    other = self._validate_comparison_value(other)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimelike.py", line 539, in _validate_comparison_value
+    raise InvalidComparison(other) from err
+pandas.errors.InvalidComparison: 2026-03-31 00:00:00
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ahmty\Desktop\hedge-fund\portfolio\quant-research\pead_engine\run_engine.py", line 209, in <module>
+    state = run(
+            ^^^^
+  File "C:\Users\ahmty\Desktop\hedge-fund\portfolio\quant-research\pead_engine\run_engine.py", line 96, in run
+    setups_df = screen_recent_earnings(
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\Desktop\hedge-fund\portfolio\quant-research\pead_engine\screener.py", line 187, in 
+screen_recent_earnings
+    vol_confirmed = _volume_confirmed(ticker, e_date)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\Desktop\hedge-fund\portfolio\quant-research\pead_engine\screener.py", line 57, in 
+_volume_confirmed
+    e_matches = vol.index[vol.index >= earnings_date.normalize()]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\ops\common.py", line 76, in new_method
+    return method(self, other)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arraylike.py", line 60, in __ge__
+    return self._cmp_method(other, operator.ge)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\indexes\base.py", line 7197, in _cmp_method
+    result = op(self._values, other)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\ops\common.py", line 76, in new_method
+    return method(self, other)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arraylike.py", line 60, in __ge__
+    return self._cmp_method(other, operator.ge)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\arrays\datetimelike.py", line 985, in _cmp_method
+    return invalid_comparison(self, other, op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ahmty\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packa
+ges\Python311\site-packages\pandas\core\ops\invalid.py", line 40, in invalid_comparison
+    raise TypeError(f"Invalid comparison between dtype={left.dtype} and {typ}")
+TypeError: Invalid comparison between dtype=datetime64[ns, America/New_York] and Timestamp

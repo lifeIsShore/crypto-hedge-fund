@@ -114,6 +114,9 @@ ASSET_UNIVERSE = [
     'CVX',      # Chevron Corp.
     'NEE',      # NextEra Energy Inc.
 
+    # --- Psychedelic Biotech ---
+    'ATAI',     # AtaiBeckley Inc. (NASDAQ)
+
     # --- Industrials & Defense ---
     'BA',       # Boeing Co.
     'CAT',      # Caterpillar Inc.

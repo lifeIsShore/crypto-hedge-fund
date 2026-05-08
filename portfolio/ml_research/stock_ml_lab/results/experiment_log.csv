@@ -1,0 +1,1 @@
+run_id,run_date,ticker,model_type,prediction_horizon,feature_set,train_period,val_period,directional_accuracy,auc_roc,brier_score,hypothetical_sharpe,max_drawdown,beats_baseline,notes

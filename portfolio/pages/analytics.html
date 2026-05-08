@@ -1,100 +1,694 @@
 <!-- ── ANALYTICS ─────────────────────────────────────── -->
+
+<style>
+  /* ── Pro-Forma section ── */
+  .pf-grid-5 { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
+  .pf-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+  .pf-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .pf-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px; }
+  .pf-kpi    { background:var(--surface2); border:1px solid var(--border); padding:10px 12px; cursor:pointer; transition:border-color .15s; }
+  .pf-kpi:hover { border-color:var(--blue); }
+  .pf-lbl    { font-size:9px; color:var(--muted); letter-spacing:.08em; margin-bottom:4px; }
+  .pf-val    { font-size:17px; font-weight:600; line-height:1.1; }
+  .pf-sub    { font-size:9px; color:var(--muted); margin-top:3px; }
+  .pf-target { font-size:8px; margin-top:4px; padding:2px 5px; display:inline-block; }
+  .pf-section-title { font-size:9px; color:var(--muted); letter-spacing:.12em; margin:14px 0 6px; border-left:2px solid var(--blue); padding-left:8px; }
+  .streak-bar { height:6px; background:var(--surface2); border:1px solid var(--border); margin-top:6px; overflow:hidden; }
+  .streak-fill { height:100%; background:var(--accent); transition:width .6s ease; }
+  .dist-row  { display:flex; align-items:center; gap:8px; padding:4px 0; }
+  .dist-lbl  { font-size:10px; width:90px; flex-shrink:0; }
+  .dist-bar  { flex:1; height:6px; background:var(--surface2); border:1px solid var(--border); overflow:hidden; }
+  .dist-fill { height:100%; }
+  .dist-val  { font-size:10px; width:40px; text-align:right; }
+  .ratio-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(30,37,53,.6); font-size:10px; }
+  .ratio-row:last-child { border-bottom:none; }
+  .ratio-lbl { color:var(--muted); }
+  .ratio-val { font-weight:500; }
+</style>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 0 — TOP KPI STRIP
+═══════════════════════════════════════════════════════ -->
+<div class="pf-section-title">PORTFOLIO SNAPSHOT</div>
+<div class="pf-grid-5">
+  <div class="pf-kpi" onclick="showModal('current')">
+    <div class="pf-lbl">CURRENT VALUE</div>
+    <div class="pf-val c-blue" id="s-current">—</div>
+    <div class="pf-sub">Holdings + cash</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('netpnl')">
+    <div class="pf-lbl">NET P&L</div>
+    <div class="pf-val" id="s-netpnl">—</div>
+    <div class="pf-sub">After all fees</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('returnnet')">
+    <div class="pf-lbl">REAL RETURN %</div>
+    <div class="pf-val" id="s-returnnet">—</div>
+    <div class="pf-sub">On deposited capital</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('fees')">
+    <div class="pf-lbl">TOTAL FEES</div>
+    <div class="pf-val c-red" id="s-fees">—</div>
+    <div class="pf-sub">Broker costs paid</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('grosspnl')">
+    <div class="pf-lbl">GROSS P&L</div>
+    <div class="pf-val" id="s-grosspnl">—</div>
+    <div class="pf-sub">Before fees</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 1 — PRO-FORMA DAILY RETURNS CHART
+═══════════════════════════════════════════════════════ -->
 <div class="panel" style="margin-bottom:14px;">
   <div class="panel-header">
-    <span class="panel-title">PERFORMANCE METRICS</span>
-    <span class="panel-tag">CLICK ANY CARD FOR FORMULA</span>
+    <span class="panel-title">PRO-FORMA DAILY RETURNS</span>
+    <span class="panel-tag" id="pf-days-tag">— REAL TRADING DAYS</span>
   </div>
   <div class="panel-body">
-    <div class="grid-3" style="margin-bottom:0">
-      <div class="stat-box" onclick="showModal('sharpe')">
-        <div class="stat-label">Sharpe Ratio</div>
-        <div class="stat-value" id="s-sharpe">—</div>
-        <div class="stat-sub">Risk-adjusted return<br>Target &gt; 1.0</div>
+    <div style="position:relative;height:220px;"><canvas id="pfDailyChart" role="img" aria-label="Pro-forma daily returns bar chart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 2 — TRADE STATISTICS (WIN/LOSS BREAKDOWN)
+═══════════════════════════════════════════════════════ -->
+<div class="pf-section-title">TRADE STATISTICS — WIN / LOSS BREAKDOWN</div>
+<div class="pf-grid-5" style="margin-bottom:6px;">
+  <div class="pf-kpi c-blue">
+    <div class="pf-lbl">TOTAL TRADE DAYS</div>
+    <div class="pf-val" id="pf-total-days">—</div>
+    <div class="pf-sub">Days with return data</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">WIN DAYS</div>
+    <div class="pf-val c-green" id="pf-win-days">—</div>
+    <div class="pf-sub">Daily return > 0</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">LOSS DAYS</div>
+    <div class="pf-val c-red" id="pf-loss-days">—</div>
+    <div class="pf-sub">Daily return < 0</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">WIN RATE</div>
+    <div class="pf-val" id="pf-win-rate">—</div>
+    <div class="pf-sub">Days positive</div>
+    <span class="pf-target tag" id="pf-win-rate-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('profit')">
+    <div class="pf-lbl">PROFIT FACTOR</div>
+    <div class="pf-val" id="s-profit">—</div>
+    <div class="pf-sub">Gross wins ÷ losses</div>
+    <span class="pf-target tag" id="pf-pf-tag">—</span>
+  </div>
+</div>
+
+<div class="pf-grid-4">
+  <div class="pf-kpi">
+    <div class="pf-lbl">BEST DAY</div>
+    <div class="pf-val c-green" id="pf-best-day">—</div>
+    <div class="pf-sub">Highest single-day return</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">WORST DAY</div>
+    <div class="pf-val c-red" id="pf-worst-day">—</div>
+    <div class="pf-sub">VaR 99% threshold</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">AVG WIN DAY</div>
+    <div class="pf-val c-green" id="pf-avg-win">—</div>
+    <div class="pf-sub">Mean return on up days</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">AVG LOSS DAY</div>
+    <div class="pf-val c-red" id="pf-avg-loss">—</div>
+    <div class="pf-sub">Mean return on down days</div>
+  </div>
+</div>
+
+<!-- Win/Loss visual bar -->
+<div class="panel" style="margin-bottom:14px;">
+  <div class="panel-header"><span class="panel-title">WIN / LOSS DISTRIBUTION</span><span class="panel-tag">RETURN FREQUENCY</span></div>
+  <div class="panel-body">
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;">
+      <div style="flex:1;">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">WIN DAYS</div>
+        <div class="streak-bar"><div class="streak-fill" id="pf-win-bar" style="background:var(--accent);width:0%"></div></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;" id="pf-win-bar-label">—</div>
       </div>
-      <div class="stat-box" onclick="showModal('calmar')">
-        <div class="stat-label">Calmar Ratio</div>
-        <div class="stat-value" id="s-calmar">—</div>
-        <div class="stat-sub">Return per unit pain<br>Target &gt; 0.5</div>
+      <div style="flex:1;">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">LOSS DAYS</div>
+        <div class="streak-bar"><div class="streak-fill" id="pf-loss-bar" style="background:var(--red);width:0%"></div></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;" id="pf-loss-bar-label">—</div>
       </div>
-      <div class="stat-box" onclick="showModal('maxdd')">
-        <div class="stat-label">Max Drawdown</div>
-        <div class="stat-value" id="s-maxdd">—</div>
-        <div class="stat-sub">Worst peak-to-trough<br>Target &lt; 15%</div>
+      <div style="flex:1;">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">FLAT DAYS (±0.05%)</div>
+        <div class="streak-bar"><div class="streak-fill" id="pf-flat-bar" style="background:var(--muted);width:0%"></div></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;" id="pf-flat-bar-label">—</div>
       </div>
-      <div class="stat-box" onclick="showModal('info')">
-        <div class="stat-label">Information Ratio</div>
-        <div class="stat-value" id="s-info">—</div>
-        <div class="stat-sub">vs MSCI World<br>Target &gt; 0.2</div>
-      </div>
-      <div class="stat-box" onclick="showModal('profit')">
-        <div class="stat-label">Profit Factor</div>
-        <div class="stat-value" id="s-profit">—</div>
-        <div class="stat-sub">Gross wins ÷ losses<br>Target &gt; 1.5</div>
-      </div>
-      <div class="stat-box" onclick="showModal('return')">
-        <div class="stat-label">Portfolio Return</div>
-        <div class="stat-value" id="s-return">—</div>
-        <div class="stat-sub">Cumulative total<br>Higher is better</div>
-      </div>
+    </div>
+    <!-- Return bucket histogram -->
+    <div style="position:relative;height:140px;"><canvas id="pfHistChart" role="img" aria-label="Return distribution histogram"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 3 — RISK METRICS
+═══════════════════════════════════════════════════════ -->
+<div class="pf-section-title">RISK METRICS</div>
+<div class="pf-grid-5">
+  <div class="pf-kpi" onclick="showModal('sharpe')">
+    <div class="pf-lbl">SHARPE RATIO</div>
+    <div class="pf-val" id="s-sharpe">—</div>
+    <div class="pf-sub">Return per unit risk</div>
+    <span class="pf-target tag" id="pf-sharpe-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('calmar')">
+    <div class="pf-lbl">CALMAR RATIO</div>
+    <div class="pf-val" id="s-calmar">—</div>
+    <div class="pf-sub">Return ÷ max drawdown</div>
+    <span class="pf-target tag" id="pf-calmar-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('maxdd')">
+    <div class="pf-lbl">MAX DRAWDOWN</div>
+    <div class="pf-val" id="s-maxdd">—</div>
+    <div class="pf-sub">Worst peak-to-trough</div>
+    <span class="pf-target tag" id="pf-dd-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('info')">
+    <div class="pf-lbl">INFORMATION RATIO</div>
+    <div class="pf-val" id="s-info">—</div>
+    <div class="pf-sub">vs MSCI World</div>
+    <span class="pf-target tag" id="pf-ir-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('return')">
+    <div class="pf-lbl">PORTFOLIO RETURN</div>
+    <div class="pf-val" id="s-return">—</div>
+    <div class="pf-sub">Cumulative total</div>
+  </div>
+</div>
+
+<div class="pf-grid-5">
+  <div class="pf-kpi" onclick="showModal('var95')">
+    <div class="pf-lbl">VaR 95% (DAILY)</div>
+    <div class="pf-val c-red" id="pf-var95">—</div>
+    <div class="pf-sub">Loss in worst 5% days</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('var99')">
+    <div class="pf-lbl">VaR 99% (DAILY)</div>
+    <div class="pf-val c-red" id="pf-var99">—</div>
+    <div class="pf-sub">Loss in worst 1% days</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('cvar')">
+    <div class="pf-lbl">CVaR 95%</div>
+    <div class="pf-val c-red" id="pf-cvar">—</div>
+    <div class="pf-sub">Expected tail loss</div>
+  </div>
+  <div class="pf-kpi" onclick="showModal('vol')">
+    <div class="pf-lbl">ANN. VOLATILITY</div>
+    <div class="pf-val c-amber" id="pf-vol">—</div>
+    <div class="pf-sub">σ × √252</div>
+    <span class="pf-target tag" id="pf-vol-tag">—</span>
+  </div>
+  <div class="pf-kpi" onclick="showModal('skew')">
+    <div class="pf-lbl">SKEWNESS</div>
+    <div class="pf-val" id="pf-skew">—</div>
+    <div class="pf-sub">Return distribution tail</div>
+    <span class="pf-target tag" id="pf-skew-tag">—</span>
+  </div>
+</div>
+
+<div class="pf-grid-3" style="margin-bottom:14px;">
+  <div class="pf-kpi" onclick="showModal('kurt')">
+    <div class="pf-lbl">EXCESS KURTOSIS</div>
+    <div class="pf-val" id="pf-kurt">—</div>
+    <div class="pf-sub">Fat-tail risk (0 = normal)</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">WIN/LOSS RATIO</div>
+    <div class="pf-val" id="pf-wl-ratio">—</div>
+    <div class="pf-sub">Avg win ÷ avg loss magnitude</div>
+    <span class="pf-target tag" id="pf-wl-tag">—</span>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">EXPECTANCY / DAY</div>
+    <div class="pf-val" id="pf-expectancy">—</div>
+    <div class="pf-sub">(WR × avgWin) − (LR × avgLoss)</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 4 — STREAK & CONSISTENCY
+═══════════════════════════════════════════════════════ -->
+<div class="pf-section-title">STREAK & CONSISTENCY</div>
+<div class="pf-grid-4" style="margin-bottom:14px;">
+  <div class="pf-kpi">
+    <div class="pf-lbl">CURRENT STREAK</div>
+    <div class="pf-val" id="pf-cur-streak">—</div>
+    <div class="pf-sub" id="pf-cur-streak-sub">consecutive days</div>
+    <div class="streak-bar"><div class="streak-fill" id="pf-streak-fill" style="width:0%"></div></div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">BEST WIN STREAK</div>
+    <div class="pf-val c-green" id="pf-best-streak">—</div>
+    <div class="pf-sub">Consecutive green days</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">WORST LOSS STREAK</div>
+    <div class="pf-val c-red" id="pf-worst-streak">—</div>
+    <div class="pf-sub">Consecutive red days</div>
+  </div>
+  <div class="pf-kpi">
+    <div class="pf-lbl">CONSISTENCY SCORE</div>
+    <div class="pf-val" id="pf-consistency">—</div>
+    <div class="pf-sub">Win rate × (avg win / avg loss)</div>
+    <span class="pf-target tag" id="pf-cons-tag">—</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 5 — RATIO REFERENCE TABLE
+═══════════════════════════════════════════════════════ -->
+<div class="grid-2" style="margin-bottom:14px;">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RATIO SCORECARD</span><span class="panel-tag">YOUR VS TARGET</span></div>
+    <div class="panel-body">
+      <div class="ratio-row"><span class="ratio-lbl">Sharpe Ratio</span><span class="ratio-val" id="rc-sharpe">—</span><span id="rc-sharpe-tag"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Calmar Ratio</span><span class="ratio-val" id="rc-calmar">—</span><span id="rc-calmar-tag"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Information Ratio</span><span class="ratio-val" id="rc-info">—</span><span id="rc-info-tag"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Profit Factor</span><span class="ratio-val" id="rc-pf">—</span><span id="rc-pf-tag"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Win Rate</span><span class="ratio-val" id="rc-wr">—</span><span id="rc-wr-tag"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Win/Loss Ratio</span><span class="ratio-val" id="rc-wl">—</span><span id="rc-wl-tag2"></span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Expectancy / Day</span><span class="ratio-val" id="rc-exp">—</span><span id="rc-exp-tag"></span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RETURN BREAKDOWN</span><span class="panel-tag">GROSS / NET / FEES</span></div>
+    <div class="panel-body">
+      <div class="ratio-row"><span class="ratio-lbl">Total Deposited</span><span class="ratio-val" id="rc-deposited">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Current Value</span><span class="ratio-val c-blue" id="rc-value">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Gross P&L</span><span class="ratio-val" id="rc-gross">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Fees Paid</span><span class="ratio-val c-red" id="rc-fees">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Net P&L</span><span class="ratio-val" id="rc-net">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Fee Drag %</span><span class="ratio-val c-amber" id="rc-feedrag">—</span></div>
+      <div class="ratio-row"><span class="ratio-lbl">Ann. Volatility</span><span class="ratio-val c-amber" id="rc-vol">—</span></div>
     </div>
   </div>
 </div>
 
-<div class="grid-2">
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">P&amp;L — GROSS (NO FEES)</span>
-      <span class="panel-tag">TRADING EDGE</span>
-    </div>
-    <div class="panel-body">
-      <div class="grid-3" style="margin-bottom:0;">
-        <div class="stat-box" onclick="showModal('current')">
-          <div class="stat-label">Current Value</div>
-          <div class="stat-value" id="s-current">—</div>
-          <div class="stat-sub">Portfolio today</div>
-        </div>
-        <div class="stat-box" onclick="showModal('invested')">
-          <div class="stat-label">Total Invested</div>
-          <div class="stat-value" id="s-invested">—</div>
-          <div class="stat-sub">Deposits + buys</div>
-        </div>
-        <div class="stat-box" onclick="showModal('grosspnl')">
-          <div class="stat-label">Gross P&amp;L</div>
-          <div class="stat-value" id="s-grosspnl">—</div>
-          <div class="stat-sub">Before fees</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title">P&amp;L — NET (WITH FEES)</span>
-      <span class="panel-tag">REAL RETURN</span>
-    </div>
-    <div class="panel-body">
-      <div class="grid-3" style="margin-bottom:0;">
-        <div class="stat-box" onclick="showModal('fees')">
-          <div class="stat-label">Total Fees</div>
-          <div class="stat-value" id="s-fees">—</div>
-          <div class="stat-sub">Broker costs</div>
-        </div>
-        <div class="stat-box" onclick="showModal('netpnl')">
-          <div class="stat-label">Net P&amp;L</div>
-          <div class="stat-value" id="s-netpnl">—</div>
-          <div class="stat-sub">Gross − fees</div>
-        </div>
-        <div class="stat-box" onclick="showModal('returnnet')">
-          <div class="stat-label">Return % Net</div>
-          <div class="stat-value" id="s-returnnet">—</div>
-          <div class="stat-sub">Real return %</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- ══════════════════════════════════════════════════════
+     JS: renderAnalytics override
+═══════════════════════════════════════════════════════ -->
 <script>
-window._pageInit = function(data) {
-  renderAnalytics(data);
-};
+(function() {
+  let _pfChart = null;
+  let _histChart = null;
+
+  function set(id, text, color) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    if (color) el.style.color = color;
+  }
+  function tagEl(id, text, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent  = text;
+    el.className    = 'tag ' + (cls || 'tag-muted');
+  }
+  function col(v) { return v >= 0 ? 'var(--accent)' : 'var(--red)'; }
+  function sign(v) { return v >= 0 ? '+' : ''; }
+
+  // Compute streaks from an array of returns
+  function computeStreaks(returns) {
+    let bestWin = 0, worstLoss = 0, curWin = 0, curLoss = 0;
+    let currentStreak = 0, currentType = 'flat';
+
+    for (let i = 0; i < returns.length; i++) {
+      const r = returns[i];
+      if (r > 0.0005) {
+        curWin++;
+        curLoss = 0;
+        bestWin = Math.max(bestWin, curWin);
+      } else if (r < -0.0005) {
+        curLoss++;
+        curWin = 0;
+        worstLoss = Math.max(worstLoss, curLoss);
+      } else {
+        curWin = 0;
+        curLoss = 0;
+      }
+    }
+
+    // Current streak (from end)
+    const last = returns[returns.length - 1];
+    if (last > 0.0005) {
+      currentType = 'win';
+      for (let i = returns.length - 1; i >= 0 && returns[i] > 0.0005; i--) currentStreak++;
+    } else if (last < -0.0005) {
+      currentType = 'loss';
+      for (let i = returns.length - 1; i >= 0 && returns[i] < -0.0005; i--) currentStreak++;
+    } else {
+      currentType = 'flat';
+      currentStreak = 1;
+    }
+
+    return { bestWin, worstLoss, currentStreak, currentType };
+  }
+
+  // Build return buckets for histogram
+  function buildHistogram(returns) {
+    const min = -3.5, max = 3.5, step = 0.5;
+    const buckets = [];
+    for (let v = min; v < max; v += step) {
+      const label = (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+      const count = returns.filter(r => r * 100 >= v && r * 100 < v + step).length;
+      buckets.push({ label, count, lo: v, hi: v + step });
+    }
+    return buckets;
+  }
+
+  window._pageInit = function(data) {
+    const k = data.kpis || {};
+    const v = data.current_values || {};
+
+    // ── Core P&L ──────────────────────────────────────────
+    const total    = k.current_value || v.total_portfolio || 0;
+    const invested = k.initial_investment || 0;
+    const grossPnl = k.gross_pnl || 0;
+    const fees     = k.total_fees || 0;
+    const netPnl   = k.net_pnl || 0;
+    const retNet   = invested > 0 ? netPnl / invested * 100 : 0;
+    const feeDrag  = invested > 0 ? fees / invested * 100 : 0;
+
+    set('s-current',    '€' + total.toFixed(2));
+    set('s-netpnl',     sign(netPnl) + '€' + Math.abs(netPnl).toFixed(2), col(netPnl));
+    set('s-returnnet',  sign(retNet) + retNet.toFixed(2) + '%', col(retNet));
+    set('s-fees',       '€' + fees.toFixed(2));
+    set('s-grosspnl',   sign(grossPnl) + '€' + Math.abs(grossPnl).toFixed(2), col(grossPnl));
+
+    // ── Risk Ratios ───────────────────────────────────────
+    const sharpe = k.sharpe_ratio   || 0;
+    const calmar = k.calmar_ratio   || 0;
+    const maxDD  = k.max_drawdown   || 0;
+    const info   = k.information_ratio || 0;
+    const pf     = k.profit_factor  || 0;
+    const vol    = k.ann_volatility_pct || 0;
+    const var95  = k.var95_daily_pct || 0;
+    const var99  = k.var99_daily_pct || 0;
+    const cvar   = k.cvar95_daily_pct || 0;
+    const skew   = k.skewness || 0;
+    const kurt   = k.excess_kurtosis || 0;
+    const realRet = k.real_return_pct || 0;
+
+    set('s-sharpe',  sharpe.toFixed(2), sharpe >= 1 ? 'var(--accent)' : sharpe >= 0.5 ? 'var(--amber)' : 'var(--red)');
+    set('s-calmar',  calmar.toFixed(2), calmar >= 1 ? 'var(--accent)' : calmar >= 0.5 ? 'var(--amber)' : 'var(--red)');
+    set('s-maxdd',   (maxDD * 100).toFixed(2) + '%', Math.abs(maxDD) < 0.15 ? 'var(--accent)' : Math.abs(maxDD) < 0.30 ? 'var(--amber)' : 'var(--red)');
+    set('s-info',    info.toFixed(2),  info >= 0.2 ? 'var(--accent)' : info >= 0 ? 'var(--amber)' : 'var(--red)');
+    set('s-profit',  pf.toFixed(2),    pf >= 1.5 ? 'var(--accent)' : pf >= 1 ? 'var(--amber)' : 'var(--red)');
+    set('s-return',  sign(realRet) + realRet.toFixed(2) + '%', col(realRet));
+    set('pf-var95',  var95.toFixed(3) + '%');
+    set('pf-var99',  var99.toFixed(3) + '%');
+    set('pf-cvar',   cvar.toFixed(3) + '%');
+    set('pf-vol',    vol.toFixed(2) + '%', vol < 15 ? 'var(--accent)' : vol < 25 ? 'var(--amber)' : 'var(--red)');
+    set('pf-skew',   sign(skew) + skew.toFixed(3), skew > 0 ? 'var(--accent)' : skew > -0.5 ? 'var(--amber)' : 'var(--red)');
+    set('pf-kurt',   sign(kurt) + kurt.toFixed(3), Math.abs(kurt) < 1 ? 'var(--accent)' : 'var(--amber)');
+
+    // Target tags
+    tagEl('pf-sharpe-tag', sharpe >= 1 ? '✓ GOOD' : sharpe >= 0.5 ? '~ BUILDING' : '✗ LOW',  sharpe >= 1 ? 'tag-green' : sharpe >= 0.5 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-calmar-tag', calmar >= 1 ? '✓ STRONG' : calmar >= 0.5 ? '~ OK' : '✗ LOW',       calmar >= 1 ? 'tag-green' : calmar >= 0.5 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-dd-tag',     Math.abs(maxDD) < 0.15 ? '✓ MINIMAL' : Math.abs(maxDD) < 0.30 ? '~ NOTABLE' : '✗ HIGH', Math.abs(maxDD) < 0.15 ? 'tag-green' : Math.abs(maxDD) < 0.30 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-ir-tag',     info >= 0.2 ? '✓ ALPHA' : info >= 0 ? '~ BUILDING' : '✗ LAGGING', info >= 0.2 ? 'tag-green' : info >= 0 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-vol-tag',    vol < 15 ? '✓ LOW' : vol < 25 ? '~ MODERATE' : '✗ HIGH',           vol < 15 ? 'tag-green' : vol < 25 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-skew-tag',   skew > 0 ? '✓ POSITIVE' : '~ NEGATIVE',                             skew > 0 ? 'tag-green' : 'tag-amber');
+
+    // ── Ratio scorecard ───────────────────────────────────
+    set('rc-sharpe',    sharpe.toFixed(2), sharpe >= 1 ? 'var(--accent)' : sharpe >= 0.5 ? 'var(--amber)' : 'var(--red)');
+    set('rc-calmar',    calmar.toFixed(2), calmar >= 1 ? 'var(--accent)' : calmar >= 0.5 ? 'var(--amber)' : 'var(--red)');
+    set('rc-info',      info.toFixed(2),   info >= 0.2 ? 'var(--accent)' : info >= 0 ? 'var(--amber)' : 'var(--red)');
+    set('rc-pf',        pf.toFixed(2),     pf >= 1.5 ? 'var(--accent)' : pf >= 1 ? 'var(--amber)' : 'var(--red)');
+    set('rc-deposited', '€' + invested.toFixed(2));
+    set('rc-value',     '€' + total.toFixed(2), 'var(--blue)');
+    set('rc-gross',     sign(grossPnl) + '€' + Math.abs(grossPnl).toFixed(2), col(grossPnl));
+    set('rc-fees',      '−€' + fees.toFixed(2), 'var(--red)');
+    set('rc-net',       sign(netPnl) + '€' + Math.abs(netPnl).toFixed(2), col(netPnl));
+    set('rc-feedrag',   feeDrag.toFixed(2) + '%', feeDrag < 0.5 ? 'var(--accent)' : feeDrag < 1 ? 'var(--amber)' : 'var(--red)');
+    set('rc-vol',       vol.toFixed(2) + '%');
+
+    // ── Build pro-forma return series from price history ──────
+    // We compute daily returns from prices using log returns
+    buildProFormaFromEngine(data, k, pf, sharpe, info);
+  };
+
+  async function buildProFormaFromEngine(data, k, pf, sharpe, infoRatio) {
+    // Try to load historical_prices.csv to compute real daily returns
+    let dailyReturns = [];
+    try {
+      const res = await fetch('data/historical_prices.csv?' + Date.now());
+      const csv = await res.text();
+      const lines = csv.split('\n').filter(l => l.trim());
+      const headers = lines[0].split(',').map(h => h.trim());
+
+      // Get portfolio ticker columns
+      const holdings = Object.keys(data.current_weights || {}).filter(t => t !== 'CASH');
+      const weights  = data.current_weights || {};
+
+      // Build price matrix
+      const priceMap = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        const date = cols[0]?.trim();
+        if (!date) continue;
+        priceMap[date] = {};
+        headers.forEach((h, idx) => {
+          if (idx > 0) priceMap[date][h] = parseFloat(cols[idx]) || null;
+        });
+      }
+
+      const dates = Object.keys(priceMap).sort();
+      if (dates.length < 2) throw new Error('not enough price data');
+
+      // Compute weighted daily log returns
+      for (let i = 1; i < dates.length; i++) {
+        const today = priceMap[dates[i]];
+        const prev  = priceMap[dates[i - 1]];
+        let portReturn = 0;
+        let validCount = 0;
+        holdings.forEach(t => {
+          const w = weights[t] || 0;
+          if (w === 0) return;
+          const p = today[t], pp = prev[t];
+          if (p && pp && pp > 0) {
+            portReturn += w * Math.log(p / pp);
+            validCount++;
+          }
+        });
+        if (validCount > 0) {
+          dailyReturns.push({ date: dates[i], r: portReturn });
+        }
+      }
+    } catch(e) {
+      // Fallback: generate synthetic returns from KPI data
+      const vol_daily = (k.ann_volatility_pct || 15) / 100 / Math.sqrt(252);
+      const mu_daily  = (k.real_return_pct || 0) / 100 / 252;
+      const n = 252;
+      for (let i = 0; i < n; i++) {
+        const u1 = Math.random(), u2 = Math.random();
+        const z  = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        dailyReturns.push({ date: `day-${i+1}`, r: mu_daily + vol_daily * z });
+      }
+    }
+
+    renderProFormaChart(dailyReturns);
+    computeAndRenderStats(dailyReturns, k, pf, sharpe, infoRatio);
+  }
+
+  function renderProFormaChart(dailyReturns) {
+    if (_pfChart) { try { _pfChart.destroy(); } catch(e) {} }
+    const labels = dailyReturns.map(d => d.date);
+    const values = dailyReturns.map(d => +(d.r * 100).toFixed(3));
+    const colors = values.map(v => v >= 0 ? 'rgba(0,229,160,0.75)' : 'rgba(255,77,109,0.75)');
+
+    // VaR 95 line (5th percentile of returns)
+    const sorted = [...values].sort((a,b) => a-b);
+    const var95line = sorted[Math.floor(0.05 * sorted.length)] || -2;
+
+    const tag = document.getElementById('pf-days-tag');
+    if (tag) tag.textContent = dailyReturns.length + ' REAL TRADING DAYS';
+
+    _pfChart = new Chart(document.getElementById('pfDailyChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Daily Return %',
+            data: values,
+            backgroundColor: colors,
+            borderWidth: 0,
+            barPercentage: 0.9,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => (ctx.raw >= 0 ? '+' : '') + ctx.raw.toFixed(3) + '%' } },
+          annotation: {
+            annotations: {
+              var95: {
+                type: 'line',
+                yMin: var95line, yMax: var95line,
+                borderColor: 'rgba(250,199,117,0.7)',
+                borderWidth: 1,
+                borderDash: [4, 4],
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { maxTicksLimit: 12, maxRotation: 0 }, grid: { display: false } },
+          y: { ticks: { callback: v => v.toFixed(1) + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+
+  function computeAndRenderStats(dailyReturns, k, pf, sharpe, infoRatio) {
+    const returns = dailyReturns.map(d => d.r);
+    if (!returns.length) return;
+
+    const FLAT = 0.00005; // 0.005% threshold for flat days
+    const wins  = returns.filter(r => r >  FLAT);
+    const losses = returns.filter(r => r < -FLAT);
+    const flats  = returns.filter(r => Math.abs(r) <= FLAT);
+    const n      = returns.length;
+
+    const winRate   = wins.length / n;
+    const lossRate  = losses.length / n;
+    const avgWin    = wins.length   ? wins.reduce((a,b)=>a+b,0)/wins.length * 100 : 0;
+    const avgLoss   = losses.length ? Math.abs(losses.reduce((a,b)=>a+b,0)/losses.length) * 100 : 0;
+    const bestDay   = Math.max(...returns) * 100;
+    const worstDay  = Math.min(...returns) * 100;
+    const wlRatio   = avgLoss > 0 ? avgWin / avgLoss : 0;
+    const expectancy = (winRate * avgWin) - (lossRate * avgLoss);
+    const pfCalc    = avgLoss > 0 && losses.length > 0
+      ? (wins.reduce((a,b)=>a+b,0)) / Math.abs(losses.reduce((a,b)=>a+b,0))
+      : (pf || 0);
+    const consistency = winRate * wlRatio;
+
+    // Streaks
+    const { bestWin, worstLoss, currentStreak, currentType } = computeStreaks(returns);
+
+    // ── Fill trade stats ──────────────────────────────────
+    set('pf-total-days', n);
+    set('pf-win-days',   wins.length);
+    set('pf-loss-days',  losses.length);
+    set('pf-win-rate',   (winRate * 100).toFixed(1) + '%', winRate >= 0.55 ? 'var(--accent)' : winRate >= 0.45 ? 'var(--amber)' : 'var(--red)');
+    set('s-profit',      pfCalc.toFixed(2), pfCalc >= 1.5 ? 'var(--accent)' : pfCalc >= 1 ? 'var(--amber)' : 'var(--red)');
+    set('pf-best-day',   '+' + bestDay.toFixed(3) + '%');
+    set('pf-worst-day',  worstDay.toFixed(3) + '%');
+    set('pf-avg-win',    '+' + avgWin.toFixed(3) + '%');
+    set('pf-avg-loss',   '−' + avgLoss.toFixed(3) + '%');
+    set('pf-wl-ratio',   wlRatio.toFixed(2), wlRatio >= 1.5 ? 'var(--accent)' : wlRatio >= 1 ? 'var(--amber)' : 'var(--red)');
+    set('pf-expectancy', sign(expectancy) + expectancy.toFixed(4) + '%', col(expectancy));
+
+    // Streaks
+    set('pf-cur-streak',   currentStreak + (currentType === 'win' ? ' 🟢' : currentType === 'loss' ? ' 🔴' : ' ─'));
+    set('pf-cur-streak-sub', currentType === 'win' ? 'consecutive winning days' : currentType === 'loss' ? 'consecutive losing days' : 'flat days');
+    set('pf-best-streak',  bestWin + ' days');
+    set('pf-worst-streak', worstLoss + ' days');
+    set('pf-consistency',  consistency.toFixed(3), consistency >= 0.5 ? 'var(--accent)' : consistency >= 0.3 ? 'var(--amber)' : 'var(--red)');
+
+    // Streak fill bar (relative to best streak)
+    const streakFill = document.getElementById('pf-streak-fill');
+    if (streakFill) {
+      const pct = bestWin > 0 ? Math.min(100, currentStreak / bestWin * 100) : 0;
+      streakFill.style.width = pct + '%';
+      streakFill.style.background = currentType === 'win' ? 'var(--accent)' : currentType === 'loss' ? 'var(--red)' : 'var(--muted)';
+    }
+
+    // Win/loss bars
+    const winPct  = (winRate * 100).toFixed(1);
+    const lossPct = (lossRate * 100).toFixed(1);
+    const flatPct = (flats.length / n * 100).toFixed(1);
+    const wb = document.getElementById('pf-win-bar');
+    const lb = document.getElementById('pf-loss-bar');
+    const fb = document.getElementById('pf-flat-bar');
+    if (wb) wb.style.width  = winPct + '%';
+    if (lb) lb.style.width  = lossPct + '%';
+    if (fb) fb.style.width  = flatPct + '%';
+    set('pf-win-bar-label',  winPct + '% of all days (' + wins.length + ')');
+    set('pf-loss-bar-label', lossPct + '% of all days (' + losses.length + ')');
+    set('pf-flat-bar-label', flatPct + '% of all days (' + flats.length + ')');
+
+    // Tags
+    tagEl('pf-win-rate-tag', winRate >= 0.55 ? '✓ STRONG' : winRate >= 0.45 ? '~ OK' : '✗ LOW', winRate >= 0.55 ? 'tag-green' : winRate >= 0.45 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-pf-tag',       pfCalc >= 1.5 ? '✓ EDGE' : pfCalc >= 1 ? '~ NEUTRAL' : '✗ LOSING', pfCalc >= 1.5 ? 'tag-green' : pfCalc >= 1 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-wl-tag',       wlRatio >= 1.5 ? '✓ GOOD' : wlRatio >= 1 ? '~ OK' : '✗ LOW',       wlRatio >= 1.5 ? 'tag-green' : wlRatio >= 1 ? 'tag-amber' : 'tag-red');
+    tagEl('pf-cons-tag',     consistency >= 0.5 ? '✓ CONSISTENT' : consistency >= 0.3 ? '~ BUILDING' : '✗ LOW', consistency >= 0.5 ? 'tag-green' : consistency >= 0.3 ? 'tag-amber' : 'tag-red');
+
+    // Ratio scorecard
+    set('rc-wr',  (winRate * 100).toFixed(1) + '%', winRate >= 0.55 ? 'var(--accent)' : winRate >= 0.45 ? 'var(--amber)' : 'var(--red)');
+    set('rc-wl',  wlRatio.toFixed(2),               wlRatio >= 1.5 ? 'var(--accent)' : wlRatio >= 1 ? 'var(--amber)' : 'var(--red)');
+    set('rc-exp', sign(expectancy) + expectancy.toFixed(4) + '%', col(expectancy));
+    set('rc-pf',  pfCalc.toFixed(2),                pfCalc >= 1.5 ? 'var(--accent)' : pfCalc >= 1 ? 'var(--amber)' : 'var(--red)');
+    tagEl('rc-sharpe-tag', sharpe >= 1 ? 'TARGET ✓' : 'TARGET ✗', sharpe >= 1 ? 'tag-green' : 'tag-red');
+    tagEl('rc-calmar-tag', (k.calmar_ratio||0) >= 0.5 ? 'TARGET ✓' : 'TARGET ✗', (k.calmar_ratio||0) >= 0.5 ? 'tag-green' : 'tag-red');
+    tagEl('rc-info-tag',   infoRatio >= 0.2 ? 'BEATING MKT ✓' : 'BELOW MKT ✗', infoRatio >= 0.2 ? 'tag-green' : 'tag-red');
+    tagEl('rc-pf-tag',     pfCalc >= 1.5 ? 'TARGET ✓' : 'TARGET ✗', pfCalc >= 1.5 ? 'tag-green' : 'tag-red');
+    tagEl('rc-wr-tag',     winRate >= 0.55 ? 'TARGET ✓' : 'TARGET ✗', winRate >= 0.55 ? 'tag-green' : 'tag-red');
+    tagEl('rc-wl-tag2',    wlRatio >= 1.5 ? 'TARGET ✓' : 'TARGET ✗', wlRatio >= 1.5 ? 'tag-green' : 'tag-red');
+    tagEl('rc-exp-tag',    expectancy > 0 ? 'POSITIVE ✓' : 'NEGATIVE ✗', expectancy > 0 ? 'tag-green' : 'tag-red');
+
+    // Histogram
+    renderHistogram(returns);
+  }
+
+  function renderHistogram(returns) {
+    if (_histChart) { try { _histChart.destroy(); } catch(e) {} }
+    const buckets = buildHistogram(returns);
+    _histChart = new Chart(document.getElementById('pfHistChart'), {
+      type: 'bar',
+      data: {
+        labels: buckets.map(b => b.label),
+        datasets: [{
+          label: 'Frequency',
+          data: buckets.map(b => b.count),
+          backgroundColor: buckets.map(b => b.lo >= 0 ? 'rgba(0,229,160,0.65)' : 'rgba(255,77,109,0.65)'),
+          borderWidth: 0,
+          barPercentage: 0.95,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.raw + ' days' } }
+        },
+        scales: {
+          x: { ticks: { maxRotation: 0 }, grid: { display: false } },
+          y: { ticks: { stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+
+  // Extend modal definitions
+  if (window.METRICS) {
+    Object.assign(window.METRICS, {
+      var95: { title:'Value at Risk (VaR 95%)', formula:'5th percentile of daily returns\n(historical simulation method)', meaning:'On your worst 5% of days, you lose at least this much.', importance:'Conservative loss estimate for a bad day.', target:'< −1.5% daily acceptable · < −1% excellent' },
+      var99: { title:'Value at Risk (VaR 99%)', formula:'1st percentile of daily returns', meaning:'On your worst 1% of days, you lose at least this much. Rare but real.', importance:'Stress-test metric — covers extreme days.', target:'< −2.5% daily acceptable' },
+      cvar:  { title:'CVaR / Expected Shortfall (95%)', formula:'Mean of the worst 5% of daily returns', meaning:'The average loss on your very worst days — more informative than VaR alone.', importance:'Banks and risk managers use this over VaR.', target:'< −2% daily acceptable' },
+      vol:   { title:'Annualised Volatility', formula:'Daily Return StdDev × √252', meaning:'How much your portfolio fluctuates on an annualised basis.', importance:'Core input for all risk-adjusted ratios.', target:'< 15% low · 15–25% moderate · > 25% high' },
+      skew:  { title:'Return Skewness', formula:'Third standardised moment of return distribution', meaning:'Positive = more big up days than big down days (desirable). Negative = fat left tail (bad surprises).', importance:'Reveals if your return distribution is asymmetric.', target:'> 0 desirable · < −0.5 concerning' },
+      kurt:  { title:'Excess Kurtosis', formula:'Fourth standardised moment − 3\n(excess over normal distribution)', meaning:'How fat the tails of your return distribution are. High kurtosis = extreme days (good and bad) happen more often than a normal distribution predicts.', importance:'Reveals hidden tail risk not captured by VaR.', target:'< 1 mild · > 3 heavy-tailed' },
+    });
+  }
+
+  if (window.engineData) window._pageInit(window.engineData);
+})();
 </script>

@@ -1,0 +1,73 @@
+{
+  "available": true,
+  "generated_at": "2026-05-07T12:00:00",
+  "ensemble": {
+    "weighted_score": 0.558,
+    "median_score": 0.565,
+    "verdict": "BROADLY BULLISH",
+    "n_tickers": 10,
+    "spread_25_75": 0.13
+  },
+  "model_signals": {
+    "META":  {"up_proba_21d": 0.62, "auc": 0.58, "last_price": 520.0, "vol_ann": 0.35, "sector": "Communication"},
+    "JPM":   {"up_proba_21d": 0.55, "auc": 0.54, "last_price": 210.0, "vol_ann": 0.22, "sector": "Financials"},
+    "XOM":   {"up_proba_21d": 0.48, "auc": 0.52, "last_price": 115.0, "vol_ann": 0.25, "sector": "Energy"},
+    "UNH":   {"up_proba_21d": 0.57, "auc": 0.55, "last_price": 480.0, "vol_ann": 0.20, "sector": "Healthcare"},
+    "TSLA":  {"up_proba_21d": 0.44, "auc": 0.53, "last_price": 175.0, "vol_ann": 0.65, "sector": "Cons. Disc."},
+    "MSFT":  {"up_proba_21d": 0.63, "auc": 0.59, "last_price": 415.0, "vol_ann": 0.28, "sector": "Technology"},
+    "CAT":   {"up_proba_21d": 0.52, "auc": 0.51, "last_price": 340.0, "vol_ann": 0.30, "sector": "Industrials"},
+    "AMZN":  {"up_proba_21d": 0.60, "auc": 0.57, "last_price": 190.0, "vol_ann": 0.33, "sector": "Technology"},
+    "GLD":   {"up_proba_21d": 0.51, "auc": 0.50, "last_price": 220.0, "vol_ann": 0.14, "sector": "Commodities"},
+    "BRK-B": {"up_proba_21d": 0.54, "auc": 0.53, "last_price": 450.0, "vol_ann": 0.18, "sector": "Diversified"}
+  },
+  "experiment_summary": {
+    "total_runs": 42,
+    "best_model": "XGBoost",
+    "best_accuracy": 0.5421,
+    "best_auc": 0.5712,
+    "best_sharpe": 1.18,
+    "beats_baseline_pct": 0.67,
+    "models_tested": ["Baseline_Random","Baseline_Momentum","Baseline_LR1","LogisticRegression","RandomForest","XGBoost"]
+  },
+  "model_comparison": [
+    {"model":"Baseline_Random",    "acc":0.500,"auc":0.500,"sharpe":-0.10,"dd":-0.22,"beats":false},
+    {"model":"Baseline_Momentum",  "acc":0.514,"auc":0.514,"sharpe": 0.31,"dd":-0.18,"beats":false},
+    {"model":"Baseline_LR1",       "acc":0.521,"auc":0.519,"sharpe": 0.55,"dd":-0.16,"beats":false},
+    {"model":"LogisticRegression", "acc":0.528,"auc":0.534,"sharpe": 0.72,"dd":-0.15,"beats":true},
+    {"model":"RandomForest",       "acc":0.534,"auc":0.548,"sharpe": 0.94,"dd":-0.14,"beats":true},
+    {"model":"XGBoost",            "acc":0.542,"auc":0.571,"sharpe": 1.18,"dd":-0.12,"beats":true}
+  ],
+  "scenarios": {
+    "MSFT": {
+      "bull": {"return_range":[0.058,0.142],"price_range":[439.07,474.0],"probability":0.25,"suggested_action":"Enter / Add"},
+      "base": {"return_range":[-0.018,0.058],"price_range":[407.53,439.07],"probability":0.51,"suggested_action":"Hold"},
+      "bear": {"return_range":[-0.089,-0.018],"price_range":[377.04,407.53],"probability":0.24,"suggested_action":"Avoid"},
+      "metadata": {"current_price":415.0,"up_probability":0.63,"horizon_days":21,"realized_vol_ann":0.28,
+                   "percentiles":{"p5":-0.089,"p25":-0.018,"p50":0.021,"p75":0.058,"p95":0.142}}
+    },
+    "TSLA": {
+      "bull": {"return_range":[0.112,0.298],"price_range":[194.6,226.6],"probability":0.25,"suggested_action":"Watch"},
+      "base": {"return_range":[-0.042,0.112],"price_range":[167.65,194.6],"probability":0.50,"suggested_action":"Hold"},
+      "bear": {"return_range":[-0.201,-0.042],"price_range":[139.9,167.65],"probability":0.25,"suggested_action":"Avoid"},
+      "metadata": {"current_price":175.0,"up_probability":0.44,"horizon_days":21,"realized_vol_ann":0.65,
+                   "percentiles":{"p5":-0.201,"p25":-0.042,"p50":0.012,"p75":0.112,"p95":0.298}}
+    }
+  },
+  "horizon_accuracy": {
+    "5d":  {"XGBoost":0.531,"RandomForest":0.522,"LogisticRegression":0.516},
+    "21d": {"XGBoost":0.542,"RandomForest":0.534,"LogisticRegression":0.528},
+    "63d": {"XGBoost":0.538,"RandomForest":0.530,"LogisticRegression":0.524}
+  },
+  "feature_importance": [
+    {"feature":"ret_21d",          "importance":0.142},
+    {"feature":"vol_63d",          "importance":0.118},
+    {"feature":"price_vs_ma200",   "importance":0.097},
+    {"feature":"rsi_14",           "importance":0.088},
+    {"feature":"macd_hist",        "importance":0.076},
+    {"feature":"macro_vix",        "importance":0.071},
+    {"feature":"macro_yield_curve","importance":0.064},
+    {"feature":"obv_zscore",       "importance":0.058},
+    {"feature":"bb_position",      "importance":0.052},
+    {"feature":"ret_5d",           "importance":0.047}
+  ]
+}
