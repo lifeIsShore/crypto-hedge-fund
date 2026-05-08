@@ -330,10 +330,10 @@ def get_research_state():
 
 if __name__ == '__main__':
     print("\n" + "="*50)
-    print("🚀 QUANT ENGINE DASHBOARD (HTML)")
+    print(" QUANT ENGINE DASHBOARD (HTML)")
     print("="*50)
-    print("\n📊 Open your browser and go to:")
-    print("   ➜ http://localhost:5000")
+    print("\n Open your browser and go to:")
+    print("   -> http://localhost:5000")
     print("\n" + "="*50)
     
     # Initialize scheduler
