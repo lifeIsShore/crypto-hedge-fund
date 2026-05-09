@@ -38,7 +38,7 @@
     <div style="font-size:12px;letter-spacing:.1em;color:#fff;margin-bottom:2px;">BENCHMARK COMPARISON</div>
     <div style="font-size:9px;color:var(--muted);">Your portfolio vs major indices & strategies · click any section to expand</div>
   </div>
-  <div class="your-port"><div class="your-dot"></div>YOUR PORTFOLIO · €96 INVESTED · 38d</div>
+  <div class="your-port"><div class="your-dot"></div>YOUR PORTFOLIO · <span id="bm-invested-label">—</span></div>
 </div>
 
 <!-- 01 BROAD MARKET -->
@@ -336,9 +336,20 @@
     const kpis   = data.kpis || {};
     const sharpe = kpis.sharpe_ratio;
     const beta   = kpis.beta;
-    const ret    = kpis.total_return_pct != null
-      ? kpis.total_return_pct
-      : (kpis.net_pnl && kpis.total_invested ? kpis.net_pnl / kpis.total_invested * 100 : null);
+    // real_return_pct = actual P&L on invested capital; fallback chain for older state files
+    const ret    = kpis.real_return_pct != null
+      ? kpis.real_return_pct
+      : kpis.total_return_pct != null
+        ? kpis.total_return_pct
+        : (kpis.net_pnl != null && kpis.initial_investment ? kpis.net_pnl / kpis.initial_investment * 100 : null);
+
+    // Dynamic header label
+    const investedEl = document.getElementById('bm-invested-label');
+    if (investedEl) {
+      const inv = kpis.initial_investment || (data.current_values && (data.current_values.total_portfolio)) || null;
+      const val = kpis.current_value || null;
+      investedEl.textContent = val != null ? '€' + val.toFixed(0) + ' VALUE' : '—';
+    }
 
     function sign(v) { return v >= 0 ? '+' : ''; }
     function vs(yourRet, benchRet) {

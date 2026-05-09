@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-08T12:25:56.446975",
-  "data_end_date": "2026-05-07",
+  "generated_at": "2026-05-09T13:59:39.141230",
+  "data_end_date": "2026-05-08",
   "held_tickers": [
     "APC.DE",
     "MSF.DE",
@@ -12,99 +12,99 @@
   "factor_regressions": [
     {
       "ticker": "ATAI",
-      "annualised_alpha_pct": 57.267,
-      "alpha_tstat": 0.849,
-      "alpha_pvalue": 0.3966,
-      "beta_mkt": 1.159,
-      "beta_smb": 1.6024,
-      "beta_hml": -0.2971,
-      "r_squared": 0.127,
+      "annualised_alpha_pct": 59.936,
+      "alpha_tstat": 0.887,
+      "alpha_pvalue": 0.3759,
+      "beta_mkt": 1.1603,
+      "beta_smb": 1.6163,
+      "beta_hml": -0.3061,
+      "r_squared": 0.128,
       "alpha_sig": false,
       "return_source": "beta",
-      "n_obs": 388
+      "n_obs": 387
     },
     {
       "ticker": "TSLA",
-      "annualised_alpha_pct": 8.6,
-      "alpha_tstat": 0.226,
-      "alpha_pvalue": 0.8215,
-      "beta_mkt": 2.1724,
-      "beta_smb": 0.1436,
-      "beta_hml": -0.2422,
-      "r_squared": 0.4174,
+      "annualised_alpha_pct": 9.463,
+      "alpha_tstat": 0.248,
+      "alpha_pvalue": 0.8044,
+      "beta_mkt": 2.1728,
+      "beta_smb": 0.1481,
+      "beta_hml": -0.2451,
+      "r_squared": 0.4177,
       "alpha_sig": false,
       "return_source": "beta",
-      "n_obs": 388
+      "n_obs": 387
     },
     {
       "ticker": "APC.DE",
-      "annualised_alpha_pct": -4.195,
-      "alpha_tstat": -0.195,
-      "alpha_pvalue": 0.8451,
-      "beta_mkt": 0.4404,
-      "beta_smb": -0.0412,
-      "beta_hml": 0.3339,
-      "r_squared": 0.0707,
+      "annualised_alpha_pct": -5.086,
+      "alpha_tstat": -0.237,
+      "alpha_pvalue": 0.8132,
+      "beta_mkt": 0.44,
+      "beta_smb": -0.0459,
+      "beta_hml": 0.3369,
+      "r_squared": 0.0705,
       "alpha_sig": false,
       "return_source": "mixed",
-      "n_obs": 388
+      "n_obs": 387
     },
     {
       "ticker": "AMZN",
-      "annualised_alpha_pct": -5.745,
-      "alpha_tstat": -0.318,
-      "alpha_pvalue": 0.7506,
-      "beta_mkt": 1.2705,
-      "beta_smb": -0.0382,
-      "beta_hml": -0.3636,
-      "r_squared": 0.536,
+      "annualised_alpha_pct": -5.851,
+      "alpha_tstat": -0.323,
+      "alpha_pvalue": 0.7469,
+      "beta_mkt": 1.2704,
+      "beta_smb": -0.0387,
+      "beta_hml": -0.3633,
+      "r_squared": 0.5355,
       "alpha_sig": false,
       "return_source": "beta",
-      "n_obs": 388
+      "n_obs": 387
     },
     {
       "ticker": "MSF.DE",
-      "annualised_alpha_pct": -10.849,
-      "alpha_tstat": -0.53,
-      "alpha_pvalue": 0.5961,
-      "beta_mkt": 0.2039,
-      "beta_smb": -0.0972,
-      "beta_hml": -0.4221,
-      "r_squared": 0.0695,
+      "annualised_alpha_pct": -12.075,
+      "alpha_tstat": -0.59,
+      "alpha_pvalue": 0.5557,
+      "beta_mkt": 0.2033,
+      "beta_smb": -0.1036,
+      "beta_hml": -0.4179,
+      "r_squared": 0.0686,
       "alpha_sig": false,
       "return_source": "mixed",
-      "n_obs": 388
+      "n_obs": 387
     }
   ],
   "summary": {
     "n_tickers_regressed": 5,
     "n_significant_alpha": 0,
-    "avg_market_beta": 1.0492,
-    "avg_alpha_pct": 9.016
+    "avg_market_beta": 1.0494,
+    "avg_alpha_pct": 9.277
   },
-  "bl_generated_at": "2026-05-08T12:26:09.276488",
+  "bl_generated_at": "2026-05-09T13:59:51.004787",
   "regime_used": "low_stress",
-  "stress_score_used": 0.2796,
+  "stress_score_used": 0.2753,
   "bl_views": [],
   "equilibrium_returns": {
-    "APC.DE": 0.069954,
-    "MSF.DE": 0.061522,
-    "AMZN": 0.135406,
-    "TSLA": 0.274143,
-    "ATAI": 0.639563
+    "APC.DE": 0.070089,
+    "MSF.DE": 0.060606,
+    "AMZN": 0.136216,
+    "TSLA": 0.279077,
+    "ATAI": 0.639517
   },
   "bl_posterior_returns": {
-    "APC.DE": 0.069954,
-    "MSF.DE": 0.061522,
-    "AMZN": 0.135406,
-    "TSLA": 0.274143,
-    "ATAI": 0.639563
+    "APC.DE": 0.070089,
+    "MSF.DE": 0.060606,
+    "AMZN": 0.136216,
+    "TSLA": 0.279077,
+    "ATAI": 0.639517
   },
   "bl_weights": {
-    "APC.DE": 0.1936,
-    "MSF.DE": 0.1842,
-    "AMZN": 0.1925,
-    "TSLA": 0.1797,
+    "APC.DE": 0.1932,
+    "MSF.DE": 0.1794,
+    "AMZN": 0.1918,
+    "TSLA": 0.1856,
     "ATAI": 0.25
   },
   "markowitz_weights": {
@@ -115,46 +115,46 @@
     "ATAI": 0.25
   },
   "current_weights": {
-    "APC.DE": 0.1799,
-    "MSF.DE": 0.1765,
-    "AMZN": 0.1685,
-    "TSLA": 0.1741,
-    "ATAI": 0.301
+    "APC.DE": 0.1801,
+    "MSF.DE": 0.1716,
+    "AMZN": 0.1682,
+    "TSLA": 0.1799,
+    "ATAI": 0.3003
   },
   "weight_comparison": [
     {
       "ticker": null,
       "Markowitz": 0.25,
-      "Black-Litterman": 0.1936,
-      "Current (actual)": 0.1799,
-      "BL - Markowitz": -0.0564
+      "Black-Litterman": 0.1932,
+      "Current (actual)": 0.1801,
+      "BL - Markowitz": -0.0568
     },
     {
       "ticker": null,
       "Markowitz": 0.0,
-      "Black-Litterman": 0.1842,
-      "Current (actual)": 0.1765,
-      "BL - Markowitz": 0.1842
+      "Black-Litterman": 0.1794,
+      "Current (actual)": 0.1716,
+      "BL - Markowitz": 0.1794
     },
     {
       "ticker": null,
       "Markowitz": 0.25,
-      "Black-Litterman": 0.1925,
-      "Current (actual)": 0.1685,
-      "BL - Markowitz": -0.0575
+      "Black-Litterman": 0.1918,
+      "Current (actual)": 0.1682,
+      "BL - Markowitz": -0.0582
     },
     {
       "ticker": null,
       "Markowitz": 0.25,
-      "Black-Litterman": 0.1797,
-      "Current (actual)": 0.1741,
-      "BL - Markowitz": -0.0703
+      "Black-Litterman": 0.1856,
+      "Current (actual)": 0.1799,
+      "BL - Markowitz": -0.0644
     },
     {
       "ticker": null,
       "Markowitz": 0.25,
       "Black-Litterman": 0.25,
-      "Current (actual)": 0.301,
+      "Current (actual)": 0.3003,
       "BL - Markowitz": 0.0
     }
   ]

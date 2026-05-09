@@ -7,6 +7,7 @@ from flask import Flask, render_template_string, request, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 import json
 import subprocess
+import sys
 import os
 from datetime import datetime
 import pandas as pd
@@ -21,6 +22,17 @@ def dashboard():
     """Serve the HTML dashboard"""
     with open('dashboard.html', 'r', encoding='utf-8') as f:
         return f.read()
+
+@app.route('/data/ledger.csv', methods=['GET'])
+def get_ledger():
+    """Serve ledger.csv for the History tab."""
+    try:
+        with open('data/ledger.csv', 'r', encoding='utf-8') as f:
+            content = f.read()
+        return app.response_class(response=content, status=200, mimetype='text/plain')
+    except FileNotFoundError:
+        return app.response_class(response='', status=404, mimetype='text/plain')
+
 
 @app.route('/data/engine_state.json', methods=['GET'])
 def get_engine_state():
@@ -180,6 +192,40 @@ def start_scheduler():
 
 # --- PEAD / QUANT RESEARCH ENDPOINTS ---
 
+@app.route('/data/pead_state.json', methods=['GET'])
+def get_pead_state():
+    """Serve pead_state.json from the quant research engine output."""
+    import re as _re
+    pead_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'ml_quant_finance_research', 'quant_research', 'pead_engine', 'data', 'pead_state.json'
+    )
+    if not os.path.exists(pead_path):
+        return jsonify({'available': False, 'error': 'pead_state.json not found — run the PEAD engine first.'}), 404
+    try:
+        with open(pead_path, 'r', encoding='utf-8') as f:
+            raw = _re.sub(r'\bNaN\b', 'null', f.read())
+        return app.response_class(response=raw, status=200, mimetype='application/json')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/data/regime_state.json', methods=['GET'])
+def get_regime_state():
+    """Serve regime_state.json from the quant research engine output."""
+    regime_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'ml_quant_finance_research', 'quant_research', 'regime_engine', 'data', 'regime_state.json'
+    )
+    if not os.path.exists(regime_path):
+        return jsonify({'available': False, 'error': 'regime_state.json not found — run the Regime engine first.'}), 404
+    try:
+        with open(regime_path, 'r', encoding='utf-8') as f:
+            return app.response_class(response=f.read(), status=200, mimetype='application/json')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/run_pead_engine', methods=['POST'])
 def run_pead_engine():
     """
@@ -278,6 +324,56 @@ def run_regime_engine():
 
     except subprocess.TimeoutExpired:
         return jsonify({'success': False, 'error': 'Regime engine timed out (>3 min)'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# --- ML PIPELINE ENDPOINT ---
+
+@app.route('/api/run_ml_pipeline', methods=['POST'])
+def run_ml_pipeline():
+    """Trigger the ML pipeline script and return progress/result."""
+    import re as _re
+    ml_script = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'ml_quant_finance_research', 'ml_research',
+        'stock_ml_lab', 'run_ml_pipeline.py'
+    )
+    if not os.path.exists(ml_script):
+        return jsonify({'success': False, 'error': f'Script not found: {ml_script}'}), 404
+
+    env = dict(os.environ)
+    env['PYTHONUTF8'] = '1'
+
+    try:
+        result = subprocess.run(
+            [sys.executable, ml_script],
+            capture_output=True, timeout=600,
+            text=True, encoding='utf-8',
+            cwd=os.path.dirname(ml_script),
+            env=env,
+        )
+        stdout = result.stdout or ''
+        stderr = result.stderr or ''
+        combined = stdout + stderr
+
+        if result.returncode == 0:
+            ml_state = None
+            ml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ml_state.json')
+            if os.path.exists(ml_path):
+                try:
+                    with open(ml_path, 'r', encoding='utf-8') as f:
+                        raw = _re.sub(r'\bNaN\b', 'null', f.read())
+                        ml_state = json.loads(raw)
+                except Exception as e:
+                    print(f'[ML PIPELINE] Could not read ml_state.json: {e}')
+            return jsonify({'success': True, 'log': combined, 'ml_state': ml_state})
+        else:
+            print(f'[ML PIPELINE] Failed (rc={result.returncode}): {stderr[:500]}')
+            return jsonify({'success': False, 'error': stderr or stdout or 'Unknown error', 'log': combined}), 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'ML pipeline timed out (>10 min)'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

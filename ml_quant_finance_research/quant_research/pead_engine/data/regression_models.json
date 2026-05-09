@@ -5,12 +5,12 @@
     "intercept": 0.5728,
     "r_squared": 0.8429,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.484441",
+    "fitted_on": "2026-05-09T14:00:26.319392",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 10.12,
-        "same_day_return": -1.0693945938604732,
+        "same_day_return": -1.0693858843056847,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -39,7 +39,7 @@
     "intercept": -1.9729,
     "r_squared": 0.2107,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.491280",
+    "fitted_on": "2026-05-09T14:00:26.327722",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -73,7 +73,7 @@
     "intercept": -2.137,
     "r_squared": 0.6834,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.496995",
+    "fitted_on": "2026-05-09T14:00:26.334277",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -107,7 +107,7 @@
     "intercept": -1.2874,
     "r_squared": 0.0078,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.502705",
+    "fitted_on": "2026-05-09T14:00:26.339541",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
@@ -141,12 +141,12 @@
     "intercept": -1.5241,
     "r_squared": 0.9525,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.505974",
+    "fitted_on": "2026-05-09T14:00:26.343983",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 5.67,
-        "same_day_return": -1.2882921770212996,
+        "same_day_return": -1.2882836108501494,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -175,7 +175,7 @@
     "intercept": 1.2792,
     "r_squared": 0.5374,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.511521",
+    "fitted_on": "2026-05-09T14:00:26.349886",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -209,7 +209,7 @@
     "intercept": 0.0001,
     "r_squared": 0.291,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.516318",
+    "fitted_on": "2026-05-09T14:00:26.353507",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -243,7 +243,7 @@
     "intercept": -0.5383,
     "r_squared": 0.0139,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.521275",
+    "fitted_on": "2026-05-09T14:00:26.356200",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
@@ -277,7 +277,7 @@
     "intercept": -2.0289,
     "r_squared": 0.0087,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.525473",
+    "fitted_on": "2026-05-09T14:00:26.358748",
     "observations": [
       {
         "earnings_date": "2025-05-31 00:00:00",
@@ -311,7 +311,7 @@
     "intercept": 1.3336,
     "r_squared": 0.2203,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.530701",
+    "fitted_on": "2026-05-09T14:00:26.361286",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -345,7 +345,7 @@
     "intercept": 0.4726,
     "r_squared": 0.0013,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.537456",
+    "fitted_on": "2026-05-09T14:00:26.365360",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -376,15 +376,15 @@
   "QCOM": {
     "ticker": "QCOM",
     "slope": 0.4228,
-    "intercept": -1.1193,
+    "intercept": -1.1192,
     "r_squared": 0.1138,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.546261",
+    "fitted_on": "2026-05-09T14:00:26.370488",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 2.05,
-        "same_day_return": 0.4541382716015452,
+        "same_day_return": 0.454148062862636,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -413,18 +413,18 @@
     "intercept": -1.8455,
     "r_squared": 0.0325,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.550961",
+    "fitted_on": "2026-05-09T14:00:26.372682",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
         "surprise_pct": 3.45,
-        "same_day_return": 0.7756529770561293,
+        "same_day_return": 0.7756426027974106,
         "e_day_used": "2025-04-30 00:00:00"
       },
       {
         "earnings_date": "2025-07-31 00:00:00",
         "surprise_pct": 5.13,
-        "same_day_return": -4.926345120648456,
+        "same_day_return": -4.926352827160763,
         "e_day_used": "2025-07-31 00:00:00"
       },
       {
@@ -447,24 +447,24 @@
     "intercept": 0.891,
     "r_squared": 0.0144,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.553968",
+    "fitted_on": "2026-05-09T14:00:26.375761",
     "observations": [
       {
         "earnings_date": "2025-05-31 00:00:00",
         "surprise_pct": 19.75,
-        "same_day_return": 3.9381707284688483,
+        "same_day_return": 3.9381869208393816,
         "e_day_used": "2025-06-02 00:00:00"
       },
       {
         "earnings_date": "2025-08-31 00:00:00",
         "surprise_pct": 5.94,
-        "same_day_return": -0.44533745481429854,
+        "same_day_return": -0.4453374834050505,
         "e_day_used": "2025-09-02 00:00:00"
       },
       {
         "earnings_date": "2025-11-30 00:00:00",
         "surprise_pct": 20.58,
-        "same_day_return": 1.6830145448651246,
+        "same_day_return": 1.6830275691178231,
         "e_day_used": "2025-12-01 00:00:00"
       },
       {
@@ -481,18 +481,18 @@
     "intercept": -0.3095,
     "r_squared": 0.9482,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.559698",
+    "fitted_on": "2026-05-09T14:00:26.378061",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 5.81,
-        "same_day_return": 0.2607695261447107,
+        "same_day_return": 0.260761950920263,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": -0.4,
-        "same_day_return": 0.27286946685609603,
+        "same_day_return": 0.2728864896750727,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -515,18 +515,18 @@
     "intercept": 0.964,
     "r_squared": 0.1454,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.564416",
+    "fitted_on": "2026-05-09T14:00:26.380069",
     "observations": [
       {
         "earnings_date": "2025-05-31 00:00:00",
         "surprise_pct": 3.37,
-        "same_day_return": 0.6282716371001529,
+        "same_day_return": 0.6282810062216315,
         "e_day_used": "2025-06-02 00:00:00"
       },
       {
         "earnings_date": "2025-08-31 00:00:00",
         "surprise_pct": -0.62,
-        "same_day_return": -0.3670523175711926,
+        "same_day_return": -0.36704551652768647,
         "e_day_used": "2025-09-02 00:00:00"
       },
       {
@@ -549,7 +549,7 @@
     "intercept": -0.5928,
     "r_squared": 0.0041,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.570087",
+    "fitted_on": "2026-05-09T14:00:26.382622",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -583,7 +583,7 @@
     "intercept": -0.8237,
     "r_squared": 0.1695,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.576587",
+    "fitted_on": "2026-05-09T14:00:26.385621",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
@@ -617,7 +617,7 @@
     "intercept": -0.404,
     "r_squared": 0.0286,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.584402",
+    "fitted_on": "2026-05-09T14:00:26.390586",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -651,7 +651,7 @@
     "intercept": -0.5146,
     "r_squared": 0.0085,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.589155",
+    "fitted_on": "2026-05-09T14:00:26.392585",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -685,7 +685,7 @@
     "intercept": -0.1838,
     "r_squared": 0.4446,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.595381",
+    "fitted_on": "2026-05-09T14:00:26.396201",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -719,24 +719,24 @@
     "intercept": 1.6474,
     "r_squared": 0.4999,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.599142",
+    "fitted_on": "2026-05-09T14:00:26.398772",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 3.12,
-        "same_day_return": 2.1114859399756547,
+        "same_day_return": 2.1114973319007024,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 1.52,
-        "same_day_return": 0.11793315667820714,
+        "same_day_return": 0.11791156028635452,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
         "earnings_date": "2025-12-31 00:00:00",
         "surprise_pct": 12.26,
-        "same_day_return": -1.1326128143062553,
+        "same_day_return": -1.132623298591573,
         "e_day_used": "2025-12-31 00:00:00"
       },
       {
@@ -749,28 +749,28 @@
   },
   "JPM": {
     "ticker": "JPM",
-    "slope": 0.1683,
-    "intercept": 0.2562,
-    "r_squared": 0.3422,
+    "slope": 0.1731,
+    "intercept": 0.2454,
+    "r_squared": 0.3523,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.603783",
+    "fitted_on": "2026-05-09T14:00:26.401867",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
-        "surprise_pct": 10.89,
-        "same_day_return": 0.9752352023499222,
+        "surprise_pct": 10.62,
+        "same_day_return": 0.9752460382966177,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 4.01,
-        "same_day_return": -0.08236504387522103,
+        "same_day_return": -0.0823552442548503,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
         "earnings_date": "2025-12-31 00:00:00",
         "surprise_pct": -3.91,
-        "same_day_return": -0.371046785029705,
+        "same_day_return": -0.37103729341126934,
         "e_day_used": "2025-12-31 00:00:00"
       },
       {
@@ -784,21 +784,21 @@
   "BAC": {
     "ticker": "BAC",
     "slope": -0.0122,
-    "intercept": 0.4697,
+    "intercept": 0.4696,
     "r_squared": 0.0007,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.608458",
+    "fitted_on": "2026-05-09T14:00:26.404005",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 3.73,
-        "same_day_return": 0.4244509348034331,
+        "same_day_return": 0.4244427055015043,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 12.04,
-        "same_day_return": -1.5833587004801752,
+        "same_day_return": -1.5833585840027808,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -821,18 +821,18 @@
     "intercept": 5.2911,
     "r_squared": 0.3985,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.612571",
+    "fitted_on": "2026-05-09T14:00:26.406538",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 12.91,
-        "same_day_return": 2.452192401808251,
+        "same_day_return": 2.45219262185854,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 10.49,
-        "same_day_return": -0.9662850750309815,
+        "same_day_return": -0.9662774810487273,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -855,18 +855,18 @@
     "intercept": 1.6,
     "r_squared": 0.1134,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.617037",
+    "fitted_on": "2026-05-09T14:00:26.408547",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 8.59,
-        "same_day_return": 0.1208158205745713,
+        "same_day_return": 0.12082692803256911,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 32.63,
-        "same_day_return": -1.3651098867236144,
+        "same_day_return": -1.3651003884535329,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -889,7 +889,7 @@
     "intercept": 0.2598,
     "r_squared": 0.5914,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.621282",
+    "fitted_on": "2026-05-09T14:00:26.412646",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -923,12 +923,12 @@
     "intercept": -1.9183,
     "r_squared": 0.3408,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.625889",
+    "fitted_on": "2026-05-09T14:00:26.414707",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 5.09,
-        "same_day_return": 0.5643278421406439,
+        "same_day_return": 0.5643472863001708,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -957,18 +957,18 @@
     "intercept": 0.7675,
     "r_squared": 0.2462,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.632950",
+    "fitted_on": "2026-05-09T14:00:26.417853",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": -8.23,
-        "same_day_return": 0.9252436886292958,
+        "same_day_return": 0.9252537681953887,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 3.99,
-        "same_day_return": 0.03475758713278321,
+        "same_day_return": 0.0347665599511382,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -991,7 +991,7 @@
     "intercept": 0.7276,
     "r_squared": 0.004,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.638353",
+    "fitted_on": "2026-05-09T14:00:26.420073",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1025,30 +1025,30 @@
     "intercept": -0.4189,
     "r_squared": 0.2449,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.641685",
+    "fitted_on": "2026-05-09T14:00:26.423072",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 35.94,
-        "same_day_return": 0.20669190134723348,
+        "same_day_return": 0.2066871793210634,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 37.43,
-        "same_day_return": 6.83438179768685,
+        "same_day_return": 6.834378525520757,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
         "earnings_date": "2025-12-31 00:00:00",
         "surprise_pct": 16.18,
-        "same_day_return": -0.3601399678614947,
+        "same_day_return": -0.3601368699961416,
         "e_day_used": "2025-12-31 00:00:00"
       },
       {
         "earnings_date": "2026-03-31 00:00:00",
         "surprise_pct": 3.93,
-        "same_day_return": 1.1163106259716171,
+        "same_day_return": 1.1163124392980173,
         "e_day_used": "2026-03-31 00:00:00"
       }
     ]
@@ -1059,12 +1059,12 @@
     "intercept": -2.7165,
     "r_squared": 0.6897,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.647133",
+    "fitted_on": "2026-05-09T14:00:26.425615",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 12.89,
-        "same_day_return": 0.5261506161925444,
+        "same_day_return": 0.5261426615676301,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -1093,7 +1093,7 @@
     "intercept": 1.2664,
     "r_squared": 0.0908,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.653255",
+    "fitted_on": "2026-05-09T14:00:26.429636",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1104,7 +1104,7 @@
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 4.23,
-        "same_day_return": 3.755158399996872,
+        "same_day_return": 3.755151400098633,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -1127,7 +1127,7 @@
     "intercept": -0.9455,
     "r_squared": 0.3685,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.659413",
+    "fitted_on": "2026-05-09T14:00:26.433178",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1161,7 +1161,7 @@
     "intercept": 0.2758,
     "r_squared": 0.0138,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.664731",
+    "fitted_on": "2026-05-09T14:00:26.436210",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1195,12 +1195,12 @@
     "intercept": 0.9689,
     "r_squared": 0.2224,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.668592",
+    "fitted_on": "2026-05-09T14:00:26.440737",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 2.72,
-        "same_day_return": 0.1807262654826447,
+        "same_day_return": 0.18073330541181765,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -1229,7 +1229,7 @@
     "intercept": 0.0934,
     "r_squared": 0.0005,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.678000",
+    "fitted_on": "2026-05-09T14:00:26.446007",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1263,7 +1263,7 @@
     "intercept": 0.134,
     "r_squared": 0.0096,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.684335",
+    "fitted_on": "2026-05-09T14:00:26.450990",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1297,30 +1297,30 @@
     "intercept": 1.16,
     "r_squared": 0.0169,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.691450",
+    "fitted_on": "2026-05-09T14:00:26.456198",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
         "surprise_pct": 5.64,
-        "same_day_return": 1.25989015212018,
+        "same_day_return": 1.2598936698981156,
         "e_day_used": "2025-04-30 00:00:00"
       },
       {
         "earnings_date": "2025-07-31 00:00:00",
         "surprise_pct": -7.97,
-        "same_day_return": 0.39963913511393834,
+        "same_day_return": 0.39962927041998775,
         "e_day_used": "2025-07-31 00:00:00"
       },
       {
         "earnings_date": "2025-10-31 00:00:00",
         "surprise_pct": 3.11,
-        "same_day_return": -1.027100726909902,
+        "same_day_return": -1.0271013180297661,
         "e_day_used": "2025-10-31 00:00:00"
       },
       {
         "earnings_date": "2026-01-31 00:00:00",
         "surprise_pct": 1.79,
-        "same_day_return": 4.129598846504434,
+        "same_day_return": 4.1295977543373885,
         "e_day_used": "2026-02-02 00:00:00"
       }
     ]
@@ -1331,12 +1331,12 @@
     "intercept": -0.0861,
     "r_squared": 0.3222,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.698198",
+    "fitted_on": "2026-05-09T14:00:26.461574",
     "observations": [
       {
         "earnings_date": "2025-04-30 00:00:00",
         "surprise_pct": -0.81,
-        "same_day_return": 0.4150277360615684,
+        "same_day_return": 0.4150539190094893,
         "e_day_used": "2025-04-30 00:00:00"
       },
       {
@@ -1365,18 +1365,18 @@
     "intercept": 0.108,
     "r_squared": 0.0042,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.703176",
+    "fitted_on": "2026-05-09T14:00:26.465664",
     "observations": [
       {
         "earnings_date": "2025-05-31 00:00:00",
         "surprise_pct": 1.23,
-        "same_day_return": 1.6025926608230767,
+        "same_day_return": 1.6026046515140946,
         "e_day_used": "2025-06-02 00:00:00"
       },
       {
         "earnings_date": "2025-08-31 00:00:00",
         "surprise_pct": 1.13,
-        "same_day_return": -0.4770264478563324,
+        "same_day_return": -0.4770329145303731,
         "e_day_used": "2025-09-02 00:00:00"
       },
       {
@@ -1399,7 +1399,7 @@
     "intercept": 2.544,
     "r_squared": 0.5704,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.708532",
+    "fitted_on": "2026-05-09T14:00:26.470534",
     "observations": [
       {
         "earnings_date": "2025-05-31 00:00:00",
@@ -1433,7 +1433,7 @@
     "intercept": 0.6075,
     "r_squared": 0.5759,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.714377",
+    "fitted_on": "2026-05-09T14:00:26.476152",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1467,12 +1467,12 @@
     "intercept": 0.1042,
     "r_squared": 0.4162,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.723994",
+    "fitted_on": "2026-05-09T14:00:26.487262",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": -3.73,
-        "same_day_return": 0.9097756864893336,
+        "same_day_return": 0.9097837779107998,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -1497,15 +1497,15 @@
   },
   "LMT": {
     "ticker": "LMT",
-    "slope": -0.0046,
-    "intercept": 0.5542,
-    "r_squared": 0.0321,
+    "slope": -0.0047,
+    "intercept": 0.5544,
+    "r_squared": 0.032,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.730868",
+    "fitted_on": "2026-05-09T14:00:26.491812",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
-        "surprise_pct": -77.59,
+        "surprise_pct": -77.27,
         "same_day_return": 0.9921775965986424,
         "e_day_used": "2025-06-30 00:00:00"
       },
@@ -1535,12 +1535,12 @@
     "intercept": -1.0463,
     "r_squared": 0.8065,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.737549",
+    "fitted_on": "2026-05-09T14:00:26.495500",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 9.47,
-        "same_day_return": 0.9401333064975814,
+        "same_day_return": 0.9401334068257272,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
@@ -1569,7 +1569,7 @@
     "intercept": -6.0197,
     "r_squared": 0.6009,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.748199",
+    "fitted_on": "2026-05-09T14:00:26.499259",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
@@ -1603,18 +1603,18 @@
     "intercept": 0.4276,
     "r_squared": 0.0316,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.756567",
+    "fitted_on": "2026-05-09T14:00:26.503550",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",
         "surprise_pct": 3.43,
-        "same_day_return": 1.760964257049702,
+        "same_day_return": 1.7609787621558626,
         "e_day_used": "2025-06-30 00:00:00"
       },
       {
         "earnings_date": "2025-09-30 00:00:00",
         "surprise_pct": 9.87,
-        "same_day_return": 0.5829478714558523,
+        "same_day_return": 0.5829400506413451,
         "e_day_used": "2025-09-30 00:00:00"
       },
       {
@@ -1637,7 +1637,7 @@
     "intercept": 2.1201,
     "r_squared": 0.9615,
     "n_quarters": 4,
-    "fitted_on": "2026-05-08T12:26:49.762518",
+    "fitted_on": "2026-05-09T14:00:26.507129",
     "observations": [
       {
         "earnings_date": "2025-06-30 00:00:00",

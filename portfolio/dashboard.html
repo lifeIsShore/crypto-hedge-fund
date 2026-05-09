@@ -825,6 +825,11 @@
       _activeTab = name;
 
       const container = document.getElementById('page-container');
+
+      // ml_research is never cached — its script must re-execute fresh each visit
+      // so the DOM-guard in _loadML works correctly
+      if (name === 'ml_research') delete _pageCache[name];
+
       if (!_pageCache[name]) {
         container.innerHTML = '<div class="page-loading">LOADING ' + name.toUpperCase() + '...</div>';
       }

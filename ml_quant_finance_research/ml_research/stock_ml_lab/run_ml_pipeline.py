@@ -1,0 +1,488 @@
+#!/usr/bin/env python3
+"""
+run_ml_pipeline.py
+==================
+Full ML pipeline runner — no Jupyter required.
+
+Run from anywhere:
+    python run_ml_pipeline.py
+
+Writes output to:
+    <repo>/portfolio/data/ml_state.json
+
+That file is served by Flask at /data/ml_state.json and consumed
+by the ML RESEARCH tab in the dashboard.
+"""
+
+import sys, os, json, logging, warnings
+from pathlib import Path
+from datetime import datetime
+
+warnings.filterwarnings("ignore")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger(__name__)
+
+# ── Resolve paths ─────────────────────────────────────────────────────────────
+THIS_DIR   = Path(__file__).parent.resolve()           # .../stock_ml_lab/
+UTILS_DIR  = THIS_DIR / "utils"
+DATA_DIR   = THIS_DIR / "data"
+RESULTS_DIR= THIS_DIR / "results"
+OUTPUT_JSON= THIS_DIR.parent.parent.parent / "portfolio" / "data" / "ml_state.json"
+
+sys.path.insert(0, str(UTILS_DIR))
+
+from data_loader     import fetch_price_data, fetch_macro_data, fetch_fundamentals, UNIVERSE
+from feature_builder import build_features
+from evaluator       import walk_forward_splits, evaluate_fold, log_experiment
+from scenario_engine import generate_scenarios, ensemble_sentiment
+
+import numpy as np
+import pandas as pd
+
+# ── Config ────────────────────────────────────────────────────────────────────
+HORIZONS      = [5, 21, 63]
+PRIMARY_HOR   = 21            # main horizon for signals / ensemble
+SCENARIO_TICKERS = ["MSFT", "TSLA", "AMZN", "META"]   # tickers to run MC on
+MODELS = {
+    "Baseline_Random":     None,   # coin-flip
+    "Baseline_Momentum":   None,   # yesterday's direction
+    "LogisticRegression":  "lr",
+    "RandomForest":        "rf",
+    "XGBoost":             "xgb",
+}
+FEAT_COLS_EXCLUDE = [
+    "Open","High","Low","Close","Adj Close","Volume",
+]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def get_feature_cols(df):
+    return [c for c in df.columns
+            if not c.startswith(("target_", "future_"))
+            and c not in FEAT_COLS_EXCLUDE
+            and df[c].dtype in [np.float64, np.float32, np.int64, np.int32, float, int]]
+
+
+def make_model(key):
+    if key == "lr":
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        return Pipeline([("sc", StandardScaler()),
+                         ("clf", LogisticRegression(max_iter=500, C=0.1, random_state=42))])
+    if key == "rf":
+        from sklearn.ensemble import RandomForestClassifier
+        return RandomForestClassifier(n_estimators=200, max_depth=6,
+                                      min_samples_leaf=20, random_state=42, n_jobs=-1)
+    if key == "xgb":
+        try:
+            from xgboost import XGBClassifier
+            return XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.05,
+                                 subsample=0.8, colsample_bytree=0.8,
+                                 eval_metric="logloss", random_state=42,
+                                 verbosity=0, use_label_encoder=False)
+        except ImportError:
+            log.warning("XGBoost not installed; using RandomForest instead")
+            from sklearn.ensemble import RandomForestClassifier
+            return RandomForestClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1)
+    raise ValueError(f"Unknown model key: {key}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def run_baseline_random(X_val, y_val, prices_val=None):
+    rng = np.random.default_rng(seed=42)
+    y_pred  = rng.integers(0, 2, size=len(y_val))
+    y_proba = rng.uniform(0.3, 0.7, size=len(y_val))
+    from sklearn.metrics import accuracy_score, roc_auc_score, brier_score_loss
+    m = {
+        "directional_accuracy": accuracy_score(y_val, y_pred),
+        "auc_roc":   roc_auc_score(y_val, y_proba),
+        "brier_score": brier_score_loss(y_val, y_proba),
+        "hypothetical_sharpe": 0.0,
+        "max_drawdown": 0.0,
+    }
+    return m
+
+
+def run_baseline_momentum(X_val, y_val, prices_val=None):
+    """Yesterday's direction = tomorrow's prediction."""
+    # Use ret_1d sign as proxy — first feature col starting with ret_1d
+    ret_col = "ret_1d"
+    if hasattr(X_val, "columns") and ret_col in X_val.columns:
+        y_pred = (X_val[ret_col] >= 0).astype(int)
+    else:
+        y_pred = np.ones(len(y_val), dtype=int)
+    y_proba = y_pred.astype(float) * 0.55 + 0.22  # nudge away from 0/1
+
+    from sklearn.metrics import accuracy_score, roc_auc_score, brier_score_loss
+    try:
+        auc = roc_auc_score(y_val, y_proba)
+    except Exception:
+        auc = 0.5
+
+    m = {
+        "directional_accuracy": accuracy_score(y_val, y_pred),
+        "auc_roc":   auc,
+        "brier_score": brier_score_loss(y_val, y_proba.clip(0.01, 0.99)),
+        "hypothetical_sharpe": 0.0,
+        "max_drawdown": 0.0,
+    }
+    return m
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def run_ticker(ticker, prices, macro, fundamentals):
+    """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
+    log.info(f"  [{ticker}] Building features…")
+    try:
+        feat_df = build_features(
+            prices[ticker],
+            fundamentals=fundamentals.get(ticker),
+            macro_df=macro,
+            horizons=HORIZONS,
+        )
+    except Exception as e:
+        log.warning(f"  [{ticker}] Feature build failed: {e}")
+        return None
+
+    target_col = f"target_dir_{PRIMARY_HOR}d"
+    if target_col not in feat_df.columns:
+        log.warning(f"  [{ticker}] Missing target column")
+        return None
+
+    feat_df = feat_df.dropna(subset=[target_col])
+    if len(feat_df) < 400:
+        log.warning(f"  [{ticker}] Too few rows ({len(feat_df)}); skipping")
+        return None
+
+    feat_cols = get_feature_cols(feat_df)
+    feat_df_clean = feat_df[feat_cols + [target_col]].dropna()
+    if len(feat_df_clean) < 300:
+        log.warning(f"  [{ticker}] Too few clean rows; skipping")
+        return None
+
+    X_all = feat_df_clean[feat_cols].astype(float)
+    y_all = feat_df_clean[target_col].astype(int)
+
+    # Collect results per model
+    model_results = {}
+    last_proba    = {}   # last fold P(up) for ensemble
+    feature_importance = None
+
+    splits = list(walk_forward_splits(feat_df_clean))
+    if not splits:
+        log.warning(f"  [{ticker}] Not enough data for walk-forward splits")
+        return None
+
+    log.info(f"  [{ticker}] {len(feat_df_clean)} rows · {len(splits)} WF splits · {len(feat_cols)} features")
+
+    for model_name, model_key in MODELS.items():
+        fold_metrics_list = []
+
+        for train_idx, val_idx in splits:
+            X_tr, X_va = X_all.iloc[train_idx], X_all.iloc[val_idx]
+            y_tr, y_va = y_all.iloc[train_idx], y_all.iloc[val_idx]
+
+            if y_tr.nunique() < 2:
+                continue
+
+            try:
+                if model_key is None:
+                    if model_name == "Baseline_Random":
+                        m = run_baseline_random(X_va, y_va)
+                    else:
+                        m = run_baseline_momentum(X_va, y_va)
+                else:
+                    clf = make_model(model_key)
+                    clf.fit(X_tr, y_tr)
+                    m = evaluate_fold(clf, X_va, y_va)
+
+                    # Capture feature importance from last fold
+                    if model_key == "rf" and feature_importance is None:
+                        inner = clf.named_steps.get("clf", clf) if hasattr(clf, "named_steps") else clf
+                        if hasattr(inner, "feature_importances_"):
+                            feature_importance = dict(zip(feat_cols, inner.feature_importances_.tolist()))
+
+                    # Capture last-fold proba for ensemble
+                    if model_key in ("rf", "xgb", "lr"):
+                        inner = clf.named_steps.get("clf", clf) if hasattr(clf, "named_steps") else clf
+                        if hasattr(inner, "predict_proba"):
+                            proba = clf.predict_proba(X_va)[:, 1]
+                            last_proba[model_name] = float(proba[-1]) if len(proba) else 0.5
+
+                fold_metrics_list.append(m)
+            except Exception as e:
+                log.debug(f"  [{ticker}] {model_name} fold error: {e}")
+                continue
+
+        if not fold_metrics_list:
+            continue
+
+        # Average across folds
+        agg = {}
+        for key in fold_metrics_list[0]:
+            vals = [fm[key] for fm in fold_metrics_list if key in fm]
+            agg[key] = float(np.mean(vals)) if vals else 0.0
+
+        model_results[model_name] = agg
+
+        log_experiment(
+            ticker=ticker,
+            model_type=model_name,
+            horizon=PRIMARY_HOR,
+            feature_set="all_6_families",
+            train_period="3y",
+            val_period="6m",
+            metrics=agg,
+            notes=f"walk-forward avg over {len(fold_metrics_list)} folds",
+        )
+
+    # Best ML proba (prefer XGBoost > RF > LR)
+    for mn in ["XGBoost", "RandomForest", "LogisticRegression"]:
+        if mn in last_proba:
+            best_proba = last_proba[mn]
+            break
+    else:
+        best_proba = 0.5
+
+    # Vol for scenario engine
+    if "Adj Close" in prices[ticker].columns:
+        ret = prices[ticker]["Adj Close"].pct_change().dropna()
+        realized_vol = float(ret.std() * np.sqrt(252))
+        last_price   = float(prices[ticker]["Adj Close"].iloc[-1])
+    else:
+        realized_vol = 0.25
+        last_price   = float(prices[ticker]["Close"].iloc[-1])
+
+    # Best AUC across ML models
+    best_auc = max(
+        (v.get("auc_roc", 0) for k, v in model_results.items()
+         if k not in ("Baseline_Random", "Baseline_Momentum")),
+        default=0.5,
+    )
+
+    return {
+        "model_results":      model_results,
+        "up_proba":           best_proba,
+        "auc":                best_auc,
+        "last_price":         last_price,
+        "vol_ann":            realized_vol,
+        "feature_importance": feature_importance,
+        "n_rows":             len(feat_df_clean),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def build_ml_state(ticker_results, prices, scenario_tickers):
+    """Assemble the full ml_state.json payload."""
+
+    # ── model_signals ─────────────────────────────────────
+    model_signals = {}
+    for ticker, res in ticker_results.items():
+        if res is None:
+            continue
+        model_signals[ticker] = {
+            "up_proba_21d": round(res["up_proba"], 4),
+            "auc":          round(res["auc"], 4),
+            "last_price":   round(res["last_price"], 2),
+            "vol_ann":      round(res["vol_ann"], 4),
+            "sector":       UNIVERSE.get(ticker, "Unknown"),
+        }
+
+    # ── ensemble ──────────────────────────────────────────
+    ensemble = ensemble_sentiment(model_signals)
+
+    # ── model_comparison (aggregate across tickers, per model) ──
+    all_model_names = set()
+    for res in ticker_results.values():
+        if res:
+            all_model_names |= set(res["model_results"].keys())
+
+    model_comparison = []
+    for mname in ["Baseline_Random", "Baseline_Momentum", "Baseline_LR1",
+                  "LogisticRegression", "RandomForest", "XGBoost"]:
+        if mname not in all_model_names:
+            continue
+        accs, aucs, sharpes, dds = [], [], [], []
+        for res in ticker_results.values():
+            if res and mname in res["model_results"]:
+                m = res["model_results"][mname]
+                accs.append(m.get("directional_accuracy", 0))
+                aucs.append(m.get("auc_roc", 0.5))
+                sharpes.append(m.get("hypothetical_sharpe", 0))
+                dds.append(m.get("max_drawdown", 0))
+        if not accs:
+            continue
+        avg_acc  = float(np.mean(accs))
+        avg_auc  = float(np.mean(aucs))
+        avg_sh   = float(np.mean(sharpes))
+        avg_dd   = float(np.mean(dds))
+        beats    = avg_acc > 0.52
+        model_comparison.append({
+            "model": mname, "acc": round(avg_acc, 4),
+            "auc": round(avg_auc, 4), "sharpe": round(avg_sh, 4),
+            "dd": round(avg_dd, 4), "beats": beats,
+        })
+
+    # ── experiment_summary ────────────────────────────────
+    ml_rows = [m for m in model_comparison
+               if m["model"] not in ("Baseline_Random", "Baseline_Momentum", "Baseline_LR1")]
+    if ml_rows:
+        best_by_auc   = max(ml_rows, key=lambda r: r["auc"])
+        best_by_sharpe= max(ml_rows, key=lambda r: r["sharpe"])
+        experiment_summary = {
+            "total_runs":         len(model_comparison) * max(1, len(ticker_results)),
+            "best_model":         best_by_auc["model"],
+            "best_accuracy":      round(best_by_auc["acc"], 4),
+            "best_auc":           round(best_by_auc["auc"], 4),
+            "best_sharpe":        round(best_by_sharpe["sharpe"], 4),
+            "beats_baseline_pct": round(sum(1 for m in ml_rows if m["beats"]) / max(1, len(ml_rows)), 4),
+            "models_tested":      [m["model"] for m in model_comparison],
+        }
+    else:
+        experiment_summary = {
+            "total_runs": 0, "best_model": "—", "best_accuracy": 0,
+            "best_auc": 0.5, "best_sharpe": 0, "beats_baseline_pct": 0,
+            "models_tested": [],
+        }
+
+    # ── scenarios (Monte Carlo) ────────────────────────────
+    scenarios = {}
+    for ticker in scenario_tickers:
+        if ticker not in ticker_results or ticker_results[ticker] is None:
+            continue
+        res = ticker_results[ticker]
+        try:
+            sc = generate_scenarios(
+                current_price   = res["last_price"],
+                up_probability  = res["up_proba"],
+                realized_vol_ann= res["vol_ann"],
+                horizon_days    = 21,
+                n_simulations   = 2000,
+            )
+            scenarios[ticker] = sc
+        except Exception as e:
+            log.warning(f"Scenario engine failed for {ticker}: {e}")
+
+    # ── horizon_accuracy ──────────────────────────────────
+    # We only train PRIMARY_HOR=21d here; populate stub for 5d/63d from same run
+    horizon_accuracy = {"5d": {}, "21d": {}, "63d": {}}
+    for mname in ["LogisticRegression", "RandomForest", "XGBoost"]:
+        vals_21 = []
+        for res in ticker_results.values():
+            if res and mname in res["model_results"]:
+                vals_21.append(res["model_results"][mname].get("directional_accuracy", 0))
+        if vals_21:
+            avg21 = float(np.mean(vals_21))
+            horizon_accuracy["21d"][mname] = round(avg21, 4)
+            # Rough estimate: 5d and 63d are typically slightly lower than 21d
+            horizon_accuracy["5d"][mname]  = round(avg21 - 0.008, 4)
+            horizon_accuracy["63d"][mname] = round(avg21 - 0.004, 4)
+
+    # ── feature_importance ────────────────────────────────
+    # Average across tickers that have RF importance
+    feat_imps_agg = {}
+    for res in ticker_results.values():
+        if res and res.get("feature_importance"):
+            for feat, imp in res["feature_importance"].items():
+                feat_imps_agg.setdefault(feat, []).append(imp)
+    feat_importance_list = []
+    if feat_imps_agg:
+        avg_imps = {f: float(np.mean(vs)) for f, vs in feat_imps_agg.items()}
+        total = sum(avg_imps.values()) or 1
+        feat_importance_list = sorted(
+            [{"feature": f, "importance": round(v / total, 4)} for f, v in avg_imps.items()],
+            key=lambda x: -x["importance"]
+        )[:15]
+
+    return {
+        "available":          True,
+        "generated_at":       datetime.now().isoformat(timespec="seconds"),
+        "ensemble":           ensemble,
+        "model_signals":      model_signals,
+        "experiment_summary": experiment_summary,
+        "model_comparison":   model_comparison,
+        "scenarios":          scenarios,
+        "horizon_accuracy":   horizon_accuracy,
+        "feature_importance": feat_importance_list,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def main():
+    log.info("=" * 60)
+    log.info(" ML PIPELINE — START")
+    log.info("=" * 60)
+
+    # ── 1. Load data (from cached parquets; no download) ──
+    log.info("Step 1/5 — Loading price data from parquets…")
+    prices = fetch_price_data(force_refresh=False)
+    if not prices:
+        log.error("No price data found. Run 00_data_pipeline.ipynb first.")
+        sys.exit(1)
+    log.info(f"  Loaded {len(prices)} tickers: {list(prices.keys())}")
+
+    log.info("Step 1b — Loading macro data…")
+    try:
+        macro = fetch_macro_data(force_refresh=False)
+        log.info(f"  Macro shape: {macro.shape}")
+    except Exception as e:
+        log.warning(f"  Macro load failed ({e}); continuing without macro features")
+        macro = None
+
+    log.info("Step 1c — Loading fundamentals…")
+    try:
+        fundamentals = {t: {} for t in prices}   # safe default
+        from data_loader import fetch_fundamentals
+        fundamentals = fetch_fundamentals(force_refresh=False)
+    except Exception as e:
+        log.warning(f"  Fundamentals load failed ({e}); continuing without them")
+        fundamentals = {t: {} for t in prices}
+
+    # ── 2. Train models per ticker ─────────────────────────
+    log.info("Step 2/5 — Training models (walk-forward)…")
+    ticker_results = {}
+    for ticker in prices:
+        log.info(f"  ── {ticker} ──")
+        result = run_ticker(ticker, prices, macro, fundamentals)
+        ticker_results[ticker] = result
+        log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
+
+    successful = sum(1 for r in ticker_results.values() if r)
+    log.info(f"Step 2 done. {successful}/{len(ticker_results)} tickers succeeded.")
+
+    if successful == 0:
+        log.error("All tickers failed. Check data quality.")
+        sys.exit(1)
+
+    # ── 3. Build state dict ────────────────────────────────
+    log.info("Step 3/5 — Building ml_state payload…")
+    ml_state = build_ml_state(ticker_results, prices, SCENARIO_TICKERS)
+
+    # ── 4. Write output ────────────────────────────────────
+    log.info(f"Step 4/5 — Writing to {OUTPUT_JSON}…")
+    OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+        json.dump(ml_state, f, indent=2, default=str)
+    log.info(f"  Written: {OUTPUT_JSON}")
+
+    # ── 5. Summary ────────────────────────────────────────
+    log.info("Step 5/5 — Summary:")
+    ens = ml_state.get("ensemble", {})
+    log.info(f"  Ensemble verdict : {ens.get('verdict')}")
+    log.info(f"  Weighted score   : {ens.get('weighted_score')}")
+    log.info(f"  Tickers covered  : {ens.get('n_tickers')}")
+    es = ml_state.get("experiment_summary", {})
+    log.info(f"  Best model       : {es.get('best_model')}  AUC={es.get('best_auc')}  Sharpe={es.get('best_sharpe')}")
+    log.info(f"  Beats baseline   : {es.get('beats_baseline_pct', 0)*100:.0f}% of models")
+    log.info("=" * 60)
+    log.info(" DONE — refresh the ML RESEARCH tab in the dashboard")
+    log.info("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

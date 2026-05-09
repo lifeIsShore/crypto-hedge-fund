@@ -1,73 +1,507 @@
 {
   "available": true,
-  "generated_at": "2026-05-07T12:00:00",
+  "generated_at": "2026-05-09T14:18:26",
   "ensemble": {
-    "weighted_score": 0.558,
-    "median_score": 0.565,
-    "verdict": "BROADLY BULLISH",
-    "n_tickers": 10,
-    "spread_25_75": 0.13
+    "weighted_score": 0.4103,
+    "median_score": 0.3388,
+    "verdict": "MIXED",
+    "n_tickers": 8,
+    "spread_25_75": 0.5714
   },
   "model_signals": {
-    "META":  {"up_proba_21d": 0.62, "auc": 0.58, "last_price": 520.0, "vol_ann": 0.35, "sector": "Communication"},
-    "JPM":   {"up_proba_21d": 0.55, "auc": 0.54, "last_price": 210.0, "vol_ann": 0.22, "sector": "Financials"},
-    "XOM":   {"up_proba_21d": 0.48, "auc": 0.52, "last_price": 115.0, "vol_ann": 0.25, "sector": "Energy"},
-    "UNH":   {"up_proba_21d": 0.57, "auc": 0.55, "last_price": 480.0, "vol_ann": 0.20, "sector": "Healthcare"},
-    "TSLA":  {"up_proba_21d": 0.44, "auc": 0.53, "last_price": 175.0, "vol_ann": 0.65, "sector": "Cons. Disc."},
-    "MSFT":  {"up_proba_21d": 0.63, "auc": 0.59, "last_price": 415.0, "vol_ann": 0.28, "sector": "Technology"},
-    "CAT":   {"up_proba_21d": 0.52, "auc": 0.51, "last_price": 340.0, "vol_ann": 0.30, "sector": "Industrials"},
-    "AMZN":  {"up_proba_21d": 0.60, "auc": 0.57, "last_price": 190.0, "vol_ann": 0.33, "sector": "Technology"},
-    "GLD":   {"up_proba_21d": 0.51, "auc": 0.50, "last_price": 220.0, "vol_ann": 0.14, "sector": "Commodities"},
-    "BRK-B": {"up_proba_21d": 0.54, "auc": 0.53, "last_price": 450.0, "vol_ann": 0.18, "sector": "Diversified"}
+    "META": {
+      "up_proba_21d": 0.9088,
+      "auc": 0.6512,
+      "last_price": 616.81,
+      "vol_ann": 0.375,
+      "sector": "Communication Services"
+    },
+    "XOM": {
+      "up_proba_21d": 0.0312,
+      "auc": 0.6485,
+      "last_price": 146.58,
+      "vol_ann": 0.2677,
+      "sector": "Energy"
+    },
+    "UNH": {
+      "up_proba_21d": 0.0689,
+      "auc": 0.6478,
+      "last_price": 369.74,
+      "vol_ann": 0.2875,
+      "sector": "Healthcare"
+    },
+    "TSLA": {
+      "up_proba_21d": 0.1588,
+      "auc": 0.5907,
+      "last_price": 411.79,
+      "vol_ann": 0.5657,
+      "sector": "Consumer Discretionary"
+    },
+    "MSFT": {
+      "up_proba_21d": 0.7802,
+      "auc": 0.6112,
+      "last_price": 420.77,
+      "vol_ann": 0.2652,
+      "sector": "Technology"
+    },
+    "CAT": {
+      "up_proba_21d": 0.6836,
+      "auc": 0.6116,
+      "last_price": 895.69,
+      "vol_ann": 0.2967,
+      "sector": "Industrials"
+    },
+    "AMZN": {
+      "up_proba_21d": 0.3419,
+      "auc": 0.6296,
+      "last_price": 271.17,
+      "vol_ann": 0.3283,
+      "sector": "Consumer Discretionary"
+    },
+    "BRK-B": {
+      "up_proba_21d": 0.3357,
+      "auc": 0.6145,
+      "last_price": 475.08,
+      "vol_ann": 0.1878,
+      "sector": "Diversified"
+    }
   },
   "experiment_summary": {
-    "total_runs": 42,
+    "total_runs": 50,
     "best_model": "XGBoost",
-    "best_accuracy": 0.5421,
-    "best_auc": 0.5712,
-    "best_sharpe": 1.18,
-    "beats_baseline_pct": 0.67,
-    "models_tested": ["Baseline_Random","Baseline_Momentum","Baseline_LR1","LogisticRegression","RandomForest","XGBoost"]
+    "best_accuracy": 0.5573,
+    "best_auc": 0.6112,
+    "best_sharpe": 0.0,
+    "beats_baseline_pct": 1.0,
+    "models_tested": [
+      "Baseline_Random",
+      "Baseline_Momentum",
+      "LogisticRegression",
+      "RandomForest",
+      "XGBoost"
+    ]
   },
   "model_comparison": [
-    {"model":"Baseline_Random",    "acc":0.500,"auc":0.500,"sharpe":-0.10,"dd":-0.22,"beats":false},
-    {"model":"Baseline_Momentum",  "acc":0.514,"auc":0.514,"sharpe": 0.31,"dd":-0.18,"beats":false},
-    {"model":"Baseline_LR1",       "acc":0.521,"auc":0.519,"sharpe": 0.55,"dd":-0.16,"beats":false},
-    {"model":"LogisticRegression", "acc":0.528,"auc":0.534,"sharpe": 0.72,"dd":-0.15,"beats":true},
-    {"model":"RandomForest",       "acc":0.534,"auc":0.548,"sharpe": 0.94,"dd":-0.14,"beats":true},
-    {"model":"XGBoost",            "acc":0.542,"auc":0.571,"sharpe": 1.18,"dd":-0.12,"beats":true}
+    {
+      "model": "Baseline_Random",
+      "acc": 0.4992,
+      "auc": 0.5146,
+      "sharpe": 0.0,
+      "dd": 0.0,
+      "beats": false
+    },
+    {
+      "model": "Baseline_Momentum",
+      "acc": 0.5019,
+      "auc": 0.4881,
+      "sharpe": 0.0,
+      "dd": 0.0,
+      "beats": false
+    },
+    {
+      "model": "LogisticRegression",
+      "acc": 0.5524,
+      "auc": 0.6029,
+      "sharpe": 0.0,
+      "dd": 0.0,
+      "beats": true
+    },
+    {
+      "model": "RandomForest",
+      "acc": 0.5575,
+      "auc": 0.5955,
+      "sharpe": 0.0,
+      "dd": 0.0,
+      "beats": true
+    },
+    {
+      "model": "XGBoost",
+      "acc": 0.5573,
+      "auc": 0.6112,
+      "sharpe": 0.0,
+      "dd": 0.0,
+      "beats": true
+    }
   ],
   "scenarios": {
     "MSFT": {
-      "bull": {"return_range":[0.058,0.142],"price_range":[439.07,474.0],"probability":0.25,"suggested_action":"Enter / Add"},
-      "base": {"return_range":[-0.018,0.058],"price_range":[407.53,439.07],"probability":0.51,"suggested_action":"Hold"},
-      "bear": {"return_range":[-0.089,-0.018],"price_range":[377.04,407.53],"probability":0.24,"suggested_action":"Avoid"},
-      "metadata": {"current_price":415.0,"up_probability":0.63,"horizon_days":21,"realized_vol_ann":0.28,
-                   "percentiles":{"p5":-0.089,"p25":-0.018,"p50":0.021,"p75":0.058,"p95":0.142}}
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.0885,
+          0.2043
+        ],
+        "price_range": [
+          458.03,
+          506.73
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 399.73"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.0431,
+          0.0885
+        ],
+        "price_range": [
+          402.62,
+          458.03
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.1284,
+          -0.0431
+        ],
+        "price_range": [
+          366.73,
+          402.62
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 433.39 for 5 days"
+      },
+      "metadata": {
+        "current_price": 420.7699890136719,
+        "up_probability": 0.7802073359489441,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.2652154952675185,
+        "percentiles": {
+          "p5": -0.1284,
+          "p25": -0.0431,
+          "p50": 0.0227,
+          "p75": 0.0885,
+          "p95": 0.2043
+        }
+      }
     },
     "TSLA": {
-      "bull": {"return_range":[0.112,0.298],"price_range":[194.6,226.6],"probability":0.25,"suggested_action":"Watch"},
-      "base": {"return_range":[-0.042,0.112],"price_range":[167.65,194.6],"probability":0.50,"suggested_action":"Hold"},
-      "bear": {"return_range":[-0.201,-0.042],"price_range":[139.9,167.65],"probability":0.25,"suggested_action":"Avoid"},
-      "metadata": {"current_price":175.0,"up_probability":0.44,"horizon_days":21,"realized_vol_ann":0.65,
-                   "percentiles":{"p5":-0.201,"p25":-0.042,"p50":0.012,"p75":0.112,"p95":0.298}}
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.0317,
+          0.2776
+        ],
+        "price_range": [
+          424.85,
+          526.1
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 391.2"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.2185,
+          0.0317
+        ],
+        "price_range": [
+          321.82,
+          424.85
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.364,
+          -0.2185
+        ],
+        "price_range": [
+          261.89,
+          321.82
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 424.14 for 5 days"
+      },
+      "metadata": {
+        "current_price": 411.7900085449219,
+        "up_probability": 0.15876656770706177,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.5657324836322204,
+        "percentiles": {
+          "p5": -0.364,
+          "p25": -0.2185,
+          "p50": -0.0986,
+          "p75": 0.0317,
+          "p95": 0.2776
+        }
+      }
+    },
+    "AMZN": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.0479,
+          0.188
+        ],
+        "price_range": [
+          284.17,
+          322.15
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 257.61"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.1068,
+          0.0479
+        ],
+        "price_range": [
+          242.2,
+          284.17
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.2053,
+          -0.1068
+        ],
+        "price_range": [
+          215.49,
+          242.2
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 279.31 for 5 days"
+      },
+      "metadata": {
+        "current_price": 271.1700134277344,
+        "up_probability": 0.3419278860092163,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.3282967869203556,
+        "percentiles": {
+          "p5": -0.2053,
+          "p25": -0.1068,
+          "p50": -0.0301,
+          "p75": 0.0479,
+          "p95": 0.188
+        }
+      }
+    },
+    "META": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.1465,
+          0.3214
+        ],
+        "price_range": [
+          707.17,
+          815.03
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 585.97"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.0445,
+          0.1465
+        ],
+        "price_range": [
+          589.35,
+          707.17
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.1642,
+          -0.0445
+        ],
+        "price_range": [
+          515.52,
+          589.35
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 635.31 for 5 days"
+      },
+      "metadata": {
+        "current_price": 616.8099975585938,
+        "up_probability": 0.9087986946105957,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.37502695143016834,
+        "percentiles": {
+          "p5": -0.1642,
+          "p25": -0.0445,
+          "p50": 0.0494,
+          "p75": 0.1465,
+          "p95": 0.3214
+        }
+      }
     }
   },
   "horizon_accuracy": {
-    "5d":  {"XGBoost":0.531,"RandomForest":0.522,"LogisticRegression":0.516},
-    "21d": {"XGBoost":0.542,"RandomForest":0.534,"LogisticRegression":0.528},
-    "63d": {"XGBoost":0.538,"RandomForest":0.530,"LogisticRegression":0.524}
+    "5d": {
+      "LogisticRegression": 0.5444,
+      "RandomForest": 0.5495,
+      "XGBoost": 0.5493
+    },
+    "21d": {
+      "LogisticRegression": 0.5524,
+      "RandomForest": 0.5575,
+      "XGBoost": 0.5573
+    },
+    "63d": {
+      "LogisticRegression": 0.5484,
+      "RandomForest": 0.5535,
+      "XGBoost": 0.5533
+    }
   },
   "feature_importance": [
-    {"feature":"ret_21d",          "importance":0.142},
-    {"feature":"vol_63d",          "importance":0.118},
-    {"feature":"price_vs_ma200",   "importance":0.097},
-    {"feature":"rsi_14",           "importance":0.088},
-    {"feature":"macd_hist",        "importance":0.076},
-    {"feature":"macro_vix",        "importance":0.071},
-    {"feature":"macro_yield_curve","importance":0.064},
-    {"feature":"obv_zscore",       "importance":0.058},
-    {"feature":"bb_position",      "importance":0.052},
-    {"feature":"ret_5d",           "importance":0.047}
+    {
+      "feature": "price_vs_ma200",
+      "importance": 0.0726
+    },
+    {
+      "feature": "macro_fed_funds",
+      "importance": 0.0697
+    },
+    {
+      "feature": "macro_cpi_yoy",
+      "importance": 0.0688
+    },
+    {
+      "feature": "vol_63d",
+      "importance": 0.0656
+    },
+    {
+      "feature": "macro_yield_curve",
+      "importance": 0.0645
+    },
+    {
+      "feature": "dist_52w_low",
+      "importance": 0.0632
+    },
+    {
+      "feature": "macro_dxy",
+      "importance": 0.0625
+    },
+    {
+      "feature": "macro_yield_10y",
+      "importance": 0.0533
+    },
+    {
+      "feature": "macro_yield_2y",
+      "importance": 0.0469
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 0.0436
+    },
+    {
+      "feature": "vol_21d",
+      "importance": 0.0417
+    },
+    {
+      "feature": "price_vs_ma50",
+      "importance": 0.0364
+    },
+    {
+      "feature": "ret_63d",
+      "importance": 0.0358
+    },
+    {
+      "feature": "dist_52w_high",
+      "importance": 0.0356
+    },
+    {
+      "feature": "macro_vix",
+      "importance": 0.0356
+    }
   ]
 }

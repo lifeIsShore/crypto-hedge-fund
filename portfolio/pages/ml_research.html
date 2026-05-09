@@ -1,12 +1,51 @@
 <!-- ── ML RESEARCH TAB ─────────────────────────────────────────────────────── -->
-<div id="mlr-unavailable" style="display:block;padding:60px 0;text-align:center;">
-  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;letter-spacing:.08em;">NO ML RESEARCH DATA</div>
-  <div style="font-size:11px;color:var(--muted);max-width:520px;margin:0 auto;line-height:1.9;">
-    Run the ML notebooks to populate this tab:<br>
-    <span style="color:var(--text);">ml_quant_finance_research/ml_research/stock_ml_lab/notebooks/03_baseline_models.ipynb</span><br>
-    <span style="color:var(--text);">ml_quant_finance_research/ml_research/stock_ml_lab/notebooks/04_ml_models.ipynb</span><br>
-    <span style="color:var(--text);">ml_quant_finance_research/ml_research/stock_ml_lab/notebooks/06_scenario_engine.ipynb</span><br>
-    <span style="color:var(--text);">ml_quant_finance_research/ml_research/stock_ml_lab/notebooks/07_ensemble.ipynb</span>
+
+<!-- Run control panel -->
+<div class="panel" style="margin-bottom:14px;" id="mlr-run-panel">
+  <div class="panel-header">
+    <span class="panel-title">ML PIPELINE — RUN CONTROL</span>
+    <span class="panel-tag" id="mlr-last-run">LAST RUN: —</span>
+  </div>
+  <div class="panel-body">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="font-size:10px;color:var(--muted);flex:1;line-height:1.7;">
+        Trains Logistic Regression, Random Forest &amp; XGBoost on 10 tickers using walk-forward validation, then writes
+        <code style="color:var(--accent)">portfolio/data/ml_state.json</code>.
+        Uses locally cached data — no internet required. Runtime ~2–5 min.
+      </div>
+      <button id="btn-run-ml" class="btn"
+        onclick="mlrRunPipeline()"
+        style="font-size:10px;letter-spacing:.06em;padding:5px 18px;
+               border-color:var(--blue);color:var(--blue);font-weight:600;">
+        ▶ RUN ML PIPELINE
+      </button>
+    </div>
+    <div id="mlr-status-bar"
+      style="display:none;margin-top:10px;border:1px solid var(--border);
+             background:var(--surface2);padding:8px 10px;font-size:10px;
+             color:var(--muted);position:relative;">
+      <span id="mlr-status-txt">Waiting…</span>
+      <span id="mlr-spinner" style="display:none;position:absolute;right:10px;top:50%;
+        transform:translateY(-50%);color:var(--blue);">●</span>
+    </div>
+    <div id="mlr-log-wrap" style="display:none;margin-top:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:9px;color:var(--muted);letter-spacing:.1em;">PIPELINE LOG</span>
+        <button class="btn" onclick="document.getElementById('mlr-log-wrap').style.display='none'"
+          style="font-size:9px;padding:2px 8px;border-color:var(--muted);color:var(--muted);">HIDE</button>
+      </div>
+      <pre id="mlr-log-output" style="background:var(--bg);border:1px solid var(--border);
+        padding:10px;font-size:9px;line-height:1.7;max-height:200px;overflow-y:auto;
+        white-space:pre-wrap;color:var(--muted);font-family:var(--mono);"></pre>
+    </div>
+  </div>
+</div>
+
+<div id="mlr-unavailable" style="display:block;padding:40px 0;text-align:center;">
+  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;letter-spacing:.08em;">NO ML RESEARCH DATA YET</div>
+  <div style="font-size:11px;color:var(--muted);max-width:500px;margin:0 auto;line-height:1.9;">
+    Click <span style="color:var(--blue);">&#9658; RUN ML PIPELINE</span> above to train the models and populate this tab.<br>
+    Raw data is already cached — no internet required. Runtime ~2–5 minutes.
   </div>
 </div>
 
@@ -210,6 +249,77 @@
 
     window._pageInit = function () { destroyCharts(); _loadML(); };
 
+    window.mlrRunPipeline = async function () {
+      const btn    = document.getElementById('btn-run-ml');
+      const bar    = document.getElementById('mlr-status-bar');
+      const txt    = document.getElementById('mlr-status-txt');
+      const spin   = document.getElementById('mlr-spinner');
+      const logW   = document.getElementById('mlr-log-wrap');
+      const logOut = document.getElementById('mlr-log-output');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ RUNNING…';
+      btn.style.borderColor = 'var(--amber)';
+      btn.style.color = 'var(--amber)';
+      bar.style.display = 'block';
+      txt.style.color = '';
+      txt.textContent = 'Running ML pipeline — training LR, RF & XGBoost on 10 tickers… (~2-5 min)';
+      spin.style.display = 'inline';
+      logW.style.display = 'none';
+
+      const spinChars = ['●','○','◉','○'];
+      let si = 0;
+      const spinTimer = setInterval(() => { spin.textContent = spinChars[si++ % 4]; }, 400);
+
+      try {
+        const res = await fetch('/api/run_ml_pipeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+        clearInterval(spinTimer);
+        spin.style.display = 'none';
+
+        if (data.success) {
+          txt.textContent = '✅ ML pipeline completed successfully — reloading results…';
+          txt.style.color = 'var(--accent)';
+          btn.textContent = '✓ DONE — RUN AGAIN';
+          btn.style.borderColor = 'var(--accent)';
+          btn.style.color = 'var(--accent)';
+          const tag = document.getElementById('mlr-last-run');
+          if (tag) tag.textContent = 'LAST RUN: ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+          if (data.log) { logOut.textContent = data.log; logW.style.display = 'block'; logOut.scrollTop = logOut.scrollHeight; }
+          // Reload the ML results into the UI
+          if (data.ml_state) {
+            _mlrData = data.ml_state;
+            document.getElementById('mlr-unavailable').style.display = 'none';
+            document.getElementById('mlr-content').style.display = 'block';
+            _render(data.ml_state);
+          } else {
+            await _loadML();
+          }
+        } else {
+          txt.textContent = '❌ Pipeline error: ' + (data.error || 'unknown');
+          txt.style.color = 'var(--red)';
+          btn.textContent = '▶ RUN ML PIPELINE';
+          btn.style.borderColor = 'var(--blue)';
+          btn.style.color = 'var(--blue)';
+          if (data.log) { logOut.textContent = data.log; logW.style.display = 'block'; }
+        }
+      } catch (err) {
+        clearInterval(spinTimer);
+        spin.style.display = 'none';
+        txt.textContent = '❌ Request failed: ' + err.message;
+        txt.style.color = 'var(--red)';
+        btn.textContent = '▶ RUN ML PIPELINE';
+        btn.style.borderColor = 'var(--blue)';
+        btn.style.color = 'var(--blue)';
+      }
+
+      btn.disabled = false;
+    };
+
     window.mlrSwitchMetric = function (metric, btn) {
       document.querySelectorAll('.mlr-metric-btn').forEach(b => b.classList.remove('active-mlr-btn'));
       btn.classList.add('active-mlr-btn');
@@ -226,6 +336,10 @@
     };
 
     async function _loadML() {
+      // Guard: if our root elements aren't in the DOM yet, bail out.
+      // This happens when the script clone runs in document.head before
+      // the tab HTML has been inserted into #page-container.
+      if (!document.getElementById('mlr-unavailable')) return;
       try {
         const r = await fetch('/data/ml_state.json?' + Date.now());
         const state = await r.json();
@@ -468,5 +582,8 @@
 
 
 
-    window._pageInit(null);
+    // Do NOT call _pageInit here — dashboard.html always calls it after
+    // injecting this HTML into #page-container. Calling it here runs in
+    // document.head before the tab DOM exists, causing a race condition
+    // where _loadML's fetch resolves against missing elements.
   })();

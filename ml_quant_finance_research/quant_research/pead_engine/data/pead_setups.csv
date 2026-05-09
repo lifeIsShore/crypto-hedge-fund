@@ -96,37 +96,6 @@ UBER,2025-12-31,-81.94,,-0.499,,,False,,False,Low,bearish,2026-01-05,Technology,
 META,2025-09-30,-84.34,,-1.213,-2.491,-1.278,False,,False,Low,bearish,2025-10-02,Communication,30,-10.825,-10.468,True,2026-05-08T11:29:46.286033,,,
 SPOT,2025-06-30,-120.78,,-0.681,-0.152,0.529,False,,False,Low,bearish,2025-07-02,Communication,30,-11.607,-1.243,True,2026-05-08T11:29:49.582357,,,
 ATAI,2025-09-30,-125.28,,-2.936,,,False,,False,Low,bearish,2025-10-02,Healthcare,30,13.619,-24.708,False,2026-05-08T11:29:47.200014,,,
-MRK,2026-03-31,13.15,,1.854,4.297,2.443,True,False,True,High,bullish,2026-04-02,Healthcare,30,-6.42,,False,2026-05-08T12:18:34.845320,Neutral,Slowdown,Neutral_Neutral_Slowdown
-NKE,2026-02-28,24.27,,-1.23,0.952,2.182,True,False,False,Medium,bullish,2026-03-04,Consumer Staples,21,-24.642,,False,2026-05-08T12:18:35.361833,Neutral,Expansion,Neutral_Neutral_Expansion
-GOOGL,2026-03-31,91.59,,5.141,4.96,-0.181,False,False,False,Low,bullish,2026-04-02,Communication,30,29.577,,True,2026-05-08T12:18:32.640256,Neutral,Slowdown,Neutral_Neutral_Slowdown
-BA,2026-03-31,70.26,,5.19,,,False,False,True,Low,bullish,2026-04-02,Industrials,30,6.282,,True,2026-05-08T12:18:35.621327,Neutral,Slowdown,Neutral_Neutral_Slowdown
-AMZN,2026-03-31,68.18,,3.643,2.752,-0.891,False,False,False,Low,bullish,2026-04-02,Technology,45,29.69,,True,2026-05-08T12:18:32.540305,Neutral,Slowdown,Neutral_Neutral_Slowdown
-META,2026-03-31,56.79,,6.665,3.818,-2.847,False,False,False,Low,bullish,2026-04-02,Communication,30,6.258,,True,2026-05-08T12:18:32.726332,Neutral,Slowdown,Neutral_Neutral_Slowdown
-MU,2026-02-28,33.21,,0.073,1.595,1.522,False,False,False,Low,bullish,2026-03-04,Technology,45,-8.578,,False,2026-05-08T12:18:33.024950,Neutral,Expansion,Neutral_Neutral_Expansion
-LLY,2026-03-31,25.9,,3.738,4.883,1.145,False,False,True,Low,bullish,2026-04-02,Healthcare,30,3.458,,True,2026-05-08T12:18:34.522314,Neutral,Slowdown,Neutral_Neutral_Slowdown
-TXN,2026-03-31,22.76,,4.141,4.024,-0.117,False,False,True,Low,bullish,2026-04-02,Technology,45,44.142,,True,2026-05-08T12:18:33.167673,Neutral,Slowdown,Neutral_Neutral_Slowdown
-CAT,2026-03-31,19.3,,6.147,4.038,-2.109,False,False,True,Low,bullish,2026-04-02,Industrials,30,22.2,,True,2026-05-08T12:18:35.804235,Neutral,Slowdown,Neutral_Neutral_Slowdown
-SPOT,2026-03-31,17.99,,2.086,-0.569,-2.655,False,False,False,Low,bullish,2026-04-02,Communication,30,-10.371,,False,2026-05-08T12:18:33.535571,Neutral,Slowdown,Neutral_Neutral_Slowdown
-TSLA,2026-03-31,17.15,,4.636,2.163,-2.473,False,False,True,Low,bullish,2026-04-02,Technology,45,8.852,,True,2026-05-08T12:18:32.810747,Neutral,Slowdown,Neutral_Neutral_Slowdown
-RTX,2026-03-31,16.95,,3.072,2.23,-0.842,False,False,False,Low,bullish,2026-04-02,Industrials,30,-11.88,,False,2026-05-08T12:18:35.978811,Neutral,Slowdown,Neutral_Neutral_Slowdown
-GE,2026-03-31,16.31,,3.85,2.951,-0.899,False,False,True,Low,bullish,2026-04-02,Industrials,30,-0.228,,False,2026-05-08T12:18:36.226987,Neutral,Slowdown,Neutral_Neutral_Slowdown
-SBUX,2026-03-31,14.51,,3.309,2.186,-1.123,False,False,False,Low,bullish,2026-04-02,Consumer Staples,21,16.156,,True,2026-05-08T12:18:35.461236,Neutral,Slowdown,Neutral_Neutral_Slowdown
-MS,2026-03-31,13.66,,3.915,0.623,-3.292,False,False,True,Low,bullish,2026-04-02,Financials,21,13.998,,True,2026-05-08T12:18:34.115185,Neutral,Slowdown,Neutral_Neutral_Slowdown
-UNH,2026-03-31,9.52,,3.361,1.871,-1.49,False,False,False,Low,bullish,2026-04-02,Healthcare,30,33.719,,True,2026-05-08T12:18:34.382139,Neutral,Slowdown,Neutral_Neutral_Slowdown
-BAC,2026-03-31,8.78,,3.218,0.363,-2.855,False,False,True,Low,bullish,2026-04-02,Financials,21,5.691,,True,2026-05-08T12:18:33.900489,Neutral,Slowdown,Neutral_Neutral_Slowdown
-AMGN,2026-03-31,8.04,,0.817,0.802,-0.015,False,False,True,Low,bullish,2026-04-02,Healthcare,30,-6.924,,False,2026-05-08T12:18:34.944209,Neutral,Slowdown,Neutral_Neutral_Slowdown
-JPM,2026-03-31,7.78,,3.661,1.566,-2.095,False,False,True,Low,bullish,2026-04-02,Financials,21,4.964,,True,2026-05-08T12:18:33.769352,Neutral,Slowdown,Neutral_Neutral_Slowdown
-AXP,2026-03-31,7.18,,1.677,0.824,-0.853,False,False,False,Low,bullish,2026-04-02,Financials,21,6.34,,True,2026-05-08T12:18:34.258562,Neutral,Slowdown,Neutral_Neutral_Slowdown
-GS,2026-03-31,7.06,,4.754,3.127,-1.627,False,False,True,Low,bullish,2026-04-02,Financials,21,4.661,,True,2026-05-08T12:18:34.006473,Neutral,Slowdown,Neutral_Neutral_Slowdown
-V,2026-03-31,6.79,,0.901,1.44,0.539,False,False,False,Low,bullish,2026-04-02,Financials,21,8.66,,True,2026-05-08T12:18:33.636824,Neutral,Slowdown,Neutral_Neutral_Slowdown
-GILD,2026-03-31,6.3,,2.222,0.22,-2.002,False,False,True,Low,bullish,2026-04-02,Healthcare,30,-5.025,,False,2026-05-08T12:18:35.047887,Neutral,Slowdown,Neutral_Neutral_Slowdown
-KO,2026-03-31,5.88,,-0.288,0.136,0.424,False,False,False,Low,bullish,2026-04-02,Consumer Staples,21,1.916,,True,2026-05-08T12:18:35.252014,Neutral,Slowdown,Neutral_Neutral_Slowdown
-AMD,2026-03-31,5.82,,3.77,0.539,-3.231,False,False,False,Low,bullish,2026-04-02,Technology,45,57.03,,True,2026-05-08T12:18:32.887128,Neutral,Slowdown,Neutral_Neutral_Slowdown
-ORCL,2026-02-28,5.69,,2.648,0.787,-1.861,False,False,False,Low,bullish,2026-03-04,Technology,45,-3.931,,False,2026-05-08T12:18:33.281245,Neutral,Expansion,Neutral_Neutral_Expansion
-PYPL,2026-03-31,5.59,,1.254,-0.73,-1.984,False,False,False,Low,bullish,2026-04-02,Financials,21,11.138,,True,2026-05-08T12:18:33.439486,Neutral,Slowdown,Neutral_Neutral_Slowdown
-HON,2026-03-31,5.55,,1.141,0.726,-0.415,False,False,False,Low,bullish,2026-04-02,Industrials,30,-8.655,,False,2026-05-08T12:18:36.396966,Neutral,Slowdown,Neutral_Neutral_Slowdown
-MSF.DE,2026-03-31,5.22,,-0.047,-1.137,-1.09,False,False,False,Low,bullish,2026-04-02,Technology,45,9.605,,True,2026-05-08T12:18:32.460992,Neutral,Slowdown,Neutral_Neutral_Slowdown
-UBER,2026-03-31,-81.78,,2.889,,,False,,False,Low,bearish,2026-04-02,Technology,45,2.909,,False,2026-05-08T12:18:33.360883,Neutral,Slowdown,Neutral_Neutral_Slowdown
 MRK,2026-03-31,13.15,,1.854,4.297,2.443,True,False,True,High,bullish,2026-04-02,Healthcare,30,-6.42,,False,2026-05-08T12:26:52.066181,Neutral,Slowdown,Neutral_Neutral_Slowdown
 NKE,2026-02-28,24.27,,-1.23,0.952,2.182,True,False,False,Medium,bullish,2026-03-04,Consumer Staples,21,-24.642,,False,2026-05-08T12:26:52.565107,Neutral,Expansion,Neutral_Neutral_Expansion
 GOOGL,2026-03-31,91.59,,5.141,4.96,-0.181,False,False,False,Low,bullish,2026-04-02,Communication,30,29.577,,True,2026-05-08T12:26:50.059719,Neutral,Slowdown,Neutral_Neutral_Slowdown
@@ -158,3 +127,34 @@ PYPL,2026-03-31,5.59,,1.254,-0.73,-1.984,False,False,False,Low,bullish,2026-04-0
 HON,2026-03-31,5.55,,1.141,0.726,-0.415,False,False,False,Low,bullish,2026-04-02,Industrials,30,-8.655,,False,2026-05-08T12:26:53.542023,Neutral,Slowdown,Neutral_Neutral_Slowdown
 MSF.DE,2026-03-31,5.22,,-0.047,-1.137,-1.09,False,False,False,Low,bullish,2026-04-02,Technology,45,9.605,,True,2026-05-08T12:26:49.900092,Neutral,Slowdown,Neutral_Neutral_Slowdown
 UBER,2026-03-31,-81.78,,2.889,,,False,,False,Low,bearish,2026-04-02,Technology,45,2.909,,False,2026-05-08T12:26:50.732199,Neutral,Slowdown,Neutral_Neutral_Slowdown
+NKE,2026-02-28,24.27,,-1.23,0.952,2.182,True,False,False,Medium,bullish,2026-03-04,Consumer Staples,21,-24.642,,False,2026-05-09T14:00:29.351232,Neutral,Expansion,Neutral_Neutral_Expansion
+MRK,2026-03-31,13.15,,1.854,4.297,2.443,True,False,False,Medium,bullish,2026-04-02,Healthcare,30,-6.42,,False,2026-05-09T14:00:28.870685,Neutral,Slowdown,Neutral_Neutral_Slowdown
+GOOGL,2026-03-31,91.59,,5.141,4.96,-0.181,False,False,True,Low,bullish,2026-04-02,Communication,30,29.577,,True,2026-05-09T14:00:26.821725,Neutral,Slowdown,Neutral_Neutral_Slowdown
+BA,2026-03-31,70.26,,5.19,,,False,False,True,Low,bullish,2026-04-02,Industrials,30,6.282,,True,2026-05-09T14:00:29.620624,Neutral,Slowdown,Neutral_Neutral_Slowdown
+AMZN,2026-03-31,68.18,,3.643,2.752,-0.891,False,False,False,Low,bullish,2026-04-02,Technology,45,29.69,,True,2026-05-09T14:00:26.735536,Neutral,Slowdown,Neutral_Neutral_Slowdown
+META,2026-03-31,56.79,,6.665,3.818,-2.847,False,False,True,Low,bullish,2026-04-02,Communication,30,6.258,,True,2026-05-09T14:00:26.918130,Neutral,Slowdown,Neutral_Neutral_Slowdown
+MU,2026-02-28,33.21,,0.073,1.595,1.522,False,False,False,Low,bullish,2026-03-04,Technology,45,-8.578,,False,2026-05-09T14:00:27.198067,Neutral,Expansion,Neutral_Neutral_Expansion
+LLY,2026-03-31,25.9,,3.738,4.883,1.145,False,False,False,Low,bullish,2026-04-02,Healthcare,30,3.458,,True,2026-05-09T14:00:28.723056,Neutral,Slowdown,Neutral_Neutral_Slowdown
+TXN,2026-03-31,22.76,,4.141,4.024,-0.117,False,False,True,Low,bullish,2026-04-02,Technology,45,44.142,,True,2026-05-09T14:00:27.337932,Neutral,Slowdown,Neutral_Neutral_Slowdown
+CAT,2026-03-31,19.3,,6.147,4.038,-2.109,False,False,True,Low,bullish,2026-04-02,Industrials,30,22.2,,True,2026-05-09T14:00:29.772971,Neutral,Slowdown,Neutral_Neutral_Slowdown
+SPOT,2026-03-31,17.99,,2.086,-0.569,-2.655,False,False,False,Low,bullish,2026-04-02,Communication,30,-10.371,,False,2026-05-09T14:00:27.682556,Neutral,Slowdown,Neutral_Neutral_Slowdown
+TSLA,2026-03-31,17.15,,4.636,2.163,-2.473,False,False,False,Low,bullish,2026-04-02,Technology,45,8.852,,True,2026-05-09T14:00:26.997817,Neutral,Slowdown,Neutral_Neutral_Slowdown
+RTX,2026-03-31,16.95,,3.072,2.23,-0.842,False,False,False,Low,bullish,2026-04-02,Industrials,30,-11.88,,False,2026-05-09T14:00:29.946235,Neutral,Slowdown,Neutral_Neutral_Slowdown
+GE,2026-03-31,16.31,,3.85,2.951,-0.899,False,False,True,Low,bullish,2026-04-02,Industrials,30,-0.228,,False,2026-05-09T14:00:30.097902,Neutral,Slowdown,Neutral_Neutral_Slowdown
+SBUX,2026-03-31,14.51,,3.309,2.186,-1.123,False,False,False,Low,bullish,2026-04-02,Consumer Staples,21,16.156,,True,2026-05-09T14:00:29.471747,Neutral,Slowdown,Neutral_Neutral_Slowdown
+MS,2026-03-31,13.66,,3.915,0.623,-3.292,False,False,True,Low,bullish,2026-04-02,Financials,21,13.998,,True,2026-05-09T14:00:28.329609,Neutral,Slowdown,Neutral_Neutral_Slowdown
+UNH,2026-03-31,9.52,,3.361,1.871,-1.49,False,False,False,Low,bullish,2026-04-02,Healthcare,30,33.719,,True,2026-05-09T14:00:28.580296,Neutral,Slowdown,Neutral_Neutral_Slowdown
+BAC,2026-03-31,8.78,,3.218,0.362,-2.856,False,False,True,Low,bullish,2026-04-02,Financials,21,5.691,,True,2026-05-09T14:00:28.056383,Neutral,Slowdown,Neutral_Neutral_Slowdown
+AMGN,2026-03-31,8.04,,0.817,0.802,-0.015,False,False,True,Low,bullish,2026-04-02,Healthcare,30,-6.924,,False,2026-05-09T14:00:28.961577,Neutral,Slowdown,Neutral_Neutral_Slowdown
+JPM,2026-03-31,7.78,,3.661,1.592,-2.069,False,False,False,Low,bullish,2026-04-02,Financials,21,4.964,,True,2026-05-09T14:00:27.911465,Neutral,Slowdown,Neutral_Neutral_Slowdown
+AXP,2026-03-31,7.18,,1.677,0.824,-0.853,False,False,False,Low,bullish,2026-04-02,Financials,21,6.34,,True,2026-05-09T14:00:28.461725,Neutral,Slowdown,Neutral_Neutral_Slowdown
+GS,2026-03-31,7.06,,4.754,3.127,-1.627,False,False,True,Low,bullish,2026-04-02,Financials,21,4.661,,True,2026-05-09T14:00:28.193080,Neutral,Slowdown,Neutral_Neutral_Slowdown
+V,2026-03-31,6.79,,0.901,1.44,0.539,False,False,False,Low,bullish,2026-04-02,Financials,21,8.66,,True,2026-05-09T14:00:27.772788,Neutral,Slowdown,Neutral_Neutral_Slowdown
+GILD,2026-03-31,6.3,,2.222,0.22,-2.002,False,False,True,Low,bullish,2026-04-02,Healthcare,30,-5.025,,False,2026-05-09T14:00:29.061693,Neutral,Slowdown,Neutral_Neutral_Slowdown
+KO,2026-03-31,5.88,,-0.288,0.136,0.424,False,False,False,Low,bullish,2026-04-02,Consumer Staples,21,1.916,,True,2026-05-09T14:00:29.219329,Neutral,Slowdown,Neutral_Neutral_Slowdown
+AMD,2026-03-31,5.82,,3.77,0.539,-3.231,False,False,True,Low,bullish,2026-04-02,Technology,45,57.03,,True,2026-05-09T14:00:27.073842,Neutral,Slowdown,Neutral_Neutral_Slowdown
+ORCL,2026-02-28,5.69,,2.648,0.787,-1.861,False,False,False,Low,bullish,2026-03-04,Technology,45,-3.931,,False,2026-05-09T14:00:27.440429,Neutral,Expansion,Neutral_Neutral_Expansion
+PYPL,2026-03-31,5.59,,1.254,-0.73,-1.984,False,False,False,Low,bullish,2026-04-02,Financials,21,11.138,,True,2026-05-09T14:00:27.603362,Neutral,Slowdown,Neutral_Neutral_Slowdown
+HON,2026-03-31,5.55,,1.141,0.726,-0.415,False,False,False,Low,bullish,2026-04-02,Industrials,30,-8.655,,False,2026-05-09T14:00:30.247903,Neutral,Slowdown,Neutral_Neutral_Slowdown
+MSF.DE,2026-03-31,5.22,,-0.047,-1.137,-1.09,False,False,False,Low,bullish,2026-04-02,Technology,45,9.605,,True,2026-05-09T14:00:26.641410,Neutral,Slowdown,Neutral_Neutral_Slowdown
+UBER,2026-03-31,-81.78,,2.889,,,False,,False,Low,bearish,2026-04-02,Technology,45,2.909,,False,2026-05-09T14:00:27.520313,Neutral,Slowdown,Neutral_Neutral_Slowdown
