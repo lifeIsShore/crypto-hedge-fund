@@ -1,7 +1,7 @@
 # engine/alpha/ml_alpha.py
 """
 Alpha Model 5 — ML ensemble from stock_ml_lab.
-Reads portfolio/data/ml_state.json (written by run_ml_pipeline.py).
+Reads shared/state/ml_state.json (written by run_ml_pipeline.py).
 Full pipeline refresh runs on Saturdays via run_ml_pipeline_refresh().
 
 Signal logic:
@@ -17,14 +17,14 @@ import pandas as pd
 import logging
 from datetime import datetime
 from engine.alpha.base import AlphaModel
+from shared.state_paths import ML_STATE_PATH, ensure_state_dir
 
 logger = logging.getLogger(__name__)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
 
-ML_STATE_PATH   = os.path.join(_PROJECT_ROOT, 'portfolio', 'data', 'ml_state.json')
-ML_LAB_PATH     = os.path.join(
+ML_LAB_PATH = os.path.join(
     _PROJECT_ROOT,
     'ml_quant_finance_research', 'ml_research', 'stock_ml_lab'
 )
@@ -39,7 +39,7 @@ class MLAlpha(AlphaModel):
 
     def generate_signals(self, date: str, tickers: list) -> pd.DataFrame:
         """
-        Reads ml_state.json model_signals block.
+        Reads shared/state/ml_state.json model_signals block.
         up_proba_21d drives expected_return; AUC drives confidence.
         """
         if not os.path.exists(ML_STATE_PATH):
@@ -114,9 +114,11 @@ class MLAlpha(AlphaModel):
 
 def run_ml_pipeline_refresh():
     """
-    Runs the full ML pipeline to refresh ml_state.json.
-    Call from scheduler on Saturdays only — takes 20–40 minutes.
+    Runs the full ML pipeline to refresh shared/state/ml_state.json.
+    Call from scheduler on Saturdays only — takes 20-40 minutes.
     """
+    ensure_state_dir()
+
     if not os.path.isdir(ML_LAB_PATH):
         logger.error(f"[ml] ML lab directory not found: {ML_LAB_PATH}")
         return
@@ -133,7 +135,7 @@ def run_ml_pipeline_refresh():
         if result.returncode != 0:
             logger.error(f"[ml] Pipeline failed:\n{result.stderr[-1000:]}")
         else:
-            logger.info("[ml] ML pipeline complete — ml_state.json updated")
+            logger.info(f"[ml] ML pipeline complete — ml_state.json updated at {ML_STATE_PATH}")
     except subprocess.TimeoutExpired:
         logger.error("[ml] ML pipeline timed out after 60 minutes")
     except Exception as e:

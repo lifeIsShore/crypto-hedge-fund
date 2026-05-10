@@ -1,0 +1,16 @@
+{
+  "ticker": "TSLA",
+  "fetched_at": "2026-05-10T15:08:03",
+  "iv_atm": 0.4336,
+  "iv_call_atm": 0.4429,
+  "iv_put_atm": 0.4243,
+  "iv_skew": -0.0828,
+  "iv_rv_spread": 0.0601,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.5959,
+  "short_pct_float": 0.021300001,
+  "short_ratio": 1.07,
+  "shares_short": 71106902.0,
+  "shares_short_prior": 60860404.0,
+  "short_change": 0.1684
+}

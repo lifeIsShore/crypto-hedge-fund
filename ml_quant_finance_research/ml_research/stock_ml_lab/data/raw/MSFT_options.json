@@ -1,0 +1,16 @@
+{
+  "ticker": "MSFT",
+  "fetched_at": "2026-05-10T15:08:04",
+  "iv_atm": 0.2683,
+  "iv_call_atm": 0.2688,
+  "iv_put_atm": 0.2677,
+  "iv_skew": -0.0573,
+  "iv_rv_spread": -0.0684,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.4823,
+  "short_pct_float": 0.0112,
+  "short_ratio": 2.53,
+  "shares_short": 83407242.0,
+  "shares_short_prior": 79835909.0,
+  "short_change": 0.0447
+}

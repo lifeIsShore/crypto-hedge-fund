@@ -1,0 +1,16 @@
+{
+  "ticker": "CAT",
+  "fetched_at": "2026-05-10T15:08:04",
+  "iv_atm": 0.381,
+  "iv_call_atm": 0.3907,
+  "iv_put_atm": 0.3714,
+  "iv_skew": 0.3014,
+  "iv_rv_spread": -0.0485,
+  "iv_change_5d": NaN,
+  "pc_ratio": 8.9876,
+  "short_pct_float": 0.0164,
+  "short_ratio": 3.27,
+  "shares_short": 7595776.0,
+  "shares_short_prior": 7659420.0,
+  "short_change": -0.0083
+}

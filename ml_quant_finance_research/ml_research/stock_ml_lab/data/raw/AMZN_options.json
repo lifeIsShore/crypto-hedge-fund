@@ -1,0 +1,16 @@
+{
+  "ticker": "AMZN",
+  "fetched_at": "2026-05-10T15:08:05",
+  "iv_atm": 0.2884,
+  "iv_call_atm": 0.2963,
+  "iv_put_atm": 0.2805,
+  "iv_skew": 0.2912,
+  "iv_rv_spread": 0.0224,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2091,
+  "short_pct_float": 0.0095,
+  "short_ratio": 2.02,
+  "shares_short": 93006528.0,
+  "shares_short_prior": 84784941.0,
+  "short_change": 0.097
+}

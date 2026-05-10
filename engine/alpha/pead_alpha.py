@@ -1,7 +1,7 @@
 # engine/alpha/pead_alpha.py
 """
 Alpha Model 4 — Post-Earnings Announcement Drift (PEAD).
-Wraps the existing quant_research/pead_engine/ — reads pead_setups.csv daily.
+Reads shared/state/pead_setups.csv (written by pead_engine/run_engine.py).
 Full engine refresh runs weekly (Monday) via run_pead_engine_weekly().
 
 Quality → expected return calibration:
@@ -15,16 +15,12 @@ import sys
 import pandas as pd
 import logging
 from engine.alpha.base import AlphaModel
+from shared.state_paths import PEAD_SETUPS_PATH, ensure_state_dir
 
 logger = logging.getLogger(__name__)
 
-# Path to the PEAD engine data file (written by run_engine.py)
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
-PEAD_SETUPS_PATH = os.path.join(
-    _PROJECT_ROOT,
-    'ml_quant_finance_research', 'quant_research', 'pead_engine', 'data', 'pead_setups.csv'
-)
 
 QUALITY_RETURN_MAP = {
     'High':          0.035,
@@ -41,8 +37,8 @@ class PEADAlpha(AlphaModel):
 
     def generate_signals(self, date: str, tickers: list) -> pd.DataFrame:
         """
-        Reads pead_setups.csv and converts active High/Medium quality setups
-        into standardised alpha signals.
+        Reads shared/state/pead_setups.csv and converts active
+        High/Medium quality setups into standardised alpha signals.
         """
         if not os.path.exists(PEAD_SETUPS_PATH):
             logger.warning(
@@ -58,7 +54,7 @@ class PEADAlpha(AlphaModel):
             return pd.DataFrame()
 
         if setups.empty:
-            logger.info(f"[pead] pead_setups.csv is empty")
+            logger.info("[pead] pead_setups.csv is empty")
             return pd.DataFrame()
 
         # Normalise column names (the PEAD engine uses 'pead_setup_quality')
@@ -77,8 +73,8 @@ class PEADAlpha(AlphaModel):
         # Filter: active (entry_date within last ACTIVE_WINDOW_DAYS), in universe, quality > Low
         if 'entry_date' in setups.columns:
             setups['entry_date'] = pd.to_datetime(setups['entry_date'], errors='coerce')
-            current_date   = pd.Timestamp(date)
-            active_cutoff  = current_date - pd.Timedelta(days=ACTIVE_WINDOW_DAYS)
+            current_date  = pd.Timestamp(date)
+            active_cutoff = current_date - pd.Timedelta(days=ACTIVE_WINDOW_DAYS)
             setups = setups[
                 (setups['entry_date'] >= active_cutoff) &
                 (setups['entry_date'] <= current_date)
@@ -128,9 +124,15 @@ class PEADAlpha(AlphaModel):
 
 def run_pead_engine_weekly():
     """
-    Runs the full PEAD engine to refresh pead_setups.csv.
+    Runs the full PEAD engine to refresh shared/state/pead_setups.csv.
     Call from scheduler on Mondays only — takes several minutes.
+
+    The PEAD engine writes to its own data/ directory; we mirror both
+    pead_setups.csv and pead_state.json to shared/state/ afterwards so
+    PEADAlpha.generate_signals() reads from the canonical PEAD_SETUPS_PATH.
     """
+    ensure_state_dir()
+
     pead_dir = os.path.join(
         _PROJECT_ROOT,
         'ml_quant_finance_research', 'quant_research', 'pead_engine'
@@ -138,16 +140,50 @@ def run_pead_engine_weekly():
     original_dir = os.getcwd()
     try:
         os.chdir(pead_dir)
-        sys.path.insert(0, '.')
+        if pead_dir not in sys.path:
+            sys.path.insert(0, pead_dir)
         from run_engine import run
         state = run(force_refresh=False, lookback_days=90, backfill_models=False)
         n_active = len(state.get('active_setups', []))
         logger.info(f"[pead] Weekly refresh complete: {n_active} active setups")
+
+        # ── Mirror outputs to shared/state/ ──────────────────────────────────
+        _mirror_pead_to_shared(pead_dir)
+
         return state
     except Exception as e:
         logger.error(f"[pead] Weekly engine refresh failed: {e}")
         return {}
     finally:
         os.chdir(original_dir)
-        if '.' in sys.path:
-            sys.path.remove('.')
+        if pead_dir in sys.path:
+            sys.path.remove(pead_dir)
+
+
+def _mirror_pead_to_shared(pead_dir: str) -> None:
+    """
+    Copies pead_setups.csv and pead_state.json from the PEAD engine's
+    own data/ directory into shared/state/ so the engine reads from one place.
+    Non-fatal — logs a warning if the source files don't exist yet.
+    """
+    import shutil
+    # Ensure project root is importable even when called from inside chdir'd pead_dir
+    if _PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, _PROJECT_ROOT)
+    from shared.state_paths import PEAD_SETUPS_PATH, PEAD_STATE_PATH, ensure_state_dir
+    ensure_state_dir()
+
+    src_setups = os.path.join(pead_dir, 'data', 'pead_setups.csv')
+    src_state  = os.path.join(pead_dir, 'data', 'pead_state.json')
+
+    if os.path.exists(src_setups):
+        shutil.copy2(src_setups, PEAD_SETUPS_PATH)
+        logger.info(f"[pead] pead_setups.csv → shared/state/")
+    else:
+        logger.warning(f"[pead] pead_setups.csv not found at {src_setups} — shared/state/ not updated")
+
+    if os.path.exists(src_state):
+        shutil.copy2(src_state, PEAD_STATE_PATH)
+        logger.info(f"[pead] pead_state.json → shared/state/")
+    else:
+        logger.warning(f"[pead] pead_state.json not found at {src_state} — shared/state/ not updated")

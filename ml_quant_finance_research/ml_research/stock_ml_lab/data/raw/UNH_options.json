@@ -1,0 +1,16 @@
+{
+  "ticker": "UNH",
+  "fetched_at": "2026-05-10T15:08:03",
+  "iv_atm": 0.2945,
+  "iv_call_atm": 0.2957,
+  "iv_put_atm": 0.2933,
+  "iv_skew": 0.0058,
+  "iv_rv_spread": 0.0044,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.1329,
+  "short_pct_float": 0.0186,
+  "short_ratio": 1.68,
+  "shares_short": 15177651.0,
+  "shares_short_prior": 17838552.0,
+  "short_change": -0.1492
+}

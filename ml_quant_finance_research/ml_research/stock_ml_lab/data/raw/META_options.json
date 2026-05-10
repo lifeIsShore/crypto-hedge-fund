@@ -1,0 +1,16 @@
+{
+  "ticker": "META",
+  "fetched_at": "2026-05-10T15:08:00",
+  "iv_atm": 0.2932,
+  "iv_call_atm": 0.3006,
+  "iv_put_atm": 0.2857,
+  "iv_skew": 0.0383,
+  "iv_rv_spread": -0.1186,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.0075,
+  "short_pct_float": 0.0121,
+  "short_ratio": 1.48,
+  "shares_short": 26466970.0,
+  "shares_short_prior": 24310664.0,
+  "short_change": 0.0887
+}
