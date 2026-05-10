@@ -36,9 +36,10 @@ OUTPUT_JSON= THIS_DIR.parent.parent.parent / "portfolio" / "data" / "ml_state.js
 sys.path.insert(0, str(UTILS_DIR))
 
 from data_loader     import fetch_price_data, fetch_macro_data, fetch_fundamentals, UNIVERSE
-from feature_builder import build_features
+from feature_builder import build_features, select_features, get_feature_selection_report
 from evaluator       import walk_forward_splits, evaluate_fold, log_experiment
 from scenario_engine import generate_scenarios, ensemble_sentiment
+from options_scraper import fetch_all_options_features
 
 import numpy as np
 import pandas as pd
@@ -66,6 +67,11 @@ def get_feature_cols(df):
             and c not in FEAT_COLS_EXCLUDE
             and df[c].dtype in [np.float64, np.float32, np.int64, np.int32, float, int]]
 
+
+FEATURE_SELECTION_ENABLED  = True    # set False to disable for speed
+FEATURE_IMPORTANCE_GATE    = 0.40    # fraction of 1/n_features threshold
+FEATURE_CORR_THRESHOLD     = 0.95   # drop one of any pair above this
+FEATURE_VAR_THRESHOLD      = 0.005  # drop near-constant features
 
 def make_model(key):
     if key == "lr":
@@ -135,14 +141,16 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals):
+def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
+    options_dict = (options_all or {}).get(ticker, {})
     log.info(f"  [{ticker}] Building features…")
     try:
         feat_df = build_features(
             prices[ticker],
             fundamentals=fundamentals.get(ticker),
             macro_df=macro,
+            options_dict=options_dict,
             horizons=HORIZONS,
         )
     except Exception as e:
@@ -167,6 +175,17 @@ def run_ticker(ticker, prices, macro, fundamentals):
 
     X_all = feat_df_clean[feat_cols].astype(float)
     y_all = feat_df_clean[target_col].astype(int)
+
+    # ── Stage 1 & 2 feature selection (variance + correlation) ─────
+    if FEATURE_SELECTION_ENABLED:
+        feat_cols = select_features(
+            X_all, importance_dict=None,
+            variance_threshold=FEATURE_VAR_THRESHOLD,
+            corr_threshold=FEATURE_CORR_THRESHOLD,
+            importance_gate=0,   # skip importance gate here; need RF first
+        )
+        X_all = X_all[feat_cols]
+        log.info(f"  [{ticker}] After variance/corr selection: {len(feat_cols)} features")
 
     # Collect results per model
     model_results = {}
@@ -206,6 +225,20 @@ def run_ticker(ticker, prices, macro, fundamentals):
                         inner = clf.named_steps.get("clf", clf) if hasattr(clf, "named_steps") else clf
                         if hasattr(inner, "feature_importances_"):
                             feature_importance = dict(zip(feat_cols, inner.feature_importances_.tolist()))
+
+                            # ── Stage 3: importance gate (after first RF fold) ───
+                            if FEATURE_SELECTION_ENABLED and feature_importance:
+                                refined_cols = select_features(
+                                    X_all[feat_cols],
+                                    importance_dict=feature_importance,
+                                    variance_threshold=0,    # already done
+                                    corr_threshold=1.0,      # already done
+                                    importance_gate=FEATURE_IMPORTANCE_GATE,
+                                )
+                                if len(refined_cols) >= 10:
+                                    feat_cols = refined_cols
+                                    X_all = X_all[feat_cols]
+                                    log.info(f"  [{ticker}] After importance gate: {len(feat_cols)} features")
 
                     # Capture last-fold proba for ensemble
                     if model_key in ("rf", "xgb", "lr"):
@@ -443,12 +476,28 @@ def main():
         log.warning(f"  Fundamentals load failed ({e}); continuing without them")
         fundamentals = {t: {} for t in prices}
 
+    log.info("Step 1d — Fetching options & short interest (free via yfinance)…")
+    try:
+        # Compute realised vols to pass to options scraper for IV-RV spread
+        realized_vols = {}
+        for ticker, df in prices.items():
+            if "Adj Close" in df.columns and len(df) >= 21:
+                rv = float(np.log(df["Adj Close"] / df["Adj Close"].shift(1)).dropna().tail(21).std() * np.sqrt(252))
+                realized_vols[ticker] = rv
+        options_df = fetch_all_options_features(list(prices.keys()), realized_vols=realized_vols)
+        # Convert to dict-of-dicts: {ticker: {feature: value}}
+        options_all = options_df.to_dict(orient="index") if not options_df.empty else {}
+        log.info(f"  Options data: {len(options_all)} tickers covered")
+    except Exception as e:
+        log.warning(f"  Options fetch failed ({e}); continuing without options features")
+        options_all = {}
+
     # ── 2. Train models per ticker ─────────────────────────
     log.info("Step 2/5 — Training models (walk-forward)…")
     ticker_results = {}
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals)
+        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 

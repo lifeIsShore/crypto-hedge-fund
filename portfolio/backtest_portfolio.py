@@ -149,12 +149,20 @@ class BacktestUI(tk.Tk):
             prices_df.ffill(inplace=True)
             prices_df.bfill(inplace=True)
 
-            # FX Conversion (Simplified: Using static 0.92 for historical US stocks to save download time)
-            self.logger.info("Applying static 0.92 EUR/USD FX rate to US stocks...")
+            # FX Conversion (Dynamic)
+            self.logger.info("Fetching FX history for EURUSD...")
+            fx_data = yf.download("EURUSD=X", start=fetch_start.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), auto_adjust=True, progress=False)
+            if 'Close' in fx_data.columns:
+                fx_series = 1 / fx_data["Close"]
+            else:
+                fx_series = pd.Series(0.92, index=prices_df.index)
+            fx_series = fx_series.reindex(prices_df.index, method="ffill").fillna(0.92)
+
+            self.logger.info("Applying dynamic EUR/USD FX rate to US stocks...")
             EUR_SUFFIXES = ('.DE', '.AS', '.PA')
             for col in prices_df.columns:
                 if not any(col.endswith(s) for s in EUR_SUFFIXES):
-                    prices_df[col] = prices_df[col] * 0.92
+                    prices_df[col] = prices_df[col] * fx_series
 
             # Filter valid trading days within backtest window
             bt_prices = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
@@ -186,7 +194,7 @@ class BacktestUI(tk.Tk):
                 dates_curve.append(current_date)
                 
                 # Rebalance Logic (Only on day 0 or every REBALANCE_DAYS)
-                if i % REBALANCE_DAYS == 0:
+                if i % REBALANCE_DAYS == 0 and i + 1 < len(valid_dates):
                     self.logger.info(f"--- Rebalance Date: {current_date.strftime('%Y-%m-%d')} ---")
                     
                     # 1. Lookback data up to today
@@ -194,6 +202,9 @@ class BacktestUI(tk.Tk):
                     if len(hist_slice) < 252:
                         self.logger.warning("Not enough history for Markowitz. Skipping rebalance.")
                         continue
+                        
+                    execution_date = valid_dates[i + 1]
+                    execution_prices = prices_df.loc[execution_date]
                         
                     # 2. Log Returns
                     log_returns = calculate_log_returns(hist_slice.tail(252))
@@ -209,20 +220,28 @@ class BacktestUI(tk.Tk):
                     # 4. Apply Trend Filter (200 SMA)
                     adjusted_weights = apply_trend_filter(hist_slice, optimal_weights)
                     
-                    # 5. Execute Trades based on Drift
-                    dynamic_min_trade = max(MIN_TRADE_EUR_FLOOR, portfolio_value * FEE_DRAG_TARGET)
+                    # 5. Execute Trades based on Drift (T+1)
+                    total_equity_exec = sum(qty * execution_prices.get(ticker, latest_prices.get(ticker, 0.0)) 
+                                            for ticker, qty in current_holdings.items() 
+                                            if not pd.isna(execution_prices.get(ticker, latest_prices.get(ticker))))
+                    portfolio_value_exec = total_equity_exec + current_cash
+                    
+                    dynamic_min_trade = max(MIN_TRADE_EUR_FLOOR, portfolio_value_exec * FEE_DRAG_TARGET)
                     
                     # Process Sells First
                     for ticker, target_weight in adjusted_weights.items():
                         if ticker == 'CASH': continue
-                        target_euro = target_weight * portfolio_value
-                        current_euro = current_holdings.get(ticker, 0.0) * latest_prices.get(ticker, 0.0)
+                        exec_price = execution_prices.get(ticker, latest_prices.get(ticker, 0.0))
+                        if exec_price == 0: continue
+                        
+                        target_euro = target_weight * portfolio_value_exec
+                        current_euro = current_holdings.get(ticker, 0.0) * exec_price
                         trade_euro = target_euro - current_euro
                         
-                        drift_pct = (current_euro / portfolio_value) - target_weight if portfolio_value > 0 else 0
+                        drift_pct = (current_euro / portfolio_value_exec) - target_weight if portfolio_value_exec > 0 else 0
                         
                         if abs(trade_euro) >= dynamic_min_trade and drift_pct >= DRIFT_THRESHOLD_SELL:
-                            qty_to_sell = abs(trade_euro) / latest_prices[ticker]
+                            qty_to_sell = abs(trade_euro) / exec_price
                             current_holdings[ticker] -= qty_to_sell
                             current_cash += abs(trade_euro)
                             self.logger.info(f"🔴 SELL {ticker}: \u20ac{abs(trade_euro):.2f} | Reason: Drift +{drift_pct*100:.1f}% breached +{DRIFT_THRESHOLD_SELL*100:.1f}% sell limit. Locking profits.")
@@ -232,16 +251,19 @@ class BacktestUI(tk.Tk):
                     # Process Buys
                     for ticker, target_weight in adjusted_weights.items():
                         if ticker == 'CASH': continue
-                        target_euro = target_weight * portfolio_value
-                        current_euro = current_holdings.get(ticker, 0.0) * latest_prices.get(ticker, 0.0)
+                        exec_price = execution_prices.get(ticker, latest_prices.get(ticker, 0.0))
+                        if exec_price == 0: continue
+                        
+                        target_euro = target_weight * portfolio_value_exec
+                        current_euro = current_holdings.get(ticker, 0.0) * exec_price
                         trade_euro = target_euro - current_euro
                         
-                        drift_pct = (current_euro / portfolio_value) - target_weight if portfolio_value > 0 else 0
+                        drift_pct = (current_euro / portfolio_value_exec) - target_weight if portfolio_value_exec > 0 else 0
                         
                         if trade_euro > dynamic_min_trade and drift_pct <= DRIFT_THRESHOLD_BUY:
                             amount_to_buy = min(trade_euro, current_cash)
                             if amount_to_buy > 10:
-                                qty_to_buy = amount_to_buy / latest_prices[ticker]
+                                qty_to_buy = amount_to_buy / exec_price
                                 current_holdings[ticker] = current_holdings.get(ticker, 0.0) + qty_to_buy
                                 current_cash -= amount_to_buy
                                 self.logger.info(f"🟢 BUY {ticker}: \u20ac{amount_to_buy:.2f} | Reason: Drift {drift_pct*100:.1f}% breached {DRIFT_THRESHOLD_BUY*100:.1f}% buy limit. Rebalancing.")
