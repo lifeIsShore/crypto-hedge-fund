@@ -84,10 +84,15 @@ class AlphaModel(ABC):
 
         Returns IC as a float. Defaults to 0.05 when insufficient history
         (forces moderate uncertainty — model not penalised but not trusted).
+        Returns the raw IC (can be negative) so callers can detect bad models;
+        use max(0.01, ic) only when feeding into BL omega.
         """
         try:
             from engine.db.db import get_session
             from scipy.stats import pearsonr
+            import datetime
+
+            cutoff = (datetime.date.today() - datetime.timedelta(days=lookback_days + 5)).isoformat()
 
             session = get_session()
             result = session.execute(text("""
@@ -101,11 +106,11 @@ class AlphaModel(ABC):
                         WHERE pp.ticker = s.ticker AND pp.date > s.date
                     )
                 WHERE s.model_name = :model
-                  AND s.date >= CURRENT_DATE - INTERVAL ':days days'
+                  AND s.date >= :cutoff
                   AND p_curr.adj_close IS NOT NULL
                   AND p_next.adj_close IS NOT NULL
                 ORDER BY s.date
-            """.replace(':days', str(lookback_days + 5)), {'model': self.name}))
+            """), {'model': self.name, 'cutoff': cutoff})
             rows = result.fetchall()
             session.close()
 
@@ -122,7 +127,9 @@ class AlphaModel(ABC):
             ic, pvalue = pearsonr(df['raw_score'], df['fwd_return'])
             ic = float(np.clip(ic, -1.0, 1.0))
             logger.debug(f"[{self.name}] Rolling IC({lookback_days}d): {ic:.4f} (p={pvalue:.3f})")
-            return max(0.01, ic)  # floor at 1% — never return 0 (breaks BL omega)
+            # Return raw IC — negative IC is meaningful (model is actively wrong).
+            # Callers that feed this into BL omega should apply max(0.01, ic) themselves.
+            return ic
 
         except Exception as e:
             logger.warning(f"[{self.name}] IC computation failed ({e}) — using default 0.05")
@@ -130,33 +137,76 @@ class AlphaModel(ABC):
 
     def is_live_approved(self) -> bool:
         """
-        Returns True only if this model has maintained IC >= MIN_IC_TO_LIVE
+        Returns True only if this model has sustained IC >= MIN_IC_TO_LIVE
         for at least MIN_LIVE_DAYS consecutive trading days.
+
+        Uses compute_rolling_ic() over a short 21-day window per day, which
+        is approximated here by reading raw_score vs forward returns directly
+        from the DB — same query as compute_rolling_ic but grouped by date.
 
         Models that fail this gate get omega=999 in BL (effectively ignored).
         Prevents untested models from influencing real portfolio weights.
         """
         try:
             from engine.db.db import get_session
+            import datetime
+
+            cutoff = (datetime.date.today() - datetime.timedelta(days=90)).isoformat()
 
             session = get_session()
+            # Pull daily IC values: for each date, compute Pearson(raw_score, fwd_return)
+            # via a per-date grouping of the same signal/price join used in compute_rolling_ic.
             result = session.execute(text("""
-                SELECT date, AVG(confidence) AS avg_ic
-                FROM signals
-                WHERE model_name = :model
-                  AND date >= CURRENT_DATE - INTERVAL '90 days'
-                GROUP BY date
-                ORDER BY date DESC
-                LIMIT :days
-            """), {'model': self.name, 'days': MIN_LIVE_DAYS + 5})
+                SELECT s.date,
+                       s.raw_score,
+                       p_next.adj_close / NULLIF(p_curr.adj_close, 0) - 1 AS fwd_return
+                FROM signals s
+                JOIN prices p_curr ON s.date    = p_curr.date AND s.ticker = p_curr.ticker
+                JOIN prices p_next ON p_next.ticker = s.ticker
+                    AND p_next.date = (
+                        SELECT MIN(pp.date) FROM prices pp
+                        WHERE pp.ticker = s.ticker AND pp.date > s.date
+                    )
+                WHERE s.model_name = :model
+                  AND s.date >= :cutoff
+                  AND p_curr.adj_close IS NOT NULL
+                  AND p_next.adj_close IS NOT NULL
+                ORDER BY s.date
+            """), {'model': self.name, 'cutoff': cutoff})
             rows = result.fetchall()
             session.close()
 
-            if len(rows) < MIN_LIVE_DAYS:
-                logger.debug(f"[{self.name}] Not live-approved: only {len(rows)} days of history")
+            if not rows:
+                logger.debug(f"[{self.name}] Not live-approved: no IC history")
                 return False
 
-            recent_ics = [float(r[1]) for r in rows[:MIN_LIVE_DAYS]]
+            # Compute daily IC (Pearson per date) using pandas groupby
+            from scipy.stats import pearsonr
+            df = pd.DataFrame(rows, columns=['date', 'raw_score', 'fwd_return']).dropna()
+            if df.empty:
+                return False
+
+            def _safe_pearsonr(g):
+                if len(g) < 5:
+                    return np.nan
+                try:
+                    ic, _ = pearsonr(g['raw_score'], g['fwd_return'])
+                    return float(ic)
+                except Exception:
+                    return np.nan
+
+            daily_ic = (
+                df.groupby('date')
+                  .apply(_safe_pearsonr)
+                  .dropna()
+                  .sort_index(ascending=False)
+            )
+
+            if len(daily_ic) < MIN_LIVE_DAYS:
+                logger.debug(f"[{self.name}] Not live-approved: only {len(daily_ic)} days of IC history")
+                return False
+
+            recent_ics = daily_ic.iloc[:MIN_LIVE_DAYS].tolist()
             approved = all(ic >= MIN_IC_TO_LIVE for ic in recent_ics)
 
             if not approved:

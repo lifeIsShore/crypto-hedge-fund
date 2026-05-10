@@ -32,9 +32,18 @@ def evaluate_fold(model, X_val, y_val, prices_val=None):
         "precision_up": precision_score(y_val, y_pred, zero_division=0),
         "recall_up":    recall_score(y_val, y_pred, zero_division=0),
         "f1":           f1_score(y_val, y_pred, zero_division=0),
+        # Defaults: auc_roc=0.5 (random) and financial metrics=0 when prices not provided.
+        # These are always present so downstream .get() calls never silently return 0 for AUC.
+        "auc_roc":              0.5,
+        "brier_score":          0.5,
+        "hypothetical_sharpe":  0.0,
+        "max_drawdown":         0.0,
     }
     if y_proba is not None:
-        m["auc_roc"]     = roc_auc_score(y_val, y_proba)
+        try:
+            m["auc_roc"]     = roc_auc_score(y_val, y_proba)
+        except Exception:
+            pass  # only one class in val fold — keep default 0.5
         m["brier_score"] = brier_score_loss(y_val, y_proba)
         if prices_val is not None:
             sig = (y_proba > 0.5).astype(int)

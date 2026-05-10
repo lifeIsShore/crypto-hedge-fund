@@ -69,7 +69,8 @@ class VolTimingAlpha(AlphaModel):
         # Cross-sectional rank: low vol_ratio (compressing) → high rank → positive signal
         pivot['rank'] = (1 - pivot['vol_ratio'].rank(pct=True))
         pivot['expected_return'] = (pivot['rank'] - 0.5) * 2 * RETURN_SCALE
-        pivot['confidence']      = ic
+        # IC can be negative (model actively wrong); clamp to 0.01 floor for BL omega.
+        pivot['confidence']      = max(0.01, ic)
 
         pivot = pivot.reset_index()
 

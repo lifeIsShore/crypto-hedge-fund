@@ -10,7 +10,8 @@ Schedule (cron example — 22:00 UTC = after US market close Mon–Fri):
   0 22 * * 1-5 cd /path/to/hedge-fund && python -m engine.scheduler
 
 Step frequencies:
-  Daily (every trading day):    data ingestion, features, alpha signals, divergence scan
+  Daily (every trading day):    data ingestion, features, alpha signals, divergence scan,
+                                portfolio construction (BL → optimizer → pre-trade → orders → post-trade risk)
   Weekly (Monday):              PEAD engine full refresh
   Weekend (Saturday):           ML pipeline full refresh
 """
@@ -21,6 +22,7 @@ import traceback
 import argparse
 import sys
 import os
+import pandas as pd
 
 # Ensure project root is on sys.path when run as a script
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -151,6 +153,175 @@ def step_outcome_fill():
     fill_outcome_data()
 
 
+def step_portfolio_construction():
+    """
+    Full portfolio construction loop:
+      1. Load covariance matrix and current weights from DB
+      2. Load regime info from feature store
+      3. Run Black-Litterman → posterior expected returns
+      4. Run constrained optimizer → suggested weights
+      5. Persist model outputs (suggested vs current weights)
+      6. Run pre-trade risk checks → block if violations
+      7. Generate order queue and persist to DB
+      8. Run post-trade risk snapshot
+    """
+    import numpy as np
+    from engine.portfolio.black_litterman import run_black_litterman
+    from engine.portfolio.optimizer import optimize_with_bl, persist_model_outputs
+    from engine.risk.pre_trade import run_pre_trade_checks
+    from engine.risk.post_trade import run_post_trade_risk
+    from engine.execution.order_manager import generate_order_queue
+    from engine.features.feature_store import load_returns_from_db
+    from engine.db.db import get_session
+    from sqlalchemy import text
+
+    # ── 1. Covariance matrix ─────────────────────────────────────────────────
+    log_returns = load_returns_from_db(TICKERS, lookback_days=252)
+    if log_returns.empty:
+        logger.error("[portfolio] No returns in DB — skipping portfolio construction")
+        return
+
+    available_tickers = [t for t in TICKERS if t in log_returns.columns]
+    if len(available_tickers) < 2:
+        logger.error("[portfolio] Fewer than 2 tickers with data — skipping")
+        return
+
+    cov_matrix = log_returns[available_tickers].cov() * 252   # annualised
+
+    # ── 2. Current weights from DB ───────────────────────────────────────────
+    session = get_session()
+    rows = session.execute(text("""
+        SELECT p.ticker, p.weight
+        FROM positions_history p
+        INNER JOIN (
+            SELECT ticker, MAX(date) AS max_date
+            FROM positions_history GROUP BY ticker
+        ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
+    """)).fetchall()
+    session.close()
+    current_weights = pd.Series(
+        {r[0]: float(r[1]) for r in rows if r[0] in available_tickers}
+    ).reindex(available_tickers, fill_value=0.0)
+
+    # Equal-weight market prior for tickers with no existing position
+    market_weights = pd.Series(
+        1.0 / len(available_tickers), index=available_tickers
+    )
+
+    # ── 3. Regime info ───────────────────────────────────────────────────────
+    regime_info = None
+    try:
+        result_row = get_session().execute(text("""
+            SELECT feature_name, feature_value FROM feature_store
+            WHERE ticker = '_PORTFOLIO' AND date = :date
+        """), {'date': TODAY}).fetchall()
+        get_session().close()
+        if result_row:
+            feat = {r[0]: r[1] for r in result_row}
+            if feat.get('regime_high', 0):
+                regime = 'high_stress'
+            elif feat.get('regime_low', 0):
+                regime = 'low_stress'
+            else:
+                regime = 'medium'
+            regime_info = {
+                'regime':       regime,
+                'stress_score': feat.get('stress_score', 0.5),
+            }
+            logger.info(f"[portfolio] Regime: {regime}, stress={regime_info['stress_score']:.2f}")
+    except Exception as e:
+        logger.warning(f"[portfolio] Could not load regime features: {e}")
+
+    # ── 4. Instantiate all alpha models (for live-approval gating in BL) ─────
+    from engine.alpha.momentum       import MomentumAlpha
+    from engine.alpha.mean_reversion import MeanReversionAlpha
+    from engine.alpha.vol_timing     import VolTimingAlpha
+    from engine.alpha.pead_alpha     import PEADAlpha
+    from engine.alpha.ml_alpha       import MLAlpha
+    models_dict = {
+        'momentum':       MomentumAlpha(),
+        'mean_reversion': MeanReversionAlpha(),
+        'vol_timing':     VolTimingAlpha(),
+        'pead':           PEADAlpha(),
+        'ml_model':       MLAlpha(),
+    }
+
+    # ── 5. Black-Litterman → posterior expected returns ──────────────────────
+    mu_bl = run_black_litterman(
+        tickers=available_tickers,
+        cov_matrix=cov_matrix,
+        market_weights=market_weights,
+        date=TODAY,
+        regime_info=regime_info,
+        models_dict=models_dict,
+    )
+    logger.info(f"[portfolio] BL returns computed for {len(mu_bl)} tickers")
+
+    # ── 6. Optimizer → suggested weights ────────────────────────────────────
+    suggested_weights = optimize_with_bl(
+        mu_bl=mu_bl,
+        cov_matrix=cov_matrix,
+        current_weights=current_weights,
+    )
+    logger.info(
+        f"[portfolio] Optimized weights: "
+        f"top5={suggested_weights.nlargest(5).to_dict()}"
+    )
+
+    # Persist model outputs (suggested vs current, BL returns)
+    persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl)
+
+    # ── 7. Pre-trade risk checks ─────────────────────────────────────────────
+    pre_trade = run_pre_trade_checks(suggested_weights)
+    if not pre_trade['passed']:
+        logger.warning(
+            f"[portfolio] Pre-trade checks FAILED — order queue blocked.\n"
+            f"Violations: {pre_trade['violations']}"
+        )
+        send_alert(f"Pre-trade checks failed:\n" + "\n".join(pre_trade['violations']))
+        # Still persist post-trade risk for monitoring, but don't generate orders
+        run_post_trade_risk(
+            weights=current_weights.to_dict(),
+            tickers=available_tickers,
+        )
+        return
+
+    # ── 8. Generate order queue ──────────────────────────────────────────────
+    # Pull total portfolio value from latest positions + cash
+    session = get_session()
+    val_row = session.execute(text("""
+        SELECT SUM(value_eur) FROM positions_history p
+        INNER JOIN (
+            SELECT ticker, MAX(date) AS max_date
+            FROM positions_history GROUP BY ticker
+        ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
+    """)).fetchone()
+    cash_row = session.execute(text("""
+        SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1
+    """)).fetchone()
+    session.close()
+
+    portfolio_value = float(val_row[0] or 0) + float(cash_row[0] if cash_row else 0)
+    if portfolio_value < 100:
+        logger.warning("[portfolio] Portfolio value too low to generate orders — positions table empty?")
+        portfolio_value = 10_000.0   # safe default for dry runs
+
+    orders = generate_order_queue(
+        suggested_weights=suggested_weights,
+        current_weights=current_weights,
+        total_portfolio_eur=portfolio_value,
+    )
+    logger.info(f"[portfolio] Order queue: {len(orders)} orders (portfolio=€{portfolio_value:,.0f})")
+    for o in orders:
+        logger.info(f"  {o.action:4s} {o.ticker:12s} €{o.value_eur:>8.2f}")
+
+    # ── 9. Post-trade risk snapshot (on proposed weights) ────────────────────
+    run_post_trade_risk(
+        weights=suggested_weights.to_dict(),
+        tickers=available_tickers,
+    )
+
+
 def step_pead_refresh():
     from engine.alpha.pead_alpha import run_pead_engine_weekly
     run_pead_engine_weekly()
@@ -208,6 +379,7 @@ def run_pipeline(dry_run: bool = False):
     _run_step('7. Alpha: ML signals',       lambda: step_alpha('ml_model'),      dry_run)
     _run_step('8. ETF divergence scan',     step_divergence_scan,          dry_run)
     _run_step('9. Outcome fill',            step_outcome_fill,             dry_run)
+    _run_step('10. Portfolio construction', step_portfolio_construction,   dry_run)
 
     # ── Weekly steps (Monday) ─────────────────────────────────────────────────
     if WEEKDAY == 0:

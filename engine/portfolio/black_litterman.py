@@ -61,6 +61,20 @@ def compute_view_omegas(
     return base_omega @ ic_scale   # element-wise product on diagonal
 
 
+def _single_view_omega(
+    P_row: np.ndarray,      # 1 × n
+    Sigma: np.ndarray,      # n × n
+    tau: float,
+    ic: float,
+) -> float:
+    """
+    Scalar omega for a single view, consistent with compute_view_omegas.
+    Used by build_bl_views_calibrated to avoid re-slicing Sigma per view.
+    """
+    base = float((P_row @ (tau * Sigma) @ P_row.T)[0, 0])
+    return base / (max(ic, 0.01) ** 2)
+
+
 def build_bl_views_calibrated(
     signals_df: pd.DataFrame,
     tickers: list,
@@ -69,32 +83,31 @@ def build_bl_views_calibrated(
     tau: float = 0.05,
 ) -> list:
     """
-    Drop-in replacement for build_bl_views() that uses the correct omega.
+    Builds per-ticker BL views with IC-scaled omega.
+    Uses _single_view_omega (consistent with compute_view_omegas) for each view.
     """
     views = []
     models_dict = models_dict or {}
+    Sigma = cov_matrix.loc[tickers, tickers].values   # slice once, not per row
+    n = len(tickers)
+
     for _, row in signals_df.iterrows():
         if row["ticker"] not in tickers:
             continue
         ticker_idx = tickers.index(row["ticker"])
-        n = len(tickers)
 
-        # Build single-row P matrix for this view
         P_row = np.zeros((1, n))
         P_row[0, ticker_idx] = 1.0
 
-        Sigma = cov_matrix.loc[tickers, tickers].values
         ic = max(0.01, float(row["confidence"]))
-        
+
         model = models_dict.get(row["model_name"])
-        
-        # Gate: if model not live-approved, set omega extremely high
+
+        # Gate: if model not live-approved, set omega extremely high (effectively ignored)
         if model and hasattr(model, 'is_live_approved') and not model.is_live_approved():
-            omega = 999.0   # effectively ignored by BL
+            omega = 999.0
         else:
-            # Correct omega
-            base = float((P_row @ (tau * Sigma) @ P_row.T)[0, 0])
-            omega = base / (ic ** 2)
+            omega = _single_view_omega(P_row, Sigma, tau, ic)
 
         views.append({
             "assets":  [row["ticker"]],

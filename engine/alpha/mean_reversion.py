@@ -54,7 +54,8 @@ class MeanReversionAlpha(AlphaModel):
         # RSI=70 (overbought) → (50-70)/50 = -0.40 → negative expected return
         df['rsi_norm']       = (50 - df['raw_score']) / 50
         df['expected_return'] = df['rsi_norm'] * RETURN_SCALE
-        df['confidence']      = ic
+        # IC can be negative (model actively wrong); clamp to 0.01 floor for BL omega.
+        df['confidence']      = max(0.01, ic)
 
         logger.info(f"[mean_reversion] {len(df)} signals, IC={ic:.4f}, date={date}")
         return df[['ticker', 'expected_return', 'confidence', 'raw_score']]

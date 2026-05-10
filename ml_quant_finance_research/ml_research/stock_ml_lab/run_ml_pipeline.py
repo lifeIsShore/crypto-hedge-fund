@@ -49,11 +49,11 @@ HORIZONS      = [5, 21, 63]
 PRIMARY_HOR   = 21            # main horizon for signals / ensemble
 SCENARIO_TICKERS = ["MSFT", "TSLA", "AMZN", "META"]   # tickers to run MC on
 MODELS = {
-    "Baseline_Random":     None,   # coin-flip
-    "Baseline_Momentum":   None,   # yesterday's direction
-    "LogisticRegression":  "lr",
-    "RandomForest":        "rf",
-    "XGBoost":             "xgb",
+    "Baseline_Random":    None,   # coin-flip
+    "Baseline_Momentum":  None,   # yesterday's direction
+    "LogisticRegression": "lr",
+    "RandomForest":       "rf",
+    "XGBoost":            "xgb",
 }
 FEAT_COLS_EXCLUDE = [
     "Open","High","Low","Close","Adj Close","Volume",
@@ -231,8 +231,8 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
                                 refined_cols = select_features(
                                     X_all[feat_cols],
                                     importance_dict=feature_importance,
-                                    variance_threshold=0,    # already done
-                                    corr_threshold=1.0,      # already done
+                                    variance_threshold=0,     # already done in stage 1
+                                    corr_threshold=1.0,       # already done in stage 2
                                     importance_gate=FEATURE_IMPORTANCE_GATE,
                                 )
                                 if len(refined_cols) >= 10:
@@ -275,25 +275,22 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
         )
 
     # Best ML proba (prefer XGBoost > RF > LR)
+    best_proba = 0.5
     for mn in ["XGBoost", "RandomForest", "LogisticRegression"]:
         if mn in last_proba:
             best_proba = last_proba[mn]
             break
-    else:
-        best_proba = 0.5
 
     # Vol for scenario engine
-    if "Adj Close" in prices[ticker].columns:
-        ret = prices[ticker]["Adj Close"].pct_change().dropna()
-        realized_vol = float(ret.std() * np.sqrt(252))
-        last_price   = float(prices[ticker]["Adj Close"].iloc[-1])
-    else:
-        realized_vol = 0.25
-        last_price   = float(prices[ticker]["Close"].iloc[-1])
+    ticker_df = prices[ticker]
+    price_col = "Adj Close" if "Adj Close" in ticker_df.columns else "Close"
+    ret          = ticker_df[price_col].pct_change().dropna()
+    realized_vol = float(ret.std() * np.sqrt(252)) if len(ret) >= 2 else 0.25
+    last_price   = float(ticker_df[price_col].iloc[-1])
 
     # Best AUC across ML models
     best_auc = max(
-        (v.get("auc_roc", 0) for k, v in model_results.items()
+        (v.get("auc_roc", 0.5) for k, v in model_results.items()
          if k not in ("Baseline_Random", "Baseline_Momentum")),
         default=0.5,
     )
@@ -336,7 +333,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
             all_model_names |= set(res["model_results"].keys())
 
     model_comparison = []
-    for mname in ["Baseline_Random", "Baseline_Momentum", "Baseline_LR1",
+    for mname in ["Baseline_Random", "Baseline_Momentum",
                   "LogisticRegression", "RandomForest", "XGBoost"]:
         if mname not in all_model_names:
             continue
@@ -363,7 +360,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
 
     # ── experiment_summary ────────────────────────────────
     ml_rows = [m for m in model_comparison
-               if m["model"] not in ("Baseline_Random", "Baseline_Momentum", "Baseline_LR1")]
+               if m["model"] not in ("Baseline_Random", "Baseline_Momentum")]
     if ml_rows:
         best_by_auc   = max(ml_rows, key=lambda r: r["auc"])
         best_by_sharpe= max(ml_rows, key=lambda r: r["sharpe"])
@@ -469,8 +466,6 @@ def main():
 
     log.info("Step 1c — Loading fundamentals…")
     try:
-        fundamentals = {t: {} for t in prices}   # safe default
-        from data_loader import fetch_fundamentals
         fundamentals = fetch_fundamentals(force_refresh=False)
     except Exception as e:
         log.warning(f"  Fundamentals load failed ({e}); continuing without them")

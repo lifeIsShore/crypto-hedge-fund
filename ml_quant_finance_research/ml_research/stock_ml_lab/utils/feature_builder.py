@@ -57,7 +57,8 @@ def add_technical_features(df):
     delta = c.diff()
     gain  = delta.clip(lower=0).rolling(14).mean()
     loss  = (-delta.clip(upper=0)).rolling(14).mean()
-    df["rsi_14"] = 1 - 1 / (1 + gain / (loss + 1e-9))
+    rs    = gain / (loss + 1e-9)
+    df["rsi_14"] = 100 - (100 / (1 + rs))   # standard Wilder RSI: 0–100
     ema12  = c.ewm(span=12, adjust=False).mean()
     ema26  = c.ewm(span=26, adjust=False).mean()
     macd   = ema12 - ema26
@@ -127,7 +128,9 @@ def add_options_features(df, options_dict: dict):
     return df
 
 
-def add_target(df, horizons=[5, 21, 63]):
+def add_target(df, horizons=None):
+    if horizons is None:
+        horizons = [5, 21, 63]
     c = df["Adj Close"]
     for n in horizons:
         fut = c.shift(-n) / c - 1
@@ -248,7 +251,7 @@ def get_feature_selection_report(X: pd.DataFrame, importance_dict: dict = None) 
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_features(price_df, fundamentals=None, macro_df=None,
-                   options_dict=None, horizons=[5, 21, 63]):
+                   options_dict=None, horizons=None):
     """
     Builds all feature families for one ticker.
 
@@ -262,6 +265,8 @@ def build_features(price_df, fundamentals=None, macro_df=None,
     Returns:
         DataFrame with all features + target columns.
     """
+    if horizons is None:
+        horizons = [5, 21, 63]
     df = price_df.copy()
     df = add_price_features(df)
     df = add_volume_features(df)

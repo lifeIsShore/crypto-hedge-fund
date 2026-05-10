@@ -52,7 +52,9 @@ class MomentumAlpha(AlphaModel):
 
         # rank [0, 1] → expected return: rank=0.5 = neutral (0 excess), extremes = ±scale
         df['expected_return'] = (df['raw_score'] - 0.5) * 2 * RETURN_SCALE
-        df['confidence']      = ic
+        # IC can be negative (model actively wrong); clamp to 0.01 floor for BL omega.
+        # A negative IC will still gate the model out via is_live_approved().
+        df['confidence']      = max(0.01, ic)
 
         logger.info(f"[momentum] {len(df)} signals, IC={ic:.4f}, date={date}")
         return df[['ticker', 'expected_return', 'confidence', 'raw_score']]

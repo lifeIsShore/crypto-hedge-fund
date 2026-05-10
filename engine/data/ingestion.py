@@ -51,8 +51,8 @@ def fetch_fx_history(from_date: str, to_date: str) -> dict:
     # yfinance EURUSD=X gives USD per 1 EUR (i.e. 1.08 = $1.08 per €1)
     # We want EUR per 1 USD, so invert.
     pairs = {
-        'USDEUR': ('EURUSD=X', True),   # True = invert
-        'GBPEUR': ('GBPUSD=X', True),   # GBP/USD also inverted to get EUR/GBP
+        'USDEUR': ('EURUSD=X', True),    # EURUSD=X is USD per EUR → invert to get EUR per USD
+        'GBPEUR': ('GBPEUR=X', False),   # GBPEUR=X is EUR per GBP — no inversion needed
     }
 
     for name, (pair, invert) in pairs.items():

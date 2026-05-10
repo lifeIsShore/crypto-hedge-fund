@@ -48,10 +48,14 @@ def generate_scenarios(current_price, up_probability, realized_vol_ann,
 
 def ensemble_sentiment(model_signals):
     if not model_signals:
-        return {"score": None, "verdict": "NO DATA", "n_tickers": 0}
+        return {"weighted_score": None, "verdict": "NO DATA", "n_tickers": 0}
     scores  = [s.get("up_proba_21d", 0.5) for s in model_signals.values()]
     weights = [max(0.01, s.get("auc", 0.5) - 0.5) for s in model_signals.values()]
-    w = np.array(weights) / sum(weights)
+    total_w = sum(weights)
+    if total_w == 0:
+        w = np.ones(len(weights)) / len(weights)   # equal weight fallback
+    else:
+        w = np.array(weights) / total_w
     ws = float(np.average(scores, weights=w))
     return {
         "weighted_score": round(ws, 4),

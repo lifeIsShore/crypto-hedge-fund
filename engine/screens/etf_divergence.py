@@ -17,6 +17,7 @@ once >150 observations with 30-day outcomes are available.
 """
 
 import pandas as pd
+import numpy as np
 import uuid
 import logging
 import json
@@ -68,9 +69,7 @@ def detect_divergences(date: str) -> list:
 
         # Cumulative log return over window
         etf_log_ret = float(log_returns[etf].tail(WINDOW_DAYS).sum())
-        etf_pct_ret = (pd.np.exp(etf_log_ret) - 1) if hasattr(pd, 'np') else (
-            __import__('numpy').exp(etf_log_ret) - 1
-        )
+        etf_pct_ret = np.exp(etf_log_ret) - 1
 
         if etf_pct_ret < ETF_MIN_UP:
             # ETF not rising — divergence would be market-wide, not stock-specific
@@ -81,7 +80,6 @@ def detect_divergences(date: str) -> list:
                 continue
 
             stock_log_ret = float(log_returns[ticker].tail(WINDOW_DAYS).sum())
-            import numpy as np
             stock_pct_ret = np.exp(stock_log_ret) - 1
             divergence    = etf_pct_ret - stock_pct_ret
 

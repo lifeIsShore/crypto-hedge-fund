@@ -61,13 +61,13 @@ def run_pre_trade_checks(suggested_weights: pd.Series, sector_map: dict = None) 
     else:
         logger.info("Pre-trade checks: ALL PASSED")
 
-    # Log to DB
+    # Log violations to DB
     session = get_session()
     for v in violations:
         session.execute(text("""
-            INSERT INTO risk_events (date, metric_name, metric_value)
-            VALUES (CURRENT_DATE, :name, 1)
-        """), {"name": f"pre_trade_violation: {v[:60]}"})
+            INSERT INTO risk_events (date, event_type, detail)
+            VALUES (CURRENT_DATE, 'pre_trade_violation', :detail)
+        """), {"detail": v[:200]})
     session.commit()
     session.close()
 

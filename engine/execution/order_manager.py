@@ -66,17 +66,24 @@ def generate_order_queue(
     return orders
 
 
-def confirm_order(order_id: str, actual_value_eur: float, price_eur: float, notes: str = ""):
-    """Called from dashboard when you confirm you executed an order manually."""
+def confirm_order(order_id: str, ticker: str, action: str, actual_value_eur: float, price_eur: float, notes: str = ""):
+    """
+    Called from dashboard when you confirm you executed an order manually.
+    All fields must be passed explicitly — nothing is hardcoded.
+    """
     session = get_session()
+    qty = actual_value_eur / price_eur if price_eur > 0 else 0
     session.execute(text("""
         INSERT INTO trades (date, ticker, action, quantity, price_eur, value_eur, source, notes)
         VALUES (CURRENT_DATE, :ticker, :action, :qty, :price, :value, 'manual', :notes)
     """), {
-        "ticker": "UNKNOWN",   # replaced by dashboard with actual ticker
-        "action": "BUY",
-        "qty": actual_value_eur / price_eur if price_eur > 0 else 0,
-        "price": price_eur, "value": actual_value_eur, "notes": notes
+        "ticker": ticker,
+        "action": action,
+        "qty":    qty,
+        "price":  price_eur,
+        "value":  actual_value_eur,
+        "notes":  notes,
     })
     session.commit()
     session.close()
+    logger.info(f"Trade confirmed: {action} {ticker} €{actual_value_eur:.2f} @ €{price_eur:.4f}")
