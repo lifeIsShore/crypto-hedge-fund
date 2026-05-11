@@ -1,0 +1,16 @@
+{
+  "ticker": "AMAT",
+  "fetched_at": "2026-05-11T20:02:58",
+  "iv_atm": 0.7466,
+  "iv_call_atm": 0.7659,
+  "iv_put_atm": 0.7272,
+  "iv_skew": -0.0144,
+  "iv_rv_spread": 0.2826,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.6119,
+  "short_pct_float": 0.0172,
+  "short_ratio": 2.15,
+  "shares_short": 13594148.0,
+  "shares_short_prior": 13683911.0,
+  "short_change": -0.0066
+}

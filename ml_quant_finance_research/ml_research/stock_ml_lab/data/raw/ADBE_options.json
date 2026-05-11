@@ -1,0 +1,16 @@
+{
+  "ticker": "ADBE",
+  "fetched_at": "2026-05-11T20:02:51",
+  "iv_atm": 0.4522,
+  "iv_call_atm": 0.4872,
+  "iv_put_atm": 0.4172,
+  "iv_skew": -0.0497,
+  "iv_rv_spread": 0.0041,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.5917,
+  "short_pct_float": 0.040700004,
+  "short_ratio": 2.67,
+  "shares_short": 14737592.0,
+  "shares_short_prior": 13194456.0,
+  "short_change": 0.117
+}
