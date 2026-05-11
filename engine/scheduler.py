@@ -6,20 +6,20 @@ Usage:
   python -m engine.scheduler            # run now
   python -m engine.scheduler --test     # dry run (skips actual ingestion/BL)
 
-Schedule (cron example — 22:00 UTC = after US market close Mon-Fri):
-  0 22 * * 1-5 cd /path/to/hedge-fund && python -m engine.scheduler
-
 Step frequencies:
   Daily (every trading day):
-    data ingestion, features, alpha signals, divergence scan,
+    ledger import, data ingestion, features, alpha signals, divergence scan,
     portfolio construction (BL → optimizer → pre-trade → orders → post-trade risk),
-    regime engine refresh (writes shared/state/regime_state.json)
+    price targets, regime engine refresh
 
   Weekly (Monday):
-    PEAD engine full refresh (writes shared/state/pead_setups.csv)
+    PEAD engine full refresh
 
   Weekend (Saturday):
-    ML pipeline full refresh (writes shared/state/ml_state.json)
+    ML pipeline full refresh
+
+  Standalone heartbeat check:
+    python -c "from engine.alerting.digest import check_heartbeat; check_heartbeat()"
 """
 
 import logging
@@ -47,7 +47,7 @@ logger = logging.getLogger('scheduler')
 
 try:
     from portfolio.src.config import ASSET_UNIVERSE
-    TICKERS = ASSET_UNIVERSE[:50]
+    TICKERS = ASSET_UNIVERSE
 except Exception as e:
     logger.error(f"Could not import ASSET_UNIVERSE from portfolio/src/config.py: {e}")
     TICKERS = ['APC.DE', 'MSF.DE', 'NVDA', 'SAP.DE', 'EUNL.DE']
@@ -56,19 +56,24 @@ TODAY   = str(datetime.date.today())
 WEEKDAY = datetime.date.today().weekday()   # 0=Mon, 5=Sat, 6=Sun
 HISTORY_START = '2022-01-01'
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP RUNNER
 # ─────────────────────────────────────────────────────────────────────────────
 
+_step_results: list = []
+
+
 def _run_step(name: str, fn, dry_run: bool = False):
     import time
+    from engine.alerting.digest import check_slow_step
+
     logger.info(f"▶ {name}")
     start = time.time()
 
     if dry_run:
         logger.info(f"  [DRY RUN] Skipped")
         _log_pipeline_run(name, 'skipped', 0)
+        _step_results.append({'name': name, 'status': 'skipped', 'duration_sec': 0})
         return
 
     try:
@@ -76,11 +81,14 @@ def _run_step(name: str, fn, dry_run: bool = False):
         elapsed = round(time.time() - start, 1)
         logger.info(f"✅ {name} ({elapsed}s)")
         _log_pipeline_run(name, 'success', elapsed)
+        _step_results.append({'name': name, 'status': 'success', 'duration_sec': elapsed})
+        check_slow_step(name, elapsed)
     except Exception as e:
         elapsed = round(time.time() - start, 1)
         logger.error(f"❌ {name} FAILED after {elapsed}s: {e}")
         logger.error(traceback.format_exc())
         _log_pipeline_run(name, 'failed', elapsed, str(e)[:500])
+        _step_results.append({'name': name, 'status': 'failed', 'duration_sec': elapsed})
         send_alert(f"Pipeline step FAILED: {name}\n{e}")
 
 
@@ -92,12 +100,8 @@ def _log_pipeline_run(step_name: str, status: str, duration_sec: float, error_ms
         session.execute(text("""
             INSERT INTO pipeline_runs (run_date, step_name, status, duration_sec, error_msg)
             VALUES (CURRENT_DATE, :step, :status, :duration, :error)
-        """), {
-            'step':     step_name,
-            'status':   status,
-            'duration': duration_sec,
-            'error':    error_msg,
-        })
+        """), {'step': step_name, 'status': status,
+               'duration': duration_sec, 'error': error_msg})
         session.commit()
         session.close()
     except Exception:
@@ -108,21 +112,29 @@ def _log_pipeline_run(step_name: str, status: str, duration_sec: float, error_ms
 # PIPELINE STEPS
 # ─────────────────────────────────────────────────────────────────────────────
 
+def step_ledger_import():
+    """Stream 8 — replay ledger.csv → sync live positions + cash to DB."""
+    from engine.reconciliation.ledger_importer import run_ledger_import
+    result = run_ledger_import(date=TODAY)
+    if result:
+        logger.info(
+            f"[ledger] {len(result.get('holdings', {}))} positions, "
+            f"cash=€{result.get('cash_eur', 0):.2f}"
+        )
+        advisor = result.get('trade_advisor_df')
+        if advisor is not None and not advisor.empty:
+            n_trades = len(advisor[advisor['action'] != 'HOLD'])
+            logger.info(f"[ledger] Trade advisor: {n_trades} orders suggested")
+
+
 def step_ingest():
     from engine.data.ingestion import run_ingestion
     run_ingestion(TICKERS, HISTORY_START, TODAY)
 
 
 def step_regime_refresh():
-    """
-    Runs the macro regime engine to refresh shared/state/regime_state.json.
-    Must run BEFORE step_features so the macro features are available.
-    Non-fatal: if regime_engine is not set up the feature store continues
-    without macro features (statistical regime still computed from prices).
-    """
     import subprocess
-    _HERE_SCHED = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.normpath(os.path.join(_HERE_SCHED, '..'))
+    project_root = _ROOT
     regime_dir = os.path.join(
         project_root, 'ml_quant_finance_research', 'quant_research', 'regime_engine'
     )
@@ -134,29 +146,20 @@ def step_regime_refresh():
     try:
         result = subprocess.run(
             [sys.executable, 'run_engine.py'],
-            cwd=regime_dir,
-            capture_output=True,
-            text=True,
-            timeout=300,   # 5 minute cap — FRED data + classification
+            cwd=regime_dir, capture_output=True, text=True, timeout=300,
         )
         if result.returncode != 0:
-            logger.warning(f"[regime] Engine returned non-zero:\n{result.stderr[-500:]}")
+            logger.warning(f"[regime] Engine non-zero:\n{result.stderr[-500:]}")
         else:
-            logger.info("[regime] regime_state.json updated successfully")
-            # Copy output to shared/state (regime_engine writes to its own data/ dir;
-            # we mirror it to shared/state/ so the engine can read from one location)
+            logger.info("[regime] regime_state.json updated")
             _mirror_regime_to_shared(regime_dir, project_root)
     except subprocess.TimeoutExpired:
-        logger.error("[regime] Engine timed out after 5 minutes")
+        logger.error("[regime] Timed out after 5 minutes")
     except Exception as e:
-        logger.error(f"[regime] Engine failed: {e}")
+        logger.error(f"[regime] Failed: {e}")
 
 
 def _mirror_regime_to_shared(regime_dir: str, project_root: str):
-    """
-    Copies regime_state.json and regime_history.csv from the regime_engine's
-    own data/ directory into shared/state/ so the engine reads from one place.
-    """
     import shutil
     from shared.state_paths import REGIME_STATE_PATH, REGIME_HISTORY_PATH, ensure_state_dir
     ensure_state_dir()
@@ -166,10 +169,54 @@ def _mirror_regime_to_shared(regime_dir: str, project_root: str):
 
     if os.path.exists(src_state):
         shutil.copy2(src_state, REGIME_STATE_PATH)
-        logger.info(f"[regime] regime_state.json → shared/state/")
+
     if os.path.exists(src_history):
         shutil.copy2(src_history, REGIME_HISTORY_PATH)
-        logger.info(f"[regime] regime_history.csv → shared/state/")
+        _sync_regime_history_to_db(src_history)
+
+
+def _sync_regime_history_to_db(csv_path: str):
+    try:
+        df = pd.read_csv(csv_path)
+        if df.empty or 'date' not in df.columns:
+            return
+        from engine.db.db import get_session
+        from sqlalchemy import text
+        session = get_session()
+        count = 0
+        try:
+            for _, row in df.iterrows():
+                session.execute(text("""
+                    INSERT INTO regime_history
+                        (date, regime_risk, regime_rates, regime_growth, regime_composite,
+                         transition_warning, ew_active_count,
+                         vix, yield_spread, hy_spread, fed_funds, computed_at)
+                    VALUES (:date,:risk,:rates,:growth,:composite,:ew_flag,:ew_count,
+                            :vix,:yield_spread,:hy_spread,:fed_funds,datetime('now'))
+                    ON CONFLICT(date) DO UPDATE SET
+                        regime_risk=:risk, regime_rates=:rates, regime_growth=:growth,
+                        regime_composite=:composite, transition_warning=:ew_flag,
+                        ew_active_count=:ew_count, vix=:vix,
+                        yield_spread=:yield_spread, hy_spread=:hy_spread, fed_funds=:fed_funds
+                """), {
+                    'date': str(row.get('date', '')),
+                    'risk': row.get('regime_risk'), 'rates': row.get('regime_rates'),
+                    'growth': row.get('regime_growth'), 'composite': row.get('regime_composite'),
+                    'ew_flag': int(row.get('transition_warning', 0)),
+                    'ew_count': int(row.get('ew_active_count', 0)),
+                    'vix': row.get('vix'), 'yield_spread': row.get('yield_spread'),
+                    'hy_spread': row.get('hy_spread'), 'fed_funds': row.get('fed_funds'),
+                })
+                count += 1
+            session.commit()
+            logger.info(f"[regime] Synced {count} rows → regime_history table")
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"[regime] DB sync failed: {e}")
+        finally:
+            session.close()
+    except Exception as e:
+        logger.warning(f"[regime] CSV→DB sync error: {e}")
 
 
 def step_features():
@@ -214,15 +261,15 @@ def step_outcome_fill():
 
 def step_portfolio_construction():
     """
-    Full portfolio construction loop:
-      1. Load covariance matrix and current weights from DB
-      2. Load regime info — BOTH statistical (stress_score) and macro (composite label)
-      3. Run Black-Litterman → posterior expected returns
-      4. Run constrained optimizer → suggested weights
-      5. Persist model outputs (suggested vs current weights)
-      6. Run pre-trade risk checks → block if violations
-      7. Generate order queue and persist to DB
-      8. Run post-trade risk snapshot
+    Full portfolio construction:
+      1. Covariance matrix from DB returns
+      2. Current weights (now from ledger import via positions_history)
+      3. Regime info from feature_store (_PORTFOLIO features)
+      4. Black-Litterman posterior returns
+      5. Constrained optimizer → suggested weights
+      6. Pre-trade risk checks
+      7. Order queue generation
+      8. Post-trade risk snapshot
     """
     import numpy as np
     from engine.portfolio.black_litterman import run_black_litterman
@@ -234,20 +281,19 @@ def step_portfolio_construction():
     from engine.db.db import get_session
     from sqlalchemy import text
 
-    # ── 1. Covariance matrix ─────────────────────────────────────────────────
     log_returns = load_returns_from_db(TICKERS, lookback_days=252)
     if log_returns.empty:
-        logger.error("[portfolio] No returns in DB — skipping portfolio construction")
+        logger.error("[portfolio] No returns in DB — run ingestion first")
         return
 
     available_tickers = [t for t in TICKERS if t in log_returns.columns]
     if len(available_tickers) < 2:
-        logger.error("[portfolio] Fewer than 2 tickers with data — skipping")
+        logger.error("[portfolio] < 2 tickers with data — skipping")
         return
 
     cov_matrix = log_returns[available_tickers].cov() * 252
 
-    # ── 2. Current weights from DB ───────────────────────────────────────────
+    # Current weights — sourced from ledger import (positions_history)
     session = get_session()
     rows = session.execute(text("""
         SELECT p.ticker, p.weight
@@ -262,17 +308,9 @@ def step_portfolio_construction():
         {r[0]: float(r[1]) for r in rows if r[0] in available_tickers}
     ).reindex(available_tickers, fill_value=0.0)
 
-    market_weights = pd.Series(
-        1.0 / len(available_tickers), index=available_tickers
-    )
+    market_weights = pd.Series(1.0 / len(available_tickers), index=available_tickers)
 
-    # ── 3. Regime info — merged from feature_store ───────────────────────────
-    #
-    # The feature store now holds BOTH:
-    #   - Statistical regime: stress_score, regime_high/medium/low
-    #   - Macro regime: macro_risk_on/off, macro_expansion/slowdown, macro_ew_transition
-    #
-    # We load all and build a unified regime_info dict for Black-Litterman.
+    # Regime info
     regime_info = None
     try:
         session2 = get_session()
@@ -284,111 +322,65 @@ def step_portfolio_construction():
 
         if result_row:
             feat = {r[0]: float(r[1]) for r in result_row}
+            if feat.get('regime_high', 0):    stat = 'high_stress'
+            elif feat.get('regime_low', 0):   stat = 'low_stress'
+            else:                             stat = 'medium'
 
-            # Statistical regime (vol + correlation)
-            if feat.get('regime_high', 0):
-                stat_regime = 'high_stress'
-            elif feat.get('regime_low', 0):
-                stat_regime = 'low_stress'
-            else:
-                stat_regime = 'medium'
-
-            # Macro regime (3-axis)
-            macro_composite = []
-            if feat.get('macro_risk_on', 0):   macro_composite.append('RiskOn')
-            elif feat.get('macro_risk_off', 0): macro_composite.append('RiskOff')
-            else:                               macro_composite.append('Neutral')
-            if feat.get('macro_easing', 0):     macro_composite.append('Easing')
-            elif feat.get('macro_tightening',0): macro_composite.append('Tightening')
-            else:                               macro_composite.append('Neutral')
-            if feat.get('macro_expansion', 0):  macro_composite.append('Expansion')
-            elif feat.get('macro_contraction',0):macro_composite.append('Contraction')
-            elif feat.get('macro_recovery', 0): macro_composite.append('Recovery')
-            else:                               macro_composite.append('Slowdown')
+            mc = []
+            mc.append('RiskOn' if feat.get('macro_risk_on') else ('RiskOff' if feat.get('macro_risk_off') else 'Neutral'))
+            mc.append('Easing' if feat.get('macro_easing') else ('Tightening' if feat.get('macro_tightening') else 'Neutral'))
+            mc.append('Expansion' if feat.get('macro_expansion') else
+                      ('Contraction' if feat.get('macro_contraction') else
+                       ('Recovery' if feat.get('macro_recovery') else 'Slowdown')))
 
             regime_info = {
-                # Statistical regime fields (used by build_regime_views)
-                'regime':       stat_regime,
-                'stress_score': feat.get('stress_score', 0.5),
-                # Macro regime fields (informational + used for BL scaling)
-                'macro_composite':    '_'.join(macro_composite),
-                'macro_risk_on':      bool(feat.get('macro_risk_on', 0)),
-                'macro_risk_off':     bool(feat.get('macro_risk_off', 0)),
-                'macro_expansion':    bool(feat.get('macro_expansion', 0)),
-                'macro_ew_transition': bool(feat.get('macro_ew_transition', 0)),
-                'macro_ew_count':     int(feat.get('macro_ew_count', 0)),
-                'macro_vix':          feat.get('macro_vix', 20.0),
+                'regime': stat, 'stress_score': feat.get('stress_score', 0.5),
+                'macro_composite': '_'.join(mc),
+                'macro_risk_on': bool(feat.get('macro_risk_on')),
+                'macro_risk_off': bool(feat.get('macro_risk_off')),
+                'macro_expansion': bool(feat.get('macro_expansion')),
+                'macro_ew_transition': bool(feat.get('macro_ew_transition')),
+                'macro_ew_count': int(feat.get('macro_ew_count', 0)),
+                'macro_vix': feat.get('macro_vix', 20.0),
             }
-
-            logger.info(
-                f"[portfolio] Statistical regime: {stat_regime} "
-                f"(stress={regime_info['stress_score']:.2f}) | "
-                f"Macro: {regime_info['macro_composite']} | "
-                f"EW={regime_info['macro_ew_transition']}"
-            )
+            logger.info(f"[portfolio] Regime: {stat} | {regime_info['macro_composite']}")
     except Exception as e:
-        logger.warning(f"[portfolio] Could not load regime features: {e}")
+        logger.warning(f"[portfolio] Regime load failed: {e}")
 
-    # ── 4. Instantiate alpha models ──────────────────────────────────────────
     from engine.alpha.momentum       import MomentumAlpha
     from engine.alpha.mean_reversion import MeanReversionAlpha
     from engine.alpha.vol_timing     import VolTimingAlpha
     from engine.alpha.pead_alpha     import PEADAlpha
     from engine.alpha.ml_alpha       import MLAlpha
     models_dict = {
-        'momentum':       MomentumAlpha(),
-        'mean_reversion': MeanReversionAlpha(),
-        'vol_timing':     VolTimingAlpha(),
-        'pead':           PEADAlpha(),
-        'ml_model':       MLAlpha(),
+        'momentum': MomentumAlpha(), 'mean_reversion': MeanReversionAlpha(),
+        'vol_timing': VolTimingAlpha(), 'pead': PEADAlpha(), 'ml_model': MLAlpha(),
     }
 
-    # ── 5. Black-Litterman → posterior expected returns ──────────────────────
     mu_bl = run_black_litterman(
-        tickers=available_tickers,
-        cov_matrix=cov_matrix,
-        market_weights=market_weights,
-        date=TODAY,
-        regime_info=regime_info,
-        models_dict=models_dict,
+        tickers=available_tickers, cov_matrix=cov_matrix,
+        market_weights=market_weights, date=TODAY,
+        regime_info=regime_info, models_dict=models_dict,
     )
-    logger.info(f"[portfolio] BL returns computed for {len(mu_bl)} tickers")
 
-    # ── 6. Optimizer → suggested weights ────────────────────────────────────
     suggested_weights = optimize_with_bl(
-        mu_bl=mu_bl,
-        cov_matrix=cov_matrix,
-        current_weights=current_weights,
+        mu_bl=mu_bl, cov_matrix=cov_matrix, current_weights=current_weights,
     )
-    logger.info(
-        f"[portfolio] Optimized weights: "
-        f"top5={suggested_weights.nlargest(5).to_dict()}"
-    )
-
     persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl)
 
-    # ── 7. Pre-trade risk checks ─────────────────────────────────────────────
     pre_trade = run_pre_trade_checks(suggested_weights)
     if not pre_trade['passed']:
-        logger.warning(
-            f"[portfolio] Pre-trade checks FAILED — order queue blocked.\n"
-            f"Violations: {pre_trade['violations']}"
-        )
-        send_alert(f"Pre-trade checks failed:\n" + "\n".join(pre_trade['violations']))
-        run_post_trade_risk(
-            weights=current_weights.to_dict(),
-            tickers=available_tickers,
-        )
+        logger.warning(f"[portfolio] Pre-trade FAILED: {pre_trade['violations']}")
+        send_alert("Pre-trade checks failed:\n" + "\n".join(pre_trade['violations']))
+        run_post_trade_risk(weights=current_weights.to_dict(), tickers=available_tickers)
         return
 
-    # ── 8. Generate order queue ──────────────────────────────────────────────
+    # Portfolio value from ledger-synced positions + cash
     session3 = get_session()
-    val_row = session3.execute(text("""
+    val_row  = session3.execute(text("""
         SELECT SUM(value_eur) FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(date) AS max_date
-            FROM positions_history GROUP BY ticker
-        ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
+        INNER JOIN (SELECT ticker, MAX(date) AS max_date FROM positions_history GROUP BY ticker)
+        latest ON p.ticker=latest.ticker AND p.date=latest.max_date
     """)).fetchone()
     cash_row = session3.execute(text("""
         SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1
@@ -397,7 +389,7 @@ def step_portfolio_construction():
 
     portfolio_value = float(val_row[0] or 0) + float(cash_row[0] if cash_row else 0)
     if portfolio_value < 100:
-        logger.warning("[portfolio] Portfolio value too low — using €10,000 default")
+        logger.warning("[portfolio] Low portfolio value — using €10,000 default")
         portfolio_value = 10_000.0
 
     orders = generate_order_queue(
@@ -405,15 +397,18 @@ def step_portfolio_construction():
         current_weights=current_weights,
         total_portfolio_eur=portfolio_value,
     )
-    logger.info(f"[portfolio] Order queue: {len(orders)} orders (portfolio=€{portfolio_value:,.0f})")
+    logger.info(f"[portfolio] {len(orders)} orders (portfolio=€{portfolio_value:,.0f})")
     for o in orders:
         logger.info(f"  {o.action:4s} {o.ticker:12s} €{o.value_eur:>8.2f}")
 
-    # ── 9. Post-trade risk snapshot ──────────────────────────────────────────
-    run_post_trade_risk(
-        weights=suggested_weights.to_dict(),
-        tickers=available_tickers,
-    )
+    run_post_trade_risk(weights=suggested_weights.to_dict(), tickers=available_tickers)
+
+
+def step_price_targets():
+    """Stream 3 — probabilistic price targets for all tickers."""
+    from engine.analysis.price_targets import run_price_targets
+    targets = run_price_targets(TICKERS, TODAY)
+    logger.info(f"[price_targets] {len(targets)} targets computed")
 
 
 def step_pead_refresh():
@@ -431,19 +426,41 @@ def step_ml_refresh():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def send_alert(message: str):
-    logger.critical(f"🚨 ALERT: {message}")
+    from engine.alerting.digest import send_alert as _send
+    _send(message)
 
-    slack_url = os.getenv('SLACK_WEBHOOK_URL', '')
-    if slack_url:
-        try:
-            import urllib.request
-            import json as _json
-            data = _json.dumps({'text': f'🚨 Hedge Fund Alert:\n{message}'}).encode()
-            req  = urllib.request.Request(slack_url, data=data,
-                                          headers={'Content-Type': 'application/json'})
-            urllib.request.urlopen(req, timeout=5)
-        except Exception as e:
-            logger.warning(f"Slack alert failed: {e}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RISK SUMMARY FOR DIGEST
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_risk_summary() -> dict:
+    try:
+        from engine.db.db import get_session
+        from sqlalchemy import text
+        session = get_session()
+        metrics_rows = session.execute(text(
+            "SELECT metric_name, metric_value FROM risk_metrics WHERE date=:d"
+        ), {'d': TODAY}).fetchall()
+        violations = session.execute(text(
+            "SELECT COUNT(*) FROM risk_events WHERE date=:d AND event_type='pre_trade_violation'"
+        ), {'d': TODAY}).fetchone()
+        val_row = session.execute(text("""
+            SELECT SUM(value_eur) FROM positions_history p
+            INNER JOIN (SELECT ticker, MAX(date) AS max_date FROM positions_history GROUP BY ticker)
+            latest ON p.ticker=latest.ticker AND p.date=latest.max_date
+        """)).fetchone()
+        session.close()
+        m = {r[0]: r[1] for r in metrics_rows}
+        return {
+            'var_95': m.get('var_95'), 'regime': m.get('regime', 'unknown'),
+            'pre_trade_violations': int(violations[0]) if violations else 0,
+            'orders_blocked': int(violations[0] or 0) > 0,
+            'portfolio_value_eur': float(val_row[0] or 0),
+        }
+    except Exception as e:
+        logger.warning(f"Risk summary failed: {e}")
+        return {}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -451,18 +468,16 @@ def send_alert(message: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_pipeline(dry_run: bool = False):
+    global _step_results
+    _step_results = []
+
     logger.info(
-        f"{'='*60}\n"
-        f"  Pipeline: {TODAY} (weekday={WEEKDAY}) "
-        f"{'[DRY RUN]' if dry_run else ''}\n"
-        f"  Tickers: {len(TICKERS)}\n"
-        f"{'='*60}"
+        f"{'='*60}\n  Pipeline: {TODAY} (weekday={WEEKDAY})"
+        f" {'[DRY RUN]' if dry_run else ''}\n  Tickers: {len(TICKERS)}\n{'='*60}"
     )
 
     # ── Daily steps ───────────────────────────────────────────────────────────
-    #
-    # IMPORTANT: regime refresh runs BEFORE features so that macro regime
-    # features (from regime_state.json) are available when feature_store runs.
+    _run_step('0.  Ledger import',           step_ledger_import,                 dry_run)  # Stream 8
     _run_step('1.  Data ingestion',          step_ingest,                        dry_run)
     _run_step('2.  Macro regime refresh',    step_regime_refresh,                dry_run)
     _run_step('3.  Feature pipeline',        step_features,                      dry_run)
@@ -474,6 +489,7 @@ def run_pipeline(dry_run: bool = False):
     _run_step('9.  ETF divergence scan',     step_divergence_scan,               dry_run)
     _run_step('10. Outcome fill',            step_outcome_fill,                  dry_run)
     _run_step('11. Portfolio construction',  step_portfolio_construction,        dry_run)
+    _run_step('12. Price targets',           step_price_targets,                 dry_run)  # Stream 3
 
     # ── Weekly steps (Monday) ─────────────────────────────────────────────────
     if WEEKDAY == 0:
@@ -484,6 +500,15 @@ def run_pipeline(dry_run: bool = False):
         _run_step('WE1. ML pipeline refresh', step_ml_refresh, dry_run)
 
     logger.info(f"{'='*60}\n  Pipeline complete: {TODAY}\n{'='*60}")
+
+    # ── End-of-run digest (Stream 9) ─────────────────────────────────────────
+    if not dry_run:
+        try:
+            from engine.alerting.digest import send_digest
+            send_digest(step_results=_step_results, date=TODAY,
+                        risk_summary=_build_risk_summary())
+        except Exception as e:
+            logger.warning(f"Digest send failed (non-fatal): {e}")
 
 
 if __name__ == '__main__':

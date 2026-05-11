@@ -26,6 +26,25 @@ CREATE TABLE IF NOT EXISTS prices (
 CREATE INDEX IF NOT EXISTS idx_prices_ticker ON prices (ticker, date);
 
 -- ─────────────────────────────────────────────────────────────
+-- FX RATES  (Stream 1)
+-- ─────────────────────────────────────────────────────────────
+
+-- Daily FX rates used for currency conversion.
+-- Stored separately so the dashboard can show raw FX history
+-- and the feature store can pull rate-of-change as a macro signal.
+-- pair examples: 'USDEUR', 'GBPEUR'
+CREATE TABLE IF NOT EXISTS fx_rates (
+    date        TEXT    NOT NULL,
+    pair        TEXT    NOT NULL,   -- e.g. 'USDEUR'
+    rate        REAL    NOT NULL,   -- EUR per 1 unit of foreign currency
+    source      TEXT    DEFAULT 'yfinance',
+    recorded_at TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, pair)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fx_rates_pair ON fx_rates (pair, date);
+
+-- ─────────────────────────────────────────────────────────────
 -- FEATURE STORE
 -- ─────────────────────────────────────────────────────────────
 
@@ -89,6 +108,35 @@ CREATE TABLE IF NOT EXISTS model_outputs (
     computed_at      TEXT        DEFAULT (datetime('now')),
     PRIMARY KEY (date, ticker)
 );
+
+-- ─────────────────────────────────────────────────────────────
+-- PRICE TARGETS  (Stream 3)
+-- ─────────────────────────────────────────────────────────────
+
+-- Probabilistic price targets computed daily after portfolio construction.
+-- All price values are in EUR. Used by the Risk/Strategy dashboard (Stream 4).
+CREATE TABLE IF NOT EXISTS price_targets (
+    date                TEXT    NOT NULL,
+    ticker              TEXT    NOT NULL,
+    current_price_eur   REAL,
+    expected_21d_eur    REAL,   -- median of lognormal at t=21d
+    target_1sigma_eur   REAL,   -- 84th percentile (upside target)
+    stop_1sigma_eur     REAL,   -- 16th percentile (hard stop)
+    stop_tight_eur      REAL,   -- 0.5σ stop (tight)
+    resistance_ma50     REAL,
+    resistance_ma200    REAL,
+    resistance_bb_upper REAL,
+    support_bb_lower    REAL,
+    high_52w            REAL,
+    low_52w             REAL,
+    risk_reward_ratio   REAL,   -- (target - current) / (current - stop)
+    up_proba            REAL,   -- ML up_proba_21d used
+    vol_ann             REAL,   -- annualised vol used
+    computed_at         TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_price_targets_ticker ON price_targets (ticker, date);
 
 -- ─────────────────────────────────────────────────────────────
 -- PORTFOLIO STATE
@@ -208,6 +256,56 @@ CREATE TABLE IF NOT EXISTS laggard_screen_results (
     notes         TEXT,
     logged_at     TEXT        DEFAULT (datetime('now'))
 );
+
+-- ─────────────────────────────────────────────────────────────
+-- REGIME HISTORY  (Stream 5 — SQLite migration)
+-- ─────────────────────────────────────────────────────────────
+
+-- Replaces regime_history.csv. JOINable with signals and price_targets
+-- for regime-stratified hit rate queries.
+CREATE TABLE IF NOT EXISTS regime_history (
+    date               TEXT    PRIMARY KEY,
+    regime_risk        TEXT,   -- 'Risk-On' | 'Risk-Off' | 'Neutral'
+    regime_rates       TEXT,   -- 'Easing'  | 'Tightening' | 'Neutral'
+    regime_growth      TEXT,   -- 'Expansion' | 'Slowdown' | 'Contraction' | 'Recovery'
+    regime_composite   TEXT,   -- e.g. 'RiskOn_Easing_Expansion'
+    transition_warning INTEGER DEFAULT 0,
+    ew_active_count    INTEGER DEFAULT 0,
+    vix                REAL,
+    yield_spread       REAL,
+    hy_spread          REAL,
+    fed_funds          REAL,
+    computed_at        TEXT    DEFAULT (datetime('now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- PEAD SETUPS  (Stream 5 — SQLite migration)
+-- ─────────────────────────────────────────────────────────────
+
+-- Replaces pead_setups.csv. JOINable with regime_history for
+-- regime-stratified PEAD hit rate analysis.
+CREATE TABLE IF NOT EXISTS pead_setups (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker                TEXT    NOT NULL,
+    earnings_date         TEXT    NOT NULL,
+    entry_date            TEXT,
+    direction             TEXT,   -- 'long' | 'short'
+    pead_setup_quality    TEXT,
+    surprise_pct          REAL,
+    underreaction_flag    INTEGER DEFAULT 0,
+    reaction_gap          REAL,
+    drift_21d             REAL,
+    drift_63d             REAL,
+    outcome_label_correct INTEGER,
+    regime_risk           TEXT,
+    regime_growth         TEXT,
+    regime_composite      TEXT,
+    sector                TEXT,
+    created_at            TEXT    DEFAULT (datetime('now')),
+    UNIQUE(ticker, earnings_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pead_setups_ticker ON pead_setups (ticker, earnings_date);
 
 -- ─────────────────────────────────────────────────────────────
 -- RECONCILIATION & DATA QUALITY

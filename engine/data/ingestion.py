@@ -45,6 +45,7 @@ def fetch_fx_history(from_date: str, to_date: str) -> dict:
     """
     Fetches daily USD→EUR and GBP→EUR rates from yfinance.
     Returns: {'USDEUR': {date_str: rate}, 'GBPEUR': {date_str: rate}}
+    Also persists rates to the fx_rates table (Stream 1).
     Falls back to constants on failure; logs fallback events to DB.
     """
     rates = {'USDEUR': {}, 'GBPEUR': {}}
@@ -74,7 +75,44 @@ def fetch_fx_history(from_date: str, to_date: str) -> dict:
             )
             _log_fx_fallback(name, str(e))
 
+    # Persist to fx_rates table (Stream 1)
+    _persist_fx_rates(rates)
+
     return rates
+
+
+def _persist_fx_rates(rates: dict):
+    """
+    Writes fetched FX rates to the fx_rates table.
+    Safe to run multiple times — upserts on (date, pair).
+    Stream 1: enables FX history queries from dashboard and regime engine.
+    """
+    try:
+        from engine.db.db import get_session
+        from sqlalchemy import text
+
+        session = get_session()
+        count = 0
+        try:
+            for pair_name, date_rate_map in rates.items():
+                for date_str, rate in date_rate_map.items():
+                    session.execute(text("""
+                        INSERT INTO fx_rates (date, pair, rate, source)
+                        VALUES (:date, :pair, :rate, 'yfinance')
+                        ON CONFLICT (date, pair) DO UPDATE SET
+                            rate   = :rate,
+                            source = 'yfinance'
+                    """), {'date': date_str, 'pair': pair_name, 'rate': rate})
+                    count += 1
+            session.commit()
+            logger.info(f"FX rates persisted: {count} rows across {len(rates)} pairs")
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"FX rate persistence failed: {e}")
+        finally:
+            session.close()
+    except Exception as e:
+        logger.warning(f"Could not persist FX rates: {e}")
 
 
 def apply_fx_conversion(df: pd.DataFrame, fx_rates: dict) -> pd.DataFrame:
@@ -321,7 +359,8 @@ def run_ingestion(
       1. Fetch OHLCV from Polygon (fallback: yfinance)
       2. Validate prices (spike filter, zero-price filter)
       3. Apply FX conversion → all prices in EUR
-      4. Persist to DB
+      4. Persist prices to DB
+      5. Persist FX rates to fx_rates table (Stream 1)
 
     Args:
         tickers:   list of ticker strings
@@ -351,7 +390,7 @@ def run_ingestion(
         logger.error("Ingestion: all rows rejected by validation")
         return pd.DataFrame()
 
-    # Step 3: FX conversion
+    # Step 3 + 5: FX conversion (also persists rates to fx_rates table)
     if apply_fx:
         fx_rates = fetch_fx_history(from_date, to_date)
         df_eur = apply_fx_conversion(df_clean, fx_rates)
@@ -359,7 +398,7 @@ def run_ingestion(
         df_eur = df_clean
         df_eur['currency'] = 'EUR'
 
-    # Step 4: Persist
+    # Step 4: Persist prices
     persist_prices(df_eur)
 
     logger.info(f"Ingestion complete: {len(df_eur)} rows persisted.")
