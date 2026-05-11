@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-11T20:38:27.796615",
+  "generated_at": "2026-05-11T21:04:33.338240",
   "active_setups": [],
   "recent_setups": [
     {
@@ -175,7 +175,7 @@
     "high_hit_rate_21d": null,
     "bullish_avg_drift_21d": 5.335,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-05-11T20:38:27.788015",
+    "stats_computed_at": "2026-05-11T21:04:33.330179",
     "hit_rate_21d_expansion": 0.0,
     "avg_drift_21d_expansion": -12.384,
     "hit_rate_21d_slowdown": 0.758,

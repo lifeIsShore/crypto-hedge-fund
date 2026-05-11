@@ -1,12 +1,12 @@
 {
   "available": true,
-  "generated_at": "2026-05-11T20:13:48",
+  "generated_at": "2026-05-11T21:20:46",
   "ensemble": {
-    "weighted_score": 0.4518,
-    "median_score": 0.4316,
+    "weighted_score": 0.4565,
+    "median_score": 0.457,
     "verdict": "MIXED",
-    "n_tickers": 36,
-    "spread_25_75": 0.7068
+    "n_tickers": 37,
+    "spread_25_75": 0.7021
   },
   "model_signals": {
     "APC.DE": {
@@ -219,6 +219,13 @@
       "vol_ann": 0.4869,
       "sector": "Energy"
     },
+    "UCB.BR": {
+      "up_proba_21d": 0.7907,
+      "auc": 0.5688,
+      "last_price": 234.1,
+      "vol_ann": 0.2751,
+      "sector": "Healthcare"
+    },
     "SHL.DE": {
       "up_proba_21d": 0.9844,
       "auc": 0.5902,
@@ -263,10 +270,10 @@
     }
   },
   "experiment_summary": {
-    "total_runs": 470,
+    "total_runs": 480,
     "best_model": "XGBoost",
-    "best_accuracy": 0.5171,
-    "best_auc": 0.6127,
+    "best_accuracy": 0.5156,
+    "best_auc": 0.6111,
     "best_sharpe": 0.0,
     "beats_baseline_pct": 0.6667,
     "models_tested": [
@@ -280,15 +287,15 @@
   "model_comparison": [
     {
       "model": "Baseline_Random",
-      "acc": 0.5024,
-      "auc": 0.5042,
+      "acc": 0.5026,
+      "auc": 0.5033,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": false
     },
     {
       "model": "Baseline_Momentum",
-      "acc": 0.5743,
+      "acc": 0.5744,
       "auc": 0.5,
       "sharpe": 0.0,
       "dd": 0.0,
@@ -296,24 +303,24 @@
     },
     {
       "model": "LogisticRegression",
-      "acc": 0.5349,
-      "auc": 0.5951,
+      "acc": 0.5326,
+      "auc": 0.5943,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": true
     },
     {
       "model": "RandomForest",
-      "acc": 0.5216,
-      "auc": 0.6106,
+      "acc": 0.5205,
+      "auc": 0.6085,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": true
     },
     {
       "model": "XGBoost",
-      "acc": 0.5171,
-      "auc": 0.6127,
+      "acc": 0.5156,
+      "auc": 0.6111,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": false
@@ -623,37 +630,37 @@
   },
   "horizon_accuracy": {
     "5d": {
-      "LogisticRegression": 0.5269,
-      "RandomForest": 0.5136,
-      "XGBoost": 0.5091
+      "LogisticRegression": 0.5246,
+      "RandomForest": 0.5125,
+      "XGBoost": 0.5076
     },
     "21d": {
-      "LogisticRegression": 0.5349,
-      "RandomForest": 0.5216,
-      "XGBoost": 0.5171
+      "LogisticRegression": 0.5326,
+      "RandomForest": 0.5205,
+      "XGBoost": 0.5156
     },
     "63d": {
-      "LogisticRegression": 0.5309,
-      "RandomForest": 0.5176,
-      "XGBoost": 0.5131
+      "LogisticRegression": 0.5286,
+      "RandomForest": 0.5165,
+      "XGBoost": 0.5116
     }
   },
   "feature_importance": [
     {
       "feature": "dist_52w_low",
-      "importance": 0.0772
-    },
-    {
-      "feature": "macro_fed_funds",
-      "importance": 0.072
+      "importance": 0.0763
     },
     {
       "feature": "macro_cpi_yoy",
-      "importance": 0.0718
+      "importance": 0.0719
+    },
+    {
+      "feature": "macro_fed_funds",
+      "importance": 0.0712
     },
     {
       "feature": "macro_yield_curve",
-      "importance": 0.0684
+      "importance": 0.0681
     },
     {
       "feature": "macro_yield_2y",
@@ -661,35 +668,35 @@
     },
     {
       "feature": "vol_63d",
-      "importance": 0.0621
+      "importance": 0.063
     },
     {
       "feature": "macro_dxy",
-      "importance": 0.0615
+      "importance": 0.0616
     },
     {
       "feature": "price_vs_ma200",
-      "importance": 0.0562
+      "importance": 0.0564
     },
     {
       "feature": "macro_yield_10y",
-      "importance": 0.0524
+      "importance": 0.0543
     },
     {
       "feature": "vol_21d",
-      "importance": 0.0499
+      "importance": 0.0493
     },
     {
       "feature": "ret_63d",
-      "importance": 0.0465
+      "importance": 0.0466
     },
     {
       "feature": "dist_52w_high",
-      "importance": 0.044
+      "importance": 0.0435
     },
     {
       "feature": "macd_signal",
-      "importance": 0.0421
+      "importance": 0.042
     },
     {
       "feature": "macro_vix",
