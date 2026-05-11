@@ -1,0 +1,16 @@
+{
+  "ticker": "BAC",
+  "fetched_at": "2026-05-11T20:03:03",
+  "iv_atm": 0.2815,
+  "iv_call_atm": 0.2891,
+  "iv_put_atm": 0.2739,
+  "iv_skew": 0.229,
+  "iv_rv_spread": 0.0794,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.5449,
+  "short_pct_float": 0.0,
+  "short_ratio": 0.0,
+  "shares_short": 2244.0,
+  "shares_short_prior": 3039.0,
+  "short_change": -0.2616
+}
