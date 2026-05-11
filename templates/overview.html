@@ -295,8 +295,8 @@
     </div>
   </div>
   <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div> MOCK DATA</div>
-    <div class="timestamp" id="clock"></div>
+    <div class="live-badge"><div class="live-dot"></div> LIVE SYSTEM</div>
+    <div class="timestamp" id="clock">{{ now }}</div>
   </div>
 </header>
 
@@ -327,9 +327,9 @@
       <div class="kpi-sub">GARCH(1,1) forecast</div>
     </div>
     <div class="kpi neutral">
-      <div class="kpi-label">PORTFOLIO RETURN (YTD)</div>
-      <div class="kpi-value">+8.2%</div>
-      <div class="kpi-sub">Ann. log returns</div>
+      <div class="kpi-label">PORTFOLIO VALUE (EUR)</div>
+      <div class="kpi-value">{{ "{:,.2f}".format(total_eur) }}</div>
+      <div class="kpi-sub">Incl. {{ "{:,.2f}".format(cash_eur) }} Cash</div>
     </div>
     <div class="kpi neutral">
       <div class="kpi-label">SHARPE RATIO</div>
@@ -448,13 +448,17 @@
       <div style="margin-bottom:18px">
         <div class="regime-row">
           <div class="regime-label">BULL / LOW VOL</div>
-          <div class="regime-bar-bg"><div class="regime-bar-fill" style="width:63%;background:var(--accent)"></div></div>
-          <div class="regime-pct" style="color:var(--accent)">63%</div>
+          <div class="regime-bar-bg">
+            <div class="regime-bar-fill" style="--w: {{ (regime.get('bull_prob', 0.5) * 100)|round }}%; width: var(--w); background:var(--accent)"></div>
+          </div>
+          <div class="regime-pct" style="color:var(--accent)">{{ (regime.get('bull_prob', 0.5) * 100)|round }}%</div>
         </div>
         <div class="regime-row">
           <div class="regime-label">BEAR / HIGH VOL</div>
-          <div class="regime-bar-bg"><div class="regime-bar-fill" style="width:37%;background:var(--accent2)"></div></div>
-          <div class="regime-pct" style="color:var(--accent2)">37%</div>
+          <div class="regime-bar-bg">
+            <div class="regime-bar-fill" style="--w: {{ (100 - regime.get('bull_prob', 0.5) * 100)|round }}%; width: var(--w); background:var(--accent2)"></div>
+          </div>
+          <div class="regime-pct" style="color:var(--accent2)">{{ (100 - regime.get('bull_prob', 0.5) * 100)|round }}%</div>
         </div>
       </div>
       <div style="font-size:10px; color:var(--muted); margin-bottom:12px; border-top:1px solid var(--border); padding-top:12px;">VOLATILITY BY REGIME</div>
@@ -580,6 +584,8 @@
   <div class="status-item">SIMULATION <span>1,000 PATHS</span></div>
   <div class="status-item">DATA <span>MOCK · 252 DAYS</span></div>
   <div class="status-item" style="margin-left:auto">ASSUMPTIONS: log-normality, IID returns, constant weights</div>
+  <!-- Data Bridge -->
+  <div id="data-bridge" data-assets='{{ positions|tojson }}' style="display:none"></div>
 </footer>
 
 <script>
@@ -806,20 +812,14 @@ new Chart(document.getElementById('mcChart'), {
 });
 
 // ─── 5. Weights Donut ─────────────────────────────────────────────────
-const assets = [
-  { name: 'SPY', weight: 0.35, mu: 0.118, sigma: 0.162 },
-  { name: 'TLT', weight: 0.20, mu: 0.042, sigma: 0.128 },
-  { name: 'GLD', weight: 0.15, mu: 0.068, sigma: 0.143 },
-  { name: 'QQQ', weight: 0.20, mu: 0.142, sigma: 0.198 },
-  { name: 'VWO', weight: 0.10, mu: 0.089, sigma: 0.221 },
-];
+const assets = JSON.parse(document.getElementById('data-bridge').getAttribute('data-assets') || '[]');
 
 new Chart(document.getElementById('weightsChart'), {
   type: 'doughnut',
   data: {
-    labels: assets.map(a => a.name),
+    labels: assets.map(a => a.ticker),
     datasets: [{
-      data: assets.map(a => a.weight * 100),
+      data: assets.map(a => (a.weight || 0) * 100),
       backgroundColor: ['rgba(0,229,160,0.8)', 'rgba(108,122,156,0.8)', 'rgba(245,166,35,0.8)', 'rgba(100,149,237,0.8)', 'rgba(255,77,109,0.8)'],
       borderColor: '#07080a',
       borderWidth: 2,
@@ -839,16 +839,14 @@ new Chart(document.getElementById('weightsChart'), {
 const tbody = document.getElementById('assetTableBody');
 const colors = ['var(--accent)', '#6495ed', 'var(--accent3)', '#a78bfa', 'var(--accent2)'];
 assets.forEach((a, i) => {
-  const mVaR = -(a.sigma / Math.sqrt(252) * 1.645 * a.weight * 100).toFixed(2);
-  const contrib = (Math.abs(mVaR) * a.weight).toFixed(3);
   tbody.innerHTML += `
     <tr>
-      <td style="color:${colors[i]};font-weight:500">${a.name}</td>
-      <td>${(a.weight * 100).toFixed(0)}%</td>
-      <td style="color:var(--accent)">${(a.mu * 100).toFixed(1)}%</td>
-      <td style="color:var(--accent3)">${(a.sigma * 100).toFixed(1)}%</td>
-      <td style="color:var(--accent2)">${mVaR}%</td>
-      <td>${contrib}%</td>
+      <td style="color:${colors[i % colors.length]};font-weight:500">${a.ticker}</td>
+      <td>${(a.weight * 100).toFixed(1)}%</td>
+      <td style="color:var(--accent)">€${(a.value_eur || 0).toLocaleString()}</td>
+      <td style="color:var(--accent3)">—</td>
+      <td style="color:var(--accent2)">—</td>
+      <td>—</td>
     </tr>`;
 });
 

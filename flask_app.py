@@ -16,6 +16,8 @@ import sys, os, json, logging
 from pathlib import Path
 from datetime import datetime, date
 import numpy as np
+from apscheduler.schedulers.background import BackgroundScheduler
+import subprocess
 
 # ── path setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.resolve()
@@ -100,6 +102,38 @@ def _mc_portfolio(positions, targets_map, n_paths=8000):
     var1  = float(np.percentile(port_ret, 1)  * 100)
     cvar5 = float(np.mean(port_ret[port_ret <= np.percentile(port_ret, 5)]) * 100)
     return round(var5, 2), round(cvar5, 2), round(var1, 2), round(total, 2)
+
+
+def _run_scheduled_rebalance():
+    """Background task to refresh the portfolio engine weekly."""
+    try:
+        log.info("⏰ [SCHEDULED REFRESH] Starting weekly portfolio rebalance...")
+        res = subprocess.run([sys.executable, str(ROOT / "portfolio" / "recalculate_engine.py")], 
+                             capture_output=True, text=True, encoding="utf-8")
+        if res.returncode == 0:
+            log.info("✅ [SCHEDULED REFRESH] Weekly rebalance successful.")
+        else:
+            log.error(f"❌ [SCHEDULED REFRESH] Rebalance failed: {res.stderr}")
+    except Exception as e:
+        log.error(f"❌ [SCHEDULED REFRESH] Error: {e}")
+
+
+def start_scheduler():
+    """Initialize the background task manager."""
+    scheduler = BackgroundScheduler()
+    # Monday at 17:00 CET
+    scheduler.add_job(
+        func=_run_scheduled_rebalance,
+        trigger="cron",
+        day_of_week=0,
+        hour=17,
+        minute=0,
+        timezone="Europe/Berlin",
+        id="weekly_refresh"
+    )
+    scheduler.start()
+    log.info("⏱️  Scheduler active: Weekly refresh set for Monday 17:00 CET")
+    return scheduler
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -496,5 +530,6 @@ def health():
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    start_scheduler()
     log.info("Control Tower (Flask) starting — http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=False)
