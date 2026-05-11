@@ -1,0 +1,16 @@
+{
+  "ticker": "GILD",
+  "fetched_at": "2026-05-11T20:03:13",
+  "iv_atm": 0.3353,
+  "iv_call_atm": 0.3286,
+  "iv_put_atm": 0.342,
+  "iv_skew": 0.3342,
+  "iv_rv_spread": 0.1196,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.183,
+  "short_pct_float": 0.0183,
+  "short_ratio": 3.88,
+  "shares_short": 22751109.0,
+  "shares_short_prior": 19985404.0,
+  "short_change": 0.1384
+}

@@ -1,0 +1,16 @@
+{
+  "ticker": "ORCL",
+  "fetched_at": "2026-05-11T20:02:53",
+  "iv_atm": 0.6048,
+  "iv_call_atm": 0.6074,
+  "iv_put_atm": 0.6022,
+  "iv_skew": -0.0702,
+  "iv_rv_spread": -0.0313,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.8774,
+  "short_pct_float": 0.0171,
+  "short_ratio": 1.14,
+  "shares_short": 29340158.0,
+  "shares_short_prior": 30553140.0,
+  "short_change": -0.0397
+}

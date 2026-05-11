@@ -1,0 +1,16 @@
+{
+  "ticker": "V",
+  "fetched_at": "2026-05-11T20:03:00",
+  "iv_atm": 0.2414,
+  "iv_call_atm": 0.2269,
+  "iv_put_atm": 0.2559,
+  "iv_skew": 0.4379,
+  "iv_rv_spread": -0.0768,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.6524,
+  "short_pct_float": 0.014099999,
+  "short_ratio": 3.34,
+  "shares_short": 23418610.0,
+  "shares_short_prior": 26634362.0,
+  "short_change": -0.1207
+}

@@ -1,0 +1,16 @@
+{
+  "ticker": "CRM",
+  "fetched_at": "2026-05-11T20:02:50",
+  "iv_atm": 0.4736,
+  "iv_call_atm": 0.4838,
+  "iv_put_atm": 0.4635,
+  "iv_skew": -0.0186,
+  "iv_rv_spread": -0.026,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.6627,
+  "short_pct_float": 0.1047,
+  "short_ratio": 5.52,
+  "shares_short": 74077294.0,
+  "shares_short_prior": 22873808.0,
+  "short_change": 2.2385
+}

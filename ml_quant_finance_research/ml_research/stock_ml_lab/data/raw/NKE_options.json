@@ -1,0 +1,16 @@
+{
+  "ticker": "NKE",
+  "fetched_at": "2026-05-11T20:03:17",
+  "iv_atm": 0.3691,
+  "iv_call_atm": 0.3828,
+  "iv_put_atm": 0.3555,
+  "iv_skew": -0.0265,
+  "iv_rv_spread": 0.1114,
+  "iv_change_5d": NaN,
+  "pc_ratio": 4.4806,
+  "short_pct_float": 0.059299998,
+  "short_ratio": 2.09,
+  "shares_short": 56120601.0,
+  "shares_short_prior": 42717391.0,
+  "short_change": 0.3138
+}

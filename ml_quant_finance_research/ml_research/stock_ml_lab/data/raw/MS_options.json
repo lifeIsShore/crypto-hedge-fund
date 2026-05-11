@@ -1,0 +1,16 @@
+{
+  "ticker": "MS",
+  "fetched_at": "2026-05-11T20:03:05",
+  "iv_atm": 0.3106,
+  "iv_call_atm": 0.3234,
+  "iv_put_atm": 0.2979,
+  "iv_skew": 0.426,
+  "iv_rv_spread": 0.053,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.6309,
+  "short_pct_float": 0.0,
+  "short_ratio": 0.0,
+  "shares_short": 15814.0,
+  "shares_short_prior": 6915.0,
+  "short_change": 1.2869
+}

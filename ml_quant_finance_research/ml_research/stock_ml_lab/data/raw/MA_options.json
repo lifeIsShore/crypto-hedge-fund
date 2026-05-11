@@ -1,0 +1,16 @@
+{
+  "ticker": "MA",
+  "fetched_at": "2026-05-11T20:03:01",
+  "iv_atm": 0.2932,
+  "iv_call_atm": 0.3149,
+  "iv_put_atm": 0.2716,
+  "iv_skew": 0.0441,
+  "iv_rv_spread": 0.0267,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.0512,
+  "short_pct_float": 0.0074,
+  "short_ratio": 1.9,
+  "shares_short": 6487956.0,
+  "shares_short_prior": 6304204.0,
+  "short_change": 0.0291
+}

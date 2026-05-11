@@ -1,0 +1,16 @@
+{
+  "ticker": "INTC",
+  "fetched_at": "2026-05-11T20:02:57",
+  "iv_atm": 0.9745,
+  "iv_call_atm": 0.9365,
+  "iv_put_atm": 1.0125,
+  "iv_skew": -0.0093,
+  "iv_rv_spread": -0.0445,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.9231,
+  "short_pct_float": 0.0287,
+  "short_ratio": 1.38,
+  "shares_short": 144272202.0,
+  "shares_short_prior": 114951944.0,
+  "short_change": 0.2551
+}

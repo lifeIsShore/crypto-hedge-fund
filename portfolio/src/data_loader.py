@@ -107,9 +107,11 @@ def fetch_historical(tickers, lookback_days=504, cache_path='data/historical_pri
     start_date = end_date - timedelta(days=lookback_days + 100)
 
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    logging.info(f"Fetching data for {len(tickers)} assets: {tickers}")
     logging.info(f"Fetching data for {len(tickers)} assets from Yahoo Finance...")
 
     try:
+        # 1. Try bulk download first (fastest)
         data = yf.download(
             tickers,
             start=start_date.strftime('%Y-%m-%d'),
@@ -118,7 +120,27 @@ def fetch_historical(tickers, lookback_days=504, cache_path='data/historical_pri
             progress=False,
         )
 
-        prices = pd.DataFrame({tickers[0]: data['Close']}) if len(tickers) == 1 else data['Close']
+        if data.empty or (len(tickers) > 1 and 'Close' not in data.columns):
+            logging.warning("Bulk download failed or returned empty. Falling back to individual fetches.")
+            prices = pd.DataFrame()
+        else:
+            prices = pd.DataFrame({tickers[0]: data['Close']}) if len(tickers) == 1 else data['Close']
+
+        # 2. If bulk failed or some tickers are missing, try individual fetches for those missing
+        if prices.empty or len(prices.columns) < len(tickers):
+            active_cols = list(prices.columns) if not prices.empty else []
+            missing = [t for t in tickers if t not in active_cols]
+            
+            for ticker in missing:
+                try:
+                    t_data = yf.download(ticker, start=start_date.strftime('%Y-%m-%d'), 
+                                         end=end_date.strftime('%Y-%m-%d'), 
+                                         auto_adjust=True, progress=False)
+                    if not t_data.empty:
+                        prices[ticker] = t_data['Close']
+                        logging.info(f"  [{ticker}] Fetched individually")
+                except Exception as e:
+                    logging.warning(f"  [{ticker}] Individual fetch failed: {e}")
 
         # Reindex to our expected universe (missing tickers become all-NaN)
         prices = prices.reindex(columns=tickers)

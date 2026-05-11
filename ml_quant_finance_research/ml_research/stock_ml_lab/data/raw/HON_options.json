@@ -1,0 +1,16 @@
+{
+  "ticker": "HON",
+  "fetched_at": "2026-05-11T20:03:23",
+  "iv_atm": 0.2907,
+  "iv_call_atm": 0.2404,
+  "iv_put_atm": 0.3411,
+  "iv_skew": 0.4904,
+  "iv_rv_spread": 0.0497,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.9194,
+  "short_pct_float": 0.0175,
+  "short_ratio": 3.04,
+  "shares_short": 11075141.0,
+  "shares_short_prior": 9057823.0,
+  "short_change": 0.2227
+}

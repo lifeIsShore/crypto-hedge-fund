@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-10T15:07:32.364963",
+  "generated_at": "2026-05-11T20:02:06.778909",
   "active_setups": [],
   "recent_setups": [
     {
@@ -131,6 +131,14 @@
       "drift_63d": null
     },
     {
+      "ticker": "NDX1.DE",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 12.28,
+      "drift_21d": 5.309,
+      "drift_63d": null
+    },
+    {
       "ticker": "UNH",
       "direction": "bullish",
       "quality": "Low",
@@ -147,39 +155,31 @@
       "drift_63d": null
     },
     {
-      "ticker": "AMGN",
+      "ticker": "SHOP",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 8.04,
-      "drift_21d": -6.924,
-      "drift_63d": null
-    },
-    {
-      "ticker": "JPM",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 7.78,
-      "drift_21d": 4.964,
+      "surprise_pct": 8.56,
+      "drift_21d": 7.865,
       "drift_63d": null
     }
   ],
   "performance": {
-    "total_setups": 159,
+    "total_setups": 164,
     "high_quality_setups": 0,
     "medium_quality_setups": 13,
-    "overall_avg_drift_21d": 4.084,
+    "overall_avg_drift_21d": 4.233,
     "overall_avg_drift_63d": 4.094,
-    "overall_hit_rate_21d": 0.61,
+    "overall_hit_rate_21d": 0.622,
     "high_avg_drift_21d": null,
     "high_avg_drift_63d": null,
     "high_hit_rate_21d": null,
-    "bullish_avg_drift_21d": 5.076,
+    "bullish_avg_drift_21d": 5.21,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-05-10T15:07:32.344794",
+    "stats_computed_at": "2026-05-11T20:02:06.774882",
     "hit_rate_21d_expansion": 0.0,
     "avg_drift_21d_expansion": -12.384,
-    "hit_rate_21d_slowdown": 0.714,
-    "avg_drift_21d_slowdown": 9.919
+    "hit_rate_21d_slowdown": 0.738,
+    "avg_drift_21d_slowdown": 9.841
   },
-  "total_in_db": 159
+  "total_in_db": 164
 }

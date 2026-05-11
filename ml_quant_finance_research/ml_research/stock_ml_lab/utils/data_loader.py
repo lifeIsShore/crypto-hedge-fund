@@ -23,11 +23,12 @@ UNIVERSE = {
     "NVDA":   "Technology",   "GOOGL":  "Technology",   "META": "Communication",
     "TSLA":   "Consumer Disc","CRM":    "Technology",   "ADBE": "Technology",
     "NFLX":   "Communication","NOW":    "Technology",   "ORCL": "Technology",
-    "SNOW":   "Technology",   "UBER":   "Technology",
+    "SNOW":   "Technology",   "UBER":   "Technology",   "MSFT":   "Technology",
 
     # ── US Semiconductors ─────────────────────────────────────────────────────
     "AMD":  "Semiconductors", "INTC": "Semiconductors", "QCOM": "Semiconductors",
     "AMAT": "Semiconductors", "MU":   "Semiconductors", "TXN":  "Semiconductors",
+    "TSM":  "Semiconductors",
 
     # ── US Financials ─────────────────────────────────────────────────────────
     "V":    "Financials", "MA":    "Financials", "JPM":   "Financials",
@@ -39,6 +40,7 @@ UNIVERSE = {
     "UNH":  "Healthcare", "JNJ":  "Healthcare", "PFE":  "Healthcare",
     "LLY":  "Healthcare", "ABBV": "Healthcare", "MRK":  "Healthcare",
     "AMGN": "Healthcare", "GILD": "Healthcare", "TMO":  "Healthcare",
+    "BNTX": "Healthcare",
 
     # ── US Consumer ───────────────────────────────────────────────────────────
     "KO":   "Consumer Staples", "MCD":  "Consumer Disc", "WMT": "Consumer Staples",
@@ -49,7 +51,7 @@ UNIVERSE = {
     "XOM":  "Energy",      "CVX":  "Energy",      "NEE":  "Energy",
     "BA":   "Industrials", "CAT":  "Industrials", "LMT":  "Industrials",
     "RTX":  "Industrials", "GE":   "Industrials", "HON":  "Industrials",
-    "UPS":  "Industrials", "DE":   "Industrials",
+    "UPS":  "Industrials", "DE":   "Industrials", "FSLR": "Energy",
 
     # ── European Blue-Chips — DAX ─────────────────────────────────────────────
     "SAP.DE":  "Technology",    "ALV.DE":  "Financials",    "SIE.DE":  "Industrials",
@@ -58,6 +60,8 @@ UNIVERSE = {
     "MUV2.DE": "Financials",    "DBK.DE":  "Financials",    "ENR.DE":  "Energy",
     "IFX.DE":  "Semiconductors","VOW3.DE": "Consumer Disc", "RWE.DE":  "Energy",
     "CON.DE":  "Industrials",   "AIR.DE":  "Aerospace",
+    "NDX1.DE": "Energy",      "ARGX.BR": "Healthcare",    "UCB.BR":  "Healthcare",
+    "SHL.DE":  "Healthcare",    "COK.DE":  "Technology",
 
     # ── European — Other exchanges ────────────────────────────────────────────
     "ASML.AS": "Semiconductors","SHELL.AS": "Energy",       "TTE.PA":  "Energy",
@@ -106,7 +110,8 @@ def fetch_price_data(tickers=None, start="2014-01-01", end=None, force_refresh=F
 
     result = {}
     for ticker in tickers:
-        out_path = RAW_DIR / f"{ticker.replace('/', '_')}_prices.parquet"
+        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
+        out_path = RAW_DIR / f"{safe_name}_prices.parquet"
 
         if out_path.exists() and not force_refresh:
             result[ticker] = pd.read_parquet(out_path)
@@ -202,7 +207,7 @@ def fetch_fundamentals(tickers=None, force_refresh=False):
 
     result = {}
     for ticker in tickers:
-        safe_name = ticker.replace("/", "_")
+        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
         out_path = RAW_DIR / f"{safe_name}_fundamentals.json"
 
         if out_path.exists() and not force_refresh:
@@ -233,7 +238,7 @@ def get_data_summary(tickers=None):
         tickers = list(UNIVERSE.keys())
     rows = []
     for ticker in tickers:
-        safe_name = ticker.replace("/", "_")
+        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
         pp = RAW_DIR / f"{safe_name}_prices.parquet"
         fp = RAW_DIR / f"{safe_name}_fundamentals.json"
         row = {"ticker": ticker, "sector": UNIVERSE.get(ticker, "?")}

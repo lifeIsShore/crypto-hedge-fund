@@ -1,0 +1,16 @@
+{
+  "ticker": "TXN",
+  "fetched_at": "2026-05-11T20:03:00",
+  "iv_atm": 0.4813,
+  "iv_call_atm": 0.4363,
+  "iv_put_atm": 0.5264,
+  "iv_skew": 0.0725,
+  "iv_rv_spread": -0.1797,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2805,
+  "short_pct_float": 0.0212,
+  "short_ratio": 2.98,
+  "shares_short": 17319312.0,
+  "shares_short_prior": 20066505.0,
+  "short_change": -0.1369
+}

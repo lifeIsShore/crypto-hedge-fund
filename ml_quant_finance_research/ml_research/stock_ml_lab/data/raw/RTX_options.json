@@ -1,0 +1,16 @@
+{
+  "ticker": "RTX",
+  "fetched_at": "2026-05-11T20:03:22",
+  "iv_atm": 0.3111,
+  "iv_call_atm": 0.2833,
+  "iv_put_atm": 0.3389,
+  "iv_skew": 0.5462,
+  "iv_rv_spread": 0.0503,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2268,
+  "short_pct_float": 0.0099,
+  "short_ratio": 3.09,
+  "shares_short": 13286137.0,
+  "shares_short_prior": 13161836.0,
+  "short_change": 0.0094
+}

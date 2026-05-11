@@ -25,6 +25,7 @@ ASSET_UNIVERSE = [
     'CRM',      # Salesforce Inc.
     'ADBE',     # Adobe Inc.
     'NFLX',     # Netflix Inc.
+    'MSFT',     # Microsoft Corp. (US)
 
     # --- US Semiconductors & Hardware ---
     'AMD',      # Advanced Micro Devices
@@ -34,6 +35,7 @@ ASSET_UNIVERSE = [
     'MU',       # Micron Technology
     'TXN',      # Texas Instruments
     'ORCL',     # Oracle Corp.
+    'TSM',      # Taiwan Semiconductor (TSMC)
 
     # --- US Software & Internet ---
     'NOW',      # ServiceNow
@@ -66,6 +68,11 @@ ASSET_UNIVERSE = [
     'BEI.DE',   # Beiersdorf AG
     'ZAL.DE',   # Zalando SE
     'MTX.DE',   # MTU Aero Engines AG
+    'NDX1.DE',  # Nordex SE
+    'ARGX.BR',  # Argenx SE
+    'UCB.BR',   # UCB SA
+    'SHL.DE',   # Siemens Healthineers AG
+    'COK.DE',   # Cancom SE
 
     # --- European Blue Chips — Other (primary exchange) ---
     'AIR.DE',   # Airbus SE (Xetra)
@@ -97,6 +104,7 @@ ASSET_UNIVERSE = [
     'AMGN',     # Amgen Inc.
     'GILD',     # Gilead Sciences Inc.
     'TMO',      # Thermo Fisher Scientific
+    'BNTX',     # BioNTech SE
 
     # --- US Consumer & Retail ---
     'KO',       # Coca-Cola Co.
@@ -113,6 +121,7 @@ ASSET_UNIVERSE = [
     'XOM',      # ExxonMobil Corp.
     'CVX',      # Chevron Corp.
     'NEE',      # NextEra Energy Inc.
+    'FSLR',     # First Solar Inc.
 
     # --- Psychedelic Biotech ---
     'ATAI',     # AtaiBeckley Inc. (NASDAQ)

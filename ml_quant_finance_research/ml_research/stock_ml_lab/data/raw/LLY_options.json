@@ -1,0 +1,16 @@
+{
+  "ticker": "LLY",
+  "fetched_at": "2026-05-11T20:03:10",
+  "iv_atm": 0.4021,
+  "iv_call_atm": 0.4143,
+  "iv_put_atm": 0.39,
+  "iv_skew": 0.0536,
+  "iv_rv_spread": -0.0438,
+  "iv_change_5d": NaN,
+  "pc_ratio": 1.743,
+  "short_pct_float": 0.0091,
+  "short_ratio": 2.7,
+  "shares_short": 8114678.0,
+  "shares_short_prior": 6873427.0,
+  "short_change": 0.1806
+}

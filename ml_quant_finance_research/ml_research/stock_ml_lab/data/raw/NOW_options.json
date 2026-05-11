@@ -1,0 +1,16 @@
+{
+  "ticker": "NOW",
+  "fetched_at": "2026-05-11T20:02:53",
+  "iv_atm": 0.5706,
+  "iv_call_atm": 0.5918,
+  "iv_put_atm": 0.5493,
+  "iv_skew": -0.101,
+  "iv_rv_spread": -0.3438,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.562,
+  "short_pct_float": 0.0378,
+  "short_ratio": 2.0,
+  "shares_short": 38945953.0,
+  "shares_short_prior": 27906982.0,
+  "short_change": 0.3956
+}

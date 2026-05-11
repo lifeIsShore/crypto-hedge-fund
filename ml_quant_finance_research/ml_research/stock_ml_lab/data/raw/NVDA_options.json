@@ -1,0 +1,16 @@
+{
+  "ticker": "NVDA",
+  "fetched_at": "2026-05-11T20:02:48",
+  "iv_atm": 0.3763,
+  "iv_call_atm": 0.394,
+  "iv_put_atm": 0.3586,
+  "iv_skew": 0.0506,
+  "iv_rv_spread": -0.0101,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2133,
+  "short_pct_float": 0.012200001,
+  "short_ratio": 1.68,
+  "shares_short": 283335701.0,
+  "shares_short_prior": 229241850.0,
+  "short_change": 0.236
+}

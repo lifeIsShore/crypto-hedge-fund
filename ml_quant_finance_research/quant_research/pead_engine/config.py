@@ -12,23 +12,24 @@ Edit only here — all other modules import from this file.
 PEAD_UNIVERSE = [
     # US Big Tech
     "APC.DE", "MSF.DE", "AMZN", "NVDA", "GOOGL", "META", "TSLA",
-    "CRM", "ADBE", "NFLX",
+    "CRM", "ADBE", "NFLX", "MSFT",
     # Psychedelic Biotech
     "ATAI",
     # US Semis
-    "AMD", "INTC", "QCOM", "AMAT", "MU", "TXN", "ORCL",
+    "AMD", "INTC", "QCOM", "AMAT", "MU", "TXN", "ORCL", "TSM",
     # US Software
     "NOW", "SNOW", "UBER", "PYPL", "SPOT", "SHOP",
     # US Financials
     "V", "MA", "JPM", "BAC", "GS", "MS", "BRK-B", "AXP",
     # US Healthcare
-    "UNH", "JNJ", "PFE", "LLY", "ABBV", "MRK", "AMGN", "GILD",
+    "UNH", "JNJ", "PFE", "LLY", "ABBV", "MRK", "AMGN", "GILD", "BNTX",
     # US Consumer
     "KO", "MCD", "WMT", "HD", "COST", "NKE", "SBUX",
     # US Industrials
-    "BA", "CAT", "LMT", "RTX", "GE", "HON",
+    "BA", "CAT", "LMT", "RTX", "GE", "HON", "FSLR",
     # European (earnings data available via yfinance)
     "SAP.DE", "ALV.DE", "SIE.DE", "BAYN.DE", "BMW.DE",
+    "NDX1.DE", "ARGX.BR", "UCB.BR", "SHL.DE", "COK.DE", "ASML.AS",
 ]
 
 # ── PEAD Core Thresholds ─────────────────────────────────────────────────────

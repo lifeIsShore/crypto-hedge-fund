@@ -41,6 +41,8 @@ XETRA_TO_NASDAQ = {
     "SIE.DE": None,
     "BAYN.DE": None,
     "BMW.DE": None,
+    "ARGX.BR": "ARGX",
+    "BNTX": "BNTX",
 }
 
 # GICS Sector mapping (static, good enough for drift window calibration)
@@ -48,25 +50,27 @@ TICKER_SECTOR = {
     "AAPL": "Technology",  "MSFT": "Technology",  "APC.DE": "Technology",
     "MSF.DE": "Technology","AMZN": "Technology",  "NVDA": "Technology",
     "GOOGL": "Communication","META": "Communication","TSLA": "Technology",
-    "CRM": "Technology",   "ADBE": "Technology",  "NFLX": "Communication",
-    "ATAI": "Healthcare",
+    "CRM": "Technology",   "ADBE": "Technology",    "NFLX": "Communication", "MSFT": "Technology",
+    "ATAI": "Healthcare",    "BNTX": "Healthcare",
     "AMD": "Technology",   "INTC": "Technology",  "QCOM": "Technology",
     "AMAT": "Technology",  "MU": "Technology",    "TXN": "Technology",
     "ORCL": "Technology",  "NOW": "Technology",   "SNOW": "Technology",
     "UBER": "Technology",  "PYPL": "Financials",  "SPOT": "Communication",
-    "SHOP": "Technology",
+    "SHOP": "Technology",    "TSM":  "Technology",
     "V": "Financials",     "MA": "Financials",    "JPM": "Financials",
     "BAC": "Financials",   "GS": "Financials",    "MS": "Financials",
     "BRK-B": "Financials", "AXP": "Financials",
     "UNH": "Healthcare",   "JNJ": "Healthcare",   "PFE": "Healthcare",
     "LLY": "Healthcare",   "ABBV": "Healthcare",  "MRK": "Healthcare",
-    "AMGN": "Healthcare",  "GILD": "Healthcare",
+    "AMGN": "Healthcare",  "GILD": "Healthcare", "ARGX.BR": "Healthcare",
+    "UCB.BR": "Healthcare", "SHL.DE": "Healthcare",
     "KO": "Consumer Staples","MCD": "Consumer Staples","WMT": "Consumer Staples",
     "HD": "Consumer Staples","COST": "Consumer Staples","NKE": "Consumer Staples",
     "SBUX": "Consumer Staples",
     "BA": "Industrials",   "CAT": "Industrials",  "LMT": "Industrials",
     "RTX": "Industrials",  "GE": "Industrials",   "HON": "Industrials",
-    "SAP.DE": "Technology",
+    "FSLR": "Energy",      "NDX1.DE": "Energy",
+    "SAP.DE": "Technology", "COK.DE": "Technology", "ASML.AS": "Technology",
 }
 
 

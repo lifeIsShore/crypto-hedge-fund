@@ -1,0 +1,16 @@
+{
+  "ticker": "KO",
+  "fetched_at": "2026-05-11T20:03:13",
+  "iv_atm": 0.1964,
+  "iv_call_atm": 0.1773,
+  "iv_put_atm": 0.2156,
+  "iv_skew": -0.0423,
+  "iv_rv_spread": 0.0014,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.4914,
+  "short_pct_float": 0.0095999995,
+  "short_ratio": 2.76,
+  "shares_short": 41151710.0,
+  "shares_short_prior": 53713859.0,
+  "short_change": -0.2339
+}

@@ -1,0 +1,16 @@
+{
+  "ticker": "QCOM",
+  "fetched_at": "2026-05-11T20:02:57",
+  "iv_atm": 1.0093,
+  "iv_call_atm": 1.1047,
+  "iv_put_atm": 0.9138,
+  "iv_skew": -0.2107,
+  "iv_rv_spread": 0.2712,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2149,
+  "short_pct_float": 0.0514,
+  "short_ratio": 3.79,
+  "shares_short": 48642638.0,
+  "shares_short_prior": 39627080.0,
+  "short_change": 0.2275
+}

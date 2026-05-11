@@ -1,0 +1,16 @@
+{
+  "ticker": "NFLX",
+  "fetched_at": "2026-05-11T20:02:52",
+  "iv_atm": 0.3079,
+  "iv_call_atm": 0.3189,
+  "iv_put_atm": 0.2969,
+  "iv_skew": 0.0063,
+  "iv_rv_spread": -0.1127,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.4701,
+  "short_pct_float": 0.0186,
+  "short_ratio": 2.14,
+  "shares_short": 77980436.0,
+  "shares_short_prior": 81073589.0,
+  "short_change": -0.0382
+}

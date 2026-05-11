@@ -1,0 +1,16 @@
+{
+  "ticker": "UBER",
+  "fetched_at": "2026-05-11T20:02:55",
+  "iv_atm": 0.3709,
+  "iv_call_atm": 0.3535,
+  "iv_put_atm": 0.3882,
+  "iv_skew": -0.2528,
+  "iv_rv_spread": -0.0631,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.411,
+  "short_pct_float": 0.028499998,
+  "short_ratio": 3.66,
+  "shares_short": 55932355.0,
+  "shares_short_prior": 53777087.0,
+  "short_change": 0.0401
+}

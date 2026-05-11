@@ -1,0 +1,16 @@
+{
+  "ticker": "GOOGL",
+  "fetched_at": "2026-05-11T20:02:48",
+  "iv_atm": 0.2801,
+  "iv_call_atm": 0.2887,
+  "iv_put_atm": 0.2715,
+  "iv_skew": 0.0628,
+  "iv_rv_spread": -0.0861,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.4004,
+  "short_pct_float": 0.0134000005,
+  "short_ratio": 2.72,
+  "shares_short": 78071445.0,
+  "shares_short_prior": 80006593.0,
+  "short_change": -0.0242
+}

@@ -1,0 +1,16 @@
+{
+  "ticker": "HD",
+  "fetched_at": "2026-05-11T20:03:15",
+  "iv_atm": 0.4349,
+  "iv_call_atm": 0.4407,
+  "iv_put_atm": 0.4292,
+  "iv_skew": -0.0648,
+  "iv_rv_spread": 0.1708,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.8183,
+  "short_pct_float": 0.0136,
+  "short_ratio": 2.95,
+  "shares_short": 12142932.0,
+  "shares_short_prior": 10293338.0,
+  "short_change": 0.1797
+}

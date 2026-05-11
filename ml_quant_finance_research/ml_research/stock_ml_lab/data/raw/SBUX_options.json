@@ -1,0 +1,16 @@
+{
+  "ticker": "SBUX",
+  "fetched_at": "2026-05-11T20:03:18",
+  "iv_atm": 0.3049,
+  "iv_call_atm": 0.2527,
+  "iv_put_atm": 0.3572,
+  "iv_skew": -0.0416,
+  "iv_rv_spread": -0.0177,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.2893,
+  "short_pct_float": 0.0442,
+  "short_ratio": 6.08,
+  "shares_short": 45276800.0,
+  "shares_short_prior": 47154560.0,
+  "short_change": -0.0398
+}

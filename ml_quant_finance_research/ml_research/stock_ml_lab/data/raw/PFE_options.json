@@ -1,0 +1,16 @@
+{
+  "ticker": "PFE",
+  "fetched_at": "2026-05-11T20:03:09",
+  "iv_atm": 0.2319,
+  "iv_call_atm": 0.2334,
+  "iv_put_atm": 0.2305,
+  "iv_skew": 0.3368,
+  "iv_rv_spread": 0.0695,
+  "iv_change_5d": NaN,
+  "pc_ratio": 0.3122,
+  "short_pct_float": 0.0235,
+  "short_ratio": 3.45,
+  "shares_short": 133414052.0,
+  "shares_short_prior": 131409882.0,
+  "short_change": 0.0153
+}
