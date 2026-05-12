@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}ETF Divergence{% endblock %}
+
+{% block content %}
+
+<div class="alert alert-info" style="margin-bottom:14px">
+  Label each divergence event. Your labels become ML training data for scenario classification.
+</div>
+
+<div class="kpi-strip" id="div-kpi">
+  <div class="kpi warn"><div class="kpi-label">UNLABELED</div><div class="kpi-value" id="div-count">—</div><div class="kpi-sub">need your label</div></div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- Unlabeled queue -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">UNLABELED DIVERGENCE EVENTS</span>
+      <span class="panel-badge" id="queue-badge">QUEUE</span>
+    </div>
+    <div class="panel-body">
+      <div id="no-unlabeled" class="alert alert-ok" style="display:none">
+        ✅ No unlabeled events — queue is clear.
+      </div>
+      <table class="tbl" id="div-tbl">
+        <thead><tr><th>TICKER</th><th>ETF</th><th>DETECTED</th><th>ETF RET</th><th>STOCK RET</th><th>DIVERGENCE</th><th></th></tr></thead>
+        <tbody id="div-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Label form -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">LABEL SELECTED EVENT</span><span class="panel-badge" id="label-id-badge">SELECT ROW</span></div>
+    <div class="panel-body">
+
+      <div id="label-info" style="margin-bottom:14px;font-size:11px;color:var(--muted)">
+        Click a row in the table to label it.
+      </div>
+
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">SCENARIO GUIDE</div>
+      <div style="font-size:11px;line-height:1.8;margin-bottom:14px;color:var(--text)">
+        <div><span style="color:var(--accent)">1 — Temporary Rotation:</span> no bad news, capital rotating, ETF confirms macro → potential buy</div>
+        <div><span style="color:var(--accent3)">2 — Stock-specific bad news:</span> identifiable catalyst, high volume, analyst downgrades → watchlist</div>
+        <div><span style="color:var(--accent3)">3 — Valuation compression:</span> prior large run, mean-reverting → wait</div>
+        <div><span style="color:var(--accent2)">4 — Thesis break:</span> sustained divergence, insider selling, short interest rising → avoid/exit</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.1em">SCENARIO</div>
+          <div style="display:flex;gap:8px">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="scenario" value="1" style="width:auto"> 1</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="scenario" value="2" style="width:auto"> 2</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="scenario" value="3" style="width:auto"> 3</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="scenario" value="4" style="width:auto"> 4</label>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.1em">CONFIDENCE</div>
+          <select id="conf-sel"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.1em">NOTES</div>
+        <textarea id="notes-inp" rows="3" placeholder="What are you seeing? Any identifiable catalyst?"></textarea>
+      </div>
+
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">CHECKLIST</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+        <label style="display:flex;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="ck-news" style="width:auto"> Identifiable negative news</label>
+        <label style="display:flex;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="ck-run" style="width:auto"> Prior large run (&gt;50%)</label>
+        <label style="display:flex;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="ck-weeks" style="width:auto"> Divergence &gt; 2 weeks</label>
+        <label style="display:flex;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="ck-peers" style="width:auto"> Peers also weak</label>
+        <label style="display:flex;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="ck-short" style="width:auto"> Short interest rising / insider sell</label>
+      </div>
+
+      <button class="btn" onclick="saveLabel()" id="save-btn" disabled>SAVE LABEL</button>
+      <div id="label-feedback" style="margin-top:10px;font-size:11px"></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedId = null;
+let queueData  = [];
+
+async function loadDivergence(){
+  const data = await fetch('/api/divergence').then(r=>r.json()).catch(()=>({unlabeled:[],count:0}));
+  queueData = data.unlabeled || [];
+  document.getElementById('div-count').textContent = queueData.length;
+  document.getElementById('queue-badge').textContent = `${queueData.length} UNLABELED`;
+
+  const tbody = document.getElementById('div-tbody');
+  const noEl  = document.getElementById('no-unlabeled');
+  if(!queueData.length){
+    noEl.style.display='block';
+    tbody.innerHTML='';
+    return;
+  }
+  noEl.style.display='none';
+
+  tbody.innerHTML = queueData.map(row=>{
+    const divColor = Math.abs(+row.divergence_pct||0)>0.10?'var(--accent2)':'var(--accent3)';
+    return `<tr style="cursor:pointer" onclick="selectRow(${row.id})" id="div-row-${row.id}">
+      <td style="font-weight:500;color:#fff">${row.ticker}</td>
+      <td style="color:var(--muted)">${row.etf_reference||'—'}</td>
+      <td>${(row.detected_at||'—').slice(0,10)}</td>
+      <td style="color:${(+row.etf_return_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${row.etf_return_pct!=null?fmtPct((+row.etf_return_pct)*100):'—'}</td>
+      <td style="color:${(+row.stock_return_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${row.stock_return_pct!=null?fmtPct((+row.stock_return_pct)*100):'—'}</td>
+      <td style="color:${divColor}">${row.divergence_pct!=null?fmtPct((+row.divergence_pct)*100):'—'}</td>
+      <td><span class="tag tag-yellow">LABEL</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function selectRow(id){
+  document.querySelectorAll('#div-tbody tr').forEach(r=>r.style.background='');
+  const rowEl = document.getElementById(`div-row-${id}`);
+  if(rowEl) rowEl.style.background='rgba(0,229,160,.06)';
+
+  const row = queueData.find(r=>r.id===id);
+  if(!row) return;
+  selectedId = id;
+
+  document.getElementById('label-id-badge').textContent = `ID ${id} · ${row.ticker}`;
+  document.getElementById('label-info').innerHTML=
+    `<strong style="color:#fff">${row.ticker}</strong> vs <strong style="color:#fff">${row.etf_reference||'—'}</strong> — detected ${(row.detected_at||'—').slice(0,10)}<br>
+     ETF: <span style="color:var(--accent)">${row.etf_return_pct!=null?fmtPct((+row.etf_return_pct)*100):'—'}</span> &nbsp;
+     Stock: <span style="color:var(--accent2)">${row.stock_return_pct!=null?fmtPct((+row.stock_return_pct)*100):'—'}</span> &nbsp;
+     Div: <span style="color:var(--accent3)">${row.divergence_pct!=null?fmtPct((+row.divergence_pct)*100):'—'}</span>`;
+
+  document.getElementById('save-btn').disabled = false;
+  document.getElementById('label-feedback').innerHTML='';
+}
+
+async function saveLabel(){
+  const scenario = document.querySelector('input[name="scenario"]:checked')?.value;
+  if(!scenario){ document.getElementById('label-feedback').innerHTML='<span style="color:var(--accent3)">Select a scenario.</span>'; return; }
+  if(!selectedId){ return; }
+
+  const checklist = {
+    negative_news:    document.getElementById('ck-news').checked,
+    prior_large_run:  document.getElementById('ck-run').checked,
+    divergence_weeks: document.getElementById('ck-weeks').checked,
+    peers_weak:       document.getElementById('ck-peers').checked,
+    short_int_rising: document.getElementById('ck-short').checked,
+  };
+
+  const res = await fetch('/api/label',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      id: selectedId, scenario: +scenario,
+      confidence: document.getElementById('conf-sel').value,
+      notes: document.getElementById('notes-inp').value,
+      checklist,
+    })
+  }).then(r=>r.json()).catch(()=>({ok:false}));
+
+  if(res.ok){
+    document.getElementById('label-feedback').innerHTML='<span style="color:var(--accent)">✅ Label saved.</span>';
+    selectedId=null;
+    document.getElementById('save-btn').disabled=true;
+    document.getElementById('label-id-badge').textContent='SELECT ROW';
+    document.getElementById('label-info').textContent='Click a row in the table to label it.';
+    document.getElementById('notes-inp').value='';
+    document.querySelectorAll('input[name="scenario"]').forEach(r=>r.checked=false);
+    ['ck-news','ck-run','ck-weeks','ck-peers','ck-short'].forEach(id=>{ document.getElementById(id).checked=false; });
+    setTimeout(loadDivergence, 500);
+  } else {
+    document.getElementById('label-feedback').innerHTML='<span style="color:var(--accent2)">❌ Save failed. DB may not be ready.</span>';
+  }
+}
+
+loadDivergence();
+</script>
+{% endblock %}

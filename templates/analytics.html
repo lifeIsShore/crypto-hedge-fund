@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip">
+  <div class="kpi neutral"><div class="kpi-label">TOTAL POSITIONS</div><div class="kpi-value" id="a-n">—</div></div>
+  <div class="kpi good">   <div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="a-total">—</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">TOTAL TRADES</div><div class="kpi-value" id="a-trades">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CUMULATIVE RETURN</div><div class="kpi-value" id="a-cumret">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">LAST UPDATED</div><div class="kpi-value" id="a-updated" style="font-size:12px">{{ now }}</div></div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- Portfolio allocation chart -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">PORTFOLIO ALLOCATION</span><span class="panel-badge">BY VALUE €</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:240px"><canvas id="allocChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Performance chart -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">PERFORMANCE HISTORY</span><span class="panel-badge">CUMULATIVE RETURN %</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:240px"><canvas id="perfChart"></canvas></div>
+      <div id="no-perf" class="alert alert-info" style="display:none;margin-top:10px">No performance history in DB.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Positions detail -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">POSITION BREAKDOWN</span><span class="panel-badge">DETAILED VIEW</span></div>
+  <div class="panel-body">
+    <table class="tbl">
+      <thead><tr><th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th></tr></thead>
+      <tbody>
+        {% for p in positions %}
+        <tr style="cursor:pointer" onclick="window.location='/ticker/{{ p.ticker }}'">
+          <td style="font-weight:500;color:var(--accent)">{{ p.ticker }}</td>
+          <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
+          <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
+          <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
+          <td>{{ '%.1f%%'|format(p.weight|float * 100) if p.weight else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="color:var(--muted)">No positions. Run pipeline.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent trades -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">RECENT TRADES</span><span class="panel-badge">LAST 100</span></div>
+  <div class="panel-body">
+    <table class="tbl">
+      <thead><tr><th>DATE</th><th>TICKER</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th></tr></thead>
+      <tbody>
+        {% for t in trades %}
+        <tr>
+          <td>{{ t.date or '—' }}</td>
+          <td style="cursor:pointer;color:var(--accent)" onclick="window.location='/ticker/{{ t.ticker }}'">{{ t.ticker }}</td>
+          <td class="{{ 'sig-buy' if t.action == 'BUY' else 'sig-sell' }}">{{ t.action }}</td>
+          <td>{{ '%d'|format(t.quantity|int) if t.quantity else '—' }}</td>
+          <td>{{ '€%.2f'|format(t.price_eur|float) if t.price_eur else '—' }}</td>
+          <td>{{ '€%.0f'|format(t.total_eur|float) if t.total_eur else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="color:var(--muted)">No trades yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// KPI population
+document.getElementById('a-n').textContent      = {{ positions|length }};
+document.getElementById('a-total').textContent  = fmtEur({{ positions|sum(attribute='value_eur')|float|round(2) }});
+document.getElementById('a-trades').textContent = {{ trades|length }};
+
+// Allocation bar chart
+const positions = {{ positions|tojson }};
+if(positions.length){
+  new Chart(document.getElementById('allocChart'),{
+    type:'bar',
+    data:{
+      labels: positions.map(p=>p.ticker),
+      datasets:[{
+        label:'Value €',
+        data: positions.map(p=>+(p.value_eur||0)),
+        backgroundColor:'rgba(0,229,160,.5)',
+        borderColor:'var(--accent)',
+        borderWidth:1
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtEur(v)}}}}
+  });
+}
+
+// Performance chart
+const perf = {{ perf|tojson }};
+if(perf.length){
+  const labels = perf.map(p=>p.date).reverse();
+  const rets   = perf.map(p=>+(p.cumulative_return_pct||0)).reverse();
+  document.getElementById('a-cumret').textContent = fmtPct(rets[rets.length-1]);
+  new Chart(document.getElementById('perfChart'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Cumulative Return %',
+        data: rets,
+        borderColor:'var(--accent)',
+        backgroundColor:'rgba(0,229,160,.08)',
+        fill:true, pointRadius:0, borderWidth:1.5, tension:0.3
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{maxTicksLimit:8},grid:{display:false}},
+        y:{ticks:{callback:v=>v.toFixed(1)+'%'}}
+      }}
+  });
+} else {
+  document.getElementById('no-perf').style.display='block';
+}
+</script>
+{% endblock %}

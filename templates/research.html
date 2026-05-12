@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}ML Research{% endblock %}
+
+{% block content %}
+
+<!-- Ensemble KPIs -->
+<div class="kpi-strip" id="ensemble-kpi">
+  <div class="kpi neutral"><div class="kpi-label">ENSEMBLE VERDICT</div><div class="kpi-value" id="e-verdict" style="font-size:18px">—</div><div class="kpi-sub">21d horizon</div></div>
+  <div class="kpi neutral"><div class="kpi-label">WEIGHTED SCORE</div><div class="kpi-value" id="e-score">—</div><div class="kpi-sub">0=bear · 0.5=neutral · 1=bull</div></div>
+  <div class="kpi neutral"><div class="kpi-label">TICKERS COVERED</div><div class="kpi-value" id="e-n">—</div><div class="kpi-sub">with ML signal</div></div>
+  <div class="kpi neutral"><div class="kpi-label">BEST MODEL</div><div class="kpi-value" id="e-best" style="font-size:14px">—</div><div class="kpi-sub" id="e-best-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">BEATS BASELINE</div><div class="kpi-value" id="e-beats">—</div><div class="kpi-sub">of models pass 52% acc gate</div></div>
+  <div class="kpi neutral"><div class="kpi-label">GENERATED</div><div class="kpi-value" id="e-gen" style="font-size:12px">—</div><div class="kpi-sub">last ML run</div></div>
+</div>
+
+<div id="ml-warn" class="alert alert-warn" style="display:none;margin-top:14px">
+  No ML state found. Run: <code>python run_ml_pipeline.py</code> inside <code>ml_quant_finance_research/ml_research/stock_ml_lab/</code>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- Per-ticker signals -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">PER-TICKER SIGNALS — 21D HORIZON</span>
+      <span class="panel-badge" id="sig-badge">AUC GATED ≥0.53</span>
+    </div>
+    <div class="panel-body">
+      <input type="text" id="sig-filter" placeholder="Filter ticker or sector…" style="max-width:220px;margin-bottom:10px" oninput="filterSigs(this.value)">
+      <table class="tbl" id="sig-tbl">
+        <thead><tr><th>TICKER</th><th>SECTOR</th><th>UP PROBA</th><th>AUC</th><th>VOL ANN</th><th>GATE</th><th>SIGNAL</th></tr></thead>
+        <tbody id="sig-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Model comparison -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">MODEL COMPARISON — AVG WALK-FORWARD</span><span class="panel-badge">VS BASELINES</span></div>
+      <div class="panel-body">
+        <table class="tbl" id="model-tbl">
+          <thead><tr><th>MODEL</th><th>ACCURACY</th><th>AUC</th><th>SHARPE</th><th>MAX DD</th><th>BEATS BL</th></tr></thead>
+          <tbody id="model-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">TOP FEATURE IMPORTANCES</span><span class="panel-badge">RANDOM FOREST · AVG</span></div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height:200px"><canvas id="featChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PEAD Setups -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">PEAD SETUPS — POST-EARNINGS DRIFT</span>
+    <span class="panel-badge">ACTIVE + HISTORICAL</span>
+  </div>
+  <div class="panel-body">
+    <div class="kpi-strip" id="pead-kpi" style="margin-bottom:14px">
+      <div class="kpi neutral" style="padding:10px"><div class="kpi-label">TOTAL SETUPS</div><div class="kpi-value" style="font-size:18px" id="pead-total">—</div></div>
+      <div class="kpi good"    style="padding:10px"><div class="kpi-label">21D HIT RATE</div><div class="kpi-value" style="font-size:18px" id="pead-hr">—</div></div>
+      <div class="kpi neutral" style="padding:10px"><div class="kpi-label">AVG 21D DRIFT</div><div class="kpi-value" style="font-size:18px" id="pead-drift">—</div></div>
+      <div class="kpi warn"    style="padding:10px"><div class="kpi-label">ACTIVE</div><div class="kpi-value" style="font-size:18px" id="pead-active">—</div></div>
+    </div>
+
+    <div id="pead-active-section">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">ACTIVE ENTRY WINDOWS</div>
+      <table class="tbl" id="pead-active-tbl">
+        <thead><tr><th>TICKER</th><th>DIRECTION</th><th>QUALITY</th><th>SURPRISE %</th><th>ENTRY DATE</th><th>UNDERREACTION</th><th>REGIME</th></tr></thead>
+        <tbody id="pead-active-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">HISTORICAL SETUPS (LAST 50)</div>
+      <table class="tbl" id="pead-hist-tbl">
+        <thead><tr><th>EARNINGS DATE</th><th>TICKER</th><th>DIRECTION</th><th>SURPRISE %</th><th>DRIFT 21D</th><th>CORRECT</th><th>REGIME</th></tr></thead>
+        <tbody id="pead-hist-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let featChart = null;
+
+function filterSigs(q){
+  document.querySelectorAll('#sig-tbody tr[data-row]').forEach(r=>{
+    r.style.display = r.dataset.row.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+async function loadResearch(){
+  const [mlRes, peadRes] = await Promise.all([
+    fetch('/api/ml_signals').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/pead').then(r=>r.json()).catch(()=>({})),
+  ]);
+
+  if(!mlRes.ensemble){
+    document.getElementById('ml-warn').style.display='block';
+  }
+  const ens = mlRes.ensemble || {};
+  const verdict = ens.verdict || '—';
+  const vEl = document.getElementById('e-verdict');
+  vEl.textContent = verdict;
+  vEl.style.color = verdict==='BULLISH'?'var(--accent)':verdict==='BEARISH'?'var(--accent2)':'var(--accent3)';
+  document.getElementById('e-score').textContent = ens.weighted_score!=null?(+ens.weighted_score).toFixed(3):'—';
+  document.getElementById('e-n').textContent     = ens.n_tickers || '—';
+  document.getElementById('e-gen').textContent   = (mlRes.generated_at||'—').replace('T',' ').slice(0,16);
+
+  const es = mlRes.experiment_summary || {};
+  document.getElementById('e-best').textContent    = es.best_model || '—';
+  document.getElementById('e-best-sub').textContent= `AUC ${(es.best_auc||0).toFixed(4)}  Sharpe ${(es.best_sharpe||0).toFixed(3)}`;
+  document.getElementById('e-beats').textContent   = es.beats_baseline_pct!=null?((+es.beats_baseline_pct)*100).toFixed(0)+'%':'—';
+
+  const sigs = mlRes.model_signals || {};
+  const sigRows = Object.entries(sigs).sort(([a],[b])=>a.localeCompare(b));
+  document.getElementById('sig-badge').textContent = `${sigRows.length} TICKERS · AUC GATED ≥0.53`;
+  const sigBody = document.getElementById('sig-tbody');
+  if(!sigRows.length){
+    sigBody.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">No signals. Run ML pipeline.</td></tr>';
+  } else {
+    sigBody.innerHTML = sigRows.map(([tk, s])=>{
+      const up  = +s.up_proba_21d || 0.5;
+      const auc = +s.auc || 0;
+      const action = up>=.60?'BUY':up>=.54?'LEAN_BUY':up<=.40?'SELL':up<=.46?'LEAN_SELL':'NEUTRAL';
+      const gated  = auc>=.53;
+      const search = `${tk} ${s.sector||''}`;
+      return `<tr data-row="${search}" style="cursor:pointer" onclick="window.location='/ticker/${tk}'">
+        <td style="font-weight:500;color:var(--accent)">${tk}</td>
+        <td style="color:var(--muted)">${s.sector||'—'}</td>
+        <td style="color:${up>=.55?'var(--accent)':up<=.45?'var(--accent2)':'var(--muted)'}">${(up*100).toFixed(1)}%</td>
+        <td>${auc.toFixed(4)}</td>
+        <td>${s.vol_ann!=null?((+s.vol_ann)*100).toFixed(1)+'%':'—'}</td>
+        <td><span class="tag ${gated?'tag-green':'tag-red'}">${gated?'✅ PASS':'⛔ GATED'}</span></td>
+        <td class="${sigClass(action)}">${sigLabel(action)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const mc = mlRes.model_comparison || [];
+  const mBody = document.getElementById('model-tbody');
+  if(!mc.length){
+    mBody.innerHTML='<tr><td colspan="6" style="color:var(--muted)">No model data yet.</td></tr>';
+  } else {
+    mBody.innerHTML = mc.map(m=>{
+      const isBase = m.model.startsWith('Baseline');
+      return `<tr style="${isBase?'opacity:.55':''}">
+        <td style="font-weight:500;color:${isBase?'var(--muted)':'#fff'}">${m.model}</td>
+        <td>${((m.acc||0)*100).toFixed(1)}%</td>
+        <td style="color:${(m.auc||0)>=.53?'var(--accent)':'var(--muted)'}">${(m.auc||0).toFixed(4)}</td>
+        <td style="color:${(m.sharpe||0)>0?'var(--accent)':'var(--accent2)'}">${(m.sharpe||0).toFixed(3)}</td>
+        <td style="color:var(--accent2)">${((m.dd||0)*100).toFixed(1)}%</td>
+        <td><span class="tag ${m.beats?'tag-green':'tag-red'}">${m.beats?'✅ YES':'❌ NO'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const fi = (mlRes.feature_importance||[]).slice(0,12);
+  if(fi.length){
+    if(featChart) featChart.destroy();
+    featChart = new Chart(document.getElementById('featChart'),{
+      type:'bar',
+      data:{
+        labels: fi.map(f=>f.feature),
+        datasets:[{label:'Importance',data:fi.map(f=>+f.importance*100),
+          backgroundColor:fi.map((_,i)=>`rgba(0,229,160,${.7-.04*i})`),borderWidth:0}]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{ticks:{callback:v=>v.toFixed(1)+'%'}},y:{grid:{display:false}}}}
+    });
+  }
+
+  const perf = peadRes.performance || {};
+  document.getElementById('pead-total').textContent = perf.total_setups || '—';
+  document.getElementById('pead-hr').textContent    = perf.overall_hit_rate_21d!=null?((+perf.overall_hit_rate_21d)*100).toFixed(1)+'%':'—';
+  document.getElementById('pead-drift').textContent = perf.overall_avg_drift_21d!=null?((+perf.overall_avg_drift_21d)>=0?'+':'')+((+perf.overall_avg_drift_21d)).toFixed(2)+'%':'—';
+
+  const active = peadRes.active_setups || [];
+  document.getElementById('pead-active').textContent = active.length;
+
+  const atbody = document.getElementById('pead-active-tbody');
+  if(!active.length){
+    atbody.innerHTML='<tr><td colspan="7" style="color:var(--muted)">No active entry windows today.</td></tr>';
+  } else {
+    atbody.innerHTML = active.map(s=>`<tr>
+      <td style="font-weight:500;color:#fff">${s.ticker}</td>
+      <td class="${s.direction==='bullish'?'sig-buy':'sig-sell'}">${s.direction==='bullish'?'🟢 BULL':'🔴 BEAR'}</td>
+      <td>${s.quality==='HIGH'?'🔥 HIGH':s.quality==='MEDIUM'?'⭐ MEDIUM':'LOW'}</td>
+      <td style="color:${(+s.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${s.surprise_pct!=null?fmtPct(+s.surprise_pct):'—'}</td>
+      <td>${s.entry_date||'—'}</td>
+      <td>${s.underreaction?'⚠️ YES':'No'}</td>
+      <td>${s.regime_composite||'—'}</td>
+    </tr>`).join('');
+  }
+
+  const hist = peadRes.db_history || [];
+  const htbody = document.getElementById('pead-hist-tbody');
+  if(!hist.length){
+    htbody.innerHTML='<tr><td colspan="7" style="color:var(--muted)">No historical data yet.</td></tr>';
+  } else {
+    htbody.innerHTML = hist.slice(0,50).map(h=>`<tr>
+      <td>${h.earnings_date||'—'}</td>
+      <td style="font-weight:500;color:#fff">${h.ticker}</td>
+      <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
+      <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
+      <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>
+      <td>${h.outcome_label_correct!=null?(['❌','✅'][+h.outcome_label_correct]||'—'):'—'}</td>
+      <td style="color:var(--muted)">${h.regime_composite||'—'}</td>
+    </tr>`).join('');
+  }
+}
+
+loadResearch();
+</script>
+{% endblock %}

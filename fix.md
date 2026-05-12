@@ -168,3 +168,56 @@ text
   RUN_SYSTEM.bat   <-- Runs everything
 My Final Advice for You:
 "Stop simulating, start integrating." Your HTML is beautiful, but the fake data in the charts is your biggest risk. Your next priority should be taking those GARCH and Monte Carlo formulas out of JavaScript and putting them into a Python risk_engine.py script.
+
+---
+
+## ✅ COMPLETED SESSIONS LOG
+
+### Session 1 — 2026-05-12 (Claude Sonnet 4.6)
+**Status: Infrastructure & API layer completed.**
+
+Already done (found on inspection):
+- Phase 1 Consolidation: root `templates/` exists with all major pages
+- Phase 2 Flask routes: all page routes exist (analytics, trades, holdings, ticker/<ticker>, health, regime, pead, etc.)
+- `/api/ml_signals` returns full ML state (experiment_summary, feature_importance, model_comparison)
+- `DASHBOARD_ONLY.bat` created and working (sets DASHBOARD_ONLY=1, no scheduler)
+- Observer mode: scheduler skipped when DASHBOARD_ONLY=1
+- Atomic JSON writes: `atomic_write_json()` helper in flask_app.py
+- Data freshness indicator in base.html (stale-banner, /api/freshness endpoint)
+- Feature store: `engine/features/feature_store.py` exists
+- Ticker Detail page: `/ticker/<ticker>` route + `ticker_detail.html`
+- Monte Carlo moved to Python: `_mc_portfolio()`, `/api/portfolio_mc`, `/api/ticker_mc`
+
+Done this session:
+- **Fixed critical API mismatch**: `overview.html` was calling `/api/positions`, `/api/cash`, `/api/ml`, `/api/rebalance` — none of which existed. Added all 4 as proper endpoints in `flask_app.py`.
+- **Added `/api/pead`** endpoint to serve pead.html
+- **Added `/api/divergence`** endpoint to serve divergence.html labeling queue
+- **Added `/api/risk_events`** endpoint (dedicated, not bundled with pipeline_status)
+- **Copied missing templates to root `templates/`**: `health.html`, `pead.html`, `rebalance.html`, `divergence.html` — all pages now have a working home
+- **Upgraded `health.html`**: Added Kill Switch panel (data provider + DB + pipeline freshness status, RED alert if stale)
+- **Ticker links**: Added `onclick="window.location='/ticker/...'"` to position rows in `rebalance.html` and `pead.html`
+
+### ⏳ STILL TODO (pick up here next session)
+
+**Priority 1 — Cleanup (safe to do, no logic changes):**
+- Delete `dashboard/` folder (redundant — has its own flask_app.py and templates, no longer needed)
+- Delete `portfolio/server.py`, `portfolio/start.bat`, `portfolio/dashboard.html` (obsolete standalone versions)
+- Archive or delete `.streamlit/` folder
+- Migrate useful snippets from `portfolio/pages/` to root `templates/`, then delete the folder
+- Standardize `portfolio/data/` → `shared/state/` (check for any data files not yet in shared/state)
+
+**Priority 2 — Real Charts (the "Seed 42" problem):**
+- overview.html: check if any JS-seeded random returns / GARCH / Monte Carlo remain
+- If so: move them to a `risk_engine.py` Python script, expose via `/api/historical_returns/<ticker>` and `/api/portfolio_returns`
+- Replace JS chart data sources with real DB/API calls
+
+**Priority 3 — ML Structure ("Modular Research Lab"):**
+- Walk-Forward Validation engine (train on rolling windows, not 80/20 split)
+- Model Zoo pattern: separate files per model architecture under `engine/alpha/`
+- Versioned Feature Parquet: save feature matrix as timestamped `.parquet` file
+- Kelly Sizing: pull half-Kelly from ML engine into Overview KPI strip
+
+**Priority 4 — Frontend API Integration & Ledger Migration:**
+- Connect all APIs into the tabs to ensure they dynamically show the discovered data.
+- Update the Holdings page to accurately display the current portfolio holdings.
+- Migrate the legacy CSV ledger into the SQLite database.

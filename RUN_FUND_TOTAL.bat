@@ -1,5 +1,6 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
+set PYTHONIOENCODING=utf-8
 
 echo ============================================================
 echo   HEDGE FUND CONTROL TOWER - UNIFIED SYSTEM RUNNER

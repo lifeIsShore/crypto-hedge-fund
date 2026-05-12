@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+{% block title %}Trades{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip">
+  <div class="kpi neutral"><div class="kpi-label">TOTAL TRADES</div><div class="kpi-value" id="t-n">—</div><div class="kpi-sub">in history</div></div>
+  <div class="kpi good">   <div class="kpi-label">BUYS</div><div class="kpi-value" id="t-buy">—</div><div class="kpi-sub">orders</div></div>
+  <div class="kpi danger"> <div class="kpi-label">SELLS</div><div class="kpi-value" id="t-sell">—</div><div class="kpi-sub">orders</div></div>
+  <div class="kpi neutral"><div class="kpi-label">DEPOSITS</div><div class="kpi-value" id="t-dep">—</div><div class="kpi-sub">cash in</div></div>
+  <div class="kpi neutral"><div class="kpi-label">LAST TRADE</div><div class="kpi-value" id="t-last" style="font-size:13px">—</div><div class="kpi-sub" id="t-last-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CASH BALANCE</div><div class="kpi-value" id="t-cash" style="font-size:13px">—</div><div class="kpi-sub">current</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:380px 1fr;gap:14px;margin-top:14px;align-items:start">
+
+  <!-- ── LOG FORM ──────────────────────────────────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">LOG TRANSACTION</span>
+        <span class="panel-badge">LEDGER ENTRY</span>
+      </div>
+      <div class="panel-body">
+        <div id="form-feedback" style="display:none;margin-bottom:12px"></div>
+
+        <!-- Action selector -->
+        <div style="margin-bottom:12px">
+          <div class="form-row-label">ACTION</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="action-btns">
+            <button class="action-btn active" data-action="Buy"      onclick="setAction('Buy')">BUY</button>
+            <button class="action-btn"         data-action="Sell"     onclick="setAction('Sell')">SELL</button>
+            <button class="action-btn"         data-action="Deposit"  onclick="setAction('Deposit')">DEPOSIT</button>
+            <button class="action-btn"         data-action="Dividend" onclick="setAction('Dividend')">DIVIDEND</button>
+            <button class="action-btn"         data-action="Fee"      onclick="setAction('Fee')">FEE</button>
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div style="margin-bottom:10px">
+          <div class="form-row-label">DATE</div>
+          <input type="date" id="f-date" style="width:100%">
+        </div>
+
+        <!-- Ticker (hidden for Deposit/Dividend/Fee) -->
+        <div style="margin-bottom:10px" id="f-ticker-row">
+          <div class="form-row-label">ASSET / TICKER</div>
+          <input type="text" id="f-ticker" placeholder="e.g. NVDA, SAP.DE, AAPL" style="width:100%;text-transform:uppercase"
+                 oninput="this.value=this.value.toUpperCase()">
+          <div style="margin-top:6px;font-size:9px;color:var(--muted)">
+            Type any ticker. Common: APC.DE · MSF.DE · NVDA · SAP.DE · AMZN · ASML.DE
+          </div>
+        </div>
+
+        <!-- Quantity (hidden for non-Buy/Sell) -->
+        <div style="margin-bottom:10px" id="f-qty-row">
+          <div class="form-row-label">QUANTITY (SHARES)</div>
+          <input type="number" id="f-qty" placeholder="e.g. 10.000000" step="0.000001" min="0" style="width:100%">
+          <div style="margin-top:4px;font-size:9px;color:var(--muted)">Supports up to 6 decimal places (Trade Republic)</div>
+        </div>
+
+        <!-- Price -->
+        <div style="margin-bottom:10px">
+          <div class="form-row-label" id="f-price-label">PRICE PER SHARE (€) — excl. fees</div>
+          <input type="number" id="f-price" placeholder="0.00" step="0.01" min="0" style="width:100%"
+                 oninput="updateTotal()">
+        </div>
+
+        <!-- Fee (shown for Buy/Sell) -->
+        <div style="margin-bottom:10px" id="f-fee-row">
+          <div class="form-row-label">BROKER FEE (€) — optional</div>
+          <input type="number" id="f-fee" placeholder="e.g. 1.00" step="0.01" min="0" style="width:100%"
+                 oninput="updateTotal()">
+        </div>
+
+        <!-- Computed total -->
+        <div style="margin-bottom:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border)" id="f-total-row">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;color:var(--muted);letter-spacing:.1em">COMPUTED TOTAL</span>
+            <span style="font-size:16px;font-weight:600" id="f-total-display">—</span>
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px" id="f-cash-preview">—</div>
+        </div>
+
+        <!-- Notes -->
+        <div style="margin-bottom:14px">
+          <div class="form-row-label">NOTES (optional)</div>
+          <input type="text" id="f-notes" placeholder="e.g. monthly DCA, Q4 earnings play" style="width:100%">
+        </div>
+
+        <button class="btn btn-primary" onclick="submitTrade()" id="submit-btn">
+          ⚡ LOG TRANSACTION
+        </button>
+
+        <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">⚡ QUICK FEE LOG</div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div style="flex:1">
+              <div class="form-row-label">FEE AMOUNT (€)</div>
+              <input type="number" id="qf-amount" placeholder="0.00" step="0.01" min="0" style="width:100%">
+            </div>
+            <div style="flex:1">
+              <div class="form-row-label">TYPE (optional)</div>
+              <input type="text" id="qf-type" placeholder="Trading fee" style="width:100%">
+            </div>
+            <button class="btn" style="flex-shrink:0;border-color:var(--accent2);color:var(--accent2)" onclick="submitFee()">LOG FEE</button>
+          </div>
+          <div id="fee-feedback" style="margin-top:8px;font-size:11px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules panel -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">LEDGER GUIDE</span><span class="panel-badge">RULES</span></div>
+      <div class="panel-body" style="font-size:10px;line-height:1.8;color:var(--muted)">
+        <div style="margin-bottom:6px"><span style="color:#fff">Buy / Sell</span> — Enter price per share, excl. fees. Log fees separately or via Quick Fee Log.</div>
+        <div style="margin-bottom:6px"><span style="color:#fff">Deposit</span> — Total cash added to account. Ticker auto-sets to CASH.</div>
+        <div style="margin-bottom:6px"><span style="color:#fff">Dividend</span> — Total cash received. Ticker auto-sets to CASH.</div>
+        <div style="margin-bottom:6px"><span style="color:#fff">Fee</span> — Use Quick Fee Log below for speed. Deducts from cash.</div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          After logging, click <strong style="color:#fff">⟳ Refresh</strong> in your pipeline runner to recalculate positions &amp; weights.
+          Cash balance updates immediately.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── HISTORY ─────────────────────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">TRADE HISTORY</span>
+      <span class="panel-badge" id="t-badge">ALL TRADES</span>
+    </div>
+    <div class="panel-body">
+      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="t-filter" placeholder="Filter ticker…" style="max-width:160px" oninput="filterTrades()">
+        <select id="t-action-filter" style="max-width:130px" onchange="filterTrades()">
+          <option value="">All actions</option>
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+          <option value="DEPOSIT">DEPOSIT</option>
+          <option value="DIVIDEND">DIVIDEND</option>
+          <option value="FEE">FEE</option>
+        </select>
+        <button class="btn" onclick="loadTrades()" style="font-size:10px;padding:5px 12px">⟳ REFRESH</button>
+      </div>
+      <div id="no-trades" class="alert alert-info" style="display:none">No trades recorded yet. Log your first transaction.</div>
+      <table class="tbl" id="trades-tbl">
+        <thead><tr>
+          <th>DATE</th><th>TICKER</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th><th>FEE €</th><th>NOTES</th>
+        </tr></thead>
+        <tbody id="trades-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.form-row-label {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: .1em;
+  margin-bottom: 5px;
+}
+.action-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: all .15s;
+}
+.action-btn:hover { border-color: var(--accent); color: var(--text); }
+.action-btn.active { background: rgba(0,229,160,.12); border-color: var(--accent); color: var(--accent); }
+.action-btn.active[data-action="Sell"]    { background: rgba(255,77,109,.12); border-color: var(--accent2); color: var(--accent2); }
+.action-btn.active[data-action="Fee"]     { background: rgba(255,77,109,.08); border-color: var(--accent2); color: var(--accent2); }
+.action-btn.active[data-action="Deposit"] { background: rgba(100,149,237,.12); border-color: var(--accent4); color: var(--accent4); }
+.action-btn.active[data-action="Dividend"]{ background: rgba(245,166,35,.12); border-color: var(--accent3); color: var(--accent3); }
+.btn-primary {
+  width: 100%;
+  background: rgba(0,229,160,.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-primary:hover { background: rgba(0,229,160,.25); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────
+let allTrades   = [];
+let currentCash = 0;
+let currentAction = 'Buy';
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Default date to today
+  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  loadTrades();
+  loadCash();
+});
+
+// ── Action selector ───────────────────────────────────────────────────────
+function setAction(action) {
+  currentAction = action;
+  document.querySelectorAll('.action-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.action === action);
+  });
+
+  const tickerRow  = document.getElementById('f-ticker-row');
+  const qtyRow     = document.getElementById('f-qty-row');
+  const feeRow     = document.getElementById('f-fee-row');
+  const priceLabel = document.getElementById('f-price-label');
+  const totalRow   = document.getElementById('f-total-row');
+
+  if (action === 'Buy' || action === 'Sell') {
+    tickerRow.style.display  = '';
+    qtyRow.style.display     = '';
+    feeRow.style.display     = '';
+    totalRow.style.display   = '';
+    priceLabel.textContent   = 'PRICE PER SHARE (€) — excl. fees';
+    document.getElementById('f-ticker').disabled = false;
+  } else if (action === 'Deposit' || action === 'Dividend') {
+    tickerRow.style.display  = 'none';
+    qtyRow.style.display     = 'none';
+    feeRow.style.display     = 'none';
+    totalRow.style.display   = '';
+    priceLabel.textContent   = 'AMOUNT (€)';
+  } else if (action === 'Fee') {
+    tickerRow.style.display  = 'none';
+    qtyRow.style.display     = 'none';
+    feeRow.style.display     = 'none';
+    totalRow.style.display   = '';
+    priceLabel.textContent   = 'FEE AMOUNT (€)';
+  }
+  updateTotal();
+}
+
+// ── Live total + cash preview ─────────────────────────────────────────────
+function updateTotal() {
+  const qty   = parseFloat(document.getElementById('f-qty').value)   || 0;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const fee   = parseFloat(document.getElementById('f-fee').value)   || 0;
+  const disp  = document.getElementById('f-total-display');
+  const prev  = document.getElementById('f-cash-preview');
+
+  let total = 0;
+  if (currentAction === 'Buy' || currentAction === 'Sell') {
+    total = qty * price;
+  } else {
+    total = price;
+  }
+
+  disp.textContent = total > 0 ? fmtEur(total) : '—';
+
+  // Cash impact preview
+  let newCash = currentCash;
+  if      (currentAction === 'Buy')      newCash = currentCash - total - fee;
+  else if (currentAction === 'Sell')     newCash = currentCash + total - fee;
+  else if (currentAction === 'Deposit')  newCash = currentCash + total;
+  else if (currentAction === 'Dividend') newCash = currentCash + total;
+  else if (currentAction === 'Fee')      newCash = currentCash - total;
+
+  const delta    = newCash - currentCash;
+  const sign     = delta >= 0 ? '+' : '';
+  const deltaCol = delta >= 0 ? 'var(--accent)' : 'var(--accent2)';
+  if (total > 0) {
+    prev.innerHTML = `Cash: ${fmtEur(currentCash)} → <strong style="color:${deltaCol}">${fmtEur(newCash)}</strong> <span style="color:${deltaCol}">(${sign}${fmtEur(delta)})</span>`;
+  } else {
+    prev.textContent = `Current cash: ${fmtEur(currentCash)}`;
+  }
+}
+
+// ── Submit trade ──────────────────────────────────────────────────────────
+async function submitTrade() {
+  const btn  = document.getElementById('submit-btn');
+  const fb   = document.getElementById('form-feedback');
+
+  const action = currentAction;
+  const date   = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  const ticker = action === 'Buy' || action === 'Sell'
+    ? document.getElementById('f-ticker').value.trim().toUpperCase()
+    : 'CASH';
+  const qty    = document.getElementById('f-qty').value.trim();
+  const price  = document.getElementById('f-price').value.trim();
+  const fee    = parseFloat(document.getElementById('f-fee').value) || 0;
+  const notes  = document.getElementById('f-notes').value.trim();
+
+  // Client-side validation
+  if (!price || isNaN(+price) || +price <= 0) {
+    showFeedback('error', '⚠ Price / amount must be > 0'); return;
+  }
+  if ((action === 'Buy' || action === 'Sell') && (!ticker || ticker === 'CASH')) {
+    showFeedback('error', '⚠ Enter a ticker symbol for Buy/Sell'); return;
+  }
+  if ((action === 'Buy' || action === 'Sell') && (!qty || isNaN(+qty) || +qty <= 0)) {
+    showFeedback('error', '⚠ Quantity must be > 0 for Buy/Sell'); return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'LOGGING…';
+
+  try {
+    const res = await fetch('/api/log_trade', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action, ticker, quantity: +qty || null, price: +price, date, notes, fee_eur: fee }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      currentCash = data.new_cash_eur;
+      document.getElementById('t-cash').textContent = fmtEur(currentCash);
+      showFeedback('ok',
+        `✅ ${action.toUpperCase()} logged — ${ticker}${qty ? ' × ' + (+qty).toFixed(qty.includes('.') ? 6 : 0) : ''} @ ${fmtEur(+price)} · Cash now ${fmtEur(currentCash)}`
+      );
+      // Reset form
+      document.getElementById('f-qty').value   = '';
+      document.getElementById('f-price').value = '';
+      document.getElementById('f-fee').value   = '';
+      document.getElementById('f-notes').value = '';
+      updateTotal();
+      loadTrades();
+    } else {
+      showFeedback('error', '⚠ ' + (data.error || 'Server error'));
+    }
+  } catch (e) {
+    showFeedback('error', '⚠ Network error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⚡ LOG TRANSACTION';
+}
+
+// ── Quick fee ─────────────────────────────────────────────────────────────
+async function submitFee() {
+  const amt  = parseFloat(document.getElementById('qf-amount').value) || 0;
+  const type = document.getElementById('qf-type').value.trim() || 'Trading fee';
+  const fb   = document.getElementById('fee-feedback');
+
+  if (amt <= 0) { fb.innerHTML = '<span style="color:var(--accent3)">⚠ Fee amount must be > 0</span>'; return; }
+
+  const res  = await fetch('/api/log_trade', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ action: 'Fee', ticker: 'CASH', price: amt, notes: type,
+                              date: new Date().toISOString().slice(0,10) }),
+  }).then(r => r.json()).catch(() => ({ ok: false, error: 'Network error' }));
+
+  if (res.ok) {
+    currentCash = res.new_cash_eur;
+    document.getElementById('t-cash').textContent = fmtEur(currentCash);
+    fb.innerHTML = `<span style="color:var(--accent)">✅ Fee €${amt.toFixed(2)} logged · Cash now ${fmtEur(currentCash)}</span>`;
+    document.getElementById('qf-amount').value = '';
+    document.getElementById('qf-type').value   = '';
+    loadTrades();
+  } else {
+    fb.innerHTML = `<span style="color:var(--accent2)">❌ ${res.error || 'Failed'}</span>`;
+  }
+}
+
+// ── Feedback helper ───────────────────────────────────────────────────────
+function showFeedback(type, msg) {
+  const fb = document.getElementById('form-feedback');
+  fb.style.display = 'block';
+  const color = type === 'ok' ? 'var(--accent)' : type === 'warn' ? 'var(--accent3)' : 'var(--accent2)';
+  const bg    = type === 'ok' ? 'rgba(0,229,160,.08)' : type === 'warn' ? 'rgba(245,166,35,.08)' : 'rgba(255,77,109,.08)';
+  fb.style.cssText = `display:block;padding:8px 12px;border:1px solid ${color};background:${bg};font-size:11px;color:${color}`;
+  fb.textContent = msg;
+  setTimeout(() => { fb.style.display = 'none'; }, 8000);
+}
+
+// ── Load cash ─────────────────────────────────────────────────────────────
+async function loadCash() {
+  const data = await fetch('/api/cash').then(r => r.json()).catch(() => ({}));
+  currentCash = parseFloat(data.cash_eur) || 0;
+  document.getElementById('t-cash').textContent = fmtEur(currentCash);
+  updateTotal();
+}
+
+// ── Load trade history ────────────────────────────────────────────────────
+async function loadTrades() {
+  const data = await fetch('/api/trades?limit=500').then(r => r.json()).catch(() => []);
+  allTrades = Array.isArray(data) ? data : (data.trades || []);
+
+  const buys  = allTrades.filter(t => t.action === 'BUY').length;
+  const sells = allTrades.filter(t => t.action === 'SELL').length;
+  const deps  = allTrades.filter(t => t.action === 'DEPOSIT').length;
+
+  document.getElementById('t-n').textContent    = allTrades.length;
+  document.getElementById('t-buy').textContent  = buys;
+  document.getElementById('t-sell').textContent = sells;
+  document.getElementById('t-dep').textContent  = deps;
+  document.getElementById('t-badge').textContent = `${allTrades.length} TRADES`;
+
+  if (allTrades.length) {
+    const last = allTrades[0];
+    document.getElementById('t-last').textContent     = last.date || '—';
+    document.getElementById('t-last-sub').textContent = `${last.ticker} ${last.action}`;
+  }
+
+  renderTrades(allTrades);
+}
+
+function renderTrades(trades) {
+  const tbody = document.getElementById('trades-tbody');
+  const noEl  = document.getElementById('no-trades');
+  if (!trades.length) { noEl.style.display = 'block'; tbody.innerHTML = ''; return; }
+  noEl.style.display = 'none';
+
+  const actionColor = {
+    BUY:      'var(--accent)',
+    SELL:     'var(--accent2)',
+    DEPOSIT:  'var(--accent4)',
+    DIVIDEND: 'var(--accent3)',
+    FEE:      'var(--muted)',
+  };
+
+  tbody.innerHTML = trades.map(t => {
+    const ac = t.action || '';
+    const col = actionColor[ac] || 'var(--text)';
+    return `<tr data-ticker="${t.ticker||''}" data-action="${ac}">
+      <td>${t.date || '—'}</td>
+      <td style="font-weight:500;cursor:pointer;color:var(--accent4)"
+          onclick="window.location='/ticker/${t.ticker}'">${t.ticker || '—'}</td>
+      <td style="color:${col};font-weight:600">${ac}</td>
+      <td>${t.quantity != null ? (+t.quantity).toFixed(+t.quantity % 1 === 0 ? 0 : 4) : '—'}</td>
+      <td>${t.price_eur != null ? fmtEur(t.price_eur) : '—'}</td>
+      <td style="font-weight:500">${fmtEur(t.total_eur ?? t.value_eur)}</td>
+      <td style="color:var(--accent2)">${t.fee_eur && +t.fee_eur > 0 ? fmtEur(t.fee_eur) : '—'}</td>
+      <td style="color:var(--muted);font-size:10px">${t.notes || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTrades() {
+  const q      = document.getElementById('t-filter').value.toLowerCase();
+  const action = document.getElementById('t-action-filter').value;
+  let filtered = allTrades;
+  if (q)      filtered = filtered.filter(t => (t.ticker || '').toLowerCase().includes(q));
+  if (action) filtered = filtered.filter(t => t.action === action);
+  renderTrades(filtered);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Holdings{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip">
+  <div class="kpi neutral"><div class="kpi-label">TOTAL POSITIONS</div><div class="kpi-value" id="h-n">—</div><div class="kpi-sub">active holdings</div></div>
+  <div class="kpi neutral"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="h-total">—</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="h-cash">—</div><div class="kpi-sub">available EUR</div></div>
+  <div class="kpi good">   <div class="kpi-label">BULLISH POSITIONS</div><div class="kpi-value" id="h-bull">—</div><div class="kpi-sub">up_proba &gt; 55%</div></div>
+  <div class="kpi danger"> <div class="kpi-label">BEARISH POSITIONS</div><div class="kpi-value" id="h-bear">—</div><div class="kpi-sub">up_proba &lt; 45%</div></div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">CURRENT HOLDINGS — WITH ML SIGNAL OVERLAY</span>
+    <span class="panel-badge">LIVE FROM DB</span>
+  </div>
+  <div class="panel-body">
+    <div id="no-holdings" class="alert alert-info" style="display:none">No holdings in DB. Import your ledger first.</div>
+    <table class="tbl" id="holdings-tbl">
+      <thead><tr>
+        <th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th>
+        <th>EXP 21D €</th><th>TARGET €</th><th>STOP €</th><th>WIN%</th><th>ACTION</th>
+      </tr></thead>
+      <tbody id="holdings-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadHoldings(){
+  const data = await fetch('/api/holdings').then(r=>r.json()).catch(()=>({}));
+  const positions = data.positions || [];
+  const cash = data.cash_eur || 0;
+  const total = positions.reduce((s,p)=>s+(+p.value_eur||0),0) + cash;
+
+  document.getElementById('h-n').textContent     = positions.length;
+  document.getElementById('h-total').textContent = fmtEur(total);
+  document.getElementById('h-cash').textContent  = fmtEur(cash);
+  document.getElementById('h-bull').textContent  = positions.filter(p=>(+p.up_proba||0)>0.55).length;
+  document.getElementById('h-bear').textContent  = positions.filter(p=>(+p.up_proba||0)<0.45).length;
+
+  const tbody = document.getElementById('holdings-tbody');
+  const noEl  = document.getElementById('no-holdings');
+  if(!positions.length){
+    noEl.style.display = 'block'; tbody.innerHTML=''; return;
+  }
+  noEl.style.display = 'none';
+  tbody.innerHTML = positions.map(p=>{
+    const up = +p.up_proba || 0.5;
+    const action = up>=0.60?'BUY':up>=0.54?'LEAN_BUY':up<=0.40?'SELL':up<=0.46?'LEAN_SELL':'NEUTRAL';
+    return `<tr style="cursor:pointer" onclick="window.location='/ticker/${p.ticker}'">
+      <td style="font-weight:500;color:var(--accent)">${p.ticker}</td>
+      <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
+      <td>${fmtEur(p.price)}</td>
+      <td>${fmtEur(p.value_eur)}</td>
+      <td>${p.weight!=null?((+p.weight)*100).toFixed(1)+'%':'—'}</td>
+      <td style="color:${(+p.expected_21d_eur||0)>=(+p.price||0)?'var(--accent)':'var(--accent2)'}">${fmtEur(p.expected_21d_eur)}</td>
+      <td style="color:var(--accent)">${fmtEur(p.target_1sigma_eur)}</td>
+      <td style="color:var(--accent2)">${fmtEur(p.stop_1sigma_eur)}</td>
+      <td>${(up*100).toFixed(1)}%</td>
+      <td class="${sigClass(action)}">${sigLabel(action)}</td>
+    </tr>`;
+  }).join('');
+}
+
+loadHoldings();
+</script>
+{% endblock %}

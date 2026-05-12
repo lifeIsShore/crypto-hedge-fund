@@ -335,6 +335,27 @@ CREATE TABLE IF NOT EXISTS data_validation_log (
 -- SCHEDULER / PIPELINE AUDIT
 -- ─────────────────────────────────────────────────────────────
 
+-- ─────────────────────────────────────────────────────────────
+-- PERFORMANCE HISTORY  (daily portfolio value + returns)
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS performance_history (
+    date                  TEXT    PRIMARY KEY,
+    portfolio_value_eur   REAL,
+    cash_eur              REAL,
+    invested_eur          REAL,
+    benchmark_value_eur   REAL,   -- e.g. MSCI World ETF proxy
+    daily_return_pct      REAL,
+    cumulative_return_pct REAL,
+    computed_at           TEXT    DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_perf_date ON performance_history (date);
+
+-- ─────────────────────────────────────────────────────────────
+-- SCHEDULER / PIPELINE AUDIT
+-- ─────────────────────────────────────────────────────────────
+
 CREATE TABLE IF NOT EXISTS pipeline_runs (
     id           INTEGER     PRIMARY KEY AUTOINCREMENT,
     run_date     TEXT        NOT NULL,

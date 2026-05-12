@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Macro Regime{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip" id="regime-kpi">
+  <div class="kpi neutral"><div class="kpi-label">RISK APPETITE</div><div class="kpi-value" id="r-risk" style="font-size:16px">—</div><div class="kpi-sub" id="r-risk-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">RATE ENVIRONMENT</div><div class="kpi-value" id="r-rate" style="font-size:16px">—</div><div class="kpi-sub">Fed policy</div></div>
+  <div class="kpi neutral"><div class="kpi-label">GROWTH CYCLE</div><div class="kpi-value" id="r-growth" style="font-size:16px">—</div><div class="kpi-sub" id="r-streak">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">EARLY WARNINGS</div><div class="kpi-value" id="r-ew">—</div><div class="kpi-sub">of 4 triggers</div></div>
+  <div class="kpi neutral"><div class="kpi-label">AS OF DATE</div><div class="kpi-value" id="r-date" style="font-size:14px">—</div><div class="kpi-sub">last regime snapshot</div></div>
+  <div class="kpi neutral"><div class="kpi-label">COMPOSITE</div><div class="kpi-value" id="r-comp" style="font-size:11px;line-height:1.4">—</div></div>
+</div>
+
+<div id="regime-alert" style="margin-top:14px"></div>
+
+<div class="grid grid-2" style="margin-top:14px">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">LIVE MACRO INPUTS</span><span class="panel-badge">LATEST SNAPSHOT</span></div>
+    <div class="panel-body">
+      <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr)">
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">VIX</div><div class="kpi-value" style="font-size:18px" id="m-vix">—</div><div class="kpi-sub">&lt;20 calm</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">10Y-2Y SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-spread">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HY SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-hy">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">IG SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-ig">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">FED FUNDS</div><div class="kpi-value" style="font-size:18px" id="m-fed">—</div></div>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">EARLY WARNING FLAGS</div>
+        <div class="grid grid-4">
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">VIX RISING</div><div class="kpi-value" id="ew-vix" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">CURVE FLAT</div><div class="kpi-value" id="ew-curve" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HY WIDENING</div><div class="kpi-value" id="ew-hy" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">RATE REPRICE</div><div class="kpi-value" id="ew-rate" style="font-size:14px">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">HISTORICAL DISTRIBUTION — LAST 90 DAYS</span><span class="panel-badge">DB</span></div>
+    <div class="panel-body"><div class="chart-wrap" style="height:220px"><canvas id="regimeDistChart"></canvas></div></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">SIGNAL RELIABILITY IN CURRENT REGIME</span><span class="panel-badge" id="rel-badge">—</span></div>
+  <div class="panel-body">
+    <div class="grid grid-4">
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">LAGGARD SCREEN</div><div class="kpi-value" id="rel-lag" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">PEAD SETUPS</div><div class="kpi-value" id="rel-pead" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">SHORT SQUEEZE</div><div class="kpi-value" id="rel-sq" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">CORR BREAK</div><div class="kpi-value" id="rel-cb" style="font-size:16px">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">REGIME HISTORY — LAST 30 DAYS</span><span class="panel-badge">SQLITE</span></div>
+  <div class="panel-body">
+    <table class="tbl">
+      <thead><tr><th>DATE</th><th>RISK</th><th>RATES</th><th>GROWTH</th><th>COMPOSITE</th><th>VIX</th><th>SPREAD</th><th>TRANSITION ⚠️</th></tr></thead>
+      <tbody id="hist-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const GUIDANCE = {
+  'Expansion|Risk-On':{lag:'HIGH',pead:'HIGH',sq:'HIGH',cb:'HIGH'},
+  'Expansion|Neutral':{lag:'HIGH',pead:'HIGH',sq:'MED',cb:'HIGH'},
+  'Slowdown|Neutral':{lag:'MOD',pead:'MOD',sq:'MED',cb:'AVOID'},
+  'Slowdown|Risk-On':{lag:'MOD',pead:'HIGH',sq:'MED',cb:'MOD'},
+  'Slowdown|Risk-Off':{lag:'LOW',pead:'LOW',sq:'AVOID',cb:'AVOID'},
+  'Contraction|Risk-Off':{lag:'AVOID',pead:'LOW',sq:'AVOID',cb:'AVOID'},
+  'Recovery|Risk-On':{lag:'HIGH',pead:'MOD',sq:'HIGH',cb:'HIGH'},
+  'Recovery|Neutral':{lag:'HIGH',pead:'MOD',sq:'MOD',cb:'MOD'},
+};
+const REL_COLOR={'HIGH':'var(--accent)','MOD':'var(--accent3)','MED':'var(--accent3)','LOW':'var(--accent2)','AVOID':'var(--accent2)','UNKNOWN':'var(--muted)'};
+let regDistChart = null;
+
+async function loadRegime(){
+  const data = await fetch('/api/regime').then(r=>r.json()).catch(()=>({}));
+  if(!data.regime_risk){
+    document.getElementById('regime-alert').innerHTML='<div class="alert alert-warn">No regime state. Run: <code>python run_engine.py</code> in regime_engine/</div>';
+    return;
+  }
+  const risk=data.regime_risk,rate=data.regime_rates,growth=data.regime_growth;
+  const comp=data.regime_composite||'—',tw=data.transition_warning,ew=data.ew_active_count||0;
+  const riskColor=risk==='Risk-On'?'var(--accent)':risk==='Risk-Off'?'var(--accent2)':'var(--accent3)';
+  const rEl=document.getElementById('r-risk'); rEl.textContent=risk; rEl.style.color=riskColor;
+  document.getElementById('r-risk-sub').textContent=risk==='Risk-On'?'equity-friendly':'defensive';
+  const rtEl=document.getElementById('r-rate'); rtEl.textContent=rate; rtEl.style.color=rate==='Easing'?'var(--accent)':rate==='Tightening'?'var(--accent2)':'var(--accent3)';
+  const grEl=document.getElementById('r-growth'); grEl.textContent=growth; grEl.style.color=(growth==='Expansion'||growth==='Recovery')?'var(--accent)':growth==='Contraction'?'var(--accent2)':'var(--accent3)';
+  document.getElementById('r-streak').textContent=data.current_streak_days?`${data.current_streak_days} consecutive days`:'—';
+  document.getElementById('r-ew').textContent=`${ew}/4`;
+  document.getElementById('r-date').textContent=data.as_of_date||'—';
+  document.getElementById('r-comp').textContent=comp;
+  document.getElementById('regime-alert').innerHTML=tw
+    ?'<div class="alert alert-warn">⚠️ Regime transition warning — multiple stress indicators firing simultaneously.</div>'
+    :`<div class="alert alert-ok">Regime stable: <strong>${comp}</strong>${data.current_streak_days?' · '+data.current_streak_days+' consecutive days':''}</div>`;
+  const m=data.macro_snapshot||{};
+  const vix=+m.vix||0;
+  const vixEl=document.getElementById('m-vix'); vixEl.textContent=vix.toFixed(2); vixEl.style.color=vix>30?'var(--accent2)':vix>20?'var(--accent3)':'var(--accent)';
+  const spr=+m.yield_spread||0;
+  const sprEl=document.getElementById('m-spread'); sprEl.textContent=(spr>=0?'+':'')+spr.toFixed(2)+'%'; sprEl.style.color=spr<0?'var(--accent2)':'var(--accent)';
+  document.getElementById('m-hy').textContent=(m.hy_spread!=null?(+m.hy_spread).toFixed(2):'—')+'%';
+  document.getElementById('m-ig').textContent=(m.ig_spread!=null?(+m.ig_spread).toFixed(2):'—')+'%';
+  document.getElementById('m-fed').textContent=(m.fed_funds!=null?(+m.fed_funds).toFixed(2):'—')+'%';
+  const ewf=data.ew_flags||{};
+  [['ew-vix',ewf.vix_rising],['ew-curve',ewf.curve_flattening],['ew-hy',ewf.hy_widening],['ew-rate',ewf.rate_reprice]].forEach(([id,active])=>{
+    const el=document.getElementById(id);
+    el.textContent=active?'🔴 ACTIVE':'✅ Clear';
+    el.style.color=active?'var(--accent2)':'var(--accent)';
+  });
+  const key=`${growth}|${risk}`;
+  const rel=GUIDANCE[key]||{lag:'UNKNOWN',pead:'UNKNOWN',sq:'UNKNOWN',cb:'UNKNOWN'};
+  const relIcon={'HIGH':'🟢','MOD':'🟡','MED':'🟡','LOW':'🔴','AVOID':'⛔','UNKNOWN':'❓'};
+  document.getElementById('rel-badge').textContent=`${growth} · ${risk}`;
+  [['rel-lag',rel.lag],['rel-pead',rel.pead],['rel-sq',rel.sq],['rel-cb',rel.cb]].forEach(([id,v])=>{
+    const el=document.getElementById(id); el.textContent=`${relIcon[v]||'?'} ${v}`; el.style.color=REL_COLOR[v]||'var(--muted)';
+  });
+  const hist=(data.history||[]).slice(0,30);
+  const htbody=document.getElementById('hist-tbody');
+  if(!hist.length){ htbody.innerHTML='<tr><td colspan="8" style="color:var(--muted)">No history yet.</td></tr>'; }
+  else{
+    htbody.innerHTML=hist.map(h=>{
+      const rc=h.regime_risk==='Risk-On'?'var(--accent)':h.regime_risk==='Risk-Off'?'var(--accent2)':'var(--accent3)';
+      return `<tr><td>${h.date}</td><td style="color:${rc}">${h.regime_risk||'—'}</td><td>${h.regime_rates||'—'}</td><td>${h.regime_growth||'—'}</td><td style="color:var(--muted);font-size:10px">${h.regime_composite||'—'}</td><td>${h.vix!=null?(+h.vix).toFixed(1):'—'}</td><td style="color:${(+h.yield_spread||0)<0?'var(--accent2)':'var(--accent)'}">${h.yield_spread!=null?((+h.yield_spread)>=0?'+':'')+( +h.yield_spread).toFixed(2)+'%':'—'}</td><td>${h.transition_warning?'<span class="tag tag-yellow">⚠️ YES</span>':'—'}</td></tr>`;
+    }).join('');
+    const counts={};
+    hist.forEach(h=>{ const k=h.regime_composite||'Unknown'; counts[k]=(counts[k]||0)+1; });
+    const labels=Object.keys(counts),vals=Object.values(counts);
+    const colors=['var(--accent)','var(--accent3)','var(--accent2)','var(--accent4)','#a78bfa'];
+    if(regDistChart) regDistChart.destroy();
+    regDistChart=new Chart(document.getElementById('regimeDistChart'),{type:'bar',data:{labels,datasets:[{label:'Days',data:vals,backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+  }
+}
+loadRegime();
+</script>
+{% endblock %}
