@@ -96,6 +96,34 @@
   </div>
 </div>
 
+<!-- Historical Returns Chart (real data from DB) -->
+<div class="grid grid-2" style="margin-top:14px">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">📉 DAILY RETURNS — {{ ticker }}</span>
+      <span class="panel-badge">REAL DB DATA</span>
+    </div>
+    <div class="panel-body">
+      <div id="returns-loading" style="color:var(--muted);font-size:11px">Loading historical returns…</div>
+      <canvas id="returns-chart" style="display:none"></canvas>
+      <div id="returns-stats" style="margin-top:10px;font-size:10px;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <!-- Monte Carlo Chart (real Python MC from /api/ticker_mc) -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">🎲 MONTE CARLO — {{ ticker }}</span>
+      <span class="panel-badge">21D SIMULATION</span>
+    </div>
+    <div class="panel-body">
+      <div id="mc-loading" style="color:var(--muted);font-size:11px">Loading Monte Carlo simulation…</div>
+      <canvas id="mc-chart" style="display:none"></canvas>
+      <div id="mc-stats" style="margin-top:10px;font-size:10px;color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -108,5 +136,119 @@
   el.textContent = sigLabel(action);
   el.className = sigClass(action);
 })();
+
+// ── Historical Returns Chart (real data from /api/historical_returns/<ticker>) ──────
+async function loadReturnsChart(){
+  const ticker = '{{ ticker }}';
+  const loadEl  = document.getElementById('returns-loading');
+  const canvas  = document.getElementById('returns-chart');
+  const statsEl = document.getElementById('returns-stats');
+
+  let data;
+  try {
+    const res = await fetch(`/api/historical_returns/${ticker}?limit=252`);
+    if(!res.ok){ loadEl.textContent = `No price data found for ${ticker} in DB.`; return; }
+    data = await res.json();
+  } catch(e) {
+    loadEl.textContent = `Error loading returns: ${e.message}`; return;
+  }
+
+  if(!data.dates || !data.dates.length){
+    loadEl.textContent = 'No historical price data in DB for this ticker.';
+    return;
+  }
+
+  loadEl.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const colors = data.daily_returns.map(r => r >= 0 ? 'rgba(0,229,160,0.6)' : 'rgba(255,77,109,0.6)');
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: data.dates,
+      datasets: [{
+        label: 'Daily Return %',
+        data: data.daily_returns,
+        backgroundColor: colors,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          ticks: { color: 'rgba(200,212,232,.6)', callback: v => v.toFixed(1)+'%' },
+          grid:  { color: 'rgba(30,37,53,.6)' }
+        }
+      }
+    }
+  });
+
+  statsEl.innerHTML = [
+    `<span style="color:var(--accent)">Ann.Vol: ${data.ann_vol_pct}%</span>`,
+    `<span>Cum.Return: <span style="color:${data.cum_return_pct>=0?'var(--accent)':'var(--accent2)'}">${data.cum_return_pct>0?'+':''}${data.cum_return_pct}%</span></span>`,
+    `<span style="color:var(--muted)">${data.n_days} trading days</span>`
+  ].join(' &nbsp;··&nbsp; ');
+}
+
+// ── Monte Carlo Chart (real Python MC from /api/ticker_mc/<ticker>) ────────────
+async function loadMCChart(){
+  const ticker = '{{ ticker }}';
+  const loadEl  = document.getElementById('mc-loading');
+  const canvas  = document.getElementById('mc-chart');
+  const statsEl = document.getElementById('mc-stats');
+
+  let data;
+  try {
+    const res = await fetch(`/api/ticker_mc/${ticker}`);
+    if(!res.ok){ loadEl.textContent = `No ML signal found for ${ticker}. Run ML pipeline first.`; return; }
+    data = await res.json();
+  } catch(e) {
+    loadEl.textContent = `Error loading MC: ${e.message}`; return;
+  }
+
+  loadEl.style.display = 'none';
+  canvas.style.display = 'block';
+
+  // Colour bars: green above current price, red below
+  const barColors = data.labels.map(price =>
+    price >= data.cur ? 'rgba(0,229,160,0.55)' : 'rgba(255,77,109,0.55)'
+  );
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: data.labels.map(v => '€'+v.toFixed(2)),
+      datasets: [{
+        label: '21D Price Distribution',
+        data: data.counts,
+        backgroundColor: barColors,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: 'rgba(200,212,232,.5)', maxTicksLimit: 6 }, grid: { display: false } },
+        y: { ticks: { color: 'rgba(200,212,232,.5)' }, grid: { color: 'rgba(30,37,53,.6)' } }
+      }
+    }
+  });
+
+  statsEl.innerHTML = [
+    `<span style="color:var(--accent)">P(profit): ${data.p_profit}%</span>`,
+    `<span style="color:var(--accent)">P(+5%): ${data.p_up5}%</span>`,
+    `<span style="color:var(--accent2)">P(-10%): ${data.p_down10}%</span>`,
+    `<span style="color:var(--muted)">VaR5: €${data.var5}</span>`,
+    `<span style="color:var(--muted)">CVaR5: €${data.cvar5}</span>`
+  ].join(' &nbsp;··&nbsp; ');
+}
+
+loadReturnsChart();
+loadMCChart();
 </script>
 {% endblock %}

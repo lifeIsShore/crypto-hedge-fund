@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Backtest Reports{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+  <a href="/health" style="color:var(--muted);font-size:10px;text-decoration:none">← BACK TO HEALTH</a>
+  <h1 style="font-size:20px;font-weight:600;color:#fff">📈 Backtest Reports</h1>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">REPORTS IN backtests/</span>
+    <span class="panel-badge">{{ reports|length }} FILE{{ 's' if reports|length != 1 else '' }}</span>
+  </div>
+  <div class="panel-body">
+    {% if reports %}
+    <table class="tbl">
+      <thead><tr><th>FILENAME</th><th>SIZE</th><th>LAST MODIFIED</th><th>OPEN</th></tr></thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td style="color:#fff">{{ r.name }}</td>
+          <td style="color:var(--muted)">{{ r.size_kb }} KB</td>
+          <td style="color:var(--muted)">{{ r.modified }}</td>
+          <td>
+            <a href="/backtests/{{ r.name }}" target="_blank" style="color:var(--accent);font-size:10px;text-decoration:none">🔗 Open &rarr;</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">
+      No backtest reports found in <code>backtests/</code> yet.<br>
+      Run your backtesting scripts and save outputs to that folder — they will appear here automatically.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

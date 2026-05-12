@@ -222,6 +222,21 @@ Done this session:
   - Created `RUN_SYSTEM.bat` — full pipeline launcher (data → ML → research → dashboard); complements `DASHBOARD_ONLY.bat`
   - Created `/backtests/` folder for backtest output reports
 
+### Session 3 — 2026-05-12 (Claude Sonnet 4.6)
+**Status: Priority 4 & 5 fully completed.**
+
+Done this session:
+- **Priority 5 — DB Migration (verified complete)**:
+  - `pipeline_logs` table already exists in live `engine_data.db` — schema was applied in prior session
+  - `migrate_ledger.py` not needed — trades were entered directly into SQLite (no CSV ledger exists)
+  - 12 trades, 12 cash_history rows, 5 current positions confirmed healthy in DB
+- **Priority 4 — Frontend API Integration**:
+  - **Kill Switch panel** in `health.html` — replaced fake browser-side heuristic with real `/api/kill_switch_status` polling every 60s; shows live provider status with ⛔/✅ badges
+  - **Pipeline Logs viewer** in `health.html` — wired `loadLogs()` to `/api/pipeline_logs`; filter buttons (ALL/ERROR/WARNING/INFO) now actually work
+  - **Backtest Reports page** — created `templates/backtests.html` + `/backtests` and `/backtests/<filename>` routes in `flask_app.py`; health.html links to it
+  - **Ticker Detail charts** — wired `loadReturnsChart()` to `/api/historical_returns/<ticker>` (real DB price data, green/red bars) and `loadMCChart()` to `/api/ticker_mc/<ticker>` (real Python Monte Carlo); both replace any JS-synthesised data
+  - Fixed orphaned `history()` route stub left by prior edit
+
 ### ⏳ STILL TODO (pick up here next session)
 
 **Priority 2 — Real Charts (remaining)**:

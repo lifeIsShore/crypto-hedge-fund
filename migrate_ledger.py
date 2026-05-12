@@ -15,6 +15,7 @@ def main():
     cursor = conn.cursor()
 
     try:
+        cursor.execute('DELETE FROM trades')
         with open(CSV_PATH, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.startswith('Date,Action,Ticker'):
@@ -89,7 +90,8 @@ def main():
         # Build running positions
         positions = {} # ticker -> {qty, price, value}
         
-        for date_str, action, ticker, qty, price, val, fee, notes in cursor.execute('SELECT date, action, ticker, quantity, price_eur, value_eur, fee_eur, notes FROM trades ORDER BY date ASC, id ASC'):
+        trades_list = cursor.execute('SELECT date, action, ticker, quantity, price_eur, value_eur, fee_eur, notes FROM trades ORDER BY date ASC, id ASC').fetchall()
+        for date_str, action, ticker, qty, price, val, fee, notes in trades_list:
             if action.upper() in ("BUY", "SELL") and ticker and ticker != "CASH":
                 if ticker not in positions:
                     positions[ticker] = {"qty": 0.0, "price": 0.0, "value": 0.0}

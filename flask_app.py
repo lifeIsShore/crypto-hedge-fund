@@ -1302,6 +1302,33 @@ def api_mpt_weights():
     return jsonify({"weights": result, "count": len(result)})
 
 
+@app.route("/backtests")
+def backtests():
+    """List backtest report files in the backtests/ folder."""
+    import glob
+    bt_dir = ROOT / "backtests"
+    bt_dir.mkdir(exist_ok=True)
+    files = sorted(bt_dir.glob("*.html"), reverse=True) + \
+            sorted(bt_dir.glob("*.json"), reverse=True) + \
+            sorted(bt_dir.glob("*.csv"),  reverse=True)
+    reports = [{"name": f.name, "size_kb": round(f.stat().st_size / 1024, 1),
+                "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")}
+               for f in files]
+    return render_template("backtests.html",
+        reports=reports,
+        page="health",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route("/backtests/<filename>")
+def backtest_file(filename):
+    """Serve a specific backtest report file."""
+    from flask import send_from_directory
+    bt_dir = ROOT / "backtests"
+    return send_from_directory(bt_dir, filename)
+
+
 @app.route("/history")
 def history():
     return render_template("history.html",
