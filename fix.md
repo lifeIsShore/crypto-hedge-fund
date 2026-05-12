@@ -197,27 +197,53 @@ Done this session:
 - **Upgraded `health.html`**: Added Kill Switch panel (data provider + DB + pipeline freshness status, RED alert if stale)
 - **Ticker links**: Added `onclick="window.location='/ticker/...'"` to position rows in `rebalance.html` and `pead.html`
 
+### Session 2 — 2026-05-12 (Claude Sonnet 4.6)
+**Status: Priority 1 cleanup, new APIs, infrastructure completed.**
+
+Done this session:
+- **Priority 1 — Cleanup complete**:
+  - Moved `dashboard/app.py` and `dashboard/flask_app.py` to `_archive/dashboard/`
+  - Moved `portfolio/server.py` → `_archive/portfolio_server.py`
+  - Moved `portfolio/start.bat` → `_archive/portfolio_start.bat`
+  - Moved `portfolio/dashboard.html` → `_archive/portfolio_dashboard.html`
+  - Moved `.streamlit/` → `_archive/.streamlit/`
+  - Moved all `portfolio/pages/` legacy snippets to `_archive/portfolio_pages/` (analytics, holdings, trades, benchmark, history, ml_research, overview, quant_research, research, risk)
+  - Moved `portfolio/data/ml_state.json` and `engine_state.json` to `_archive/` (canonical copies live in `shared/state/`)
+- **Priority 5 — Kill Switch & Observability**:
+  - Added `check_api_connectivity()` to `flask_app.py` — probes Yahoo Finance + FRED with 5s timeout
+  - Added `/api/kill_switch_status` endpoint — returns live provider status + stale file flags; `kill_switch_active: true` when any provider is down or files are stale
+  - Added `log_pipeline_event()` helper to `flask_app.py` — any pipeline script can call this to write structured entries to `pipeline_logs` table
+  - Added `/api/pipeline_logs` endpoint — filterable by level (INFO/WARNING/ERROR), limit param
+  - Added `pipeline_logs` table to `engine/db/schema.sql` with indexes on date and level
+- **Priority 2 — Real Charts (Seed 42)**:
+  - Added `/api/stress_tests` — beta-adjusted portfolio stress scenarios (COVID, GFC, Dot-Com, 2022, Flash Crash); replaces hardcoded HTML constants
+  - Added `/api/historical_returns/<ticker>` — real daily returns from `prices` table using LAG window function; replaces any JS-synthesised return data
+- **Priority 6 — Infrastructure**:
+  - Created `RUN_SYSTEM.bat` — full pipeline launcher (data → ML → research → dashboard); complements `DASHBOARD_ONLY.bat`
+  - Created `/backtests/` folder for backtest output reports
+
 ### ⏳ STILL TODO (pick up here next session)
 
-**Priority 1 — Cleanup (safe to do, no logic changes):**
-- Delete `dashboard/` folder (redundant — has its own flask_app.py and templates, no longer needed)
-- Delete `portfolio/server.py`, `portfolio/start.bat`, `portfolio/dashboard.html` (obsolete standalone versions)
-- Archive or delete `.streamlit/` folder
-- Migrate useful snippets from `portfolio/pages/` to root `templates/`, then delete the folder
-- Standardize `portfolio/data/` → `shared/state/` (check for any data files not yet in shared/state)
+**Priority 2 — Real Charts (remaining)**:
+- Audit `overview.html` and `analytics.html` for any remaining JS seeded-random / GARCH / synthetic Monte Carlo
+- Wire stress test display in `risk.html` or `analytics.html` to call `/api/stress_tests` instead of hardcoded values
+- Wire ticker return charts in `ticker_detail.html` to call `/api/historical_returns/<ticker>`
 
-**Priority 2 — Real Charts (the "Seed 42" problem):**
-- overview.html: check if any JS-seeded random returns / GARCH / Monte Carlo remain
-- If so: move them to a `risk_engine.py` Python script, expose via `/api/historical_returns/<ticker>` and `/api/portfolio_returns`
-- Replace JS chart data sources with real DB/API calls
-
-**Priority 3 — ML Structure ("Modular Research Lab"):**
+**Priority 3 — ML Structure ("Modular Research Lab")**:
 - Walk-Forward Validation engine (train on rolling windows, not 80/20 split)
-- Model Zoo pattern: separate files per model architecture under `engine/alpha/`
+- `lstm_model.py` under `engine/alpha/` — not yet created
 - Versioned Feature Parquet: save feature matrix as timestamped `.parquet` file
 - Kelly Sizing: pull half-Kelly from ML engine into Overview KPI strip
+- Ensemble probability standardization: enforce `up_proba` as `float 0.0–1.0` contract via `engine/alpha/base_model.py`
 
-**Priority 4 — Frontend API Integration & Ledger Migration:**
-- Connect all APIs into the tabs to ensure they dynamically show the discovered data.
-- Update the Holdings page to accurately display the current portfolio holdings.
-- Migrate the legacy CSV ledger into the SQLite database.
+**Priority 4 — Frontend API Integration**:
+- Ticker Detail page: confirm all 3 data sources wired (ML signal ✓, risk metrics, trade history)
+- Wire `/api/pipeline_logs` into `health.html` log viewer section
+- Wire `/api/kill_switch_status` into Kill Switch panel in `health.html` (live poll every 60s)
+- Add Backtest Reports link in Health or Analytics page pointing to `/backtests/`
+
+**Priority 5 — DB migration**:
+- Run `CREATE TABLE pipeline_logs` against the live `engine_data.db` (schema.sql updated but DB not yet migrated)
+- Migrate legacy CSV ledger into SQLite if not already done (`migrate_ledger.py` exists — verify it ran)
+
+

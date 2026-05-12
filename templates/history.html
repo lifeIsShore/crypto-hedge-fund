@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip">
+  <div class="kpi neutral">
+    <div class="kpi-label">TOTAL RETURN</div>
+    <div class="kpi-value" id="h-ret">—</div>
+    <div class="kpi-sub">since inception</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">CURRENT AUM</div>
+    <div class="kpi-value" id="h-aum">—</div>
+    <div class="kpi-sub">EUR</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">MAX DRAWDOWN</div>
+    <div class="kpi-value" id="h-dd">—</div>
+    <div class="kpi-sub">peak-to-trough</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">ANN. VOLATILITY</div>
+    <div class="kpi-value" id="h-vol">—</div>
+    <div class="kpi-sub">daily x sqrt(252)</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">TOTAL TRADES</div>
+    <div class="kpi-value" id="h-trades">—</div>
+    <div class="kpi-sub">in ledger</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">DATA POINTS</div>
+    <div class="kpi-value" id="h-days">—</div>
+    <div class="kpi-sub">return days</div>
+  </div>
+</div>
+
+<!-- Equity curve (full width) -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">EQUITY CURVE</span>
+    <span class="panel-badge" id="eq-range">FULL HISTORY</span>
+  </div>
+  <div class="panel-body">
+    <div class="chart-wrap" style="height:260px"><canvas id="equityChart"></canvas></div>
+    <div id="no-equity" class="alert alert-info" style="display:none;margin-top:10px">
+      No equity history yet -- log deposits and trades to build a curve.
+    </div>
+  </div>
+</div>
+
+<!-- Rolling vol + return distribution -->
+<div class="grid grid-2" style="margin-top:14px">
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">ROLLING 21D VOLATILITY</span><span
+        class="panel-badge">ANNUALISED %</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:200px"><canvas id="volChart"></canvas></div>
+      <div id="no-vol" class="alert alert-info" style="display:none;margin-top:8px">Need 22+ return days.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RETURN DISTRIBUTION</span><span class="panel-badge">FULL HISTORY
+        HISTOGRAM</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:200px"><canvas id="histChart"></canvas></div>
+      <div id="no-hist" class="alert alert-info" style="display:none;margin-top:8px">Need 10+ return days.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Drawdown curve -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">DRAWDOWN CURVE</span><span class="panel-badge">% FROM PEAK</span>
+  </div>
+  <div class="panel-body">
+    <div class="chart-wrap" style="height:180px"><canvas id="ddChart"></canvas></div>
+    <div id="no-dd" class="alert alert-info" style="display:none;margin-top:8px">No drawdown data.</div>
+  </div>
+</div>
+
+<!-- Full trade ledger -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">FULL TRADE LEDGER</span>
+    <span class="panel-badge" id="ledger-badge">ALL ENTRIES</span>
+  </div>
+  <div class="panel-body">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="lf-ticker" placeholder="Filter ticker..." style="max-width:160px" oninput="filterLedger()">
+      <select id="lf-action" style="max-width:140px" onchange="filterLedger()">
+        <option value="">All actions</option>
+        <option value="BUY">BUY</option>
+        <option value="SELL">SELL</option>
+        <option value="DEPOSIT">DEPOSIT</option>
+        <option value="DIVIDEND">DIVIDEND</option>
+        <option value="FEE">FEE</option>
+      </select>
+      <button class="btn" onclick="loadHistory()" style="font-size:10px;padding:5px 12px">REFRESH</button>
+      <span style="font-size:10px;color:var(--muted);margin-left:auto" id="ledger-count"></span>
+    </div>
+    <div id="no-ledger" class="alert alert-info" style="display:none">No trades in DB yet.</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>DATE</th>
+          <th>TICKER</th>
+          <th>ACTION</th>
+          <th>QTY</th>
+          <th>PRICE EUR</th>
+          <th>TOTAL EUR</th>
+          <th>FEE EUR</th>
+          <th>NOTES</th>
+        </tr>
+      </thead>
+      <tbody id="ledger-tbody">
+        <tr>
+          <td colspan="8" style="color:var(--muted)">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let allLedger = [];
+  let chartInst = {};
+
+  function destroyChart(id) {
+    if (chartInst[id]) { chartInst[id].destroy(); delete chartInst[id]; }
+  }
+
+  async function loadHistory() {
+    ['equityChart', 'volChart', 'histChart', 'ddChart'].forEach(destroyChart);
+
+    let perf;
+    try {
+      perf = await fetch('/api/performance').then(r => r.json());
+    } catch (e) {
+      console.error('Failed /api/performance', e);
+      return;
+    }
+
+    const k = perf.kpis || {};
+    const daily = perf.daily_returns || [];
+    const equity = perf.equity_series || [];
+    allLedger = perf.ledger || [];
+
+    // KPIs
+    const ret = k.real_return_pct || 0;
+    const retEl = document.getElementById('h-ret');
+    retEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
+    retEl.closest('.kpi').className = 'kpi ' + (ret >= 0 ? 'good' : 'danger');
+    document.getElementById('h-aum').textContent = fmtEur(k.current_value);
+    document.getElementById('h-dd').textContent = '-' + ((k.max_drawdown || 0) * 100).toFixed(1) + '%';
+    document.getElementById('h-vol').textContent = (k.ann_volatility_pct || 0).toFixed(1) + '%';
+    document.getElementById('h-trades').textContent = allLedger.length;
+    document.getElementById('h-days').textContent = k.total_return_days || 0;
+
+    // Equity curve
+    if (equity.length >= 2) {
+      document.getElementById('eq-range').textContent = equity[0].date + ' to ' + equity[equity.length - 1].date;
+      chartInst['equityChart'] = new Chart(document.getElementById('equityChart'), {
+        type: 'line',
+        data: {
+          labels: equity.map(x => x.date),
+          datasets: [{
+            label: 'Portfolio Value EUR', data: equity.map(x => x.value),
+            borderColor: 'var(--accent)', backgroundColor: 'rgba(0,229,160,.07)',
+            fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+            y: { ticks: { callback: v => fmtEur(v) } }
+          }
+        }
+      });
+    } else {
+      document.getElementById('no-equity').style.display = 'block';
+    }
+
+    const returns = daily.map(x => x.r);
+
+    // Rolling 21D volatility
+    if (returns.length >= 22) {
+      const volDates = [], volVals = [];
+      for (let i = 21; i < returns.length; i++) {
+        const win = returns.slice(i - 21, i + 1);
+        const mean = win.reduce((a, b) => a + b, 0) / 22;
+        const variance = win.reduce((s, r) => s + (r - mean) ** 2, 0) / 21;
+        volDates.push(daily[i].date);
+        volVals.push(+(Math.sqrt(variance) * Math.sqrt(252) * 100).toFixed(3));
+      }
+      chartInst['volChart'] = new Chart(document.getElementById('volChart'), {
+        type: 'line',
+        data: {
+          labels: volDates,
+          datasets: [{
+            label: 'Rolling 21D Vol %', data: volVals,
+            borderColor: 'var(--accent3)', backgroundColor: 'rgba(245,166,35,.06)',
+            fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+            y: { ticks: { callback: v => v.toFixed(1) + '%' } }
+          }
+        }
+      });
+    } else {
+      document.getElementById('no-vol').style.display = 'block';
+    }
+
+    // Return histogram
+    const pctR = returns.map(r => +(r * 100).toFixed(3));
+    if (pctR.length >= 10) {
+      const min = Math.min(...pctR), max = Math.max(...pctR);
+      const nBins = 30, binW = (max - min) / nBins || 0.001;
+      const bins = Array.from({ length: nBins }, (_, i) => min + i * binW);
+      const counts = new Array(nBins).fill(0);
+      for (const r of pctR) counts[Math.min(nBins - 1, Math.floor((r - min) / binW))]++;
+      chartInst['histChart'] = new Chart(document.getElementById('histChart'), {
+        type: 'bar',
+        data: {
+          labels: bins.map(b => b.toFixed(2) + '%'),
+          datasets: [{
+            label: 'Days', data: counts,
+            backgroundColor: bins.map(b => b >= 0 ? 'rgba(0,229,160,.65)' : 'rgba(255,77,109,.65)'),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+            y: { ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    } else {
+      document.getElementById('no-hist').style.display = 'block';
+    }
+
+    // Drawdown curve
+    if (returns.length >= 2) {
+      let peak = -Infinity, cum = 1;
+      const ddDates = [], ddVals = [];
+      for (let i = 0; i < returns.length; i++) {
+        cum *= (1 + returns[i]);
+        if (cum > peak) peak = cum;
+        ddDates.push(daily[i].date);
+        ddVals.push(+(peak > 0 ? -((peak - cum) / peak) * 100 : 0).toFixed(3));
+      }
+      chartInst['ddChart'] = new Chart(document.getElementById('ddChart'), {
+        type: 'line',
+        data: {
+          labels: ddDates,
+          datasets: [{
+            label: 'Drawdown %', data: ddVals,
+            borderColor: 'var(--accent2)', backgroundColor: 'rgba(255,77,109,.08)',
+            fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.2
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+            y: { suggestedMax: 0, ticks: { callback: v => v.toFixed(1) + '%' } }
+          }
+        }
+      });
+    } else {
+      document.getElementById('no-dd').style.display = 'block';
+    }
+
+    renderLedger(allLedger);
+  }
+
+  function renderLedger(trades) {
+    const tbody = document.getElementById('ledger-tbody');
+    const noEl = document.getElementById('no-ledger');
+    document.getElementById('ledger-count').textContent = trades.length + ' entries shown';
+    document.getElementById('ledger-badge').textContent = trades.length + ' ENTRIES';
+    if (!trades.length) { noEl.style.display = 'block'; tbody.innerHTML = ''; return; }
+    noEl.style.display = 'none';
+    const aCol = { BUY: 'var(--accent)', SELL: 'var(--accent2)', DEPOSIT: 'var(--accent4)', DIVIDEND: 'var(--accent3)', FEE: 'var(--muted)' };
+    tbody.innerHTML = [...trades].reverse().map(t => {
+      const ac = (t.action || '').toUpperCase();
+      const qty = t.quantity != null ? ((+t.quantity) % 1 === 0 ? (+t.quantity).toFixed(0) : (+t.quantity).toFixed(4)) : '—';
+      return '<tr>'
+        + '<td>' + (t.date || '—') + '</td>'
+        + '<td style="font-weight:500;cursor:pointer;color:var(--accent4)" onclick="window.location=\'/ticker/' + t.ticker + '\'">' + (t.ticker || '—') + '</td>'
+        + '<td style="color:' + (aCol[ac] || 'var(--text)') + ';font-weight:600">' + ac + '</td>'
+        + '<td>' + qty + '</td>'
+        + '<td>' + (t.price_eur != null ? fmtEur(t.price_eur) : '—') + '</td>'
+        + '<td style="font-weight:500">' + fmtEur(t.total_eur != null ? t.total_eur : t.value_eur) + '</td>'
+        + '<td style="color:var(--accent2)">' + (t.fee_eur && +t.fee_eur > 0 ? fmtEur(t.fee_eur) : '—') + '</td>'
+        + '<td style="color:var(--muted);font-size:10px">' + (t.notes || '—') + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function filterLedger() {
+    const q = document.getElementById('lf-ticker').value.toLowerCase();
+    const ac = document.getElementById('lf-action').value;
+    let f = allLedger;
+    if (q) f = f.filter(t => (t.ticker || '').toLowerCase().includes(q));
+    if (ac) f = f.filter(t => (t.action || '').toUpperCase() === ac);
+    renderLedger(f);
+  }
+
+  loadHistory();
+</script>
+{% endblock %}

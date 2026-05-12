@@ -365,3 +365,22 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     error_msg    TEXT,
     started_at   TEXT        DEFAULT (datetime('now'))
 );
+
+-- ─────────────────────────────────────────────────────────────
+-- PIPELINE LOGS  (structured logs readable by health.html)
+-- Written by all pipeline scripts via log_pipeline_event().
+-- Replaces reading flat .log files from disk.
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS pipeline_logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at   TEXT    DEFAULT (datetime('now')),
+    level       TEXT    NOT NULL DEFAULT 'INFO',  -- INFO | WARNING | ERROR | CRITICAL
+    step_name   TEXT,                              -- e.g. 'data_ingestion', 'ml_pipeline'
+    message     TEXT    NOT NULL,
+    detail      TEXT,                              -- optional JSON payload
+    run_date    TEXT    DEFAULT (date('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_pipeline_logs_date  ON pipeline_logs (run_date, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pipeline_logs_level ON pipeline_logs (level, logged_at DESC);

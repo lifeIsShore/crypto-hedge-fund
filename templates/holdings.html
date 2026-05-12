@@ -28,6 +28,56 @@
   </div>
 </div>
 
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">MPT OPTIMAL WEIGHTS</span>
+    <span class="panel-badge">BLACK-LITTERMAN MODEL</span>
+  </div>
+  <div class="panel-body">
+    <table class="tbl" id="mpt-tbl">
+      <thead><tr>
+        <th>TICKER</th>
+        <th>CURRENT WT</th>
+        <th>OPTIMAL WT</th>
+        <th>DELTA WT</th>
+        <th>EXPECTED RET</th>
+        <th>BL RET</th>
+      </tr></thead>
+      <tbody id="mpt-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MPT Optimal Weights panel -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">MPT OPTIMAL WEIGHTS</span>
+    <span class="panel-badge" id="mpt-badge">BLACK-LITTERMAN · LATEST RUN</span>
+  </div>
+  <div class="panel-body">
+    <div id="no-mpt" class="alert alert-info" style="display:none">No model output yet — run the pipeline to generate optimal weights.</div>
+    <table class="tbl" id="mpt-tbl">
+      <thead><tr>
+        <th>TICKER</th>
+        <th>CURRENT WT</th>
+        <th>OPTIMAL WT</th>
+        <th style="width:200px">DELTA</th>
+        <th>EXP RETURN</th>
+        <th>BL RETURN</th>
+        <th>VALUE €</th>
+        <th>ACTION</th>
+      </tr></thead>
+      <tbody id="mpt-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+
+    <!-- Weight comparison bar chart -->
+    <div style="margin-top:16px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">WEIGHT COMPARISON — CURRENT vs OPTIMAL</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="mptChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -68,6 +118,84 @@ async function loadHoldings(){
   }).join('');
 }
 
+
+
+async function loadMPT() {
+  const data = await fetch('/api/mpt_weights').then(r => r.json()).catch(() => ({}));
+  const weights = data.weights || [];
+  const tbody = document.getElementById('mpt-tbody');
+  const noEl  = document.getElementById('no-mpt');
+
+  if (!weights.length) {
+    if (noEl) noEl.style.display = 'block';
+    tbody.innerHTML = '';
+    return;
+  }
+
+  const badge = document.getElementById('mpt-badge');
+  if (badge) badge.textContent = 'BLACK-LITTERMAN · ' + weights.length + ' POSITIONS';
+
+  tbody.innerHTML = weights.map(w => {
+    const cur   = (+(w.current_weight || 0) * 100).toFixed(1);
+    const opt   = (+(w.optimal_weight || 0) * 100).toFixed(1);
+    const delta = +(w.delta || 0) * 100;
+    const dSign = delta >= 0 ? '+' : '';
+    const dCol  = delta >= 0.5 ? 'var(--accent)' : delta <= -0.5 ? 'var(--accent2)' : 'var(--muted)';
+    const action  = delta > 1 ? 'BUY' : delta < -1 ? 'SELL' : 'HOLD';
+    const aClass  = action === 'BUY' ? 'sig-buy' : action === 'SELL' ? 'sig-sell' : 'sig-neutral';
+    const wCur = Math.min(100, +cur);
+    const wOpt = Math.min(100, +opt);
+    const barHtml = '<div style="display:flex;align-items:center;gap:6px">'
+      + '<div style="flex:1;height:5px;background:var(--border);position:relative">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:' + wCur + '%;background:rgba(100,149,237,.6)"></div>'
+      + '</div>'
+      + '<div style="flex:1;height:5px;background:var(--border);position:relative">'
+        + '<div style="position:absolute;left:0;top:0;height:100%;width:' + wOpt + '%;background:rgba(0,229,160,.6)"></div>'
+      + '</div>'
+      + '<span style="color:' + dCol + ';min-width:40px;text-align:right;font-size:9px">' + dSign + delta.toFixed(1) + '%</span>'
+      + '</div>';
+    const expR = w.expected_return != null ? (+(w.expected_return)*100).toFixed(2)+'%' : '—';
+    const blR  = w.bl_return      != null ? (+(w.bl_return)*100).toFixed(2)+'%'       : '—';
+    const valE = w.value_eur      != null ? fmtEur(w.value_eur)                        : '—';
+    return '<tr>'
+      + '<td style="font-weight:500;color:var(--accent);cursor:pointer" onclick="window.location=\'/ticker/' + w.ticker + '\'">'
+        + w.ticker + '</td>'
+      + '<td style="color:var(--accent4)">' + cur + '%</td>'
+      + '<td style="color:var(--accent)">'  + opt + '%</td>'
+      + '<td>' + barHtml + '</td>'
+      + '<td>' + expR + '</td>'
+      + '<td>' + blR  + '</td>'
+      + '<td>' + valE + '</td>'
+      + '<td class="' + aClass + '">' + action + '</td>'
+      + '</tr>';
+  }).join('');
+
+  const mptCanvas = document.getElementById('mptChart');
+  if (mptCanvas) {
+    new Chart(mptCanvas, {
+      type: 'bar',
+      data: {
+        labels: weights.map(w => w.ticker),
+        datasets: [
+          { label: 'Current %', data: weights.map(w => +(+(w.current_weight||0)*100).toFixed(2)),
+            backgroundColor: 'rgba(100,149,237,.5)', borderColor: 'var(--accent4)', borderWidth: 1 },
+          { label: 'Optimal %', data: weights.map(w => +(+(w.optimal_weight||0)*100).toFixed(2)),
+            backgroundColor: 'rgba(0,229,160,.45)',  borderColor: 'var(--accent)',  borderWidth: 1 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { ticks: { callback: function(v){ return v.toFixed(1) + '%'; } } }
+        }
+      }
+    });
+  }
+}
+
 loadHoldings();
+loadMPT();
 </script>
 {% endblock %}

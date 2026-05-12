@@ -3,139 +3,400 @@
 
 {% block content %}
 
+<!-- KPI strip — populated from /api/performance -->
 <div class="kpi-strip">
-  <div class="kpi neutral"><div class="kpi-label">TOTAL POSITIONS</div><div class="kpi-value" id="a-n">—</div></div>
-  <div class="kpi good">   <div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="a-total">—</div><div class="kpi-sub">EUR</div></div>
-  <div class="kpi neutral"><div class="kpi-label">TOTAL TRADES</div><div class="kpi-value" id="a-trades">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">CUMULATIVE RETURN</div><div class="kpi-value" id="a-cumret">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">LAST UPDATED</div><div class="kpi-value" id="a-updated" style="font-size:12px">{{ now }}</div></div>
+  <div class="kpi good">   <div class="kpi-label">NET P&amp;L</div>    <div class="kpi-value" id="a-pnl">—</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">REAL RETURN</div>  <div class="kpi-value" id="a-ret">—</div><div class="kpi-sub">since first deposit</div></div>
+  <div class="kpi neutral"><div class="kpi-label">SHARPE RATIO</div> <div class="kpi-value" id="a-sharpe">—</div><div class="kpi-sub">annualised</div></div>
+  <div class="kpi neutral"><div class="kpi-label">MAX DRAWDOWN</div> <div class="kpi-value" id="a-dd">—</div><div class="kpi-sub">peak-to-trough</div></div>
+  <div class="kpi neutral"><div class="kpi-label">WIN RATE</div>     <div class="kpi-value" id="a-wr">—</div><div class="kpi-sub">% profitable days</div></div>
+  <div class="kpi neutral"><div class="kpi-label">ANN. VOL</div>     <div class="kpi-value" id="a-vol">—</div><div class="kpi-sub">daily × √252</div></div>
 </div>
 
+<!-- Row 1: Equity curve + ratio scorecard -->
 <div class="grid grid-2" style="margin-top:14px">
 
-  <!-- Portfolio allocation chart -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">EQUITY CURVE</span><span class="panel-badge" id="eq-badge">PORTFOLIO VALUE €</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:220px"><canvas id="equityChart"></canvas></div>
+      <div id="no-equity" class="alert alert-info" style="display:none;margin-top:10px">No equity history yet — log trades to build a curve.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RATIO SCORECARD</span><span class="panel-badge">RISK-ADJUSTED METRICS</span></div>
+    <div class="panel-body">
+      <table class="tbl" id="ratio-tbl">
+        <tbody>
+          <tr><td style="color:var(--muted)">Sharpe Ratio</td>     <td id="r-sharpe" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Calmar Ratio</td>     <td id="r-calmar" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Profit Factor</td>    <td id="r-pf" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Info Ratio</td>       <td id="r-ir" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Consistency Score</td><td id="r-cs" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Win / Loss Ratio</td> <td id="r-wl" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Expectancy / day</td> <td id="r-exp" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">VaR 95% (daily)</td>  <td id="r-var95" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">CVaR 95% (daily)</td> <td id="r-cvar" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">VaR 99% (daily)</td>  <td id="r-var99" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Skewness</td>         <td id="r-skew" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Excess Kurtosis</td>  <td id="r-kurt" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Best Day</td>         <td id="r-best" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Worst Day</td>        <td id="r-worst" style="text-align:right">—</td></tr>
+          <tr><td style="color:var(--muted)">Fee Drag</td>         <td id="r-fee" style="text-align:right">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 2: Daily return bar + win/loss histogram -->
+<div class="grid grid-2" style="margin-top:14px">
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">DAILY RETURNS</span><span class="panel-badge">LAST 90 DAYS %</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:200px"><canvas id="dailyChart"></canvas></div>
+      <div id="no-daily" class="alert alert-info" style="display:none;margin-top:8px">No daily return data.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RETURN DISTRIBUTION</span><span class="panel-badge">WIN / LOSS HISTOGRAM</span></div>
+    <div class="panel-body">
+      <div class="chart-wrap" style="height:200px"><canvas id="histChart"></canvas></div>
+      <div id="no-hist" class="alert alert-info" style="display:none;margin-top:8px">Need ≥10 trading days for histogram.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 3: Return breakdown + streak panel -->
+<div class="grid grid-2" style="margin-top:14px">
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">RETURN BREAKDOWN</span><span class="panel-badge">P&amp;L DECOMPOSITION</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">CAPITAL FLOWS</div>
+          <div class="mini-row"><span>Total Deposited</span><span id="bd-dep">—</span></div>
+          <div class="mini-row"><span>Dividends Received</span><span id="bd-div">—</span></div>
+          <div class="mini-row"><span>Fees Paid</span><span style="color:var(--accent2)" id="bd-fee">—</span></div>
+          <div class="mini-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;font-weight:600">
+            <span>Net P&amp;L</span><span id="bd-pnl">—</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">PORTFOLIO TODAY</div>
+          <div class="mini-row"><span>Holdings Value</span><span id="bd-hold">—</span></div>
+          <div class="mini-row"><span>Cash Balance</span><span id="bd-cash">—</span></div>
+          <div class="mini-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;font-weight:600">
+            <span>Total AUM</span><span id="bd-aum">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">STREAK ANALYSIS</span><span class="panel-badge">WIN / LOSS RUNS</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="streak-box" id="s-win-box">
+          <div class="streak-label">BEST WIN STREAK</div>
+          <div class="streak-val" id="s-win">—</div>
+          <div class="streak-sub">consecutive days</div>
+        </div>
+        <div class="streak-box streak-bad" id="s-loss-box">
+          <div class="streak-label">WORST LOSS STREAK</div>
+          <div class="streak-val" id="s-loss">—</div>
+          <div class="streak-sub">consecutive days</div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;background:var(--surface2);border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px">CURRENT STREAK</div>
+        <div style="font-size:18px;font-weight:600" id="s-cur">—</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px" id="s-cur-type">—</div>
+      </div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:10px">
+        <div><span style="color:var(--muted)">Win days: </span><span id="s-wdays" style="color:var(--accent)">—</span></div>
+        <div><span style="color:var(--muted)">Loss days: </span><span id="s-ldays" style="color:var(--accent2)">—</span></div>
+        <div><span style="color:var(--muted)">Avg win: </span><span id="s-avgw" style="color:var(--accent)">—</span></div>
+        <div><span style="color:var(--muted)">Avg loss: </span><span id="s-avgl" style="color:var(--accent2)">—</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 4: Portfolio allocation + position detail -->
+<div class="grid grid-2" style="margin-top:14px">
+
   <div class="panel">
     <div class="panel-header"><span class="panel-title">PORTFOLIO ALLOCATION</span><span class="panel-badge">BY VALUE €</span></div>
     <div class="panel-body">
-      <div class="chart-wrap" style="height:240px"><canvas id="allocChart"></canvas></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="allocChart"></canvas></div>
     </div>
   </div>
 
-  <!-- Performance chart -->
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">PERFORMANCE HISTORY</span><span class="panel-badge">CUMULATIVE RETURN %</span></div>
+    <div class="panel-header"><span class="panel-title">POSITION BREAKDOWN</span><span class="panel-badge">DETAILED VIEW</span></div>
     <div class="panel-body">
-      <div class="chart-wrap" style="height:240px"><canvas id="perfChart"></canvas></div>
-      <div id="no-perf" class="alert alert-info" style="display:none;margin-top:10px">No performance history in DB.</div>
+      <table class="tbl">
+        <thead><tr><th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th></tr></thead>
+        <tbody>
+          {% for p in positions %}
+          <tr style="cursor:pointer" onclick="window.location='/ticker/{{ p.ticker }}'">
+            <td style="font-weight:500;color:var(--accent)">{{ p.ticker }}</td>
+            <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
+            <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
+            <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
+            <td>{{ '%.1f%%'|format(p.weight|float * 100) if p.weight else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="color:var(--muted)">No positions. Run pipeline.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
-</div>
-
-<!-- Positions detail -->
-<div class="panel" style="margin-top:14px">
-  <div class="panel-header"><span class="panel-title">POSITION BREAKDOWN</span><span class="panel-badge">DETAILED VIEW</span></div>
-  <div class="panel-body">
-    <table class="tbl">
-      <thead><tr><th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th></tr></thead>
-      <tbody>
-        {% for p in positions %}
-        <tr style="cursor:pointer" onclick="window.location='/ticker/{{ p.ticker }}'">
-          <td style="font-weight:500;color:var(--accent)">{{ p.ticker }}</td>
-          <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
-          <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
-          <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
-          <td>{{ '%.1f%%'|format(p.weight|float * 100) if p.weight else '—' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" style="color:var(--muted)">No positions. Run pipeline.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Recent trades -->
-<div class="panel" style="margin-top:14px">
-  <div class="panel-header"><span class="panel-title">RECENT TRADES</span><span class="panel-badge">LAST 100</span></div>
-  <div class="panel-body">
-    <table class="tbl">
-      <thead><tr><th>DATE</th><th>TICKER</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th></tr></thead>
-      <tbody>
-        {% for t in trades %}
-        <tr>
-          <td>{{ t.date or '—' }}</td>
-          <td style="cursor:pointer;color:var(--accent)" onclick="window.location='/ticker/{{ t.ticker }}'">{{ t.ticker }}</td>
-          <td class="{{ 'sig-buy' if t.action == 'BUY' else 'sig-sell' }}">{{ t.action }}</td>
-          <td>{{ '%d'|format(t.quantity|int) if t.quantity else '—' }}</td>
-          <td>{{ '€%.2f'|format(t.price_eur|float) if t.price_eur else '—' }}</td>
-          <td>{{ '€%.0f'|format(t.total_eur|float) if t.total_eur else '—' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="6" style="color:var(--muted)">No trades yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
+<style>
+.mini-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; font-size: 11px;
+  border-bottom: 1px solid rgba(30,37,53,.5);
+}
+.mini-row:last-child { border-bottom: none; }
+.streak-box {
+  padding: 12px 14px;
+  background: rgba(0,229,160,.06);
+  border: 1px solid rgba(0,229,160,.2);
+}
+.streak-box.streak-bad {
+  background: rgba(255,77,109,.06);
+  border-color: rgba(255,77,109,.2);
+}
+.streak-label { font-size: 9px; color: var(--muted); letter-spacing: .1em; margin-bottom: 6px; }
+.streak-val   { font-size: 28px; font-weight: 600; }
+.streak-sub   { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.streak-box .streak-val   { color: var(--accent); }
+.streak-box.streak-bad .streak-val { color: var(--accent2); }
+</style>
+
 <script>
-// KPI population
-document.getElementById('a-n').textContent      = {{ positions|length }};
-document.getElementById('a-total').textContent  = fmtEur({{ positions|sum(attribute='value_eur')|float|round(2) }});
-document.getElementById('a-trades').textContent = {{ trades|length }};
+async function loadAnalytics() {
+  let perf;
+  try {
+    perf = await fetch('/api/performance').then(r => r.json());
+  } catch(e) {
+    console.error('Failed to load /api/performance', e);
+    return;
+  }
 
-// Allocation bar chart
-const positions = {{ positions|tojson }};
-if(positions.length){
-  new Chart(document.getElementById('allocChart'),{
-    type:'bar',
-    data:{
-      labels: positions.map(p=>p.ticker),
-      datasets:[{
-        label:'Value €',
-        data: positions.map(p=>+(p.value_eur||0)),
-        backgroundColor:'rgba(0,229,160,.5)',
-        borderColor:'var(--accent)',
-        borderWidth:1
-      }]
-    },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtEur(v)}}}}
-  });
+  const k = perf.kpis || {};
+  const daily = perf.daily_returns || [];
+  const equity = perf.equity_series || [];
+
+  // ── KPI strip ─────────────────────────────────────────────────────────
+  const pnl = k.net_pnl || 0;
+  const pnlEl = document.getElementById('a-pnl');
+  pnlEl.textContent = fmtEur(pnl);
+  pnlEl.closest('.kpi').className = 'kpi ' + (pnl >= 0 ? 'good' : 'danger');
+
+  const retEl = document.getElementById('a-ret');
+  retEl.textContent = fmtPct(k.real_return_pct || 0, 2);
+  retEl.closest('.kpi').className = 'kpi ' + ((k.real_return_pct || 0) >= 0 ? 'good' : 'danger');
+
+  const sharpe = k.sharpe_ratio || 0;
+  const sharpeEl = document.getElementById('a-sharpe');
+  sharpeEl.textContent = sharpe.toFixed(2);
+  sharpeEl.closest('.kpi').className = 'kpi ' + (sharpe >= 1 ? 'good' : sharpe >= 0 ? 'neutral' : 'danger');
+
+  document.getElementById('a-dd').textContent  = fmtPct((k.max_drawdown || 0) * -100, 1);
+  document.getElementById('a-wr').textContent  = fmtPct((k.win_rate || 0) * 100, 1);
+  document.getElementById('a-vol').textContent = fmtPct(k.ann_volatility_pct || 0, 1);
+
+  // ── Ratio scorecard ────────────────────────────────────────────────────
+  function colorNum(id, v, goodThresh, dangerThresh, pct=false, dp=2) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = pct ? fmtPct(v, dp) : (v >= 0 ? '' : '') + v.toFixed(dp);
+    el.style.color = v >= goodThresh ? 'var(--accent)' : v <= dangerThresh ? 'var(--accent2)' : 'var(--accent3)';
+  }
+  colorNum('r-sharpe', k.sharpe_ratio || 0,        1,    0);
+  colorNum('r-calmar', k.calmar_ratio || 0,        1,    0);
+  colorNum('r-pf',     k.profit_factor || 0,       1.5,  1);
+  colorNum('r-ir',     k.information_ratio || 0,   0.5, -0.5);
+  colorNum('r-cs',     k.consistency_score || 0,   0.4,  0.1);
+  colorNum('r-wl',     k.win_loss_ratio || 0,      1.5,  0.8);
+  colorNum('r-exp',    (k.expectancy_pct || 0),    0.05, 0, true, 4);
+  colorNum('r-var95',  (k.var95_daily_pct || 0),   0,   -1, true, 2);
+  colorNum('r-cvar',   (k.cvar95_daily_pct || 0),  0,   -1.5, true, 2);
+  colorNum('r-var99',  (k.var99_daily_pct || 0),   0,   -2, true, 2);
+
+  // Skewness — positive is good
+  const skEl = document.getElementById('r-skew');
+  if (skEl) {
+    skEl.textContent = (k.skewness || 0).toFixed(3);
+    skEl.style.color = (k.skewness || 0) >= 0 ? 'var(--accent)' : 'var(--accent2)';
+  }
+  // Excess kurtosis — lower is better (fat tails bad)
+  const kuEl = document.getElementById('r-kurt');
+  if (kuEl) {
+    kuEl.textContent = (k.excess_kurtosis || 0).toFixed(3);
+    kuEl.style.color = (k.excess_kurtosis || 0) <= 1 ? 'var(--accent)' : 'var(--accent3)';
+  }
+
+  const bestEl  = document.getElementById('r-best');
+  const worstEl = document.getElementById('r-worst');
+  const feeEl   = document.getElementById('r-fee');
+  if (bestEl)  { bestEl.textContent  = fmtPct(k.best_day_pct  || 0, 2); bestEl.style.color  = 'var(--accent)'; }
+  if (worstEl) { worstEl.textContent = fmtPct(k.worst_day_pct || 0, 2); worstEl.style.color = 'var(--accent2)'; }
+  if (feeEl)   { feeEl.textContent   = fmtPct(k.fee_drag_pct  || 0, 3); feeEl.style.color   = 'var(--accent3)'; }
+
+  // ── Equity curve ───────────────────────────────────────────────────────
+  if (equity.length >= 2) {
+    new Chart(document.getElementById('equityChart'), {
+      type: 'line',
+      data: {
+        labels: equity.map(x => x.date),
+        datasets: [{
+          label: 'Portfolio Value €',
+          data:  equity.map(x => x.value),
+          borderColor:     'var(--accent)',
+          backgroundColor: 'rgba(0,229,160,.07)',
+          fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+          y: { ticks: { callback: v => fmtEur(v) } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('no-equity').style.display = 'block';
+  }
+
+  // ── Daily return bar chart (last 90 days) ─────────────────────────────
+  const last90 = daily.slice(-90);
+  if (last90.length) {
+    const dColors = last90.map(x => x.r >= 0 ? 'rgba(0,229,160,.7)' : 'rgba(255,77,109,.7)');
+    new Chart(document.getElementById('dailyChart'), {
+      type: 'bar',
+      data: {
+        labels: last90.map(x => x.date),
+        datasets: [{
+          label: 'Daily Return %',
+          data:  last90.map(x => +(x.r * 100).toFixed(3)),
+          backgroundColor: dColors,
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+          y: { ticks: { callback: v => v.toFixed(1) + '%' } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('no-daily').style.display = 'block';
+  }
+
+  // ── Win/loss histogram ────────────────────────────────────────────────
+  const returns = daily.map(x => +(x.r * 100).toFixed(3));
+  if (returns.length >= 10) {
+    const min = Math.min(...returns), max = Math.max(...returns);
+    const nBins = 30;
+    const binW  = (max - min) / nBins;
+    const bins  = Array.from({length: nBins}, (_, i) => min + i * binW);
+    const counts = new Array(nBins).fill(0);
+    for (const r of returns) {
+      const idx = Math.min(nBins - 1, Math.floor((r - min) / binW));
+      counts[idx]++;
+    }
+    const barColors = bins.map(b => b >= 0 ? 'rgba(0,229,160,.65)' : 'rgba(255,77,109,.65)');
+    new Chart(document.getElementById('histChart'), {
+      type: 'bar',
+      data: {
+        labels: bins.map(b => b.toFixed(2) + '%'),
+        datasets: [{ label: 'Days', data: counts, backgroundColor: barColors, borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+          y: { ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('no-hist').style.display = 'block';
+  }
+
+  // ── Return breakdown ───────────────────────────────────────────────────
+  document.getElementById('bd-dep').textContent  = fmtEur(k.total_deposited);
+  document.getElementById('bd-div').textContent  = fmtEur(k.total_dividends);
+  document.getElementById('bd-fee').textContent  = '−' + fmtEur(k.total_fees);
+  const pnlBd = document.getElementById('bd-pnl');
+  pnlBd.textContent   = fmtEur(k.net_pnl);
+  pnlBd.style.color   = (k.net_pnl || 0) >= 0 ? 'var(--accent)' : 'var(--accent2)';
+  document.getElementById('bd-hold').textContent = fmtEur(k.holdings_value);
+  document.getElementById('bd-cash').textContent = fmtEur(k.cash_eur);
+  document.getElementById('bd-aum').textContent  = fmtEur(k.current_value);
+
+  // ── Streak analysis ────────────────────────────────────────────────────
+  document.getElementById('s-win').textContent  = k.best_win_streak  ?? '—';
+  document.getElementById('s-loss').textContent = k.worst_loss_streak ?? '—';
+  const curDays = k.current_streak ?? 0;
+  const curType = (k.current_streak_type || 'flat').toLowerCase();
+  document.getElementById('s-cur').textContent      = curDays + ' day' + (curDays !== 1 ? 's' : '');
+  document.getElementById('s-cur-type').textContent = curType === 'win' ? '🟢 Win streak' : curType === 'loss' ? '🔴 Loss streak' : '⚪ Flat';
+  document.getElementById('s-cur').style.color      = curType === 'win' ? 'var(--accent)' : curType === 'loss' ? 'var(--accent2)' : 'var(--muted)';
+
+  document.getElementById('s-wdays').textContent = k.win_days  ?? '—';
+  document.getElementById('s-ldays').textContent = k.loss_days ?? '—';
+  document.getElementById('s-avgw').textContent  = fmtPct(k.avg_win_pct  || 0, 3);
+  document.getElementById('s-avgl').textContent  = fmtPct(k.avg_loss_pct || 0, 3);
+
+  // ── Allocation chart (from SSR positions) ─────────────────────────────
+  const positions = {{ positions|tojson }};
+  if (positions.length) {
+    new Chart(document.getElementById('allocChart'), {
+      type: 'bar',
+      data: {
+        labels: positions.map(p => p.ticker),
+        datasets: [{
+          label: 'Value €',
+          data:  positions.map(p => +(p.value_eur || 0)),
+          backgroundColor: 'rgba(0,229,160,.5)',
+          borderColor: 'var(--accent)', borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => fmtEur(v) } } }
+      }
+    });
+  }
 }
 
-// Performance chart
-const perf = {{ perf|tojson }};
-if(perf.length){
-  const labels = perf.map(p=>p.date).reverse();
-  const rets   = perf.map(p=>+(p.cumulative_return_pct||0)).reverse();
-  document.getElementById('a-cumret').textContent = fmtPct(rets[rets.length-1]);
-  new Chart(document.getElementById('perfChart'),{
-    type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label:'Cumulative Return %',
-        data: rets,
-        borderColor:'var(--accent)',
-        backgroundColor:'rgba(0,229,160,.08)',
-        fill:true, pointRadius:0, borderWidth:1.5, tension:0.3
-      }]
-    },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{maxTicksLimit:8},grid:{display:false}},
-        y:{ticks:{callback:v=>v.toFixed(1)+'%'}}
-      }}
-  });
-} else {
-  document.getElementById('no-perf').style.display='block';
-}
+loadAnalytics();
 </script>
 {% endblock %}
