@@ -14,7 +14,9 @@ No Streamlit dependency.  Streamlit pages still exist as a fallback.
 
 import sys, os, json, logging, tempfile, shutil
 from pathlib import Path
-from datetime import datetime, date
+import yfinance as yf
+from datetime import datetime, date, timedelta
+import pandas as pd
 import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
@@ -90,6 +92,25 @@ def _get_latest_fx_rate(pair="USDEUR"):
     return fallbacks.get(pair, 1.0)
 
 
+def _get_live_price_fallback(ticker):
+    """
+    Emergency live fetch from yfinance if DB is stale/missing.
+    Returns: (price, currency)
+    """
+    try:
+        # We use a very small period for speed
+        data = yf.download(ticker, period="1d", interval="1m", progress=False, auto_adjust=True)
+        if not data.empty:
+            # Get latest close
+            price = float(data['Close'].iloc[-1])
+            # Basic currency heuristic: .DE/.AS/.PA are EUR, everything else USD
+            curr = "EUR" if any(ticker.endswith(s) for s in [".DE", ".AS", ".PA"]) else "USD"
+            return price, curr
+    except Exception as e:
+        log.warning(f"Live fallback failed for {ticker}: {e}")
+    return None, "EUR"
+
+
 def _live_positions():
     """
     Live Reconstruction model — compute current holdings directly from the
@@ -140,7 +161,12 @@ def _live_positions():
         gbp_eur = _get_latest_fx_rate("GBPEUR")
 
         for ticker, qty in qty_map.items():
-            price_data = price_map.get(ticker, (None, "EUR"))
+            price_data = price_map.get(ticker)
+            if not price_data:
+                # DB MISSING — try live fetch from yfinance
+                log.info(f"Price missing for {ticker} in DB — attempting live fallback.")
+                price_data = _get_live_price_fallback(ticker)
+                
             raw_price, curr = price_data
 
             # Apply dynamic conversion if not EUR
