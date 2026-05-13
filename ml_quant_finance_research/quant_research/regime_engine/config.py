@@ -46,10 +46,24 @@ EW_TRIGGER_COUNT         = 2     # how many EW signals must fire to raise warnin
 
 # ── Output / Cache ───────────────────────────────────────────────────────────
 import os
-_base = os.path.join(os.path.dirname(__file__), "data")
+import sys
 
-REGIME_DB_PATH     = os.path.join(_base, "regime_history.csv")
-REGIME_STATE_PATH  = os.path.join(_base, "regime_state.json")
+# Ensure root is in path for shared imports
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.normpath(os.path.join(_HERE, "..", "..", "..", ".."))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+try:
+    from shared.state_paths import REGIME_HISTORY_PATH as REGIME_DB_PATH
+    from shared.state_paths import REGIME_STATE_PATH
+except ImportError:
+    # Fallback if run in isolation
+    _base = os.path.join(_HERE, "data")
+    REGIME_DB_PATH     = os.path.join(_base, "regime_history.csv")
+    REGIME_STATE_PATH  = os.path.join(_base, "regime_state.json")
+
 LOOKBACK_DAYS      = 504   # match main engine
-FRED_CACHE_PATH    = os.path.join(_base, "fred_cache.csv")
+_base_local = os.path.join(_HERE, "data")
+FRED_CACHE_PATH    = os.path.join(_base_local, "fred_cache.csv")
 FRED_CACHE_TTL_HRS = 6     # refresh FRED data every 6 hours

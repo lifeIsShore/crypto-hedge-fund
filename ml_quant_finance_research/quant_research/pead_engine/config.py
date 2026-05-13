@@ -91,13 +91,27 @@ SECTOR_DRIFT_WINDOWS = {
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 import os
-_base = os.path.join(os.path.dirname(__file__), "data")
+import sys
 
-PEAD_DB_PATH         = os.path.join(_base, "pead_setups.csv")
-PEAD_STATE_PATH      = os.path.join(_base, "pead_state.json")
-EARNINGS_CACHE_PATH  = os.path.join(_base, "earnings_cache.csv")
-PRICE_CACHE_PATH     = os.path.join(_base, "pead_prices.csv")
-REGRESSION_CACHE_PATH = os.path.join(_base, "regression_models.json")
+# Ensure root is in path for shared imports
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.normpath(os.path.join(_HERE, "..", "..", "..", ".."))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+try:
+    from shared.state_paths import PEAD_SETUPS_PATH as PEAD_DB_PATH
+    from shared.state_paths import PEAD_STATE_PATH
+except ImportError:
+    # Fallback if run in isolation
+    _base = os.path.join(_HERE, "data")
+    PEAD_DB_PATH         = os.path.join(_base, "pead_setups.csv")
+    PEAD_STATE_PATH      = os.path.join(_base, "pead_state.json")
+
+_base_local = os.path.join(_HERE, "data")
+EARNINGS_CACHE_PATH  = os.path.join(_base_local, "earnings_cache.csv")
+PRICE_CACHE_PATH     = os.path.join(_base_local, "pead_prices.csv")
+REGRESSION_CACHE_PATH = os.path.join(_base_local, "regression_models.json")
 
 EARNINGS_CACHE_TTL_HRS = 12   # refresh earnings calendar every 12 hours
 PRICE_CACHE_TTL_HRS    = 6
