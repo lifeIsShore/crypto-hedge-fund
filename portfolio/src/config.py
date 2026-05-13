@@ -1,4 +1,15 @@
 # src/config.py
+# ──────────────────────────────────────────────────────────────────────────────
+# CENTRAL TICKER CONFIG  (single source of truth)
+# ──────────────────────────────────────────────────────────────────────────────
+# To add a stock: append to ASSET_UNIVERSE below.  That's it.
+# The scheduler, ML pipeline, and LSTM model all import TICKERS from here.
+#
+# Usage everywhere else:
+#   from portfolio.src.config import ASSET_UNIVERSE
+#   TICKERS = ASSET_UNIVERSE          # whole universe
+#   TICKERS = TRADEABLE_UNIVERSE       # excludes ETFs (for alpha signals)
+# ──────────────────────────────────────────────────────────────────────────────
 
 """
 Configuration and Parameters for Trade Republic Quantitative Engine.
@@ -154,6 +165,10 @@ ETF_TICKERS = [
 ]
 
 ASSET_UNIVERSE.extend(ETF_TICKERS)
+
+# Derived: stocks only (ETFs excluded) — used by alpha / ML models
+# that target individual-stock alpha rather than systematic market exposure.
+TRADEABLE_UNIVERSE = [t for t in ASSET_UNIVERSE if t not in ETF_TICKERS]
 
 BENCHMARK_TICKER = 'EUNL.DE'
 

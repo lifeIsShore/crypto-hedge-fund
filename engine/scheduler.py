@@ -421,6 +421,15 @@ def step_ml_refresh():
     run_ml_pipeline_refresh()
 
 
+def step_lstm_train():
+    """Saturday — walk-forward train LSTM for all tickers and save models."""
+    from engine.alpha.lstm_model import LSTMAlpha
+    model = LSTMAlpha()
+    summary = model.train_all(tickers=TICKERS, date=TODAY)
+    passed = sum(1 for v in summary.values() if v.get('auc', 0) >= 0.53)
+    logger.info(f"[lstm_train] {passed}/{len(summary)} tickers above AUC gate")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # ALERTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -497,7 +506,8 @@ def run_pipeline(dry_run: bool = False):
 
     # ── Weekend steps (Saturday) ──────────────────────────────────────────────
     if WEEKDAY == 5:
-        _run_step('WE1. ML pipeline refresh', step_ml_refresh, dry_run)
+        _run_step('WE1. ML pipeline refresh', step_ml_refresh,  dry_run)
+        _run_step('WE2. LSTM train all',       step_lstm_train,  dry_run)
 
     logger.info(f"{'='*60}\n  Pipeline complete: {TODAY}\n{'='*60}")
 

@@ -1392,8 +1392,11 @@ def api_pipeline_logs():
 @app.route("/api/stress_tests")
 def api_stress_tests():
     """Beta-adjusted stress test results for current holdings.
-    Replaces hardcoded HTML constants with real calculations.
-    Uses beta from price history vs SPY benchmark proxy."""
+    Beta is computed from the past 252 trading days of daily log-returns,
+    regressing each ticker against the benchmark (EUNL.DE as SPY proxy).
+    Falls back to beta=1.0 if fewer than 60 overlapping days exist."""
+    import math
+
     positions = _q("""
         SELECT p.ticker, p.value_eur, p.weight
         FROM positions_history p
@@ -1414,38 +1417,93 @@ def api_stress_tests():
         {"name": "Flash Crash (May 2010)",          "market_dd": -0.099, "period": "2010-05-06/2010-05-07"},
     ]
 
+    # ── Compute real beta per ticker from 252-day price history ─────────────────
+    from portfolio.src.config import BENCHMARK_TICKER
+
+    # Load benchmark daily returns
+    bench_rows = _q("""
+        SELECT date,
+               (adj_close / LAG(adj_close) OVER (ORDER BY date)) - 1 AS r
+        FROM prices
+        WHERE ticker = :b
+        ORDER BY date DESC
+        LIMIT 253
+    """, {"b": BENCHMARK_TICKER})
+    bench_map = {row["date"]: float(row["r"]) for row in bench_rows if row["r"] is not None}
+
+    def _compute_beta(ticker: str) -> tuple:
+        """Return (beta, n_days). Falls back to (1.0, 0) on insufficient data."""
+        stock_rows = _q("""
+            SELECT date,
+                   (adj_close / LAG(adj_close) OVER (ORDER BY date)) - 1 AS r
+            FROM prices
+            WHERE ticker = :t
+            ORDER BY date DESC
+            LIMIT 253
+        """, {"t": ticker})
+        stock_map = {row["date"]: float(row["r"]) for row in stock_rows if row["r"] is not None}
+
+        common_dates = sorted(set(stock_map) & set(bench_map))
+        n = len(common_dates)
+        if n < 30:
+            return 1.0, n
+
+        xs = [bench_map[d]  for d in common_dates]   # benchmark returns
+        ys = [stock_map[d]  for d in common_dates]   # stock returns
+
+        mean_x = sum(xs) / n
+        mean_y = sum(ys) / n
+        cov    = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys)) / (n - 1)
+        var_x  = sum((x - mean_x) ** 2             for x in xs)           / (n - 1)
+
+        beta = cov / var_x if var_x > 1e-10 else 1.0
+        # Clamp to reasonable range: -3 to +5
+        beta = max(-3.0, min(5.0, beta))
+        return round(beta, 3), n
+
+    # Cache betas (one DB round-trip per ticker)
+    beta_cache = {}
+    for pos in positions:
+        ticker = pos["ticker"]
+        if ticker not in beta_cache:
+            beta_cache[ticker] = _compute_beta(ticker)
+
     results = []
     for scenario in SCENARIOS:
-        # Attempt to compute portfolio-weighted beta from DB
-        # Fall back to market_dd * 1.0 (beta=1 assumption) if insufficient data
         port_impact_pct = 0.0
         for pos in positions:
             ticker = pos["ticker"]
             w = float(pos.get("weight") or 0)
-            # Try beta from signals table or price correlation (rough)
-            beta_rows = _q("""
-                SELECT AVG(confidence) as beta_proxy
-                FROM signals WHERE ticker = :t AND model_name = 'momentum'
-                ORDER BY date DESC LIMIT 63
-            """, {"t": ticker})
-            beta = 1.0  # default to market beta
+            beta, n_days = beta_cache.get(ticker, (1.0, 0))
             port_impact_pct += w * beta * scenario["market_dd"] * 100
 
         loss_eur = total_value * (port_impact_pct / 100)
         results.append({
-            "scenario":        scenario["name"],
-            "period":          scenario["period"],
-            "market_dd_pct":   round(scenario["market_dd"] * 100, 1),
-            "portfolio_impact_pct": round(port_impact_pct, 2),
-            "estimated_loss_eur":   round(loss_eur, 2),
-            "portfolio_value_eur":  round(total_value + loss_eur, 2),
+            "scenario":              scenario["name"],
+            "period":                scenario["period"],
+            "market_dd_pct":         round(scenario["market_dd"] * 100, 1),
+            "portfolio_impact_pct":  round(port_impact_pct, 2),
+            "estimated_loss_eur":    round(loss_eur, 2),
+            "portfolio_value_eur":   round(total_value + loss_eur, 2),
         })
 
+    # Include per-ticker betas in response so risk.html can display them
+    betas_out = [
+        {"ticker": t, "beta": beta_cache[t][0], "n_days": beta_cache[t][1]}
+        for t in sorted(beta_cache)
+    ]
+
+    n_real = sum(1 for b in beta_cache.values() if b[1] >= 30)
     return jsonify({
-        "stress_tests":     results,
-        "total_value_eur":  round(total_value, 2),
-        "generated_at":     datetime.now().isoformat(),
-        "note": "Beta defaults to 1.0 per position until historical price correlation is computed."
+        "stress_tests":    results,
+        "total_value_eur": round(total_value, 2),
+        "ticker_betas":    betas_out,
+        "generated_at":    datetime.now().isoformat(),
+        "note": (
+            f"Beta computed from up to 252 trading days vs {BENCHMARK_TICKER}. "
+            f"{n_real}/{len(beta_cache)} tickers have real beta (≥30 days); "
+            "remainder default to 1.0."
+        ),
     })
 
 

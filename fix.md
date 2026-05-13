@@ -271,9 +271,9 @@ Done this session:
 
 ### ⏳ REMAINING (optional / future)
 
-- **Central Ticker Config**: single config file to add stocks; ML + scheduler auto-pick them up
-- **LSTM scheduler integration**: add `LSTMAlpha().train_all()` to Saturday ML refresh step
-- **Kelly in Overview KPI strip**: wire `/api/price_targets` kelly_half into overview.html
-- **Real beta for stress tests**: compute beta per ticker from price history (currently defaults to 1.0)
-- **Dependencies**: `pip install torch pyarrow` on machine if not already installed
+- **Central Ticker Config**: ~~single config file to add stocks; ML + scheduler auto-pick them up~~ (Done)
+- **LSTM scheduler integration**: ~~add `LSTMAlpha().train_all()` to Saturday ML refresh step~~ (Done)
+- **Kelly in Overview KPI strip**: ~~wire `/api/price_targets` kelly_half into overview.html~~ (Done)
+- **Real beta for stress tests**: ~~compute beta per ticker from price history (currently defaults to 1.0)~~ (Done)
+- **Dependencies**: ~~`pip install torch pyarrow` on machine if not already installed~~ (Done)
 

@@ -9,6 +9,7 @@
   <div class="kpi neutral"><div class="kpi-label">LARGEST HOLDING</div><div class="kpi-value" id="kpi-top">—</div><div class="kpi-sub" id="kpi-top-sub">—</div></div>
   <div class="kpi neutral"><div class="kpi-label">ML VERDICT</div><div class="kpi-value" id="kpi-verdict">—</div><div class="kpi-sub" id="kpi-verdict-sub">—</div></div>
   <div class="kpi neutral"><div class="kpi-label">REGIME</div><div class="kpi-value" id="kpi-regime" style="font-size:14px">—</div><div class="kpi-sub" id="kpi-regime-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">TOP KELLY SIZING</div><div class="kpi-value" id="kpi-kelly">—</div><div class="kpi-sub" id="kpi-kelly-sub">half-kelly % of portfolio</div></div>
 </div>
 
 <div class="grid grid-2-1" style="margin-top:14px">
@@ -73,13 +74,14 @@
 let weightsChart = null;
 
 async function loadOverview(){
-  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes] = await Promise.all([
+  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),
     fetch('/api/ml').then(r=>r.json()).catch(()=>({})),
     fetch('/api/regime').then(r=>r.json()).catch(()=>({})),
     fetch('/api/rebalance').then(r=>r.json()).catch(()=>({})),
     fetch('/api/trades').then(r=>r.json()).catch(()=>([])),
+    fetch('/api/price_targets').then(r=>r.json()).catch(()=>[]),
   ]);
 
   const positions = posRes.positions || [];
@@ -111,6 +113,27 @@ async function loadOverview(){
   rgEl.textContent = rgStr;
   rgEl.style.color = rg.regime_risk==='Risk-On'?'var(--accent)':rg.regime_risk==='Risk-Off'?'var(--accent2)':'var(--accent3)';
   document.getElementById('kpi-regime-sub').textContent = rg.transition_warning ? '⚠️ TRANSITION' : 'stable';
+
+  // Kelly KPI — find highest half-kelly among held positions
+  const targets = Array.isArray(targetsRes) ? targetsRes : [];
+  const targetsByTicker = {};
+  for(const t of targets) targetsByTicker[t.ticker] = t;
+  let topKelly = null, topKellyTicker = '';
+  for(const p of positions){
+    const t = targetsByTicker[p.ticker];
+    if(t && t.kelly_half != null){
+      const k = +t.kelly_half;
+      if(topKelly === null || k > topKelly){ topKelly = k; topKellyTicker = p.ticker; }
+    }
+  }
+  const kellyEl = document.getElementById('kpi-kelly');
+  if(topKelly !== null){
+    kellyEl.textContent = topKelly.toFixed(1) + '%';
+    kellyEl.style.color = topKelly >= 20 ? 'var(--accent)' : topKelly >= 10 ? 'var(--accent3)' : 'var(--muted)';
+    document.getElementById('kpi-kelly-sub').textContent = `${topKellyTicker} · half-kelly`;
+  } else {
+    kellyEl.textContent = '—';
+  }
 
   // Signals map from ML
   const sigMap = {};
