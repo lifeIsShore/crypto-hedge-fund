@@ -80,6 +80,83 @@ def _exec(sql, params=None):
         session.close()
 
 
+def _live_positions():
+    """
+    Live Reconstruction model — compute current holdings directly from the
+    trades ledger + latest available prices.  This replaces any read from
+    positions_history so the dashboard refreshes the instant a trade is logged.
+
+    Returns a list of dicts with keys:
+      ticker, quantity, price, value_eur, weight
+    and a separate cash_eur float.
+    """
+    # 1. Sum up all BUY / SELL quantities per ticker from the trades table
+    trade_rows = _q("""
+        SELECT ticker, action, SUM(quantity) AS qty_sum
+        FROM trades
+        WHERE action IN ('BUY', 'SELL') AND quantity IS NOT NULL
+        GROUP BY ticker, action
+    """)
+
+    qty_map = {}  # ticker -> net shares
+    for row in trade_rows:
+        t   = row["ticker"]
+        qty = float(row["qty_sum"] or 0)
+        if row["action"] == "BUY":
+            qty_map[t] = qty_map.get(t, 0.0) + qty
+        else:  # SELL
+            qty_map[t] = qty_map.get(t, 0.0) - qty
+
+    # Remove fully-exited positions (≤ 0 shares)
+    qty_map = {t: q for t, q in qty_map.items() if q > 1e-8}
+
+    # 2. Fetch latest price for each held ticker
+    positions = []
+    if qty_map:
+        tickers_sql = ",".join(f"'{t}'" for t in qty_map)
+        price_rows = _q(f"""
+            SELECT p.ticker, p.adj_close AS price
+            FROM prices p
+            INNER JOIN (
+                SELECT ticker, MAX(date) AS md FROM prices
+                WHERE ticker IN ({tickers_sql})
+                GROUP BY ticker
+            ) l ON p.ticker = l.ticker AND p.date = l.md
+        """)
+        price_map = {r["ticker"]: float(r["price"]) for r in price_rows}
+
+        for ticker, qty in qty_map.items():
+            price     = price_map.get(ticker, None)
+            has_price = price is not None and price > 0
+            value_eur = round(qty * price, 4) if has_price else None
+            positions.append({
+                "ticker":      ticker,
+                "quantity":    round(qty, 6),
+                "price":       round(price, 4) if has_price else None,
+                "value_eur":   value_eur,
+                "weight":      0.0,
+                "price_missing": not has_price,
+            })
+
+    # 3. Latest cash from cash_history
+    cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
+    cash_eur  = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
+
+    # 4. Recalculate portfolio weights — only use positions with known prices
+    priced_value = sum(p["value_eur"] for p in positions if p["value_eur"] is not None)
+    total_eur = priced_value + cash_eur
+    if total_eur > 0:
+        for p in positions:
+            if p["value_eur"] is not None:
+                p["weight"] = round(p["value_eur"] / total_eur, 6)
+            else:
+                p["weight"] = None  # unknown — can't calculate
+
+    # Sort: priced positions first (by value desc), then unpriced at bottom
+    positions.sort(key=lambda p: (p["value_eur"] is None, -(p["value_eur"] or 0)))
+    return positions, cash_eur
+
+
 def _mc_portfolio(positions, targets_map, n_paths=8000):
     """Run Monte Carlo on portfolio; return (var5_pct, cvar5_pct, var1_pct, total_eur)."""
     total = sum(float(p.get("value_eur", 0)) for p in positions)
@@ -202,20 +279,8 @@ def atomic_write_json(path, data):
 
 @app.route("/")
 def overview():
-    # Positions
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
-        ORDER BY p.value_eur DESC
-    """)
-
-    # Cash (latest row)
-    cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
-    cash_eur = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
-
+    # Live Reconstruction — reads trades ledger + latest prices, no snapshot needed
+    positions, cash_eur = _live_positions()
     total_eur = sum(float(p["value_eur"]) for p in positions) + cash_eur
 
     # Trade advisor diff
@@ -414,22 +479,29 @@ def api_freshness():
 
 @app.route("/api/holdings")
 def api_holdings():
-    """Current holdings with ML signal overlay."""
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight,
-               pt.up_proba, pt.vol_ann, pt.expected_21d_eur,
-               pt.target_1sigma_eur, pt.stop_1sigma_eur, pt.risk_reward_ratio
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
-        LEFT JOIN price_targets pt
-          ON pt.ticker = p.ticker
-         AND pt.date = (SELECT MAX(date) FROM price_targets)
-        ORDER BY p.value_eur DESC
-    """)
-    cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC LIMIT 1")
-    cash_eur  = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
+    """Current holdings with ML signal overlay — live reconstruction."""
+    positions, cash_eur = _live_positions()
+
+    # Overlay ML signals
+    if positions:
+        tickers_sql = ",".join(f"'{p['ticker']}'" for p in positions)
+        targets = _q(f"""
+            SELECT ticker, up_proba, vol_ann, expected_21d_eur,
+                   target_1sigma_eur, stop_1sigma_eur, risk_reward_ratio
+            FROM price_targets
+            WHERE date = (SELECT MAX(date) FROM price_targets)
+              AND ticker IN ({tickers_sql})
+        """)
+        targets_map = {t["ticker"]: t for t in targets}
+        for p in positions:
+            sig = targets_map.get(p["ticker"], {})
+            p["up_proba"]          = sig.get("up_proba")
+            p["vol_ann"]           = sig.get("vol_ann")
+            p["expected_21d_eur"]  = sig.get("expected_21d_eur")
+            p["target_1sigma_eur"] = sig.get("target_1sigma_eur")
+            p["stop_1sigma_eur"]   = sig.get("stop_1sigma_eur")
+            p["risk_reward_ratio"] = sig.get("risk_reward_ratio")
+
     return jsonify({"positions": positions, "cash_eur": cash_eur})
 
 
@@ -717,21 +789,24 @@ def analytics():
 
 @app.route("/holdings")
 def holdings():
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight,
-               pt.up_proba, pt.vol_ann, pt.expected_21d_eur,
-               pt.target_1sigma_eur, pt.stop_1sigma_eur
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
-        LEFT JOIN price_targets pt
-          ON pt.ticker = p.ticker
-         AND pt.date = (SELECT MAX(date) FROM price_targets)
-        ORDER BY p.value_eur DESC
+    # Live Reconstruction — no snapshot dependency
+    positions, cash_eur = _live_positions()
+
+    # Overlay ML signals from price_targets
+    targets = _q("""
+        SELECT ticker, up_proba, vol_ann, expected_21d_eur,
+               target_1sigma_eur, stop_1sigma_eur
+        FROM price_targets
+        WHERE date = (SELECT MAX(date) FROM price_targets)
     """)
-    cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC LIMIT 1")
-    cash_eur  = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
+    targets_map = {t["ticker"]: t for t in targets}
+    for p in positions:
+        sig = targets_map.get(p["ticker"], {})
+        p["up_proba"]         = sig.get("up_proba")
+        p["vol_ann"]          = sig.get("vol_ann")
+        p["expected_21d_eur"] = sig.get("expected_21d_eur")
+        p["target_1sigma_eur"] = sig.get("target_1sigma_eur")
+        p["stop_1sigma_eur"]  = sig.get("stop_1sigma_eur")
     return render_template("holdings.html",
         positions=positions,
         cash_eur=cash_eur,
@@ -825,17 +900,8 @@ def health():
 
 @app.route("/api/positions")
 def api_positions():
-    """Alias: same as /api/holdings but shaped for overview.html."""
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
-        ORDER BY p.value_eur DESC
-    """)
-    cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC LIMIT 1")
-    cash_eur  = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
+    """Alias: same as /api/holdings but shaped for overview.html — live reconstruction."""
+    positions, cash_eur = _live_positions()
     total_eur = sum(float(p["value_eur"]) for p in positions) + cash_eur
     return jsonify({"positions": positions, "cash_eur": cash_eur, "total_eur": total_eur})
 

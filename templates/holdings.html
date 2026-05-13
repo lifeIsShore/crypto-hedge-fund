@@ -86,10 +86,13 @@ async function loadHoldings(){
   const data = await fetch('/api/holdings').then(r=>r.json()).catch(()=>({}));
   const positions = data.positions || [];
   const cash = data.cash_eur || 0;
-  const total = positions.reduce((s,p)=>s+(+p.value_eur||0),0) + cash;
+  // Only sum positions with known prices for the portfolio total
+  const pricedTotal = positions.reduce((s,p)=>s+(p.value_eur!=null?+p.value_eur:0),0);
+  const total = pricedTotal + cash;
+  const unpriced = positions.filter(p=>p.price_missing);
 
   document.getElementById('h-n').textContent     = positions.length;
-  document.getElementById('h-total').textContent = fmtEur(total);
+  document.getElementById('h-total').textContent = fmtEur(total) + (unpriced.length ? ' ⚠️' : '');
   document.getElementById('h-cash').textContent  = fmtEur(cash);
   document.getElementById('h-bull').textContent  = positions.filter(p=>(+p.up_proba||0)>0.55).length;
   document.getElementById('h-bear').textContent  = positions.filter(p=>(+p.up_proba||0)<0.45).length;
@@ -103,12 +106,19 @@ async function loadHoldings(){
   tbody.innerHTML = positions.map(p=>{
     const up = +p.up_proba || 0.5;
     const action = up>=0.60?'BUY':up>=0.54?'LEAN_BUY':up<=0.40?'SELL':up<=0.46?'LEAN_SELL':'NEUTRAL';
-    return `<tr style="cursor:pointer" onclick="window.location='/ticker/${p.ticker}'">
-      <td style="font-weight:500;color:var(--accent)">${p.ticker}</td>
+    const missingBadge = p.price_missing
+      ? '<span title="No price data in DB — run pipeline to fetch prices" style="color:var(--accent2);font-size:9px;margin-left:4px">⚠ NO PRICE</span>'
+      : '';
+    const priceCell  = p.price     != null ? fmtEur(p.price)     : '<span style="color:var(--muted)">—</span>';
+    const valueCell  = p.value_eur != null ? fmtEur(p.value_eur) : '<span style="color:var(--muted)">—</span>';
+    const weightCell = p.weight    != null ? ((+p.weight)*100).toFixed(1)+'%' : '<span style="color:var(--muted)">—</span>';
+    const rowStyle   = p.price_missing ? 'opacity:0.6' : '';
+    return `<tr style="cursor:pointer;${rowStyle}" onclick="window.location='/ticker/${p.ticker}'">
+      <td style="font-weight:500;color:var(--accent)">${p.ticker}${missingBadge}</td>
       <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
-      <td>${fmtEur(p.price)}</td>
-      <td>${fmtEur(p.value_eur)}</td>
-      <td>${p.weight!=null?((+p.weight)*100).toFixed(1)+'%':'—'}</td>
+      <td>${priceCell}</td>
+      <td>${valueCell}</td>
+      <td>${weightCell}</td>
       <td style="color:${(+p.expected_21d_eur||0)>=(+p.price||0)?'var(--accent)':'var(--accent2)'}">${fmtEur(p.expected_21d_eur)}</td>
       <td style="color:var(--accent)">${fmtEur(p.target_1sigma_eur)}</td>
       <td style="color:var(--accent2)">${fmtEur(p.stop_1sigma_eur)}</td>
@@ -116,6 +126,17 @@ async function loadHoldings(){
       <td class="${sigClass(action)}">${sigLabel(action)}</td>
     </tr>`;
   }).join('');
+
+  // Show warning banner if any positions have no price data
+  if (unpriced.length) {
+    const banner = document.createElement('div');
+    banner.className = 'alert alert-warning';
+    banner.style.cssText = 'margin-bottom:10px;font-size:11px;color:var(--accent2);background:rgba(255,100,60,.08);border:1px solid rgba(255,100,60,.2);padding:8px 12px;border-radius:4px';
+    banner.innerHTML = `⚠️ <strong>${unpriced.length} position${unpriced.length>1?'s':''} missing price data:</strong> ${
+      unpriced.map(p=>p.ticker).join(', ')
+    } — run the data pipeline to fetch current prices. Portfolio value and weights exclude these positions.`;
+    tbody.parentElement.parentElement.insertBefore(banner, tbody.parentElement);
+  }
 }
 
 
