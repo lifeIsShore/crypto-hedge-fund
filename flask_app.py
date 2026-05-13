@@ -440,12 +440,14 @@ def api_trades():
     ticker = request.args.get("ticker")
     if ticker:
         rows = _q("""
-            SELECT date, ticker, action, quantity, price_eur, total_eur, notes
+            SELECT date, ticker, action, quantity, price_eur,
+                   value_eur AS total_eur, notes
             FROM trades WHERE ticker=:t ORDER BY date DESC LIMIT :lim
         """, {"t": ticker.upper(), "lim": limit})
     else:
         rows = _q("""
-            SELECT date, ticker, action, quantity, price_eur, total_eur, notes
+            SELECT date, ticker, action, quantity, price_eur,
+                   value_eur AS total_eur, notes
             FROM trades ORDER BY date DESC LIMIT :lim
         """, {"lim": limit})
     return jsonify(rows)
@@ -690,7 +692,8 @@ def analytics():
         ORDER BY p.value_eur DESC
     """)
     trades = _q("""
-        SELECT date, ticker, action, quantity, price_eur, total_eur, notes
+        SELECT date, ticker, action, quantity, price_eur,
+               value_eur AS total_eur, notes
         FROM trades
         ORDER BY date DESC
         LIMIT 100
@@ -740,7 +743,8 @@ def holdings():
 @app.route("/trades")
 def trades():
     rows = _q("""
-        SELECT date, ticker, action, quantity, price_eur, total_eur, notes
+        SELECT date, ticker, action, quantity, price_eur,
+               value_eur AS total_eur, notes
         FROM trades
         ORDER BY date DESC
         LIMIT 200
@@ -770,7 +774,8 @@ def ticker_detail(ticker):
     position = position[0] if position else {}
 
     trades_hist = _q("""
-        SELECT date, action, quantity, price_eur, total_eur, notes
+        SELECT date, action, quantity, price_eur,
+               value_eur AS total_eur, notes
         FROM trades WHERE ticker=:t ORDER BY date DESC LIMIT 50
     """, {"t": ticker})
 
@@ -1041,21 +1046,22 @@ def api_performance():
 
     # ── 1. Ledger from trades table ──────────────────────────────────────────
     trades_rows = _q("""
-        SELECT date, action, ticker, quantity, price_eur, value_eur, fee_eur, notes
+        SELECT date, action, ticker, quantity, price_eur,
+               value_eur AS total_eur, fee_eur, notes
         FROM trades ORDER BY date ASC, id ASC
     """)
 
     # ── 2. Total deposited / withdrawn capital ────────────────────────────
     total_deposited = sum(
-        float(t.get("value_eur") or 0)
+        float(t.get("total_eur") or 0)
         for t in trades_rows if t["action"] == "DEPOSIT"
     )
     total_dividends = sum(
-        float(t.get("value_eur") or 0)
+        float(t.get("total_eur") or 0)
         for t in trades_rows if t["action"] == "DIVIDEND"
     )
     total_fees = sum(
-        float(t.get("fee_eur") or 0) + (float(t.get("value_eur") or 0) if t["action"] == "FEE" else 0)
+        float(t.get("fee_eur") or 0) + (float(t.get("total_eur") or 0) if t["action"] == "FEE" else 0)
         for t in trades_rows
     )
 

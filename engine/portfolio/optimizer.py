@@ -13,9 +13,11 @@ from engine.db.db import get_session
 
 logger = logging.getLogger(__name__)
 
-# Constraints (extend from config.py values)
-MAX_POSITION     = 0.10   # 10% max per asset (tighter than config's 25% for BL output)
-MAX_SECTOR_SHARE = 0.30   # 30% max in any one sector
+# Constraints — MAX_POSITION intentionally tighter than config.MAX_WEIGHT (0.25);
+# BL optimizer already accounts for uncertainty so 10% cap reduces concentration risk.
+# Change by updating MAX_POSITION here only; document in portfolio/docs/03-TUNING-LOG.md.
+MAX_POSITION     = 0.10   # 10% max per asset in the BL-optimised portfolio
+MAX_SECTOR_SHARE = 0.30   # 30% max in any one sector (mirrors pre_trade.py MAX_SECTOR)
 TURNOVER_PENALTY = 0.002  # penalty per unit of turnover
 SLIPPAGE_PCT     = 0.0005 # 0.05% per trade (from architecture doc)
 
@@ -85,25 +87,31 @@ def optimize_with_bl(
 
 def persist_model_outputs(date: str, suggested: pd.Series, current: pd.Series, mu_bl: pd.Series):
     session = get_session()
-    for ticker in suggested.index:
-        sugg = float(suggested.get(ticker, 0))
-        curr = float(current.get(ticker, 0))
-        delt = sugg - curr
-        bl_r = float(mu_bl.get(ticker, 0))
-        session.execute(text("""
-            INSERT INTO model_outputs
-                (date, ticker, suggested_weight, current_weight, delta_weight, bl_return, computed_at)
-            VALUES (:date, :ticker, :suggested, :current, :delta, :bl_return, datetime('now'))
-            ON CONFLICT (date, ticker) DO UPDATE SET
-                suggested_weight = :suggested,
-                delta_weight     = :delta,
-                bl_return        = :bl_return,
-                computed_at      = datetime('now')
-        """), {
-            "date": date, "ticker": ticker,
-            "suggested": sugg, "current": curr,
-            "delta": delt, "bl_return": bl_r,
-        })
-    session.commit()
-    session.close()
-    logger.info(f"Model outputs persisted: {date}, {len(suggested)} tickers")
+    try:
+        for ticker in suggested.index:
+            sugg = float(suggested.get(ticker, 0))
+            curr = float(current.get(ticker, 0))
+            delt = sugg - curr
+            bl_r = float(mu_bl.get(ticker, 0))
+            session.execute(text("""
+                INSERT INTO model_outputs
+                    (date, ticker, suggested_weight, current_weight, delta_weight, bl_return, computed_at)
+                VALUES (:date, :ticker, :suggested, :current, :delta, :bl_return, datetime('now'))
+                ON CONFLICT (date, ticker) DO UPDATE SET
+                    suggested_weight = :suggested,
+                    delta_weight     = :delta,
+                    bl_return        = :bl_return,
+                    computed_at      = datetime('now')
+            """), {
+                "date": date, "ticker": ticker,
+                "suggested": sugg, "current": curr,
+                "delta": delt, "bl_return": bl_r,
+            })
+        session.commit()
+        logger.info(f"Model outputs persisted: {date}, {len(suggested)} tickers")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"persist_model_outputs failed: {e}")
+        raise
+    finally:
+        session.close()

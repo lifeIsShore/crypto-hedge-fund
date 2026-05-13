@@ -190,7 +190,15 @@ async function loadRisk(){
   sel.innerHTML=allTargets.map(t=>`<option value="${t.ticker}">${t.ticker}</option>`).join('');
   if(allTargets.length) loadTicker(allTargets[0].ticker);
 
-  document.getElementById('universe-tbody').innerHTML=!allTargets.length?'<tr><td colspan="10" style="color:var(--muted)">No price targets. Run pipeline.</td></tr>':allTargets.map(r=>{const action=r.action||'NEUTRAL';return `<tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="document.getElementById('ticker-sel').value='${r.ticker}';loadTicker('${r.ticker}')"><td style="font-weight:500;color:#fff">${r.ticker}</td><td>${fmtEur(r.current_price_eur)}</td><td>${fmtEur(r.expected_21d_eur)}</td><td style="color:${(r.exp_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${fmtPct(r.exp_pct)}</td><td>${fmtEur(r.target_1sigma_eur)}</td><td style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td><td>${r.risk_reward_ratio!=null?(+r.risk_reward_ratio).toFixed(2)+'x':'—'}</td><td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td><td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td><td class="${sigClass(action)}">${sigLabel(action)}</td></tr>`;}).join('');
+  document.getElementById('universe-tbody').innerHTML=!allTargets.length?'<tr><td colspan="10" style="color:var(--muted)">No price targets. Run pipeline.</td></tr>':allTargets.map(r=>{
+    const action=r.action||'NEUTRAL';
+    const exp_pct=(r.current_price_eur&&r.expected_21d_eur&&+r.current_price_eur>0)
+      ?(((+r.expected_21d_eur)-(+r.current_price_eur))/(+r.current_price_eur)*100)
+      :null;
+    const expPctStr=exp_pct!=null?fmtPct(exp_pct):'—';
+    const expColor=exp_pct!=null&&exp_pct>=0?'var(--accent)':'var(--accent2)';
+    return `<tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="document.getElementById('ticker-sel').value='${r.ticker}';loadTicker('${r.ticker}')"><td style="font-weight:500;color:#fff">${r.ticker}</td><td>${fmtEur(r.current_price_eur)}</td><td>${fmtEur(r.expected_21d_eur)}</td><td style="color:${expColor}">${expPctStr}</td><td>${fmtEur(r.target_1sigma_eur)}</td><td style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td><td>${r.risk_reward_ratio!=null?(+r.risk_reward_ratio).toFixed(2)+'x':'—'}</td><td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td><td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td><td class="${sigClass(action)}">${sigLabel(action)}</td></tr>`;
+  }).join('');
 
   const positions=posRes.positions||[], total=posRes.total_eur||positions.reduce((s,p)=>s+(+p.value_eur||0),0);
   if(!positions.length){ document.getElementById('port-no-pos').style.display='block'; document.getElementById('port-risk-content').style.display='none'; return; }

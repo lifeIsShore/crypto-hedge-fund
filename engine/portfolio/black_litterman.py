@@ -8,7 +8,10 @@ import numpy as np
 from sqlalchemy import text
 from engine.db.db import get_session
 import sys
-sys.path.insert(0, ".")
+import os
+_BL_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if _BL_ROOT not in sys.path:
+    sys.path.insert(0, _BL_ROOT)
 
 # Import your existing research implementation directly
 from ml_quant_finance_research.general_research.src.factor_model import (
@@ -17,6 +20,11 @@ from ml_quant_finance_research.general_research.src.factor_model import (
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    from portfolio.src.config import BENCHMARK_TICKER as _BENCHMARK_TICKER
+except Exception:
+    _BENCHMARK_TICKER = 'EUNL.DE'   # fallback if config unavailable
 
 
 def load_signals_from_db(date: str, tickers: list) -> pd.DataFrame:
@@ -139,7 +147,7 @@ def run_black_litterman(
     date: str,
     regime_info: dict = None,
     models_dict: dict = None,
-    benchmark: str = "EUNL.DE",
+    benchmark: str = None,
     tau: float = 0.05,
     risk_aversion: float = 2.5,
 ) -> pd.Series:
@@ -150,6 +158,8 @@ def run_black_litterman(
     3. Run BL formula → posterior expected returns
     Returns pd.Series indexed by ticker.
     """
+    if benchmark is None:
+        benchmark = _BENCHMARK_TICKER
     signals_df = load_signals_from_db(date, tickers)
     alpha_views = build_bl_views_calibrated(signals_df, tickers, cov_matrix, models_dict, tau)
 

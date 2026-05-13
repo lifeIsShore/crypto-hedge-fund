@@ -72,12 +72,16 @@ def run_post_trade_risk(weights: dict, tickers: list) -> dict:
 
     metrics = {**var_cvar, **dd, **regime}
 
-    # Stress tests — hardcoded historical scenarios
+    # Stress tests — market drawdown × portfolio beta-weighted equity exposure.
+    # Shocks sourced from /api/stress_tests which computes real betas vs EUNL.DE.
+    # Here we use simple equity_weight × shock as a conservative lower-bound;
+    # the dashboard's /api/stress_tests endpoint applies per-ticker betas.
     stress_shocks = {
-        "gfc_2008":       -0.45,
-        "covid_2020":     -0.34,
-        "rate_shock_2022":-0.20,
-        "mild_correction":-0.10,
+        "gfc_2008":        -0.57,
+        "covid_2020":      -0.34,
+        "dot_com_2000":    -0.49,
+        "rate_shock_2022": -0.255,
+        "flash_crash_2010": -0.099,
     }
     equity_weight = sum(w for t, w in weights.items() if t != "CASH")
     for scenario, shock in stress_shocks.items():

@@ -33,8 +33,11 @@ EUR_SUFFIXES = ('.DE', '.AS', '.PA')
 GBP_SUFFIXES = ('.L',)
 
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
-FALLBACK_USDEUR = 0.92
-FALLBACK_GBPEUR = 0.79
+# Emergency FX fallbacks — only used when yfinance fails to fetch live rates.
+# Update these whenever a persistent rate divergence exceeds ~5%.
+# Source: ECB reference rates (https://www.ecb.europa.eu/stats/exchange/eurofxref/)
+FALLBACK_USDEUR = float(os.getenv('FALLBACK_USDEUR', '0.92'))
+FALLBACK_GBPEUR = float(os.getenv('FALLBACK_GBPEUR', '1.17'))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

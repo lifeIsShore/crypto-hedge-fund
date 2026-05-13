@@ -72,18 +72,24 @@ def confirm_order(order_id: str, ticker: str, action: str, actual_value_eur: flo
     All fields must be passed explicitly — nothing is hardcoded.
     """
     session = get_session()
-    qty = actual_value_eur / price_eur if price_eur > 0 else 0
-    session.execute(text("""
-        INSERT INTO trades (date, ticker, action, quantity, price_eur, value_eur, source, notes)
-        VALUES (CURRENT_DATE, :ticker, :action, :qty, :price, :value, 'manual', :notes)
-    """), {
-        "ticker": ticker,
-        "action": action,
-        "qty":    qty,
-        "price":  price_eur,
-        "value":  actual_value_eur,
-        "notes":  notes,
-    })
-    session.commit()
-    session.close()
-    logger.info(f"Trade confirmed: {action} {ticker} €{actual_value_eur:.2f} @ €{price_eur:.4f}")
+    try:
+        qty = actual_value_eur / price_eur if price_eur > 0 else 0
+        session.execute(text("""
+            INSERT INTO trades (date, ticker, action, quantity, price_eur, value_eur, source, notes)
+            VALUES (CURRENT_DATE, :ticker, :action, :qty, :price, :value, 'manual', :notes)
+        """), {
+            "ticker": ticker,
+            "action": action,
+            "qty":    qty,
+            "price":  price_eur,
+            "value":  actual_value_eur,
+            "notes":  notes,
+        })
+        session.commit()
+        logger.info(f"Trade confirmed: {action} {ticker} €{actual_value_eur:.2f} @ €{price_eur:.4f}")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"confirm_order failed: {e}")
+        raise
+    finally:
+        session.close()
