@@ -46,10 +46,15 @@
         <!-- Ticker (hidden for Deposit/Dividend/Fee) -->
         <div style="margin-bottom:10px" id="f-ticker-row">
           <div class="form-row-label">ASSET / TICKER</div>
-          <input type="text" id="f-ticker" placeholder="e.g. NVDA, SAP.DE, AAPL" style="width:100%;text-transform:uppercase"
+          <input type="text" id="f-ticker" list="ticker-list" placeholder="Start typing... e.g. NVDA" style="width:100%;text-transform:uppercase"
                  oninput="this.value=this.value.toUpperCase()">
+          <datalist id="ticker-list">
+            {% for t in universe %}
+            <option value="{{ t }}"></option>
+            {% endfor %}
+          </datalist>
           <div style="margin-top:6px;font-size:9px;color:var(--muted)">
-            Type any ticker. Common: APC.DE · MSF.DE · NVDA · SAP.DE · AMZN · ASML.DE
+            Search the universe. You can only select registered tickers.
           </div>
         </div>
 
@@ -308,6 +313,13 @@ async function submitTrade() {
   }
   if ((action === 'Buy' || action === 'Sell') && (!ticker || ticker === 'CASH')) {
     showFeedback('error', '⚠ Enter a ticker symbol for Buy/Sell'); return;
+  }
+  if (action === 'Buy' || action === 'Sell') {
+    const validTickers = Array.from(document.querySelectorAll('#ticker-list option')).map(o => o.value);
+    if (!validTickers.includes(ticker)) {
+      showFeedback('error', `⚠ Ticker "${ticker}" is not in your registered Universe. Cannot log trade.`); 
+      return;
+    }
   }
   if ((action === 'Buy' || action === 'Sell') && (!qty || isNaN(+qty) || +qty <= 0)) {
     showFeedback('error', '⚠ Quantity must be > 0 for Buy/Sell'); return;

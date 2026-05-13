@@ -190,7 +190,7 @@ async def _fetch_polygon_single(
         'limit':    '50000',
         'apiKey':   POLYGON_API_KEY,
     }
-    async with http_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+    async with http_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=60)) as resp:
         data = await resp.json()
 
     if data.get('status') not in ('OK', 'DELAYED') or not data.get('results'):

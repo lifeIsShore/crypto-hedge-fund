@@ -171,7 +171,7 @@ def check_api_connectivity() -> dict:
     for name, url in probes.items():
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:
                 results[name] = {"ok": True,  "status": resp.status}
         except urllib.error.HTTPError as e:
             results[name] = {"ok": False, "status": e.code,   "error": str(e.reason)}
@@ -742,6 +742,7 @@ def holdings():
 
 @app.route("/trades")
 def trades():
+    from portfolio.src.config import ASSET_UNIVERSE
     rows = _q("""
         SELECT date, ticker, action, quantity, price_eur,
                value_eur AS total_eur, notes
@@ -751,6 +752,7 @@ def trades():
     """)
     return render_template("trades.html",
         trades=rows,
+        universe=sorted(ASSET_UNIVERSE),
         page="trades",
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
