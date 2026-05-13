@@ -105,10 +105,40 @@ def _get_live_price_fallback(ticker):
             price = float(data['Close'].iloc[-1])
             # Basic currency heuristic: .DE/.AS/.PA are EUR, everything else USD
             curr = "EUR" if any(ticker.endswith(s) for s in [".DE", ".AS", ".PA"]) else "USD"
+            
+            # PERMANENT FIX: Save to DB for ML and future loads
+            _persist_single_price(ticker, price, curr)
+            
             return price, curr
     except Exception as e:
         log.warning(f"Live fallback failed for {ticker}: {e}")
     return None, "EUR"
+
+
+def _persist_single_price(ticker, price, currency):
+    """Save a single price point to DB so ML and future loads can use it."""
+    try:
+        from sqlalchemy import text
+        _q_execute("""
+            INSERT INTO prices (date, ticker, open, high, low, close, volume, adj_close, currency, source)
+            VALUES (CURRENT_DATE, :t, :p, :p, :p, :p, 0, :p, :c, 'live_fallback')
+            ON CONFLICT (date, ticker) DO UPDATE SET
+                adj_close = EXCLUDED.adj_close,
+                source    = 'live_fallback'
+        """, {"t": ticker, "p": price, "c": currency})
+        log.info(f"Persisted live price for {ticker} to DB.")
+    except Exception as e:
+        log.warning(f"Failed to persist live price for {ticker}: {e}")
+
+
+def _q_execute(sql, params=None):
+    """Helper for write operations."""
+    session = get_session()
+    try:
+        session.execute(text(sql), params or {})
+        session.commit()
+    finally:
+        session.close()
 
 
 def _live_positions():
