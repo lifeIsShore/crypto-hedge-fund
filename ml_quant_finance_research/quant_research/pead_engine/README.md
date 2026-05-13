@@ -29,16 +29,15 @@ pead_engine/
     └── pead_state.json         # Latest state → dashboard
 ```
 
-## Setup
+## Setup & Running
 
+**Note: This engine is fully integrated into the master pipeline.**
+You do not need to run it manually. It executes automatically every weekend via `RUN_FUND_TOTAL.bat` at the project root.
+
+If you need to run it manually for testing:
 ```bash
-cd quant-research/pead_engine
-pip install -r requirements.txt
-```
+cd ml_quant_finance_research/quant_research/pead_engine
 
-## Running
-
-```bash
 # Normal run (screen last 90 days of earnings)
 python run_engine.py
 

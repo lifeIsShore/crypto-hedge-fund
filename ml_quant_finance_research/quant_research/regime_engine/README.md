@@ -30,16 +30,15 @@ regime_engine/
     └── regime_state.json    # Latest snapshot → dashboard
 ```
 
-## Setup
+## Setup & Running
 
+**Note: This engine is fully integrated into the master pipeline.**
+You do not need to run it manually. It executes automatically via `RUN_FUND_TOTAL.bat` at the project root.
+
+If you need to run it manually for testing:
 ```bash
-cd quant-research/regime_engine
-pip install -r requirements.txt
-```
+cd ml_quant_finance_research/quant_research/regime_engine
 
-## Running
-
-```bash
 # Normal daily run
 python run_engine.py
 

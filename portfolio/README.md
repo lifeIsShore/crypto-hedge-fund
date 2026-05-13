@@ -1,10 +1,10 @@
 # Trade Republic Quantitative Engine
 ## Project Master Documentation Map
 
-**Project Status:** Architecture & Planning Phase  
-**Last Updated:** 2026-03-25  
-**Current Capital:** €100 (test phase)  
-**Target Status:** Production-ready by Q2 2026
+**Project Status:** Live in Production (V2.0 - Unified Flask/SQLite Architecture)  
+**Last Updated:** May 2026  
+**Current Capital:** Scaled Production Phase  
+**Core Stack:** Python, SQLite, Flask, Black-Litterman, XGBoost/LSTM Integration
 
 ---
 
@@ -248,13 +248,14 @@ portfolio/
 
 ---
 
-### Phase 5: Streamlit Dashboard (Week 5)
-**What:** Build interactive UI
+### Phase 5: Flask Dashboard (Week 5)
+**What:** Build interactive HTML/JS UI
 
 **Files to create:**
-- `src/app.py` — Streamlit frontend with 2 screens:
-  - Screen 1: Command Center (scoreboard, action board, charts)
-  - Screen 2: Ledger (transaction entry, holdings table)
+- `flask_app.py` — Flask backend routing
+- `templates/` — HTML/CSS/JS frontend views:
+  - Dashboard: Command Center, Analytics, Risk
+  - Ledger: Transaction entry, holdings table
 
 **Verification:** Dashboard loads without errors. Charts display live data.
 

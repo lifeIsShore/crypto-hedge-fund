@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-11T21:04:33.338240",
+  "generated_at": "2026-05-13T12:47:35.236970",
   "active_setups": [],
   "recent_setups": [
     {
@@ -139,6 +139,14 @@
       "drift_63d": null
     },
     {
+      "ticker": "ARGX.BR",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 11.98,
+      "drift_21d": 6.366,
+      "drift_63d": null
+    },
+    {
       "ticker": "UNH",
       "direction": "bullish",
       "quality": "Low",
@@ -153,33 +161,25 @@
       "surprise_pct": 8.78,
       "drift_21d": 5.691,
       "drift_63d": null
-    },
-    {
-      "ticker": "SHOP",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 8.56,
-      "drift_21d": 7.865,
-      "drift_63d": null
     }
   ],
   "performance": {
-    "total_setups": 169,
+    "total_setups": 170,
     "high_quality_setups": 0,
     "medium_quality_setups": 13,
-    "overall_avg_drift_21d": 4.372,
+    "overall_avg_drift_21d": 4.384,
     "overall_avg_drift_63d": 4.094,
-    "overall_hit_rate_21d": 0.633,
+    "overall_hit_rate_21d": 0.635,
     "high_avg_drift_21d": null,
     "high_avg_drift_63d": null,
     "high_hit_rate_21d": null,
-    "bullish_avg_drift_21d": 5.335,
+    "bullish_avg_drift_21d": 5.342,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-05-11T21:04:33.330179",
+    "stats_computed_at": "2026-05-13T12:47:35.231893",
     "hit_rate_21d_expansion": 0.0,
     "avg_drift_21d_expansion": -12.384,
-    "hit_rate_21d_slowdown": 0.758,
-    "avg_drift_21d_slowdown": 9.774
+    "hit_rate_21d_slowdown": 0.761,
+    "avg_drift_21d_slowdown": 9.723
   },
-  "total_in_db": 169
+  "total_in_db": 170
 }

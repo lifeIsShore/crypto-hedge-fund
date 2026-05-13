@@ -80,17 +80,17 @@ Over time, the database tracks your overrides vs. the ML's suggestions and recor
 
 ## Getting Started
 
-1. **Run the Daily Pipeline:**
+1. **Run the Master Pipeline:**
+   Execute the batch script to run data ingestion, machine learning research, and optimization.
    ```bash
-   # Run a dry-run to test the pipeline safely
-   python -m engine.scheduler --test
-   
-   # Run the actual daily pipeline (data ingest, signals, optimization)
-   python -m engine.scheduler
+   RUN_FUND_TOTAL.bat
    ```
 
 2. **Launch the Control Tower Dashboard:**
+   The dashboard has been upgraded to a high-performance Flask application.
    ```bash
-   streamlit run dashboard/app.py
+   DASHBOARD_ONLY.bat
+   # OR
+   python flask_app.py
    ```
-   *Navigate to the **Rebalance Suggestions** tab to view today's mathematically verified targets.*
+   *Open `http://localhost:5000` in your browser. Navigate to the **Rebalance** tab to view today's mathematically verified targets.*
