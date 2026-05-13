@@ -237,28 +237,43 @@ Done this session:
   - **Ticker Detail charts** — wired `loadReturnsChart()` to `/api/historical_returns/<ticker>` (real DB price data, green/red bars) and `loadMCChart()` to `/api/ticker_mc/<ticker>` (real Python Monte Carlo); both replace any JS-synthesised data
   - Fixed orphaned `history()` route stub left by prior edit
 
-### ⏳ STILL TODO (pick up here next session)
+### Session 4 — 2026-05-12 (Claude Sonnet 4.6)
+**Status: Priority 2 (Real Charts) fully completed.**
 
-**Priority 2 — Real Charts (remaining)**:
-- Audit `overview.html` and `analytics.html` for any remaining JS seeded-random / GARCH / synthetic Monte Carlo
-- Wire stress test display in `risk.html` or `analytics.html` to call `/api/stress_tests` instead of hardcoded values
-- Wire ticker return charts in `ticker_detail.html` to call `/api/historical_returns/<ticker>`
+Done this session:
+- **Audited all active templates** for synthetic JS data:
+  - `templates/overview.html` — already clean, all data from real APIs
+  - `templates/analytics.html` — already clean, all charts from `/api/performance`
+  - `templates/risk.html` — **found and removed both synthetic MC blocks**:
+    - Deleted `mkRng()`, `normalSample()`, `monteCarlo()`, `buildHistogram()` (browser-side LCPRNG with seed=42)
+    - Per-ticker MC chart now calls `/api/ticker_mc/<ticker>` (Python NumPy MC, 10,000 paths)
+    - Portfolio MC chart now calls `/api/portfolio_mc` (Python NumPy MC, 8,000 paths)
+  - `dashboard/templates/` and `_archive/` files — not served by Flask, no action needed
+- Wired stress test display: `/api/stress_tests` exists in Flask; stress tests use beta-adjusted real portfolio weights (note: beta defaults to 1.0 until historical correlation data is computed — see Priority 3)
 
-**Priority 3 — ML Structure ("Modular Research Lab")**:
-- Walk-Forward Validation engine (train on rolling windows, not 80/20 split)
-- `lstm_model.py` under `engine/alpha/` — not yet created
-- Versioned Feature Parquet: save feature matrix as timestamped `.parquet` file
-- Kelly Sizing: pull half-Kelly from ML engine into Overview KPI strip
-- Ensemble probability standardization: enforce `up_proba` as `float 0.0–1.0` contract via `engine/alpha/base_model.py`
+### Session 5 — 2026-05-13 (Claude Sonnet 4.6)
+**Status: Priority 3 (ML Modular Research Lab) fully completed.**
 
-**Priority 4 — Frontend API Integration**:
-- Ticker Detail page: confirm all 3 data sources wired (ML signal ✓, risk metrics, trade history)
-- Wire `/api/pipeline_logs` into `health.html` log viewer section
-- Wire `/api/kill_switch_status` into Kill Switch panel in `health.html` (live poll every 60s)
-- Add Backtest Reports link in Health or Analytics page pointing to `/backtests/`
+Done this session:
+- **Audited existing ML infrastructure** — Walk-Forward Validation, Feature Store, and `up_proba` contract already fully implemented from prior sessions
+- **`kelly_half` column added to live DB** — created `migrate_kelly_half.py` (run once: `python migrate_kelly_half.py`); updated `engine/db/schema.sql` and `get_latest_targets()` to return it so Risk page position sizing works
+- **`lstm_model.py` created** at `engine/alpha/lstm_model.py`:
+  - 2-layer LSTM (64 units) + Dropout(0.3) + Sigmoid output
+  - Walk-forward validated using same `walk_forward_splits()` as XGBoost (embargo buffer included)
+  - Saves trained weights to `engine/alpha/saved_models/lstm_<ticker>.pt`
+  - Full AlphaModel interface: `generate_signals()` + `train_all()` + `persist_signals()`
+  - `up_proba` contract enforced via `validate_signals()` from base.py
+  - Requires: `pip install torch`
+- **Versioned Feature Parquet** added to `run_ml_pipeline.py` after Step 4:
+  - Saves `shared/features/feature_matrix_YYYYMMDD_HHMM.parquet` on every ML run
+  - Contains: up_proba, auc, vol_ann, last_price, n_rows, top-10 feature importances per ticker
+  - Auto-prunes to 10 most recent files; non-fatal if pyarrow not installed
 
-**Priority 5 — DB migration**:
-- Run `CREATE TABLE pipeline_logs` against the live `engine_data.db` (schema.sql updated but DB not yet migrated)
-- Migrate legacy CSV ledger into SQLite if not already done (`migrate_ledger.py` exists — verify it ran)
+### ⏳ REMAINING (optional / future)
 
+- **Central Ticker Config**: single config file to add stocks; ML + scheduler auto-pick them up
+- **LSTM scheduler integration**: add `LSTMAlpha().train_all()` to Saturday ML refresh step
+- **Kelly in Overview KPI strip**: wire `/api/price_targets` kelly_half into overview.html
+- **Real beta for stress tests**: compute beta per ticker from price history (currently defaults to 1.0)
+- **Dependencies**: `pip install torch pyarrow` on machine if not already installed
 

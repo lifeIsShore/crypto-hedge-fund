@@ -2,7 +2,13 @@
 """
 Abstract base class for all alpha models.
 Every model produces a standard signal DataFrame:
-  ticker | expected_return | confidence | raw_score
+  ticker | expected_return | confidence | raw_score | up_proba
+
+CONTRACT (enforced by validate_signals()):
+  up_proba   : float in [0.0, 1.0]  — probability ticker is up in 21d
+  confidence : float in [0.0, 1.0]  — model quality (AUC rescaled or IC)
+  expected_return: float, centred at 0 for up_proba=0.5
+  raw_score  : float, model-specific pre-scaling score
 
 confidence = Information Coefficient (IC) or AUC — controls BL view weight.
 Models with IC < 0.05 for < 21 consecutive days are gated from influencing weights.
@@ -18,6 +24,55 @@ logger = logging.getLogger(__name__)
 
 MIN_IC_TO_LIVE     = 0.05   # IC threshold for live approval
 MIN_LIVE_DAYS      = 21     # must sustain MIN_IC for this many consecutive trading days
+
+
+def validate_signals(df: pd.DataFrame, model_name: str = 'unknown') -> pd.DataFrame:
+    """
+    Enforces the up_proba contract on any signal DataFrame before it is
+    persisted or used for portfolio construction.
+
+    Rules:
+      - up_proba column added if missing (defaults to 0.5 = no view)
+      - up_proba clipped to [0.0, 1.0]  — hard contract
+      - confidence clipped to [0.0, 1.0]
+      - expected_return filled to 0.0 if missing
+      - NaN rows dropped with a warning
+
+    Returns a clean copy of the DataFrame.
+    """
+    if df is None or df.empty:
+        return df
+
+    df = df.copy()
+
+    # Ensure required columns exist
+    if 'up_proba' not in df.columns:
+        # Back-fill from raw_score if available (raw_score is often already [0,1])
+        if 'raw_score' in df.columns:
+            df['up_proba'] = df['raw_score'].clip(0.0, 1.0)
+        else:
+            df['up_proba'] = 0.5
+        logger.debug(f"[{model_name}] validate_signals: added up_proba column")
+
+    if 'expected_return' not in df.columns:
+        df['expected_return'] = 0.0
+
+    if 'confidence' not in df.columns:
+        df['confidence'] = 0.05
+
+    # Clip to contract bounds
+    df['up_proba']   = df['up_proba'].clip(0.0, 1.0).astype(float)
+    df['confidence'] = df['confidence'].clip(0.0, 1.0).astype(float)
+
+    # Drop NaN rows
+    before = len(df)
+    df = df.dropna(subset=['ticker', 'up_proba', 'confidence'])
+    if len(df) < before:
+        logger.warning(
+            f"[{model_name}] validate_signals: dropped {before - len(df)} NaN rows"
+        )
+
+    return df
 
 
 class AlphaModel(ABC):
@@ -37,9 +92,12 @@ class AlphaModel(ABC):
     # ─────────────────────────────────────────────────────────────────────────
 
     def persist_signals(self, date: str, signals_df: pd.DataFrame):
-        """Write signals to the signals table (upsert on conflict)."""
+        """Validate contract, then write signals to the signals table (upsert on conflict)."""
         if signals_df is None or signals_df.empty:
             return
+
+        # Enforce up_proba contract before any DB write
+        signals_df = validate_signals(signals_df, model_name=self.name)
 
         from engine.db.db import get_session
 

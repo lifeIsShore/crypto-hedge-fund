@@ -476,7 +476,7 @@ def api_price_targets():
                resistance_ma50, resistance_ma200,
                resistance_bb_upper, support_bb_lower,
                high_52w, low_52w, risk_reward_ratio,
-               up_proba, vol_ann, computed_at
+               up_proba, vol_ann, kelly_half, computed_at
         FROM price_targets
         WHERE date = (SELECT MAX(date) FROM price_targets)
         ORDER BY ticker

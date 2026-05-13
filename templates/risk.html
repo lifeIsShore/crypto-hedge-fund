@@ -113,32 +113,12 @@
 let mcDistChart = null, portMcChart = null;
 let allTargets = [];
 
-function mkRng(seed){ let s=seed; return ()=>{ s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; }; }
-function normalSample(rng){ const u=rng()||1e-10,v=rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
-
-function monteCarlo(upProba, volAnn, curPrice, nSims=10000, horizon=21){
-  const rng=mkRng(42), t=horizon/252;
-  const edge=(upProba-0.5)*2, drift=edge*volAnn*t, sigma=volAnn*Math.sqrt(t);
-  const sims=[];
-  for(let i=0;i<nSims;i++) sims.push(curPrice*Math.exp(drift+sigma*normalSample(rng)));
-  const sorted=[...sims].sort((a,b)=>a-b);
-  const var5=sorted[Math.floor(.05*nSims)], var1=sorted[Math.floor(.01*nSims)];
-  const cvar5=sorted.slice(0,Math.floor(.05*nSims)).reduce((a,b)=>a+b,0)/Math.floor(.05*nSims);
-  return {sims,p_profit:+(sims.filter(x=>x>curPrice).length/nSims*100).toFixed(1),p_up5:+(sims.filter(x=>x>curPrice*1.05).length/nSims*100).toFixed(1),p_down10:+(sims.filter(x=>x<curPrice*.90).length/nSims*100).toFixed(1),var_5_eur:+var5.toFixed(2),var_1_eur:+var1.toFixed(2),cvar_5_eur:+cvar5.toFixed(2)};
-}
-function buildHistogram(sims, nBins=55){
-  const mn=Math.min(...sims), mx=Math.max(...sims), bw=(mx-mn)/nBins;
-  const bins=new Array(nBins).fill(0), edges=Array.from({length:nBins},(_,i)=>mn+i*bw+bw/2);
-  sims.forEach(v=>{ const idx=Math.min(nBins-1,Math.floor((v-mn)/bw)); bins[idx]++; });
-  return {edges, bins};
-}
-
 function loadTicker(ticker){
   const row = allTargets.find(r=>r.ticker===ticker);
   if(!row) return;
   const cur=+row.current_price_eur||0, exp21=+row.expected_21d_eur||0;
   const tgt=+row.target_1sigma_eur||0, stop=+row.stop_1sigma_eur||0;
-  const rr=+row.risk_reward_ratio||0, up_p=+row.up_proba||0.5, vol=+row.vol_ann||0.25;
+  const rr=+row.risk_reward_ratio||0, up_p=+row.up_proba||0.5;
   const kelly=+row.kelly_half||0;
   const exp_pct=cur>0?((exp21-cur)/cur*100):0;
   const up_pct=cur>0?((tgt-cur)/cur*100):0, dn_pct=cur>0?((cur-stop)/cur*100):0;
@@ -151,14 +131,33 @@ function loadTicker(ticker){
   document.getElementById('k-stop-sub').textContent=`-${dn_pct.toFixed(1)}%`;
   document.getElementById('k-rr').textContent=rr.toFixed(2)+'x';
   document.getElementById('k-kelly').textContent=kelly.toFixed(1)+'%';
-  const mc=monteCarlo(up_p,vol,cur,10000,21);
-  const {edges,bins}=buildHistogram(mc.sims,55);
-  if(mcDistChart) mcDistChart.destroy();
-  mcDistChart=new Chart(document.getElementById('mcDistChart'),{type:'bar',data:{labels:edges.map(e=>e.toFixed(1)),datasets:[{label:'Sim prices',data:bins,backgroundColor:edges.map(e=>e>=cur?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1},{label:'VaR 5%',data:new Array(edges.length).fill(mc.var_5_eur),type:'line',borderColor:'rgba(245,166,35,.9)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:8}}},scales:{x:{ticks:{maxTicksLimit:7},grid:{display:false}},y:{ticks:{maxTicksLimit:5}}}}});
-  document.getElementById('mc-p0').textContent=mc.p_profit+'%';
-  document.getElementById('mc-p5').textContent=mc.p_up5+'%';
-  document.getElementById('mc-p10').textContent=mc.p_down10+'%';
-  document.getElementById('mc-var-line').textContent=`VaR(5%): ${fmtEur(mc.var_5_eur)}  |  VaR(1%): ${fmtEur(mc.var_1_eur)}  |  CVaR(5%): ${fmtEur(mc.cvar_5_eur)}`;
+
+  // ── Ticker MC: call Python endpoint instead of browser RNG ──
+  fetch(`/api/ticker_mc/${ticker}`)
+    .then(r=>r.json())
+    .then(mc=>{
+      if(mc.error){ console.warn('ticker_mc:', mc.error); return; }
+      if(mcDistChart) mcDistChart.destroy();
+      mcDistChart=new Chart(document.getElementById('mcDistChart'),{
+        type:'bar',
+        data:{
+          labels:mc.labels.map(e=>e.toFixed(1)),
+          datasets:[
+            {label:'Sim prices',data:mc.counts,backgroundColor:mc.labels.map(e=>e>=mc.cur?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1},
+            {label:'VaR 5%',data:new Array(mc.labels.length).fill(mc.var5),type:'line',borderColor:'rgba(245,166,35,.9)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:8}}},
+          scales:{x:{ticks:{maxTicksLimit:7},grid:{display:false}},y:{ticks:{maxTicksLimit:5}}}}
+      });
+      document.getElementById('mc-p0').textContent=mc.p_profit+'%';
+      document.getElementById('mc-p5').textContent=mc.p_up5+'%';
+      document.getElementById('mc-p10').textContent=mc.p_down10+'%';
+      document.getElementById('mc-var-line').textContent=`VaR(5%): ${fmtEur(mc.var5)}  |  VaR(1%): ${fmtEur(mc.var1)}  |  CVaR(5%): ${fmtEur(mc.cvar5)}`;
+      document.getElementById('sc-wp').textContent=mc.p_profit+'%';
+    })
+    .catch(e=>console.error('ticker_mc error:', e));
+
   const levels=[{name:'52w High',val:row.high_52w,kind:'resist'},{name:'BB Upper',val:row.resistance_bb_upper,kind:'resist'},{name:'MA 200',val:row.resistance_ma200,kind:'resist'},{name:'MA 50',val:row.resistance_ma50,kind:'resist'},{name:'► Current',val:cur,kind:'current'},{name:'Expected 21d',val:exp21,kind:'target'},{name:'Target (+1σ)',val:tgt,kind:'target'},{name:'Stop (-1σ)',val:stop,kind:'stop'},{name:'BB Lower',val:row.support_bb_lower,kind:'support'},{name:'52w Low',val:row.low_52w,kind:'support'}].filter(l=>l.val!=null&&!isNaN(+l.val)).sort((a,b)=>(+b.val)-(+a.val));
   const kindColor={resist:'var(--accent2)',current:'#fff',target:'var(--accent)',stop:'var(--accent2)',support:'var(--accent4)'};
   const kindIcon={resist:'🔴',current:'⚪',target:'🟢',stop:'❌',support:'🔵'};
@@ -166,7 +165,6 @@ function loadTicker(ticker){
   document.getElementById('sc-buy').textContent=row.support_bb_lower&&row.resistance_ma50?`${fmtEur(row.support_bb_lower)} — ${fmtEur(row.resistance_ma50)}`:'—';
   document.getElementById('sc-tgt').textContent=`${fmtEur(tgt)} (+${up_pct.toFixed(1)}%)`;
   document.getElementById('sc-stop').textContent=`${fmtEur(stop)} (-${dn_pct.toFixed(1)}%)`;
-  document.getElementById('sc-wp').textContent=mc.p_profit+'%';
 }
 
 function filterTable(q){
@@ -196,17 +194,24 @@ async function loadRisk(){
 
   const positions=posRes.positions||[], total=posRes.total_eur||positions.reduce((s,p)=>s+(+p.value_eur||0),0);
   if(!positions.length){ document.getElementById('port-no-pos').style.display='block'; document.getElementById('port-risk-content').style.display='none'; return; }
-  const rng=mkRng(0), nPaths=10000, t=21/252, portRet=new Float64Array(nPaths);
-  for(const pos of positions){const row=allTargets.find(r=>r.ticker===pos.ticker);if(!row)continue;const up_p=+row.up_proba||0.5,vol=+row.vol_ann||0.25,w=+pos.weight||0,edge=(up_p-.5)*2,drift=edge*vol*t,sigma=vol*Math.sqrt(t);for(let i=0;i<nPaths;i++) portRet[i]+=w*(drift+sigma*normalSample(rng));}
-  const sorted=[...portRet].sort((a,b)=>a-b);
-  const var5pct=+(sorted[Math.floor(.05*nPaths)]*100).toFixed(1), var1pct=+(sorted[Math.floor(.01*nPaths)]*100).toFixed(1), cvar5pct=+(sorted.slice(0,Math.floor(.05*nPaths)).reduce((a,b)=>a+b,0)/Math.floor(.05*nPaths)*100).toFixed(1);
-  document.getElementById('pv-total').textContent=fmtEur(total);
-  document.getElementById('pv-var5').textContent=var5pct+'%';
-  document.getElementById('pv-cvar5').textContent=cvar5pct+'%';
-  document.getElementById('pv-var1').textContent=var1pct+'%';
-  const {edges:pe,bins:pb}=buildHistogram([...portRet].map(x=>x*100),50);
-  if(portMcChart) portMcChart.destroy();
-  portMcChart=new Chart(document.getElementById('portMcChart'),{type:'bar',data:{labels:pe.map(e=>e.toFixed(1)+'%'),datasets:[{label:'Portfolio return %',data:pb,backgroundColor:pe.map(e=>e>=0?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8},grid:{display:false}},y:{ticks:{maxTicksLimit:4}}}}});
+
+  // ── Portfolio MC: call Python endpoint instead of browser RNG ──
+  fetch('/api/portfolio_mc')
+    .then(r=>r.json())
+    .then(pm=>{
+      if(pm.error){ console.warn('portfolio_mc:', pm.error); return; }
+      document.getElementById('pv-total').textContent=fmtEur(pm.total_eur||total);
+      document.getElementById('pv-var5').textContent=pm.var5_pct+'%';
+      document.getElementById('pv-cvar5').textContent=pm.cvar5_pct+'%';
+      document.getElementById('pv-var1').textContent=pm.var1_pct+'%';
+      if(portMcChart) portMcChart.destroy();
+      portMcChart=new Chart(document.getElementById('portMcChart'),{
+        type:'bar',
+        data:{labels:pm.labels.map(e=>e.toFixed(1)+'%'),datasets:[{label:'Portfolio return %',data:pm.counts,backgroundColor:pm.labels.map(e=>e>=0?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8},grid:{display:false}},y:{ticks:{maxTicksLimit:4}}}}
+      });
+    })
+    .catch(e=>console.error('portfolio_mc error:', e));
 }
 
 loadRisk();

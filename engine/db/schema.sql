@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS price_targets (
     risk_reward_ratio   REAL,   -- (target - current) / (current - stop)
     up_proba            REAL,   -- ML up_proba_21d used
     vol_ann             REAL,   -- annualised vol used
+    kelly_half          REAL,   -- Half-Kelly position size % (0-25)
     computed_at         TEXT    DEFAULT (datetime('now')),
     PRIMARY KEY (date, ticker)
 );

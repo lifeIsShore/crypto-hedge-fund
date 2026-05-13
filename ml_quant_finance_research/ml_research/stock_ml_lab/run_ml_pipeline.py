@@ -492,6 +492,46 @@ def main():
         json.dump(ml_state, f, indent=2, default=str)
     log.info(f"  Written (primary):  {OUTPUT_JSON}")
 
+    # Versioned Feature Parquet — timestamped snapshot of per-ticker ML results
+    # Enables walk-forward replay, LSTM retraining, and debugging without re-fetching.
+    # Kept to 10 most recent files; older snapshots are pruned automatically.
+    try:
+        ts = datetime.now().strftime("%Y%m%d_%H%M")
+        parquet_dir = THIS_DIR.parent.parent.parent / "shared" / "features"
+        parquet_dir.mkdir(parents=True, exist_ok=True)
+        parquet_path = parquet_dir / f"feature_matrix_{ts}.parquet"
+
+        feat_records = []
+        for ticker, res in ticker_results.items():
+            if res is None:
+                continue
+            record = {
+                "ticker":     ticker,
+                "run_date":   ts[:8],
+                "up_proba":   res.get("up_proba"),
+                "auc":        res.get("auc"),
+                "vol_ann":    res.get("vol_ann"),
+                "last_price": res.get("last_price"),
+                "n_rows":     res.get("n_rows"),
+            }
+            # Top-10 feature importances as flat columns
+            if res.get("feature_importance"):
+                for feat, imp in list(res["feature_importance"].items())[:10]:
+                    record[f"fi_{feat}"] = imp
+            feat_records.append(record)
+
+        if feat_records:
+            feat_df = pd.DataFrame(feat_records).set_index("ticker")
+            feat_df.to_parquet(str(parquet_path), engine="pyarrow", compression="snappy")
+            log.info(f"  Versioned feature matrix → {parquet_path.name}")
+            # Prune: keep only the 10 most recent snapshots
+            for old in sorted(parquet_dir.glob("feature_matrix_*.parquet"), reverse=True)[10:]:
+                old.unlink(missing_ok=True)
+        else:
+            log.warning("  No feature records to export as Parquet")
+    except Exception as e:
+        log.warning(f"  Versioned Feature Parquet failed (non-fatal): {e}")
+
     # Legacy copy: portfolio/data/ml_state.json (keeps dashboard working)
     try:
         import shutil

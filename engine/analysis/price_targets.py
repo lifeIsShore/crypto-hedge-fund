@@ -93,6 +93,23 @@ def compute_price_targets(
     high_52w = float(ps.tail(252).max()) if n >= 252 else float(ps.max())
     low_52w  = float(ps.tail(252).min()) if n >= 252 else float(ps.min())
 
+    # ── Half-Kelly position sizing ───────────────────────────────────────────
+    # Kelly fraction = (p * b - q) / b
+    #   p = up_proba, q = 1 - p
+    #   b = reward-to-risk ratio (upside % / downside %)
+    # Half-Kelly is standard practice for live trading:
+    #   - Reduces variance vs full Kelly
+    #   - Accounts for parameter estimation error
+    # Capped at 25% of portfolio (hard maximum per position)
+    p = up_proba
+    q = 1.0 - p
+    upside_pct  = (target_up - current_price_eur) / current_price_eur if current_price_eur > 0 else 0
+    downside_pct = (current_price_eur - stop_loss) / current_price_eur if current_price_eur > 0 else 1
+    b = upside_pct / downside_pct if downside_pct > 0.001 else 1.0
+    full_kelly = (p * b - q) / b if b > 0 else 0.0
+    half_kelly = max(0.0, full_kelly / 2.0)  # never negative (don't short via Kelly)
+    kelly_half  = min(half_kelly * 100, 25.0)  # as percentage, capped at 25%
+
     return {
         'ticker':               ticker,
         'current_price_eur':    round(current_price_eur, 4),
@@ -109,6 +126,7 @@ def compute_price_targets(
         'risk_reward_ratio':    round(rr_ratio, 3),
         'up_proba':             round(up_proba, 4),
         'vol_ann':              round(vol_ann,  4),
+        'kelly_half':           round(kelly_half, 2),
     }
 
 
@@ -234,14 +252,14 @@ def _persist_targets(date: str, targets: list):
                     resistance_ma50, resistance_ma200,
                     resistance_bb_upper, support_bb_lower,
                     high_52w, low_52w, risk_reward_ratio,
-                    up_proba, vol_ann, computed_at
+                    up_proba, vol_ann, kelly_half, computed_at
                 ) VALUES (
                     :date, :ticker, :current_price_eur, :expected_21d_eur,
                     :target_1sigma_eur, :stop_1sigma_eur, :stop_tight_eur,
                     :resistance_ma50, :resistance_ma200,
                     :resistance_bb_upper, :support_bb_lower,
                     :high_52w, :low_52w, :risk_reward_ratio,
-                    :up_proba, :vol_ann, datetime('now')
+                    :up_proba, :vol_ann, :kelly_half, datetime('now')
                 )
                 ON CONFLICT (date, ticker) DO UPDATE SET
                     current_price_eur   = :current_price_eur,
@@ -258,6 +276,7 @@ def _persist_targets(date: str, targets: list):
                     risk_reward_ratio   = :risk_reward_ratio,
                     up_proba            = :up_proba,
                     vol_ann             = :vol_ann,
+                    kelly_half          = :kelly_half,
                     computed_at         = datetime('now')
             """), {'date': date, **t})
             count += 1
@@ -364,7 +383,7 @@ def get_latest_targets() -> list:
                    resistance_ma50, resistance_ma200,
                    resistance_bb_upper, support_bb_lower,
                    high_52w, low_52w, risk_reward_ratio,
-                   up_proba, vol_ann, computed_at
+                   up_proba, vol_ann, kelly_half, computed_at
             FROM price_targets
             WHERE date = (SELECT MAX(date) FROM price_targets)
             ORDER BY ticker
@@ -377,7 +396,7 @@ def get_latest_targets() -> list:
             'resistance_ma50', 'resistance_ma200',
             'resistance_bb_upper', 'support_bb_lower',
             'high_52w', 'low_52w', 'risk_reward_ratio',
-            'up_proba', 'vol_ann', 'computed_at',
+            'up_proba', 'vol_ann', 'kelly_half', 'computed_at',
         ]
         return [dict(zip(cols, row)) for row in rows]
     except Exception as e:
