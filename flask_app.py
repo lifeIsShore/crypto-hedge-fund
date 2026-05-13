@@ -80,6 +80,16 @@ def _exec(sql, params=None):
         session.close()
 
 
+def _get_latest_fx_rate(pair="USDEUR"):
+    """Fetch latest rate from fx_rates table; fallback to constant if empty."""
+    rows = _q("SELECT rate FROM fx_rates WHERE pair = :p ORDER BY date DESC LIMIT 1", {"p": pair})
+    if rows:
+        return float(rows[0]["rate"])
+    # Emergency fallback constants if fx_rates table hasn't been populated
+    fallbacks = {"USDEUR": 0.92, "GBPEUR": 1.17}
+    return fallbacks.get(pair, 1.0)
+
+
 def _live_positions():
     """
     Live Reconstruction model — compute current holdings directly from the
@@ -115,7 +125,7 @@ def _live_positions():
     if qty_map:
         tickers_sql = ",".join(f"'{t}'" for t in qty_map)
         price_rows = _q(f"""
-            SELECT p.ticker, p.adj_close AS price
+            SELECT p.ticker, p.adj_close AS price, p.currency
             FROM prices p
             INNER JOIN (
                 SELECT ticker, MAX(date) AS md FROM prices
@@ -123,10 +133,24 @@ def _live_positions():
                 GROUP BY ticker
             ) l ON p.ticker = l.ticker AND p.date = l.md
         """)
-        price_map = {r["ticker"]: float(r["price"]) for r in price_rows}
+        # Store as (price, currency)
+        price_map = {r["ticker"]: (float(r["price"] or 0.0), r.get("currency") or "EUR") for r in price_rows}
+
+        usd_eur = _get_latest_fx_rate("USDEUR")
+        gbp_eur = _get_latest_fx_rate("GBPEUR")
 
         for ticker, qty in qty_map.items():
-            price     = price_map.get(ticker, None)
+            price_data = price_map.get(ticker, (None, "EUR"))
+            raw_price, curr = price_data
+
+            # Apply dynamic conversion if not EUR
+            price = raw_price
+            if price is not None:
+                if curr == "USD":
+                    price = raw_price * usd_eur
+                elif curr == "GBP":
+                    price = raw_price * gbp_eur
+
             has_price = price is not None and price > 0
             value_eur = round(qty * price, 4) if has_price else None
             positions.append({
@@ -140,10 +164,10 @@ def _live_positions():
 
     # 3. Latest cash from cash_history
     cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
-    cash_eur  = float(cash_rows[0]["cash_eur"]) if cash_rows else 0.0
+    cash_eur  = float(cash_rows[0]["cash_eur"] or 0.0) if cash_rows else 0.0
 
     # 4. Recalculate portfolio weights — only use positions with known prices
-    priced_value = sum(p["value_eur"] for p in positions if p["value_eur"] is not None)
+    priced_value = sum(float(p["value_eur"] or 0.0) for p in positions if p["value_eur"] is not None)
     total_eur = priced_value + cash_eur
     if total_eur > 0:
         for p in positions:
@@ -159,7 +183,7 @@ def _live_positions():
 
 def _mc_portfolio(positions, targets_map, n_paths=8000):
     """Run Monte Carlo on portfolio; return (var5_pct, cvar5_pct, var1_pct, total_eur)."""
-    total = sum(float(p.get("value_eur", 0)) for p in positions)
+    total = sum(float(p.get("value_eur") or 0.0) for p in positions)
     if total <= 0:
         return 0, 0, 0, 0
     port_ret = np.zeros(n_paths)
@@ -281,7 +305,7 @@ def atomic_write_json(path, data):
 def overview():
     # Live Reconstruction — reads trades ledger + latest prices, no snapshot needed
     positions, cash_eur = _live_positions()
-    total_eur = sum(float(p["value_eur"]) for p in positions) + cash_eur
+    total_eur = sum(float(p["value_eur"] or 0.0) for p in positions) + cash_eur
 
     # Trade advisor diff
     trade_advice = _q("""
@@ -643,7 +667,7 @@ def api_portfolio_mc():
     """)
     targets_map = {t["ticker"]: t for t in targets}
 
-    total = sum(float(p.get("value_eur", 0)) for p in positions)
+    total = sum(float(p.get("value_eur") or 0.0) for p in positions)
     if total <= 0:
         return jsonify({"error": "no positions"}), 404
 
@@ -901,9 +925,13 @@ def health():
 @app.route("/api/positions")
 def api_positions():
     """Alias: same as /api/holdings but shaped for overview.html — live reconstruction."""
-    positions, cash_eur = _live_positions()
-    total_eur = sum(float(p["value_eur"]) for p in positions) + cash_eur
-    return jsonify({"positions": positions, "cash_eur": cash_eur, "total_eur": total_eur})
+    try:
+        positions, cash_eur = _live_positions()
+        total_eur = sum(float(p["value_eur"] or 0.0) for p in positions) + cash_eur
+        return jsonify({"positions": positions, "cash_eur": cash_eur, "total_eur": total_eur})
+    except Exception:
+        import traceback
+        return traceback.format_exc(), 500
 
 
 @app.route("/api/cash")

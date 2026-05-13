@@ -1,4 +1,13 @@
-# engine/data/ingestion.py
+import os
+import sys
+
+# Ensure root is in path for absolute imports
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from portfolio.src.config import ASSET_UNIVERSE
 """
 Production data ingestion pipeline.
 Primary source:  Polygon.io (requires POLYGON_API_KEY env var)
@@ -409,12 +418,19 @@ def run_ingestion(
 
 
 if __name__ == '__main__':
-    # Quick smoke test — 5 tickers, last 30 days
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tickers', nargs='*', help='Tickers to ingest (defaults to config universe)')
+    parser.add_argument('--days', type=int, default=30, help='Days of history to fetch')
+    args = parser.parse_args()
+
     from datetime import date
-    test_tickers = ['APC.DE', 'MSF.DE', 'NVDA', 'SAP.DE', 'EUNL.DE']
     today = str(date.today())
-    thirty_ago = str(date.today() - timedelta(days=30))
+    start_date = str(date.today() - timedelta(days=args.days))
+
+    # Use CLI args if provided, otherwise the full config universe
+    tickers_to_run = args.tickers if args.tickers else ASSET_UNIVERSE
 
     logging.basicConfig(level=logging.INFO)
-    result = run_ingestion(test_tickers, thirty_ago, today)
+    result = run_ingestion(tickers_to_run, start_date, today)
     print(f"\nResult: {len(result)} rows, tickers: {result['ticker'].unique().tolist()}")
