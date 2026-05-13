@@ -132,6 +132,53 @@ def step_ingest():
     run_ingestion(TICKERS, HISTORY_START, TODAY)
 
 
+def _mirror_all_state_files():
+    """
+    Copies all state files from their engine-local data/ folders into shared/state/.
+    Called once at the start of the pipeline so every step sees fresh files,
+    AND again after regime/PEAD engines run so any new output is immediately visible.
+    """
+    import shutil
+    from shared.state_paths import (
+        REGIME_STATE_PATH, REGIME_HISTORY_PATH,
+        PEAD_STATE_PATH, PEAD_SETUPS_PATH,
+        ensure_state_dir,
+    )
+    ensure_state_dir()
+
+    copies = [
+        # (source, destination)
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'regime_engine', 'data', 'regime_state.json'),   REGIME_STATE_PATH),
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'regime_engine', 'data', 'regime_history.csv'),  REGIME_HISTORY_PATH),
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'pead_engine',   'data', 'pead_state.json'),      PEAD_STATE_PATH),
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'pead_engine',   'data', 'pead_setups.csv'),      PEAD_SETUPS_PATH),
+        # Also pick up regime files that the pead_engine may have refreshed
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'pead_engine',   'data', 'regime_state.json'),    REGIME_STATE_PATH),
+        (os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                      'pead_engine',   'data', 'regime_history.csv'),   REGIME_HISTORY_PATH),
+    ]
+
+    copied, skipped = 0, 0
+    seen_dest = set()
+    for src, dst in copies:
+        if dst in seen_dest:          # don't overwrite with a less-preferred source
+            continue
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            seen_dest.add(dst)
+            copied += 1
+            logger.info(f"[mirror] {os.path.basename(src)} → shared/state/")
+        else:
+            skipped += 1
+
+    logger.info(f"[mirror] {copied} files copied, {skipped} sources not found")
+
+
 def step_regime_refresh():
     import subprocess
     project_root = _ROOT
@@ -141,6 +188,8 @@ def step_regime_refresh():
 
     if not os.path.isdir(regime_dir):
         logger.warning(f"[regime] regime_engine dir not found: {regime_dir} — skipping")
+        # Still mirror whatever files already exist
+        _mirror_all_state_files()
         return
 
     try:
@@ -152,11 +201,18 @@ def step_regime_refresh():
             logger.warning(f"[regime] Engine non-zero:\n{result.stderr[-500:]}")
         else:
             logger.info("[regime] regime_state.json updated")
-            _mirror_regime_to_shared(regime_dir, project_root)
+        # Mirror regardless — if the run updated files, copy them; if not, copy what's there
+        _mirror_all_state_files()
+        _sync_regime_history_to_db(
+            os.path.join(_ROOT, 'ml_quant_finance_research', 'quant_research',
+                         'regime_engine', 'data', 'regime_history.csv')
+        )
     except subprocess.TimeoutExpired:
         logger.error("[regime] Timed out after 5 minutes")
+        _mirror_all_state_files()   # copy whatever we have
     except Exception as e:
         logger.error(f"[regime] Failed: {e}")
+        _mirror_all_state_files()
 
 
 def _mirror_regime_to_shared(regime_dir: str, project_root: str):
@@ -485,6 +541,11 @@ def run_pipeline(dry_run: bool = False):
         f" {'[DRY RUN]' if dry_run else ''}\n  Tickers: {len(TICKERS)}\n{'='*60}"
     )
 
+    # ── Mirror state files first — ensures shared/state/ is populated even if
+    #    regime/PEAD engines haven't run yet (uses last known-good files)
+    if not dry_run:
+        _mirror_all_state_files()
+
     # ── Daily steps ───────────────────────────────────────────────────────────
     _run_step('0.  Ledger import',           step_ledger_import,                 dry_run)  # Stream 8
     _run_step('1.  Data ingestion',          step_ingest,                        dry_run)
@@ -525,5 +586,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hedge Fund daily pipeline scheduler')
     parser.add_argument('--test', '--dry-run', action='store_true',
                         help='Dry run — logs steps without executing them')
+    parser.add_argument('--pipeline-only', action='store_true',
+                        help='Run pipeline only (same as default — accepted for BAT compatibility)')
     args = parser.parse_args()
     run_pipeline(dry_run=args.test)
