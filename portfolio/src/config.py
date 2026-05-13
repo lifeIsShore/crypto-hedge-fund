@@ -55,6 +55,7 @@ ASSET_UNIVERSE = [
     'PYPL',     # PayPal Holdings
     'SPOT',     # Spotify Technology
     'SHOP',     # Shopify Inc.
+    'FIG',      # Figma Inc. (US: FIG / GER: 1S2)
 
     # --- European Blue Chips — DAX (.DE) ---
     'SAP.DE',   # SAP SE
@@ -146,6 +147,7 @@ ASSET_UNIVERSE = [
     'HON',      # Honeywell International
     'UPS',      # United Parcel Service
     'DE',       # Deere & Company
+    'RHM.DE',   # Rheinmetall AG
 ]
 
 # List of broad-market ETFs. These are excluded from "Tradeable Pairs" scoring 
