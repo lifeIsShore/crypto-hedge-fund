@@ -70,12 +70,15 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script id="ticker-sectors-data" type="application/json">{{ ticker_sectors | tojson | safe }}</script>
+
 <script>
 let weightsChart = null;
 
 async function loadOverview(){
-  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
-  const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
+  const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+  const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
   const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),

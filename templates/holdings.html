@@ -28,26 +28,6 @@
   </div>
 </div>
 
-<div class="panel" style="margin-top:14px">
-  <div class="panel-header">
-    <span class="panel-title">MPT OPTIMAL WEIGHTS</span>
-    <span class="panel-badge">BLACK-LITTERMAN MODEL</span>
-  </div>
-  <div class="panel-body">
-    <table class="tbl" id="mpt-tbl">
-      <thead><tr>
-        <th>TICKER</th>
-        <th>CURRENT WT</th>
-        <th>OPTIMAL WT</th>
-        <th>DELTA WT</th>
-        <th>EXPECTED RET</th>
-        <th>BL RET</th>
-      </tr></thead>
-      <tbody id="mpt-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
 <!-- MPT Optimal Weights panel -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
@@ -71,9 +51,9 @@
     </table>
 
     <!-- Weight comparison bar chart -->
-    <div style="margin-top:16px">
-      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">WEIGHT COMPARISON — CURRENT vs OPTIMAL</div>
-      <div class="chart-wrap" style="height:200px"><canvas id="mptChart"></canvas></div>
+    <div style="margin-top:24px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:12px;text-align:center">WEIGHT COMPARISON — CURRENT vs OPTIMAL</div>
+      <div class="chart-wrap" style="height:250px"><canvas id="mptChart"></canvas></div>
     </div>
   </div>
 </div>
@@ -81,10 +61,15 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script id="ticker-sectors-data" type="application/json">{{ ticker_sectors | tojson | safe }}</script>
+
 <script>
+// Global metadata fetched from JSON script tags to avoid IDE syntax errors
+const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
+
 async function loadHoldings(){
-  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
-  const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
   const data = await fetch('/api/holdings').then(r=>r.json()).catch(()=>({}));
   const positions = data.positions || [];
   const cash = data.cash_eur || 0;
@@ -145,8 +130,6 @@ async function loadHoldings(){
   }
 }
 
-
-
 async function loadMPT() {
   const data = await fetch('/api/mpt_weights').then(r => r.json()).catch(() => ({}));
   const weights = data.weights || [];
@@ -158,6 +141,7 @@ async function loadMPT() {
     tbody.innerHTML = '';
     return;
   }
+  if (noEl) noEl.style.display = 'none';
 
   const badge = document.getElementById('mpt-badge');
   if (badge) badge.textContent = 'BLACK-LITTERMAN · ' + weights.length + ' POSITIONS';
@@ -222,6 +206,7 @@ async function loadMPT() {
   }
 }
 
+// Initial load
 loadHoldings();
 loadMPT();
 </script>
