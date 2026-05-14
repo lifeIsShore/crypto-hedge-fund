@@ -219,22 +219,22 @@
 <!-- ① KPI Strip -->
 <div class="kpi-strip" id="pairs-kpi">
   <div class="kpi neutral">
-    <div class="kpi-label">ACTIVE SIGNALS</div>
+    <div class="kpi-label"><span class="info-point" data-title="Active Signals" data-info="Pairs where the price spread has drifted beyond 2.0 standard deviations, suggesting a potential mean-reversion trade.">ACTIVE SIGNALS</span></div>
     <div class="kpi-value" id="kpi-active">—</div>
     <div class="kpi-sub">pairs diverged ≥ 2σ</div>
   </div>
   <div class="kpi neutral">
-    <div class="kpi-label">COINTEGRATED PAIRS</div>
+    <div class="kpi-label"><span class="info-point" data-title="Cointegration" data-info="Pairs with a strong long-term statistical link. Their prices move together, making divergences likely to revert to the mean.">COINTEGRATED PAIRS</span></div>
     <div class="kpi-value" id="kpi-coint">—</div>
     <div class="kpi-sub">p &lt; 0.05</div>
   </div>
   <div class="kpi neutral">
-    <div class="kpi-label">MAX |Z-SCORE|</div>
+    <div class="kpi-label"><span class="info-point" data-title="Z-Score" data-info="The number of standard deviations the spread is from its average. Higher Z-scores indicate more extreme price gaps.">MAX |Z-SCORE|</span></div>
     <div class="kpi-value" id="kpi-maxz">—</div>
     <div class="kpi-sub">highest divergence</div>
   </div>
   <div class="kpi neutral">
-    <div class="kpi-label">PAIRS SCANNED</div>
+    <div class="kpi-label"><span class="info-point" data-title="Scanning Scope" data-info="Total asset pairs analyzed within their respective sectors to find statistical relationships.">PAIRS SCANNED</span></div>
     <div class="kpi-value" id="kpi-scanned">—</div>
     <div class="kpi-sub">same-sector only</div>
   </div>
@@ -253,7 +253,7 @@
   <!-- Correlation Heatmap -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">60-DAY ROLLING CORRELATION HEATMAP</span>
+      <span class="panel-title info-point" data-title="Correlation Heatmap" data-info="A grid showing how closely assets move together. Green (+1.0) means they move in sync; Red (-1.0) means they move oppositely.">60-DAY ROLLING CORRELATION HEATMAP</span>
       <span class="panel-badge" id="hm-badge">TRADEABLE UNIVERSE</span>
     </div>
     <div class="panel-body">
@@ -296,7 +296,7 @@
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">PAIR SCANNER — COINTEGRATION RESULTS</span>
-      <span class="panel-badge" id="scan-badge">ENGLE-GRANGER</span>
+      <span class="panel-badge info-point" id="scan-badge" data-title="Engle-Granger Test" data-info="A two-step statistical process used to determine if the spread between two assets is stationary (mean-reverting).">ENGLE-GRANGER</span>
     </div>
     <div class="panel-body" style="padding:0">
       <div id="scanner-loading" style="color:var(--muted);font-size:10px;text-align:center;padding:40px 0">
@@ -307,10 +307,10 @@
           <tr>
             <th class="col-pair">PAIR</th>
             <th class="col-sector">SECTOR</th>
-            <th class="col-val">CORR</th>
-            <th class="col-val">P-VAL</th>
-            <th class="col-val">Z-SCORE</th>
-            <th class="col-stat">STATUS</th>
+            <th class="col-val"><span class="info-point" data-title="Correlation" data-info="Price movement similarity over time. High correlation is a prerequisite for pairs trading.">CORR</span></th>
+            <th class="col-val"><span class="info-point" data-title="P-Value" data-info="Stat significance of cointegration. Values < 0.05 suggest the relationship is reliable and not due to chance.">P-VAL</span></th>
+            <th class="col-val"><span class="info-point" data-title="Z-Score" data-info="Measures how far the current price gap is from the historical average in terms of standard deviations.">Z-SCORE</span></th>
+            <th class="col-stat"><span class="info-point" data-title="Status" data-info="The current state of the pair: Cointegrated (Good), Watching (Normal), or Drifting (Potential Entry).">STATUS</span></th>
             <th class="col-sig">SIGNAL</th>
           </tr>
         </thead>
@@ -332,7 +332,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <span id="spread-zscore-badge" style="display:none"></span>
-      <span class="panel-badge" id="spread-badge">252-DAY WINDOW</span>
+      <span class="panel-badge info-point" id="spread-badge" data-title="Lookback Window" data-info="The Z-score and mean are calculated using the last 252 trading days (approximately one year) of price history.">252-DAY WINDOW</span>
     </div>
   </div>
   <div class="panel-body">
@@ -348,20 +348,20 @@
     <div id="spread-stats" style="display:none;margin-top:14px">
       <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border)">
         <div class="kpi neutral kpi-centered" style="padding:10px; background: var(--surface)">
-          <div class="kpi-label">CURRENT Z</div>
+          <div class="kpi-label"><span class="info-point" data-title="Current Z-Score" data-info="The real-time divergence level. Entries are typically made at +/- 2.0 and exited near zero.">CURRENT Z</span></div>
           <div class="kpi-value" style="font-size:18px" id="ss-z">—</div>
         </div>
         <div class="kpi neutral kpi-centered" style="padding:10px; background: var(--surface)">
-          <div class="kpi-label">MEAN SPREAD</div>
+          <div class="kpi-label"><span class="info-point" data-title="Mean Spread" data-info="The historical equilibrium level for this pair's price difference.">MEAN SPREAD</span></div>
           <div class="kpi-value" style="font-size:18px" id="ss-mean">—</div>
         </div>
         <div class="kpi neutral kpi-centered" style="padding:10px; background: var(--surface)">
-          <div class="kpi-label">HALF-LIFE</div>
+          <div class="kpi-label"><span class="info-point" data-title="Half-Life" data-info="Estimated number of days it takes for the spread to return halfway to its historical mean. Lower is better.">HALF-LIFE</span></div>
           <div class="kpi-value" style="font-size:18px" id="ss-hl">—</div>
           <div class="kpi-sub">days</div>
         </div>
         <div class="kpi neutral kpi-centered" style="padding:10px; background: var(--surface)">
-          <div class="kpi-label">HEDGE RATIO</div>
+          <div class="kpi-label"><span class="info-point" data-title="Hedge Ratio" data-info="The Beta (β) coefficient. It tells you how many shares of Stock B to trade for every 1 share of Stock A.">HEDGE RATIO</span></div>
           <div class="kpi-value" style="font-size:18px" id="ss-hr">—</div>
           <div class="kpi-sub">β (OLS)</div>
         </div>
@@ -386,11 +386,11 @@
       <thead>
         <tr>
           <th class="col-pair">PAIR</th>
-          <th class="col-val">Z-SCORE</th>
-          <th class="col-dir">DIRECTION</th>
-          <th class="col-action">ACTION A</th>
-          <th class="col-action">ACTION B</th>
-          <th class="col-hl">HALF-LIFE</th>
+          <th class="col-val"><span class="info-point" data-title="Z-Score" data-info="The current statistical divergence. |Z| ≥ 2.0 is a strong signal.">Z-SCORE</span></th>
+          <th class="col-dir"><span class="info-point" data-title="Direction" data-info="Which asset in the pair is relatively overvalued (expensive) compared to the other.">DIRECTION</span></th>
+          <th class="col-action"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset A (Buy/Long or Sell/Short).">ACTION A</span></th>
+          <th class="col-action"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset B to remain market-neutral.">ACTION B</span></th>
+          <th class="col-hl"><span class="info-point" data-title="Mean Reversion Time" data-info="Estimated days to close half the price gap. Shorter half-lives are generally more attractive.">HALF-LIFE</span></th>
           <th class="col-note">NOTE</th>
         </tr>
       </thead>
