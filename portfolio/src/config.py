@@ -85,6 +85,7 @@ TICKER_MAPPING = {
     'FPM.DE':  'FCX',   # Freeport
     'ALB.DE':  'ALB',   # Albemarle
     'MNR.DE':  'MIN',   # Mineral Resources
+    'C1E.DE':  'LEU',   # Centrus Energy
     'VRT.DE':  'VRTX',  # Vertex
     'AXS.DE':  'AXSM',  # Axsome
 }
@@ -165,6 +166,7 @@ TICKER_NAMES = {
     'FCX': 'Freeport-McMoRan Inc.', 'FPM.DE': 'Freeport-McMoRan Inc.',
     'ALB': 'Albemarle Corporation', 'ALB.DE': 'Albemarle Corporation',
     'MIN': 'Mineral Resources Limited', 'MNR.DE': 'Mineral Resources Limited',
+    'LEU': 'Centrus Energy Corp.', 'C1E.DE': 'Centrus Energy Corp.',
     'BA': 'The Boeing Company', 'CAT': 'Caterpillar Inc.',
     'LMT': 'Lockheed Martin Corporation', 'RTX': 'RTX Corporation',
     'GE': 'General Electric Company', 'HON': 'Honeywell International Inc.',
@@ -252,6 +254,7 @@ TICKER_SECTORS = {
     'FCX': 'Mining', 'FPM.DE': 'Mining',
     'ALB': 'Mining', 'ALB.DE': 'Mining',
     'MIN': 'Mining', 'MNR.DE': 'Mining',
+    'LEU': 'Energy', 'C1E.DE': 'Energy',
     'BA': 'Industrial', 'CAT': 'Industrial', 'LMT': 'Industrial',
     'RTX': 'Industrial', 'GE': 'Industrial', 'HON': 'Industrial',
     'UPS': 'Transportation', 'DE': 'Industrial', 'RHM.DE': 'Industrial',
@@ -288,7 +291,7 @@ ASSET_UNIVERSE = [
 
     # --- Energy, Mining & Industrials ---
     'XOM', 'CVX', 'NEE', 'FSLR', 'GEV', 'CCJ', 'CEG', 'SMR', 'OKLO', 'REP', 
-    'ENB', 'ENGI', 'BE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN',
+    'ENB', 'ENGI', 'BE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN', 'C1E.DE',
     'BA', 'CAT', 'LMT', 'RTX', 'GE', 'HON', 'UPS', 'DE', 'RHM.DE'
 ]
 
