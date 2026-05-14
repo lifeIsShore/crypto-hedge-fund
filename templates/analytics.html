@@ -25,7 +25,11 @@
   </div>
 
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">RATIO SCORECARD</span><span class="panel-badge">RISK-ADJUSTED METRICS</span></div>
+    <div class="panel-header">
+      <span class="panel-title">RATIO SCORECARD</span>
+      <button id="btn-sync" class="btn" style="margin-left:auto;margin-right:10px;padding:2px 8px;font-size:9px;height:20px;line-height:1">SYNC LEDGER</button>
+      <span class="panel-badge">RISK-ADJUSTED METRICS</span>
+    </div>
     <div class="panel-body">
       <table class="tbl" id="ratio-tbl">
         <tbody>
@@ -196,6 +200,34 @@
 </style>
 
 <script>
+window.onload = () => {
+  const syncBtn = document.getElementById('btn-sync');
+  if (syncBtn) {
+    syncBtn.onclick = async () => {
+      const oldText = syncBtn.innerText;
+      syncBtn.innerText = "SYNCING...";
+      syncBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/sync_ledger', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          alert("Ledger re-imported successfully. Refreshing analytics...");
+          window.location.reload();
+        } else {
+          alert("Sync failed: " + data.error);
+        }
+      } catch (e) {
+        alert("Error triggering sync: " + e);
+      } finally {
+        syncBtn.innerText = oldText;
+        syncBtn.disabled = false;
+      }
+    };
+  }
+  loadAnalytics();
+};
+
 async function loadAnalytics() {
   let perf;
   try {

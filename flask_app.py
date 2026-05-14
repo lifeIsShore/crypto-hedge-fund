@@ -453,8 +453,11 @@ def risk():
         SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """)
 
     regime = _load_json(REGIME_STATE_PATH)
@@ -741,8 +744,11 @@ def api_portfolio_mc():
         SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """)
     targets = _q("""
         SELECT ticker, up_proba, vol_ann
@@ -850,8 +856,11 @@ def analytics():
         SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
         ORDER BY p.value_eur DESC
     """)
     trades = _q("""
@@ -936,8 +945,12 @@ def ticker_detail(ticker):
 
     position = _q("""
         SELECT p.* FROM positions_history p
-        INNER JOIN (SELECT ticker, MAX(date) AS md FROM positions_history WHERE ticker=:t GROUP BY ticker) l
-          ON p.ticker=l.ticker AND p.date=l.md
+        INNER JOIN (
+            SELECT ticker, MAX(id) AS mid 
+            FROM positions_history 
+            WHERE ticker=:t 
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """, {"t": ticker})
     position = position[0] if position else {}
 
@@ -1194,6 +1207,18 @@ def api_log_trade():
     })
 
 
+@app.route("/api/sync_ledger", methods=["POST"])
+def api_sync_ledger():
+    """Manual trigger to re-import the ledger.csv into the DB."""
+    try:
+        from engine.reconciliation.ledger_importer import run_ledger_import
+        run_ledger_import()
+        return jsonify({"ok": True, "message": "Ledger re-imported successfully."})
+    except Exception as e:
+        log.error(f"Sync failed: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/api/divergence")
 def api_divergence():
     """Unlabeled divergence events for the labeling UI."""
@@ -1262,8 +1287,11 @@ def api_performance():
         SELECT p.ticker, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """)
     cash_row = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
     cash_eur = float(cash_row[0]["cash_eur"]) if cash_row else 0.0
@@ -1510,8 +1538,11 @@ def api_mpt_weights():
         SELECT p.ticker, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """)
     pos_map = {p["ticker"]: p for p in positions}
     result = []
@@ -1629,8 +1660,11 @@ def api_stress_tests():
         SELECT p.ticker, p.value_eur, p.weight
         FROM positions_history p
         INNER JOIN (
-            SELECT ticker, MAX(date) AS md FROM positions_history GROUP BY ticker
-        ) l ON p.ticker = l.ticker AND p.date = l.md
+            SELECT ticker, MAX(id) AS mid
+            FROM positions_history
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+            GROUP BY ticker
+        ) l ON p.id = l.mid
     """)
     cash_row = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC LIMIT 1")
     cash_eur = float(cash_row[0]["cash_eur"]) if cash_row else 0.0
