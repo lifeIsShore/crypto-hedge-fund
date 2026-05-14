@@ -195,7 +195,8 @@
   .font-mono { font-family: var(--mono); }
   
   .tbl-compact td { padding: 10px 12px; font-size: 11px; vertical-align: middle; text-align: center; }
-  .tbl-compact th { font-size: 9px; padding-bottom: 12px; padding-top: 4px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+  .tbl-compact th { font-size: 9px; padding-bottom: 12px; padding-top: 4px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; cursor: pointer; transition: color 0.2s; }
+  .tbl-compact th:hover { color: #fff; }
 
   /* ── Proportional Column Distribution ──────────────────────────── */
   .col-pair { width: 22%; }
@@ -305,13 +306,13 @@
       <table class="tbl tbl-compact" id="pairs-table" style="display:none">
         <thead>
           <tr>
-            <th class="col-pair">PAIR</th>
-            <th class="col-sector">SECTOR</th>
-            <th class="col-val"><span class="info-point" data-title="Correlation" data-info="Price movement similarity over time. High correlation is a prerequisite for pairs trading.">CORR</span></th>
-            <th class="col-val"><span class="info-point" data-title="P-Value" data-info="Stat significance of cointegration. Values < 0.05 suggest the relationship is reliable and not due to chance.">P-VAL</span></th>
-            <th class="col-val"><span class="info-point" data-title="Z-Score" data-info="Measures how far the current price gap is from the historical average in terms of standard deviations.">Z-SCORE</span></th>
-            <th class="col-stat"><span class="info-point" data-title="Status" data-info="The current state of the pair: Cointegrated (Good), Watching (Normal), or Drifting (Potential Entry).">STATUS</span></th>
-            <th class="col-sig">SIGNAL</th>
+            <th class="col-pair" onclick="sortTable(0, 'pairs-table', 'str')">PAIR</th>
+            <th class="col-sector" onclick="sortTable(1, 'pairs-table', 'str')">SECTOR</th>
+            <th class="col-val" onclick="sortTable(2, 'pairs-table', 'num')"><span class="info-point" data-title="Correlation" data-info="Price movement similarity over time. High correlation is a prerequisite for pairs trading.">CORR</span></th>
+            <th class="col-val" onclick="sortTable(3, 'pairs-table', 'num')"><span class="info-point" data-title="P-Value" data-info="Stat significance of cointegration. Values < 0.05 suggest the relationship is reliable and not due to chance.">P-VAL</span></th>
+            <th class="col-val" onclick="sortTable(4, 'pairs-table', 'num')"><span class="info-point" data-title="Z-Score" data-info="Measures how far the current price gap is from the historical average in terms of standard deviations.">Z-SCORE</span></th>
+            <th class="col-stat" onclick="sortTable(5, 'pairs-table', 'str')"><span class="info-point" data-title="Status" data-info="The current state of the pair: Cointegrated (Good), Watching (Normal), or Drifting (Potential Entry).">STATUS</span></th>
+            <th class="col-sig" onclick="sortTable(6, 'pairs-table', 'str')">SIGNAL</th>
           </tr>
         </thead>
         <tbody id="pairs-tbody"></tbody>
@@ -385,13 +386,13 @@
     <table class="tbl tbl-compact" id="signals-table" style="display:none">
       <thead>
         <tr>
-          <th class="col-pair">PAIR</th>
-          <th class="col-val"><span class="info-point" data-title="Z-Score" data-info="The current statistical divergence. |Z| ≥ 2.0 is a strong signal.">Z-SCORE</span></th>
-          <th class="col-dir"><span class="info-point" data-title="Direction" data-info="Which asset in the pair is relatively overvalued (expensive) compared to the other.">DIRECTION</span></th>
-          <th class="col-action"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset A (Buy/Long or Sell/Short).">ACTION A</span></th>
-          <th class="col-action"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset B to remain market-neutral.">ACTION B</span></th>
-          <th class="col-hl"><span class="info-point" data-title="Mean Reversion Time" data-info="Estimated days to close half the price gap. Shorter half-lives are generally more attractive.">HALF-LIFE</span></th>
-          <th class="col-note">NOTE</th>
+          <th class="col-pair" onclick="sortTable(0, 'signals-table', 'str')">PAIR</th>
+          <th class="col-val" onclick="sortTable(1, 'signals-table', 'num')"><span class="info-point" data-title="Z-Score" data-info="The current statistical divergence. |Z| ≥ 2.0 is a strong signal.">Z-SCORE</span></th>
+          <th class="col-dir" onclick="sortTable(2, 'signals-table', 'str')"><span class="info-point" data-title="Direction" data-info="Which asset in the pair is relatively overvalued (expensive) compared to the other.">DIRECTION</span></th>
+          <th class="col-action" onclick="sortTable(3, 'signals-table', 'str')"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset A (Buy/Long or Sell/Short).">ACTION A</span></th>
+          <th class="col-action" onclick="sortTable(4, 'signals-table', 'str')"><span class="info-point" data-title="Trade Action" data-info="The specific trading move for asset B to remain market-neutral.">ACTION B</span></th>
+          <th class="col-hl" onclick="sortTable(5, 'signals-table', 'num')"><span class="info-point" data-title="Mean Reversion Time" data-info="Estimated days to close half the price gap. Shorter half-lives are generally more attractive.">HALF-LIFE</span></th>
+          <th class="col-note" onclick="sortTable(6, 'signals-table', 'str')">NOTE</th>
         </tr>
       </thead>
       <tbody id="signals-tbody"></tbody>
