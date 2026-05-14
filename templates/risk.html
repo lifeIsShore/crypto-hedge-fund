@@ -49,8 +49,12 @@
   <div class="panel">
     <div class="panel-header"><span class="panel-title">PRICE LEVELS</span><span class="panel-badge">EUR</span></div>
     <div class="panel-body">
-      <table class="tbl">
-        <thead><tr><th>LEVEL</th><th>PRICE €</th><th>vs CURRENT</th></tr></thead>
+      <table class="tbl" id="levels-table">
+        <thead><tr>
+          <th onclick="sortTable(0,'levels-table','str')">LEVEL</th>
+          <th onclick="sortTable(1,'levels-table','num')">PRICE €</th>
+          <th onclick="sortTable(2,'levels-table','num')">vs CURRENT</th>
+        </tr></thead>
         <tbody id="levels-tbody"><tr><td colspan="3" style="color:var(--muted)">Select ticker</td></tr></tbody>
       </table>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
@@ -96,10 +100,18 @@
       <input type="text" id="tbl-filter" placeholder="Filter ticker…" style="max-width:180px" oninput="filterTable(this.value)">
       <span style="font-size:10px;color:var(--muted)" id="filter-count"></span>
     </div>
-    <table class="tbl">
+    <table class="tbl" id="universe-table">
       <thead><tr>
-        <th>TICKER</th><th>PRICE €</th><th>EXP 21D €</th><th>EXP %</th>
-        <th>TARGET €</th><th>STOP €</th><th>R:R</th><th>WIN %</th><th>KELLY½ %</th><th>SIGNAL</th>
+        <th onclick="sortTable(0,'universe-table','str')">TICKER</th>
+        <th onclick="sortTable(1,'universe-table','num')">PRICE €</th>
+        <th onclick="sortTable(2,'universe-table','num')">EXP 21D €</th>
+        <th onclick="sortTable(3,'universe-table','num')">EXP %</th>
+        <th onclick="sortTable(4,'universe-table','num')">TARGET €</th>
+        <th onclick="sortTable(5,'universe-table','num')">STOP €</th>
+        <th onclick="sortTable(6,'universe-table','num')">R:R</th>
+        <th onclick="sortTable(7,'universe-table','num')">WIN %</th>
+        <th onclick="sortTable(8,'universe-table','num')">KELLY½ %</th>
+        <th onclick="sortTable(9,'universe-table','str')">SIGNAL</th>
       </tr></thead>
       <tbody id="universe-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>

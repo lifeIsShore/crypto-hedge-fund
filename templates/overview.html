@@ -23,7 +23,13 @@
     <div class="panel-body">
       <table class="tbl" id="pos-table">
         <thead><tr>
-          <th>TICKER</th><th>SECTOR</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th><th>SIGNAL</th>
+          <th onclick="sortTable(0,'pos-table','str')">TICKER</th>
+          <th onclick="sortTable(1,'pos-table','str')">SECTOR</th>
+          <th onclick="sortTable(2,'pos-table','num')">QTY</th>
+          <th onclick="sortTable(3,'pos-table','num')">PRICE €</th>
+          <th onclick="sortTable(4,'pos-table','num')">VALUE €</th>
+          <th onclick="sortTable(5,'pos-table','num')">WEIGHT</th>
+          <th onclick="sortTable(6,'pos-table','str')">SIGNAL</th>
         </tr></thead>
         <tbody id="pos-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
@@ -42,7 +48,13 @@
       <div class="panel-header"><span class="panel-title">RECENT TRADES</span><span class="panel-badge">LAST 10</span></div>
       <div class="panel-body">
         <table class="tbl" id="trades-table">
-          <thead><tr><th>DATE</th><th>TICKER</th><th>ACTION</th><th>QTY</th><th>PRICE €</th></tr></thead>
+          <thead><tr>
+            <th onclick="sortTable(0,'trades-table','str')">DATE</th>
+            <th onclick="sortTable(1,'trades-table','str')">TICKER</th>
+            <th onclick="sortTable(2,'trades-table','str')">ACTION</th>
+            <th onclick="sortTable(3,'trades-table','num')">QTY</th>
+            <th onclick="sortTable(4,'trades-table','num')">PRICE €</th>
+          </tr></thead>
           <tbody id="trades-tbody"><tr><td colspan="5" style="color:var(--muted)">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -61,7 +73,13 @@
     <div id="rebalance-alert"></div>
     <table class="tbl" id="reb-table">
       <thead><tr>
-        <th>TICKER</th><th>SECTOR</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
+        <th onclick="sortTable(0,'reb-table','str')">TICKER</th>
+        <th onclick="sortTable(1,'reb-table','str')">SECTOR</th>
+        <th onclick="sortTable(2,'reb-table','num')">CURRENT %</th>
+        <th onclick="sortTable(3,'reb-table','num')">TARGET %</th>
+        <th onclick="sortTable(4,'reb-table','num')">DELTA %</th>
+        <th onclick="sortTable(5,'reb-table','num')">BL RETURN</th>
+        <th onclick="sortTable(6,'reb-table','str')">ACTION</th>
       </tr></thead>
       <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>

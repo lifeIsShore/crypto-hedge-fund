@@ -155,7 +155,15 @@
       <div id="no-trades" class="alert alert-info" style="display:none">No trades recorded yet. Log your first transaction.</div>
       <table class="tbl" id="trades-tbl">
         <thead><tr>
-          <th>DATE</th><th>TICKER</th><th>SECTOR</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th><th>FEE €</th><th>NOTES</th>
+          <th onclick="sortTable(0,'trades-tbl','str')">DATE</th>
+          <th onclick="sortTable(1,'trades-tbl','str')">TICKER</th>
+          <th onclick="sortTable(2,'trades-tbl','str')">SECTOR</th>
+          <th onclick="sortTable(3,'trades-tbl','str')">ACTION</th>
+          <th onclick="sortTable(4,'trades-tbl','num')">QTY</th>
+          <th onclick="sortTable(5,'trades-tbl','num')">PRICE €</th>
+          <th onclick="sortTable(6,'trades-tbl','num')">TOTAL €</th>
+          <th onclick="sortTable(7,'trades-tbl','num')">FEE €</th>
+          <th onclick="sortTable(8,'trades-tbl','str')">NOTES</th>
         </tr></thead>
         <tbody id="trades-tbody"><tr><td colspan="9" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
@@ -167,6 +175,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script id="ticker-sectors-data" type="application/json">{{ ticker_sectors | tojson | safe }}</script>
 <style>
 .form-row-label {
   font-size: 9px;
@@ -212,8 +222,8 @@
 let allTrades   = [];
 let currentCash = 0;
 let currentAction = 'Buy';
-const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
-const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
+const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
 
 // ── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

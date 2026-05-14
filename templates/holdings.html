@@ -20,8 +20,17 @@
     <div id="no-holdings" class="alert alert-info" style="display:none">No holdings in DB. Import your ledger first.</div>
     <table class="tbl" id="holdings-tbl">
       <thead><tr>
-        <th>TICKER</th><th>SECTOR</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th>
-        <th>EXP 21D €</th><th>TARGET €</th><th>STOP €</th><th>WIN%</th><th>ACTION</th>
+        <th onclick="sortTable(0,'holdings-tbl','str')">TICKER</th>
+        <th onclick="sortTable(1,'holdings-tbl','str')">SECTOR</th>
+        <th onclick="sortTable(2,'holdings-tbl','num')">QTY</th>
+        <th onclick="sortTable(3,'holdings-tbl','num')">PRICE €</th>
+        <th onclick="sortTable(4,'holdings-tbl','num')">VALUE €</th>
+        <th onclick="sortTable(5,'holdings-tbl','num')">WEIGHT</th>
+        <th onclick="sortTable(6,'holdings-tbl','num')">EXP 21D €</th>
+        <th onclick="sortTable(7,'holdings-tbl','num')">TARGET €</th>
+        <th onclick="sortTable(8,'holdings-tbl','num')">STOP €</th>
+        <th onclick="sortTable(9,'holdings-tbl','num')">WIN%</th>
+        <th onclick="sortTable(10,'holdings-tbl','str')">ACTION</th>
       </tr></thead>
       <tbody id="holdings-tbody"><tr><td colspan="11" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
@@ -38,14 +47,14 @@
     <div id="no-mpt" class="alert alert-info" style="display:none">No model output yet — run the pipeline to generate optimal weights.</div>
     <table class="tbl" id="mpt-tbl">
       <thead><tr>
-        <th>TICKER</th>
-        <th>CURRENT WT</th>
-        <th>OPTIMAL WT</th>
-        <th style="width:200px">DELTA</th>
-        <th>EXP RETURN</th>
-        <th>BL RETURN</th>
-        <th>VALUE €</th>
-        <th>ACTION</th>
+        <th onclick="sortTable(0,'mpt-tbl','str')">TICKER</th>
+        <th onclick="sortTable(1,'mpt-tbl','num')">CURRENT WT</th>
+        <th onclick="sortTable(2,'mpt-tbl','num')">OPTIMAL WT</th>
+        <th onclick="sortTable(3,'mpt-tbl','num')" style="width:200px">DELTA</th>
+        <th onclick="sortTable(4,'mpt-tbl','num')">EXP RETURN</th>
+        <th onclick="sortTable(5,'mpt-tbl','num')">BL RETURN</th>
+        <th onclick="sortTable(6,'mpt-tbl','num')">VALUE €</th>
+        <th onclick="sortTable(7,'mpt-tbl','str')">ACTION</th>
       </tr></thead>
       <tbody id="mpt-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>

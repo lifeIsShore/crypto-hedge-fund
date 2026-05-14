@@ -28,7 +28,15 @@
     <div class="panel-body">
       <input type="text" id="sig-filter" placeholder="Filter ticker or sector…" style="max-width:220px;margin-bottom:10px" oninput="filterSigs(this.value)">
       <table class="tbl" id="sig-tbl">
-        <thead><tr><th>TICKER</th><th>SECTOR</th><th>UP PROBA</th><th>AUC</th><th>VOL ANN</th><th>GATE</th><th>SIGNAL</th></tr></thead>
+        <thead><tr>
+          <th onclick="sortTable(0,'sig-tbl','str')">TICKER</th>
+          <th onclick="sortTable(1,'sig-tbl','str')">SECTOR</th>
+          <th onclick="sortTable(2,'sig-tbl','num')">UP PROBA</th>
+          <th onclick="sortTable(3,'sig-tbl','num')">AUC</th>
+          <th onclick="sortTable(4,'sig-tbl','num')">VOL ANN</th>
+          <th onclick="sortTable(5,'sig-tbl','str')">GATE</th>
+          <th onclick="sortTable(6,'sig-tbl','str')">SIGNAL</th>
+        </tr></thead>
         <tbody id="sig-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
@@ -40,7 +48,14 @@
       <div class="panel-header"><span class="panel-title">MODEL COMPARISON — AVG WALK-FORWARD</span><span class="panel-badge">VS BASELINES</span></div>
       <div class="panel-body">
         <table class="tbl" id="model-tbl">
-          <thead><tr><th>MODEL</th><th>ACCURACY</th><th>AUC</th><th>SHARPE</th><th>MAX DD</th><th>BEATS BL</th></tr></thead>
+          <thead><tr>
+            <th onclick="sortTable(0,'model-tbl','str')">MODEL</th>
+            <th onclick="sortTable(1,'model-tbl','num')">ACCURACY</th>
+            <th onclick="sortTable(2,'model-tbl','num')">AUC</th>
+            <th onclick="sortTable(3,'model-tbl','num')">SHARPE</th>
+            <th onclick="sortTable(4,'model-tbl','num')">MAX DD</th>
+            <th onclick="sortTable(5,'model-tbl','str')">BEATS BL</th>
+          </tr></thead>
           <tbody id="model-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -72,7 +87,15 @@
     <div id="pead-active-section">
       <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">ACTIVE ENTRY WINDOWS</div>
       <table class="tbl" id="pead-active-tbl">
-        <thead><tr><th>TICKER</th><th>DIRECTION</th><th>QUALITY</th><th>SURPRISE %</th><th>ENTRY DATE</th><th>UNDERREACTION</th><th>REGIME</th></tr></thead>
+        <thead><tr>
+          <th onclick="sortTable(0,'pead-active-tbl','str')">TICKER</th>
+          <th onclick="sortTable(1,'pead-active-tbl','str')">DIRECTION</th>
+          <th onclick="sortTable(2,'pead-active-tbl','str')">QUALITY</th>
+          <th onclick="sortTable(3,'pead-active-tbl','num')">SURPRISE %</th>
+          <th onclick="sortTable(4,'pead-active-tbl','str')">ENTRY DATE</th>
+          <th onclick="sortTable(5,'pead-active-tbl','str')">UNDERREACTION</th>
+          <th onclick="sortTable(6,'pead-active-tbl','str')">REGIME</th>
+        </tr></thead>
         <tbody id="pead-active-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
@@ -80,7 +103,15 @@
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
       <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">HISTORICAL SETUPS (LAST 50)</div>
       <table class="tbl" id="pead-hist-tbl">
-        <thead><tr><th>EARNINGS DATE</th><th>TICKER</th><th>DIRECTION</th><th>SURPRISE %</th><th>DRIFT 21D</th><th>CORRECT</th><th>REGIME</th></tr></thead>
+        <thead><tr>
+          <th onclick="sortTable(0,'pead-hist-tbl','str')">EARNINGS DATE</th>
+          <th onclick="sortTable(1,'pead-hist-tbl','str')">TICKER</th>
+          <th onclick="sortTable(2,'pead-hist-tbl','str')">DIRECTION</th>
+          <th onclick="sortTable(3,'pead-hist-tbl','num')">SURPRISE %</th>
+          <th onclick="sortTable(4,'pead-hist-tbl','num')">DRIFT 21D</th>
+          <th onclick="sortTable(5,'pead-hist-tbl','str')">CORRECT</th>
+          <th onclick="sortTable(6,'pead-hist-tbl','str')">REGIME</th>
+        </tr></thead>
         <tbody id="pead-hist-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
@@ -90,10 +121,13 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script id="ticker-sectors-data" type="application/json">{{ ticker_sectors | tojson | safe }}</script>
+
 <script>
 let featChart = null;
-const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
-const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
+const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
 
 function filterSigs(q){
   q = q.toLowerCase();
