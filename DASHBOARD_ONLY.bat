@@ -25,8 +25,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-:: Set environment: production mode, no scheduler
-set FLASK_ENV=production
+:: Set environment: development mode for auto-reload
+set FLASK_ENV=development
 set FLASK_APP=flask_app.py
 set DASHBOARD_ONLY=1
 set PYTHONIOENCODING=utf-8

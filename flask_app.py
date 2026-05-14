@@ -1234,11 +1234,28 @@ def api_performance():
         for t in trades_rows if t["action"] == "DIVIDEND"
     )
     # WORKFLOW-AWARE FIX: Sum both standalone FEE rows and fees integrated into trade rows
-    total_fees = sum(
-        (float(t.get("total_eur") or 0) if t["action"] == "FEE" else 0) + 
-        float(t.get("fee_eur") or 0)
-        for t in trades_rows
-    )
+    # For FEE actions, total_eur is the fee. For other actions, use explicit fee_eur column.
+    total_fees = 0
+    debug_ledger = []
+    for t in trades_rows:
+        act = (t.get("action") or "").upper()
+        v_eur = float(t.get("total_eur") or 0)
+        f_eur = float(t.get("fee_eur") or 0)
+        
+        if act == "FEE":
+            row_fee = v_eur
+        else:
+            row_fee = f_eur
+            
+        if row_fee != 0:
+            total_fees += row_fee
+            debug_ledger.append(f"{t['date']} | {act} | val={v_eur} | fee={f_eur} | ADDED={row_fee}")
+    
+    with open("fee_debug.log", "w") as f:
+        f.write("\n".join(debug_ledger))
+        f.write(f"\nTOTAL: {total_fees}")
+    
+    log.info(f"DEBUG: Calculated total_fees={total_fees}. Details in fee_debug.log")
 
     # ── 3. Current portfolio state ────────────────────────────────────────
     positions = _q("""
@@ -1466,13 +1483,17 @@ def api_performance():
         "loss_days":            len(losses),
     }
 
-    return jsonify({
+    resp = jsonify({
         "kpis":          kpis,
         "daily_returns": daily_returns,    # [{date, r}]
         "equity_series": equity_series,    # [{date, value}]
         "ledger":        trades_rows,       # raw trades for ledger table
         "generated_at":  datetime.now().isoformat(),
     })
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @app.route("/api/mpt_weights")
@@ -1760,4 +1781,4 @@ def api_historical_returns(ticker):
 if __name__ == "__main__":
     start_scheduler()
     log.info("Control Tower (Flask) starting — http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=True)
