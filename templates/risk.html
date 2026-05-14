@@ -69,6 +69,25 @@
 
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
+    <span class="panel-title">PORTFOLIO-LEVEL RISK — WEIGHTED MONTE CARLO</span>
+    <span class="panel-badge">21D HORIZON</span>
+  </div>
+  <div class="panel-body">
+    <div id="port-no-pos" class="alert alert-info" style="display:none">No positions found. Import ledger first.</div>
+    <div id="port-risk-content">
+      <div class="kpi-strip">
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" style="font-size:18px" id="pv-total">—</div></div>
+        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var5">—</div></div>
+        <div class="kpi danger" style="padding:10px"><div class="kpi-label">CVaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-cvar5">—</div></div>
+        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 99% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var1">—</div></div>
+      </div>
+      <div class="chart-wrap" style="height:160px;margin-top:14px"><canvas id="portMcChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
     <span class="panel-title">UNIVERSE RISK/REWARD SUMMARY</span>
     <span class="panel-badge" id="universe-badge">ALL TICKERS</span>
   </div>
@@ -84,25 +103,6 @@
       </tr></thead>
       <tbody id="universe-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
-  </div>
-</div>
-
-<div class="panel" style="margin-top:14px">
-  <div class="panel-header">
-    <span class="panel-title">PORTFOLIO-LEVEL RISK — WEIGHTED MONTE CARLO</span>
-    <span class="panel-badge">21D HORIZON</span>
-  </div>
-  <div class="panel-body">
-    <div id="port-no-pos" class="alert alert-info" style="display:none">No positions found. Import ledger first.</div>
-    <div id="port-risk-content">
-      <div class="kpi-strip">
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" style="font-size:18px" id="pv-total">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var5">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">CVaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-cvar5">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 99% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var1">—</div></div>
-      </div>
-      <div class="chart-wrap" style="height:160px;margin-top:14px"><canvas id="portMcChart"></canvas></div>
-    </div>
   </div>
 </div>
 
