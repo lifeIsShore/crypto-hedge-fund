@@ -93,14 +93,16 @@
 <script>
 let featChart = null;
 const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 
 function filterSigs(q){
   q = q.toLowerCase();
   document.querySelectorAll('#sig-tbody tr[data-row]').forEach(r=>{
     const search = r.dataset.row.toLowerCase();
     const ticker = r.dataset.tk.toLowerCase();
-    const name = (tickerNames[r.dataset.tk] || '').toLowerCase();
-    r.style.display = (search.includes(q) || ticker.includes(q) || name.includes(q)) ? '' : 'none';
+    const name   = (tickerNames[r.dataset.tk] || '').toLowerCase();
+    const sector = (tickerSectors[r.dataset.tk] || '').toLowerCase();
+    r.style.display = (search.includes(q) || ticker.includes(q) || name.includes(q) || sector.includes(q)) ? '' : 'none';
   });
 }
 
@@ -139,13 +141,14 @@ async function loadResearch(){
       const auc = +s.auc || 0;
       const action = up>=.60?'BUY':up>=.54?'LEAN_BUY':up<=.40?'SELL':up<=.46?'LEAN_SELL':'NEUTRAL';
       const gated  = auc>=.53;
-      const search = `${tk} ${s.sector||''}`;
+      const sector = tickerSectors[tk] || s.sector || '—';
+      const search = `${tk} ${sector}`;
       return `<tr data-row="${search}" data-tk="${tk}" style="cursor:pointer" onclick="window.location='/ticker/${tk}'">
         <td style="font-weight:500;color:var(--accent)">
           ${tk}
           <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[tk] || ''})</span>
         </td>
-        <td style="color:var(--muted)">${s.sector||'—'}</td>
+        <td style="color:var(--muted);font-size:11px">${sector}</td>
         <td style="color:${up>=.55?'var(--accent)':up<=.45?'var(--accent2)':'var(--muted)'}">${(up*100).toFixed(1)}%</td>
         <td>${auc.toFixed(4)}</td>
         <td>${s.vol_ann!=null?((+s.vol_ann)*100).toFixed(1)+'%':'—'}</td>

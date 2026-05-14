@@ -27,9 +27,9 @@
     </div>
     <table class="tbl" id="reb-tbl">
       <thead><tr>
-        <th>TICKER</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
+        <th>TICKER</th><th>SECTOR</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
       </tr></thead>
-      <tbody id="reb-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -68,6 +68,7 @@
 <script>
 let suggestions = [];
 const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 
 async function loadRebalance(){
   const data = await fetch('/api/rebalance').then(r=>r.json()).catch(()=>({}));
@@ -100,8 +101,9 @@ async function loadRebalance(){
     return `<tr>
       <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${r.ticker}'">
         ${r.ticker}
-        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
       </td>
+      <td style="color:var(--muted);font-size:10px">${tickerSectors[r.ticker] || '—'}</td>
       <td>${r.current_weight!=null?((+r.current_weight)*100).toFixed(1)+'%':'—'}</td>
       <td>${r.suggested_weight!=null?((+r.suggested_weight)*100).toFixed(1)+'%':'—'}</td>
       <td style="color:${dw>0?'var(--accent)':dw<0?'var(--accent2)':'var(--muted)'}">${fmtPct(dw)}</td>

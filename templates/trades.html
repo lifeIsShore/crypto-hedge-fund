@@ -155,9 +155,9 @@
       <div id="no-trades" class="alert alert-info" style="display:none">No trades recorded yet. Log your first transaction.</div>
       <table class="tbl" id="trades-tbl">
         <thead><tr>
-          <th>DATE</th><th>TICKER</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th><th>FEE €</th><th>NOTES</th>
+          <th>DATE</th><th>TICKER</th><th>SECTOR</th><th>ACTION</th><th>QTY</th><th>PRICE €</th><th>TOTAL €</th><th>FEE €</th><th>NOTES</th>
         </tr></thead>
-        <tbody id="trades-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
+        <tbody id="trades-tbody"><tr><td colspan="9" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -213,6 +213,7 @@ let allTrades   = [];
 let currentCash = 0;
 let currentAction = 'Buy';
 const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 
 // ── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -455,6 +456,7 @@ function renderTrades(trades) {
         ${t.ticker || '—'}
         <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[t.ticker] || ''})</span>
       </td>
+      <td style="color:var(--muted);font-size:10px">${tickerSectors[t.ticker] || '—'}</td>
       <td style="color:${col};font-weight:600">${ac}</td>
       <td>${t.quantity != null ? (+t.quantity).toFixed(+t.quantity % 1 === 0 ? 0 : 4) : '—'}</td>
       <td>${t.price_eur != null ? fmtEur(t.price_eur) : '—'}</td>
@@ -473,7 +475,8 @@ function filterTrades() {
     filtered = filtered.filter(t => {
       const ticker = (t.ticker || '').toLowerCase();
       const name = (tickerNames[t.ticker] || '').toLowerCase();
-      return ticker.includes(q) || name.includes(q);
+      const sector = (tickerSectors[t.ticker] || '').toLowerCase();
+      return ticker.includes(q) || name.includes(q) || sector.includes(q);
     });
   }
   if (action) filtered = filtered.filter(t => t.action === action);

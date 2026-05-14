@@ -42,9 +42,9 @@ app = Flask(__name__, template_folder="templates")
 
 # ── inject ticker names into all templates ────────────────────────────────────
 @app.context_processor
-def inject_ticker_names():
-    from portfolio.src.config import TICKER_NAMES
-    return dict(ticker_names=TICKER_NAMES)
+def inject_metadata():
+    from portfolio.src.config import TICKER_NAMES, TICKER_SECTORS
+    return dict(ticker_names=TICKER_NAMES, ticker_sectors=TICKER_SECTORS)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -840,23 +840,6 @@ def regime():
         regime=reg,
         ages=ages,
         page="regime",
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-    )
-
-
-@app.route("/divergence")
-def divergence():
-    rows = _q("""
-        SELECT id, ticker, etf_reference, detected_at,
-               etf_return_pct, stock_return_pct, divergence_pct, scenario_label
-        FROM divergence_labels
-        WHERE scenario_label IS NULL
-        ORDER BY detected_at DESC
-        LIMIT 30
-    """)
-    return render_template("divergence.html",
-        rows=rows,
-        page="divergence",
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
 

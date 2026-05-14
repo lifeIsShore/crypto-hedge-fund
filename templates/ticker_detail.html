@@ -34,7 +34,7 @@
             <tr><td style="color:var(--muted)">Up Probability</td><td style="color:var(--accent)">{{ '%.3f'|format(ml_signal.up_proba_21d|float) if ml_signal.up_proba_21d else '—' }}</td></tr>
             <tr><td style="color:var(--muted)">AUC Score</td><td>{{ '%.4f'|format(ml_signal.auc|float) if ml_signal.auc else '—' }}</td></tr>
             <tr><td style="color:var(--muted)">Ann. Volatility</td><td>{{ '%.1f%%'|format(ml_signal.vol_ann|float * 100) if ml_signal.vol_ann else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">Sector</td><td>{{ ml_signal.sector or '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Sector</td><td>{{ ticker_sectors.get(ticker, '—') }}</td></tr>
             <tr><td style="color:var(--muted)">AUC Gate</td><td><span class="tag {{ 'tag-green' if (ml_signal.auc|float) >= 0.53 else 'tag-red' }}">{{ '✅ PASS' if (ml_signal.auc|float) >= 0.53 else '⛔ GATED' }}</span></td></tr>
           </tbody>
         </table>

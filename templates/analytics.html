@@ -145,7 +145,7 @@
     <div class="panel-header"><span class="panel-title">POSITION BREAKDOWN</span><span class="panel-badge">DETAILED VIEW</span></div>
     <div class="panel-body">
       <table class="tbl">
-        <thead><tr><th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th></tr></thead>
+        <thead><tr><th>TICKER</th><th>SECTOR</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th></tr></thead>
         <tbody>
           {% for p in positions %}
           <tr style="cursor:pointer" onclick="window.location='/ticker/{{ p.ticker }}'">
@@ -153,6 +153,7 @@
               {{ p.ticker }}
               <br><span style="font-size:9px;color:var(--muted);font-weight:400">({{ ticker_names.get(p.ticker, '') }})</span>
             </td>
+            <td style="color:var(--muted);font-size:10px">{{ ticker_sectors.get(p.ticker, '—') }}</td>
             <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
             <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
             <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>

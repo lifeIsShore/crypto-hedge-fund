@@ -87,8 +87,8 @@
   <div class="panel-body">
     <div id="no-risk" class="alert alert-ok" style="display:none">No risk events logged.</div>
     <table class="tbl" id="risk-tbl">
-      <thead><tr><th>DATE</th><th>TYPE</th><th>TICKER</th><th>DETAIL</th><th>LOGGED AT</th></tr></thead>
-      <tbody id="risk-tbody"><tr><td colspan="5" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <thead><tr><th>DATE</th><th>TYPE</th><th>TICKER</th><th>SECTOR</th><th>DETAIL</th><th>LOGGED AT</th></tr></thead>
+      <tbody id="risk-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -131,6 +131,7 @@
 {% block scripts %}
 <script>
 const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 // ── Kill Switch: polls /api/kill_switch_status every 60s ──────────────────
 let _ksTimer = null;
 async function checkConnectivity(){
@@ -350,6 +351,7 @@ async function loadHealth(){
         ${r.ticker||'—'}
         <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
       </td>
+      <td style="color:var(--muted);font-size:10px">${tickerSectors[r.ticker] || '—'}</td>
       <td style="color:var(--muted);font-size:10px">${r.detail||'—'}</td>
       <td style="color:var(--muted)">${(r.logged_at||'').slice(0,16)}</td>
     </tr>`).join('');

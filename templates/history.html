@@ -109,6 +109,7 @@
         <tr>
           <th>DATE</th>
           <th>TICKER</th>
+          <th>SECTOR</th>
           <th>ACTION</th>
           <th>QTY</th>
           <th>PRICE EUR</th>
@@ -119,7 +120,7 @@
       </thead>
       <tbody id="ledger-tbody">
         <tr>
-          <td colspan="8" style="color:var(--muted)">Loading...</td>
+          <td colspan="9" style="color:var(--muted)">Loading...</td>
         </tr>
       </tbody>
     </table>
@@ -133,6 +134,7 @@
   let allLedger = [];
   let chartInst = {};
   const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+  const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 
   function destroyChart(id) {
     if (chartInst[id]) { chartInst[id].destroy(); delete chartInst[id]; }
@@ -308,6 +310,7 @@
         + '<td>' + (t.date || '—') + '</td>'
         + '<td style="font-weight:500;cursor:pointer;color:var(--accent4)" onclick="window.location=\'/ticker/' + t.ticker + '\'">' 
         + (t.ticker || '—') + ' <span style="font-size:9px;color:var(--muted);font-weight:400">(' + (tickerNames[t.ticker] || '') + ')</span></td>'
+        + '<td style="color:var(--muted);font-size:10px">' + (tickerSectors[t.ticker] || '—') + '</td>'
         + '<td style="color:' + (aCol[ac] || 'var(--text)') + ';font-weight:600">' + ac + '</td>'
         + '<td>' + qty + '</td>'
         + '<td>' + (t.price_eur != null ? fmtEur(t.price_eur) : '—') + '</td>'
@@ -326,7 +329,8 @@
       f = f.filter(t => {
         const ticker = (t.ticker || '').toLowerCase();
         const name = (tickerNames[t.ticker] || '').toLowerCase();
-        return ticker.includes(q) || name.includes(q);
+        const sector = (tickerSectors[t.ticker] || '').toLowerCase();
+        return ticker.includes(q) || name.includes(q) || sector.includes(q);
       });
     }
     if (ac) f = f.filter(t => (t.action || '').toUpperCase() === ac);

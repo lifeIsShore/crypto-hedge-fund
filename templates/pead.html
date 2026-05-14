@@ -26,10 +26,10 @@
     <div id="no-active" class="alert alert-ok" style="display:none">No active entry windows today.</div>
     <table class="tbl" id="active-tbl">
       <thead><tr>
-        <th>TICKER</th><th>DIRECTION</th><th>QUALITY</th><th>SURPRISE %</th>
+        <th>TICKER</th><th>SECTOR</th><th>DIRECTION</th><th>QUALITY</th><th>SURPRISE %</th>
         <th>ENTRY DATE</th><th>UNDERREACTION</th><th>REGIME</th>
       </tr></thead>
-      <tbody id="active-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="active-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -70,10 +70,10 @@
     <div id="no-hist" class="alert alert-info" style="display:none">No historical data yet. Run PEAD engine.</div>
     <table class="tbl" id="hist-tbl">
       <thead><tr>
-        <th>EARNINGS DATE</th><th>TICKER</th><th>DIRECTION</th>
+        <th>EARNINGS DATE</th><th>TICKER</th><th>SECTOR</th><th>DIRECTION</th>
         <th>SURPRISE %</th><th>DRIFT 21D</th><th>CORRECT?</th><th>REGIME</th>
       </tr></thead>
-      <tbody id="hist-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="hist-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -84,6 +84,7 @@
 <script>
 async function loadPead(){
   const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+  const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
   const data = await fetch('/api/pead').then(r=>r.json()).catch(()=>({}));
 
   const perf = data.performance || {};
@@ -123,8 +124,9 @@ async function loadPead(){
     atbody.innerHTML = active.map(s => `<tr>
       <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${s.ticker}'">
         ${s.ticker}
-        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[s.ticker] || ''})</span>
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[s.ticker] || ''})</span>
       </td>
+      <td style="color:var(--muted);font-size:10px">${tickerSectors[s.ticker] || '—'}</td>
       <td class="${s.direction==='bullish'||s.direction==='long'?'sig-buy':'sig-sell'}">
         ${s.direction==='bullish'||s.direction==='long'?'🟢 BULL':'🔴 BEAR'}
       </td>
@@ -183,8 +185,9 @@ async function loadPead(){
       <td>${h.earnings_date||'—'}</td>
       <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${h.ticker}'">
         ${h.ticker}
-        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[h.ticker] || ''})</span>
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[h.ticker] || ''})</span>
       </td>
+      <td style="color:var(--muted);font-size:10px">${tickerSectors[h.ticker] || '—'}</td>
       <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
       <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
       <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>

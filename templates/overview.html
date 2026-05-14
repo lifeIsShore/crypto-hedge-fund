@@ -23,9 +23,9 @@
     <div class="panel-body">
       <table class="tbl" id="pos-table">
         <thead><tr>
-          <th>TICKER</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th><th>SIGNAL</th>
+          <th>TICKER</th><th>SECTOR</th><th>QTY</th><th>PRICE €</th><th>VALUE €</th><th>WEIGHT</th><th>SIGNAL</th>
         </tr></thead>
-        <tbody id="pos-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
+        <tbody id="pos-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -61,9 +61,9 @@
     <div id="rebalance-alert"></div>
     <table class="tbl" id="reb-table">
       <thead><tr>
-        <th>TICKER</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
+        <th>TICKER</th><th>SECTOR</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
       </tr></thead>
-      <tbody id="reb-tbody"><tr><td colspan="6" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -75,6 +75,7 @@ let weightsChart = null;
 
 async function loadOverview(){
   const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+  const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
   const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),
@@ -155,8 +156,9 @@ async function loadOverview(){
       return `<tr style="cursor:pointer" onclick="window.location='/ticker/${p.ticker}'">
         <td style="font-weight:500;color:var(--accent)">
           ${p.ticker}
-          <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
+          <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
         </td>
+        <td style="color:var(--muted);font-size:10px">${tickerSectors[p.ticker] || '—'}</td>
         <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
         <td>${fmtEur(p.price)}</td>
         <td>${fmtEur(p.value_eur)}</td>
@@ -214,8 +216,9 @@ async function loadOverview(){
       return `<tr>
         <td style="color:#fff;font-weight:500">
           ${r.ticker}
-          <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+          <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
         </td>
+        <td style="color:var(--muted);font-size:10px">${tickerSectors[r.ticker] || '—'}</td>
         <td>${r.current_weight!=null?((+r.current_weight)*100).toFixed(1)+'%':'—'}</td>
         <td>${r.suggested_weight!=null?((+r.suggested_weight)*100).toFixed(1)+'%':'—'}</td>
         <td class="${cls}">${r.delta_weight!=null?fmtPct((+r.delta_weight)*100):'—'}</td>
