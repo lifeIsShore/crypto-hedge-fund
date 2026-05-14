@@ -105,15 +105,19 @@ async function loadHoldings(){
     const missingBadge = p.price_missing
       ? '<span title="No price data in DB — run pipeline to fetch prices" style="color:var(--accent2);font-size:9px;margin-left:4px">⚠ NO PRICE</span>'
       : '';
+    const staleBadge = p.is_stale
+      ? `<span title="Price data is older than 3 days (${p.price_date})" style="color:var(--accent3);font-size:9px;margin-left:4px">⚠ STALE</span>`
+      : '';
     const priceCell  = p.price     != null ? fmtEur(p.price)     : '<span style="color:var(--muted)">—</span>';
     const valueCell  = p.value_eur != null ? fmtEur(p.value_eur) : '<span style="color:var(--muted)">—</span>';
     const weightCell = p.weight    != null ? ((+p.weight)*100).toFixed(1)+'%' : '<span style="color:var(--muted)">—</span>';
-    const rowStyle   = p.price_missing ? 'opacity:0.6' : '';
+    const rowStyle   = (p.price_missing || p.is_stale) ? 'opacity:0.8' : '';
     return `<tr style="cursor:pointer;${rowStyle}" onclick="window.location='/ticker/${p.ticker}'">
       <td style="font-weight:500;color:var(--accent)">
-        ${p.ticker}${missingBadge}
+        ${p.ticker}${missingBadge}${staleBadge}
         <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
       </td>
+
       <td style="color:var(--muted);font-size:10px">${tickerSectors[p.ticker] || '—'}</td>
       <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
       <td>${priceCell}</td>

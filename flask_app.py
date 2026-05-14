@@ -115,10 +115,11 @@ def _get_live_price_fallback(ticker):
             # PERMANENT FIX: Save to DB for ML and future loads
             _persist_single_price(ticker, price, curr)
             
-            return price, curr
+            return price, curr, datetime.now().strftime("%Y-%m-%d")
     except Exception as e:
         log.warning(f"Live fallback failed for {ticker}: {e}")
-    return None, "EUR"
+    return None, "EUR", None
+
 
 
 def _persist_single_price(ticker, price, currency):
@@ -204,7 +205,7 @@ def _live_positions():
     if qty_map:
         tickers_sql = ",".join(f"'{t}'" for t in qty_map)
         price_rows = _q(f"""
-            SELECT p.ticker, p.adj_close AS price, p.currency
+            SELECT p.ticker, p.adj_close AS price, p.currency, p.date
             FROM prices p
             INNER JOIN (
                 SELECT ticker, MAX(date) AS md FROM prices
@@ -213,7 +214,7 @@ def _live_positions():
             ) l ON p.ticker = l.ticker AND p.date = l.md
         """)
         # Store as (price, currency)
-        price_map = {r["ticker"]: (float(r["price"] or 0.0), r.get("currency") or "EUR") for r in price_rows}
+        price_map = {r["ticker"]: (float(r["price"] or 0.0), r.get("currency") or "EUR", r["date"]) for r in price_rows}
 
         usd_eur = _get_latest_fx_rate("USDEUR")
         gbp_eur = _get_latest_fx_rate("GBPEUR")
@@ -225,7 +226,7 @@ def _live_positions():
                 log.info(f"Price missing for {ticker} in DB — attempting live fallback.")
                 price_data = _get_live_price_fallback(ticker)
                 
-            raw_price, curr = price_data
+            raw_price, curr, price_date = price_data
 
             # Apply dynamic conversion if not EUR
             price = raw_price
@@ -234,6 +235,15 @@ def _live_positions():
                     price = raw_price * usd_eur
                 elif curr == "GBP":
                     price = raw_price * gbp_eur
+            
+            # The "Staleness Check": 3 days (approx 72h)
+            is_stale = False
+            if price_date:
+                try:
+                    p_dt = datetime.strptime(price_date, "%Y-%m-%d").date()
+                    if (date.today() - p_dt).days > 3:
+                        is_stale = True
+                except: pass
 
             has_price = price is not None and price > 0
             value_eur = round(qty * price, 4) if has_price else None
@@ -244,6 +254,8 @@ def _live_positions():
                 "value_eur":   value_eur,
                 "weight":      0.0,
                 "price_missing": not has_price,
+                "is_stale":    is_stale,
+                "price_date":  price_date,
             })
 
     # 3. Latest cash from cash_history
@@ -1098,7 +1110,7 @@ def api_pead():
         SELECT ticker, earnings_date AS entry_date, direction, pead_setup_quality AS quality,
                surprise_pct, regime_composite
         FROM pead_setups
-        WHERE earnings_date >= date('now', '-7 days')
+        WHERE earnings_date >= date('now', '-60 days')
         ORDER BY earnings_date DESC
     """)
 
@@ -1117,7 +1129,7 @@ def api_pead():
                 
                 # Filter active for CSV fallback
                 today = datetime.now()
-                cutoff = today - timedelta(days=7)
+                cutoff = today - timedelta(days=21)
                 active = [
                     r for r in reader 
                     if r.get('entry_date') and datetime.strptime(r['entry_date'], '%Y-%m-%d') >= cutoff

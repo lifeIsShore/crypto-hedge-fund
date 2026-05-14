@@ -21,19 +21,39 @@
 
 <div class="kpi-strip" id="ticker-kpi">
   <div class="kpi neutral"><div class="kpi-label">CURRENT PRICE</div><div class="kpi-value" id="k-price">—</div><div class="kpi-sub">EUR</div></div>
-  <div class="kpi neutral"><div class="kpi-label">EXPECTED 21D</div><div class="kpi-value" id="k-exp">—</div><div class="kpi-sub" id="k-exp-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">TARGET (+1σ)</div><div class="kpi-value" id="k-tgt">—</div><div class="kpi-sub" id="k-tgt-sub">—</div></div>
-  <div class="kpi danger"><div class="kpi-label">STOP (-1σ)</div><div class="kpi-value" id="k-stop">—</div><div class="kpi-sub" id="k-stop-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">RISK / REWARD</div><div class="kpi-value" id="k-rr">—</div><div class="kpi-sub">ratio</div></div>
-  <div class="kpi good"><div class="kpi-label">HALF-KELLY</div><div class="kpi-value" id="k-kelly">—</div><div class="kpi-sub">max position size</div></div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="EXPECTED VALUE" data-info="The average forecasted price in 21 days based on 10,000 Monte Carlo simulation paths.">EXPECTED 21D</div>
+    <div class="kpi-value" id="k-exp">—</div>
+    <div class="kpi-sub" id="k-exp-sub">—</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="UPSIDE TARGET" data-info="The price level at +1 standard deviation. There is a ~16% statistical probability of ending above this level.">TARGET (+1σ)</div>
+    <div class="kpi-value" id="k-tgt">—</div>
+    <div class="kpi-sub" id="k-tgt-sub">—</div>
+  </div>
+  <div class="kpi danger">
+    <div class="kpi-label info-point" data-title="DOWNSIDE RISK" data-info="The price level at -1 standard deviation. There is a ~16% statistical probability of ending below this level. Used for stop-loss.">STOP (-1σ)</div>
+    <div class="kpi-value" id="k-stop">—</div>
+    <div class="kpi-sub" id="k-stop-sub">—</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="RISK/REWARD RATIO" data-info="Potential profit divided by potential loss. Values above 1.0 indicate favorable odds.">RISK / REWARD</div>
+    <div class="kpi-value" id="k-rr">—</div>
+    <div class="kpi-sub">ratio</div>
+  </div>
+  <div class="kpi good">
+    <div class="kpi-label info-point" data-title="HALF-KELLY" data-info="Optimal position size according to the Kelly Criterion, divided by 2 to reduce volatility and 'drawdown' risk.">HALF-KELLY</div>
+    <div class="kpi-value" id="k-kelly">—</div>
+    <div class="kpi-sub">max position size</div>
+  </div>
 </div>
 
 <div class="grid grid-3-2" style="margin-top:14px">
 
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">RETURN DISTRIBUTION — 10,000 PATHS · 21D</span>
-      <span class="panel-badge">LOGNORMAL MC</span>
+      <span class="panel-title info-point" data-title="RETURN DISTRIBUTION" data-info="A histogram showing the frequency of different price outcomes from 10,000 random 'walks'.">RETURN DISTRIBUTION — 10,000 PATHS · 21D</span>
+      <span class="panel-badge info-point" data-title="LOGNORMAL MONTE CARLO" data-info="A simulation method assuming prices follow a lognormal distribution (prices stay positive, returns are compounded).">LOGNORMAL MC</span>
     </div>
     <div class="panel-body">
       <div class="chart-wrap" style="height:220px"><canvas id="mcDistChart"></canvas></div>
@@ -58,7 +78,7 @@
         <tbody id="levels-tbody"><tr><td colspan="3" style="color:var(--muted)">Select ticker</td></tr></tbody>
       </table>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px">STRATEGY CARD</div>
+        <div class="info-point" data-title="STRATEGY CARD" data-info="Quick execution guide showing technical buy zones, exit targets, and stop levels." style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px">STRATEGY CARD</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div><div style="font-size:9px;color:var(--muted)">BUY ZONE</div><div id="sc-buy" style="font-size:13px;color:var(--accent)">—</div></div>
           <div><div style="font-size:9px;color:var(--muted)">TARGET EXIT</div><div id="sc-tgt" style="font-size:13px;color:var(--accent)">—</div></div>
@@ -73,7 +93,7 @@
 
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title">PORTFOLIO-LEVEL RISK — WEIGHTED MONTE CARLO</span>
+    <span class="panel-title info-point" data-title="PORTFOLIO-LEVEL RISK" data-info="Aggregated risk assessment of all your holdings based on 10,000 simulated market paths.">PORTFOLIO-LEVEL RISK — WEIGHTED MONTE CARLO</span>
     <span class="panel-badge">21D HORIZON</span>
   </div>
   <div class="panel-body">
@@ -81,9 +101,18 @@
     <div id="port-risk-content">
       <div class="kpi-strip">
         <div class="kpi neutral" style="padding:10px"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" style="font-size:18px" id="pv-total">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var5">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">CVaR 95% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-cvar5">—</div></div>
-        <div class="kpi danger" style="padding:10px"><div class="kpi-label">VaR 99% (21D)</div><div class="kpi-value" style="font-size:18px" id="pv-var1">—</div></div>
+        <div class="kpi danger" style="padding:10px">
+          <div class="kpi-label info-point" data-title="VALUE AT RISK (95%)" data-info="The maximum loss expected over 21 days with 95% confidence. 5% chance the loss is worse.">VaR 95% (21D)</div>
+          <div class="kpi-value" style="font-size:18px" id="pv-var5">—</div>
+        </div>
+        <div class="kpi danger" style="padding:10px">
+          <div class="kpi-label info-point" data-title="CONDITIONAL VaR (95%)" data-info="The average loss expected if the market falls into the 'worst 5%' of outcomes. Also known as Expected Shortfall.">CVaR 95% (21D)</div>
+          <div class="kpi-value" style="font-size:18px" id="pv-cvar5">—</div>
+        </div>
+        <div class="kpi danger" style="padding:10px">
+          <div class="kpi-label info-point" data-title="VALUE AT RISK (99%)" data-info="The extreme tail risk. 1% chance the loss over 21 days is greater than this value.">VaR 99% (21D)</div>
+          <div class="kpi-value" style="font-size:18px" id="pv-var1">—</div>
+        </div>
       </div>
       <div class="chart-wrap" style="height:160px;margin-top:14px"><canvas id="portMcChart"></canvas></div>
     </div>
@@ -92,7 +121,7 @@
 
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title">UNIVERSE RISK/REWARD SUMMARY</span>
+    <span class="panel-title info-point" data-title="UNIVERSE SUMMARY" data-info="Overview of potential gains vs losses for all stocks in the research universe.">UNIVERSE RISK/REWARD SUMMARY</span>
     <span class="panel-badge" id="universe-badge">ALL TICKERS</span>
   </div>
   <div class="panel-body">
@@ -108,9 +137,9 @@
         <th onclick="sortTable(3,'universe-table','num')">EXP %</th>
         <th onclick="sortTable(4,'universe-table','num')">TARGET €</th>
         <th onclick="sortTable(5,'universe-table','num')">STOP €</th>
-        <th onclick="sortTable(6,'universe-table','num')">R:R</th>
-        <th onclick="sortTable(7,'universe-table','num')">WIN %</th>
-        <th onclick="sortTable(8,'universe-table','num')">KELLY½ %</th>
+        <th onclick="sortTable(6,'universe-table','num')" class="info-point" data-title="R:R" data-info="Risk-Reward ratio. Measures potential profit relative to potential loss.">R:R</th>
+        <th onclick="sortTable(7,'universe-table','num')" class="info-point" data-title="WIN PROBABILITY" data-info="The percentage of simulated paths that ended with a profit.">WIN %</th>
+        <th onclick="sortTable(8,'universe-table','num')" class="info-point" data-title="KELLY SIZING" data-info="Maximum suggested allocation based on the asset's risk and return profile.">KELLY½ %</th>
         <th onclick="sortTable(9,'universe-table','str')">SIGNAL</th>
       </tr></thead>
       <tbody id="universe-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
@@ -203,7 +232,11 @@ async function loadRisk(){
   ]);
   const riskLabel=regRes.regime_risk||'—', growLabel=regRes.regime_growth||'—', rateLabel=regRes.regime_rates||'—';
   const rColor=riskLabel==='Risk-On'?'var(--accent)':riskLabel==='Risk-Off'?'var(--accent2)':'var(--accent3)';
-  document.getElementById('regime-banner').innerHTML=`<span style="color:${rColor}">▶ ${riskLabel}</span> · ${growLabel} · ${rateLabel}`+(regRes.transition_warning?' · <span style="color:var(--accent3)">⚠️ TRANSITION WARNING</span>':'');
+  const banner = document.getElementById('regime-banner');
+  banner.classList.add('info-point');
+  banner.setAttribute('data-title', 'MACRO REGIME');
+  banner.setAttribute('data-info', 'Current market state: Risk Appetite · Growth Cycle · Rate Environment. Influences strategy selection and risk limits.');
+  banner.innerHTML=`<span style="color:${rColor}">▶ ${riskLabel}</span> · ${growLabel} · ${rateLabel}`+(regRes.transition_warning?' · <span style="color:var(--accent3)">⚠️ TRANSITION WARNING</span>':'');
 
   allTargets=Array.isArray(tgtRes)?tgtRes:(tgtRes.targets||[]);
   document.getElementById('universe-badge').textContent=`${allTargets.length} TICKERS`;

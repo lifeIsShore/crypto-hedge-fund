@@ -5,11 +5,11 @@
 
 <!-- Ensemble KPIs -->
 <div class="kpi-strip" id="ensemble-kpi">
-  <div class="kpi neutral"><div class="kpi-label">ENSEMBLE VERDICT</div><div class="kpi-value" id="e-verdict" style="font-size:18px">—</div><div class="kpi-sub">21d horizon</div></div>
-  <div class="kpi neutral"><div class="kpi-label">WEIGHTED SCORE</div><div class="kpi-value" id="e-score">—</div><div class="kpi-sub">0=bear · 0.5=neutral · 1=bull</div></div>
-  <div class="kpi neutral"><div class="kpi-label">TICKERS COVERED</div><div class="kpi-value" id="e-n">—</div><div class="kpi-sub">with ML signal</div></div>
-  <div class="kpi neutral"><div class="kpi-label">BEST MODEL</div><div class="kpi-value" id="e-best" style="font-size:14px">—</div><div class="kpi-sub" id="e-best-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">BEATS BASELINE</div><div class="kpi-value" id="e-beats">—</div><div class="kpi-sub">of models pass 52% acc gate</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="ENSEMBLE VERDICT" data-info="The final consensus from all AI models (Random Forest, LSTM, XGBoost) on overall market direction.">ENSEMBLE VERDICT</div><div class="kpi-value" id="e-verdict" style="font-size:18px">—</div><div class="kpi-sub">21d horizon</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="WEIGHTED SCORE" data-info="A numeric representation of the model confidence (0 = Extreme Bear, 1 = Extreme Bull).">WEIGHTED SCORE</div><div class="kpi-value" id="e-score">—</div><div class="kpi-sub">0=bear · 0.5=neutral · 1=bull</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="TICKERS COVERED" data-info="The total number of unique assets analyzed in the current ML run.">TICKERS COVERED</div><div class="kpi-value" id="e-n">—</div><div class="kpi-sub">with ML signal</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="BEST MODEL" data-info="The specific algorithm currently achieving the highest accuracy/Sharpe ratio in backtests.">BEST MODEL</div><div class="kpi-value" id="e-best" style="font-size:14px">—</div><div class="kpi-sub" id="e-best-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="BEATS BASELINE" data-info="Percentage of models that are outperforming a simple 'always buy' or 'always sell' strategy.">BEATS BASELINE</div><div class="kpi-value" id="e-beats">—</div><div class="kpi-sub">of models pass 52% acc gate</div></div>
   <div class="kpi neutral"><div class="kpi-label">GENERATED</div><div class="kpi-value" id="e-gen" style="font-size:12px">—</div><div class="kpi-sub">last ML run</div></div>
 </div>
 
@@ -22,7 +22,7 @@
   <!-- Per-ticker signals -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">PER-TICKER SIGNALS — 21D HORIZON</span>
+      <span class="panel-title info-point" data-title="PER-TICKER SIGNALS" data-info="Individual forecasts for each stock covering the next 21 trading days.">PER-TICKER SIGNALS — 21D HORIZON</span>
       <span class="panel-badge" id="sig-badge">AUC GATED ≥0.53</span>
     </div>
     <div class="panel-body">
@@ -45,7 +45,7 @@
   <!-- Model comparison -->
   <div style="display:flex;flex-direction:column;gap:14px">
     <div class="panel">
-      <div class="panel-header"><span class="panel-title">MODEL COMPARISON — AVG WALK-FORWARD</span><span class="panel-badge">VS BASELINES</span></div>
+      <div class="panel-header"><span class="panel-title info-point" data-title="MODEL COMPARISON" data-info="How different models performed during historical validation periods.">MODEL COMPARISON — AVG WALK-FORWARD</span><span class="panel-badge">VS BASELINES</span></div>
       <div class="panel-body">
         <table class="tbl" id="model-tbl">
           <thead><tr>
@@ -73,7 +73,7 @@
 <!-- PEAD Setups -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title">PEAD SETUPS — POST-EARNINGS DRIFT</span>
+    <span class="panel-title info-point" data-title="PEAD SETUPS" data-info="Stocks exhibiting strong momentum following positive/negative earnings surprises (Post-Earnings Announcement Drift).">PEAD SETUPS — POST-EARNINGS DRIFT</span>
     <span class="panel-badge">ACTIVE + HISTORICAL</span>
   </div>
   <div class="panel-body">
@@ -101,7 +101,7 @@
     </div>
 
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">HISTORICAL SETUPS (LAST 50)</div>
+      <div class="info-point" data-title="HISTORICAL SETUPS" data-info="Audit trail of previous earnings setups and their eventual outcome." style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">HISTORICAL SETUPS (LAST 50)</div>
       <table class="tbl" id="pead-hist-tbl">
         <thead><tr>
           <th onclick="sortTable(0,'pead-hist-tbl','str')">EARNINGS DATE</th>

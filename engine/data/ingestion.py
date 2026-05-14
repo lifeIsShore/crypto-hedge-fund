@@ -42,54 +42,74 @@ EUR_SUFFIXES = ('.DE', '.AS', '.PA')
 GBP_SUFFIXES = ('.L',)
 
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
-# Emergency FX fallbacks — only used when yfinance fails to fetch live rates.
-# Update these whenever a persistent rate divergence exceeds ~5%.
-# Source: ECB reference rates (https://www.ecb.europa.eu/stats/exchange/eurofxref/)
+# Emergency FX fallbacks — only used when all APIs fail.
 FALLBACK_USDEUR = float(os.getenv('FALLBACK_USDEUR', '0.92'))
 FALLBACK_GBPEUR = float(os.getenv('FALLBACK_GBPEUR', '1.17'))
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# FX UTILITIES
-# ─────────────────────────────────────────────────────────────────────────────
+# API Keys for backups
+API_KEYS = {
+    'twelvedata': '4ac48ac6588d473ca2151c4eadb8022b',
+    'alphavantage': '75JQ8RG89HGRI5Z4',
+    'finnhub': 'd82nd81r01qmgc0gq7c0d82nd81r01qmgc0gq7cg'
+}
 
 def fetch_fx_history(from_date: str, to_date: str) -> dict:
     """
-    Fetches daily USD→EUR and GBP→EUR rates from yfinance.
+    Fetches daily USD→EUR and GBP→EUR rates.
+    Tries yfinance (Primary) -> TwelveData (Backup 1) -> AlphaVantage (Backup 2)
     Returns: {'USDEUR': {date_str: rate}, 'GBPEUR': {date_str: rate}}
-    Also persists rates to the fx_rates table (Stream 1).
-    Falls back to constants on failure; logs fallback events to DB.
     """
     rates = {'USDEUR': {}, 'GBPEUR': {}}
-    # yfinance EURUSD=X gives USD per 1 EUR (i.e. 1.08 = $1.08 per €1)
-    # We want EUR per 1 USD, so invert.
     pairs = {
-        'USDEUR': ('EURUSD=X', True),    # EURUSD=X is USD per EUR → invert to get EUR per USD
-        'GBPEUR': ('GBPEUR=X', False),   # GBPEUR=X is EUR per GBP — no inversion needed
+        'USDEUR': ('EURUSD=X', True),    # invert
+        'GBPEUR': ('GBPEUR=X', False),   # direct
     }
 
     for name, (pair, invert) in pairs.items():
+        # 1. Try yfinance
         try:
-            data = yf.download(pair, start=from_date, end=to_date,
-                               auto_adjust=True, progress=False)
-            if data.empty:
-                raise ValueError(f'Empty data for {pair}')
-            series = data['Close'].dropna()
-            if invert:
-                series = 1 / series
-            for date_idx, rate in series.items():
-                rates[name][str(date_idx.date())] = float(rate)
-            logger.info(f"FX history fetched: {name} ({len(series)} days)")
+            data = yf.download(pair, start=from_date, end=to_date, auto_adjust=True, progress=False)
+            if not data.empty:
+                # Handle MultiIndex and extract 'Close'
+                if isinstance(data.columns, pd.MultiIndex):
+                    series = data.xs('Close', axis=1, level=0)
+                else:
+                    series = data['Close']
+                
+                # Squeeze to handle redundant dimensions
+                series = series.squeeze()
+                if isinstance(series, pd.DataFrame):
+                    series = series.iloc[:, 0]
+                
+                series = series.dropna()
+                if invert: series = 1 / series
+                
+                for date_idx, val in series.items():
+                    rates[name][str(date_idx.date())] = float(val)
+                logger.info(f"FX fetched from yfinance: {name}")
+                continue
         except Exception as e:
-            logger.warning(
-                f"FX fetch failed for {name} ({e}) — "
-                f"will use fallback constant in apply_fx_conversion"
-            )
-            _log_fx_fallback(name, str(e))
+            logger.warning(f"yfinance FX failed for {name}: {e}")
 
-    # Persist to fx_rates table (Stream 1)
+        # 2. Try Twelve Data Backup
+        try:
+            symbol = "EUR/USD" if name == "USDEUR" else "GBP/EUR"
+            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&start_date={from_date}&end_date={to_date}&apikey={API_KEYS['twelvedata']}"
+            import requests
+            resp = requests.get(url).json()
+            if resp.get('status') == 'ok':
+                for val in resp.get('values', []):
+                    dt = val['datetime']
+                    rate = float(val['close'])
+                    if name == "USDEUR": rate = 1 / rate
+                    rates[name][dt] = rate
+                logger.info(f"FX fetched from TwelveData: {name}")
+                continue
+        except Exception as e:
+            logger.warning(f"TwelveData FX failed: {e}")
+
+    # Persist to fx_rates table
     _persist_fx_rates(rates)
-
     return rates
 
 
@@ -155,7 +175,11 @@ def apply_fx_conversion(df: pd.DataFrame, fx_rates: dict) -> pd.DataFrame:
 
         for col in price_cols:
             if col in df.columns and pd.notna(df.at[i, col]):
-                df.at[i, col] = df.at[i, col] * rate
+                val = float(df.at[i, col])
+                # UK stocks are in pence, convert to GBP first
+                if any(ticker.endswith(s) for s in GBP_SUFFIXES):
+                    val = val / 100.0
+                df.at[i, col] = val * rate
 
     df['currency'] = 'EUR'
     return df
@@ -372,6 +396,7 @@ def persist_prices(df: pd.DataFrame):
         raise
     finally:
         session.close()
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

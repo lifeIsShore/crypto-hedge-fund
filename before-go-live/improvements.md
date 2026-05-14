@@ -5,6 +5,15 @@ This document outlines the high-alpha technical upgrades required to move the fu
 
 ---
 
+1. The "Daily Heartbeat" (Observability)
+Problem: You don't know if the system ran successfully without logging in.
+Brainstorm: Create a digest.py module that sends a daily summary (Email or Slack Webhook) at 17:30 CET.
+Content:
+"✅ Pipeline Success" or "❌ Pipeline FAILED at Step 4".
+Top 3 Trade Suggestions (Delta Weights).
+Current Portfolio Value & daily P&L.
+
+
 ### 1. Model Explainability Layer (SHAP/LIME)
 *Transforming the "Black Box" into a "Glass Box".*
 

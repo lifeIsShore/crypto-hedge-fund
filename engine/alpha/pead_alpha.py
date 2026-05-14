@@ -29,7 +29,7 @@ QUALITY_RETURN_MAP = {
     'Disqualified':  0.000,
 }
 DIRECTION_SIGN = {'bullish': 1, 'bearish': -1}
-ACTIVE_WINDOW_DAYS = 7   # only use setups entered in last 7 days
+ACTIVE_WINDOW_DAYS = 21  # only use setups entered in last 21 days (expanded from 7)
 
 
 class PEADAlpha(AlphaModel):
@@ -142,8 +142,16 @@ def run_pead_engine_weekly():
         os.chdir(pead_dir)
         if pead_dir not in sys.path:
             sys.path.insert(0, pead_dir)
-        from run_engine import run
-        state = run(force_refresh=False, lookback_days=90, backfill_models=False)
+        import importlib.util
+        engine_path = os.path.join(pead_dir, "run_engine.py")
+        spec = importlib.util.spec_from_file_location("run_engine", engine_path)
+        if spec and spec.loader:
+            run_engine = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(run_engine)
+            run = run_engine.run  # type: ignore
+            state = run(force_refresh=False, lookback_days=90, backfill_models=False)
+        else:
+            raise ImportError(f"Could not load PEAD engine from {engine_path}")
         n_active = len(state.get('active_setups', []))
         logger.info(f"[pead] Weekly refresh complete: {n_active} active setups")
 

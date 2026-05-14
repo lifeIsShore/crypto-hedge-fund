@@ -26,7 +26,17 @@ _default_db = f"sqlite:///{os.path.abspath(os.path.join(_root, 'engine_data.db')
 DATABASE_URL = os.getenv('DATABASE_URL', _default_db)
 
 # pool_pre_ping avoids "connection closed" errors after long idle periods
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
+# SQLite needs a timeout for concurrent writes to avoid "database is locked" errors
+if DATABASE_URL.startswith('sqlite'):
+    engine = create_engine(
+        DATABASE_URL, 
+        pool_pre_ping=True, 
+        echo=False,
+        connect_args={"timeout": 30}
+    )
+else:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
+
 Session = sessionmaker(bind=engine)
 
 

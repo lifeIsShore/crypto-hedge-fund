@@ -32,9 +32,11 @@ Verdict: 🔵 Future Expansion. Do not build this before going live. It is an ex
 
 
 
+light mode (we have only dark mode)
 
+create cold start backfill for all of the needed parts of the app. so that if i will set that app in another pc i will be able to run the app without any error and fully functional with all the data needed and graphs so on.
 
-
+add small what is it text as info
 
 
 

@@ -48,7 +48,10 @@ def _apply_fx_if_needed(ticker: str, price: float) -> float:
         pair = "GBPEUR=X" if rate == FALLBACK_GBPEUR else "EURUSD=X"
         data = yf.download(pair, period='1d', progress=False)
         if not data.empty:
-            live_rate = float(data['Close'].iloc[-1])
+            close_data = data['Close']
+            if isinstance(close_data, pd.DataFrame):
+                close_data = close_data.squeeze()
+            live_rate = float(close_data.iloc[-1])
             if pair == "EURUSD=X": live_rate = 1.0 / live_rate
             rate = live_rate
     except:

@@ -7,9 +7,21 @@
   <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="kpi-cash">—</div><div class="kpi-sub" id="kpi-cash-date">—</div></div>
   <div class="kpi neutral"><div class="kpi-label">POSITIONS</div><div class="kpi-value" id="kpi-n-pos">—</div><div class="kpi-sub">active holdings</div></div>
   <div class="kpi neutral"><div class="kpi-label">LARGEST HOLDING</div><div class="kpi-value" id="kpi-top">—</div><div class="kpi-sub" id="kpi-top-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">ML VERDICT</div><div class="kpi-value" id="kpi-verdict">—</div><div class="kpi-sub" id="kpi-verdict-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">REGIME</div><div class="kpi-value" id="kpi-regime" style="font-size:14px">—</div><div class="kpi-sub" id="kpi-regime-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">TOP KELLY SIZING</div><div class="kpi-value" id="kpi-kelly">—</div><div class="kpi-sub" id="kpi-kelly-sub">half-kelly % of portfolio</div></div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="ML ENSEMBLE" data-info="The weighted average verdict of multiple machine learning models. Bullish suggests long-term growth, Bearish suggests decline.">ML VERDICT</div>
+    <div class="kpi-value" id="kpi-verdict">—</div>
+    <div class="kpi-sub" id="kpi-verdict-sub">—</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="MACRO REGIME" data-info="The current economic phase (e.g., Risk-On/Growth). This influences how much risk the fund is willing to take.">REGIME</div>
+    <div class="kpi-value" id="kpi-regime" style="font-size:14px">—</div>
+    <div class="kpi-sub" id="kpi-regime-sub">—</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="KELLY CRITERION" data-info="A formula to determine optimal position size. 'Half-Kelly' is a conservative version to prevent over-exposure.">TOP KELLY SIZING</div>
+    <div class="kpi-value" id="kpi-kelly">—</div>
+    <div class="kpi-sub" id="kpi-kelly-sub">half-kelly % of portfolio</div>
+  </div>
 </div>
 
 <div class="grid grid-2-1" style="margin-top:14px">
@@ -29,7 +41,7 @@
           <th onclick="sortTable(3,'pos-table','num')">PRICE €</th>
           <th onclick="sortTable(4,'pos-table','num')">VALUE €</th>
           <th onclick="sortTable(5,'pos-table','num')">WEIGHT</th>
-          <th onclick="sortTable(6,'pos-table','str')">SIGNAL</th>
+          <th onclick="sortTable(6,'pos-table','str')" class="info-point" data-title="ML SIGNAL" data-info="Specific recommendation for this ticker based on 21-day price probability forecasts.">SIGNAL</th>
         </tr></thead>
         <tbody id="pos-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
@@ -66,8 +78,8 @@
 <!-- Trade Advisor -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title">TRADE ADVISOR — MODEL vs ACTUAL</span>
-    <span class="panel-badge">BL TARGETS</span>
+    <span class="panel-title info-point" data-title="TRADE ADVISOR" data-info="Compares your actual portfolio weights to the model's 'optimal' weights and suggests rebalancing trades.">TRADE ADVISOR — MODEL vs ACTUAL</span>
+    <span class="panel-badge info-point" data-title="BLACK-LITTERMAN" data-info="A portfolio optimization model that combines market equilibrium with specific investor views (from our ML models).">BL TARGETS</span>
   </div>
   <div class="panel-body">
     <div id="rebalance-alert"></div>
@@ -77,8 +89,8 @@
         <th onclick="sortTable(1,'reb-table','str')">SECTOR</th>
         <th onclick="sortTable(2,'reb-table','num')">CURRENT %</th>
         <th onclick="sortTable(3,'reb-table','num')">TARGET %</th>
-        <th onclick="sortTable(4,'reb-table','num')">DELTA %</th>
-        <th onclick="sortTable(5,'reb-table','num')">BL RETURN</th>
+        <th onclick="sortTable(4,'reb-table','num')" class="info-point" data-title="DELTA" data-info="The difference between current weight and target weight. Positive means you should buy more.">DELTA %</th>
+        <th onclick="sortTable(5,'reb-table','num')" class="info-point" data-title="BL RETURN" data-info="The expected return for this asset according to the Black-Litterman model, adjusted for market views.">BL RETURN</th>
         <th onclick="sortTable(6,'reb-table','str')">ACTION</th>
       </tr></thead>
       <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
@@ -134,6 +146,9 @@ async function loadOverview(){
   const rgEl = document.getElementById('kpi-regime');
   const rgStr = [rg.regime_risk, rg.regime_growth].filter(Boolean).join(' · ') || '—';
   rgEl.textContent = rgStr;
+  rgEl.classList.add('info-point');
+  rgEl.setAttribute('data-title', 'MACRO REGIME');
+  rgEl.setAttribute('data-info', 'The combination of Market Risk, Economic Growth, and Central Bank Policy that defines the current trading environment.');
   rgEl.style.color = rg.regime_risk==='Risk-On'?'var(--accent)':rg.regime_risk==='Risk-Off'?'var(--accent2)':'var(--accent3)';
   document.getElementById('kpi-regime-sub').textContent = rg.transition_warning ? '⚠️ TRANSITION' : 'stable';
 

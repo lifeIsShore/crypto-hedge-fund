@@ -219,6 +219,50 @@ th[onclick]:hover { color: var(--text) !important; }
 th[onclick]::after { content: '↕'; position: absolute; right: 2px; opacity: 0.2; font-size: 8px; }
 th.sort-asc::after { content: '↑'; opacity: 1; color: var(--accent); }
 th.sort-desc::after { content: '↓'; opacity: 1; color: var(--accent); }
+
+/* ── Tooltips ── */
+.info-point {
+  cursor: help;
+  border-bottom: 1px dotted var(--muted);
+  position: relative;
+  display: inline-block;
+}
+.info-point:hover {
+  border-bottom-color: var(--accent);
+}
+
+#tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(13, 15, 19, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text);
+  max-width: 240px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: translateY(5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+#tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+#tooltip-title {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+}
 </style>
 {% block extra_head %}{% endblock %}
 </head>
@@ -338,6 +382,49 @@ function sortTable(colIdx, tableId, type='str') {
   header.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
   rows.forEach(row => tbody.appendChild(row));
 }
+
+// Tooltip Logic
+const tooltip = document.createElement('div');
+tooltip.id = 'tooltip';
+tooltip.innerHTML = '<span id="tooltip-title"></span><div id="tooltip-text"></div>';
+document.body.appendChild(tooltip);
+
+document.addEventListener('mouseover', e => {
+  const target = e.target.closest('.info-point');
+  if (target) {
+    const title = target.getAttribute('data-title') || 'Definition';
+    const text = target.getAttribute('data-info');
+    document.getElementById('tooltip-title').textContent = title;
+    document.getElementById('tooltip-text').textContent = text;
+    tooltip.classList.add('visible');
+    
+    const rect = target.getBoundingClientRect();
+    let x = rect.left + (rect.width / 2);
+    let y = rect.top - 10;
+    
+    // Position adjustments
+    tooltip.style.left = '0px'; // Reset for measurement
+    tooltip.style.top = '0px';
+    const tRect = tooltip.getBoundingClientRect();
+    
+    x = x - (tRect.width / 2);
+    y = y - tRect.height;
+    
+    // Boundary check
+    if (x < 10) x = 10;
+    if (x + tRect.width > window.innerWidth - 10) x = window.innerWidth - tRect.width - 10;
+    if (y < 10) y = rect.bottom + 10;
+    
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+});
+
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('.info-point')) {
+    tooltip.classList.remove('visible');
+  }
+});
 </script>
 
 {% block scripts %}{% endblock %}

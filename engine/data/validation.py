@@ -13,8 +13,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Mirrors portfolio/src/config.py MAX_DAILY_MOVE_ANOMALY — keep in sync
-MAX_DAILY_MOVE = 0.30
+# The "21% Rule": If a stock moves >21% in a day, drop it and log a "Data Anomaly" alert.
+MAX_DAILY_MOVE = 0.21
+
 
 
 def validate_prices(df: pd.DataFrame, log_to_db: bool = True) -> pd.DataFrame:
@@ -43,21 +44,28 @@ def validate_prices(df: pd.DataFrame, log_to_db: bool = True) -> pd.DataFrame:
         for _, row in group.iterrows():
             ret = row.get('daily_return', np.nan)
 
-            # ── Gate 1: Price spike / unadjusted split detection ──────────────
-            if not np.isnan(ret) and abs(ret) > MAX_DAILY_MOVE:
-                violations.append({
-                    'date':       row['date'],
-                    'ticker':     ticker,
-                    'issue_type': 'price_spike',
-                    'raw_value':  round(float(ret), 6),
-                    'action':     'rejected',
-                    'detail':     f'{ret:.1%} daily move exceeds {MAX_DAILY_MOVE:.0%} gate',
-                })
-                logger.warning(
-                    f"⚠️  REJECTED {ticker} on {row['date']}: "
-                    f"{ret:.1%} move > {MAX_DAILY_MOVE:.0%} gate"
-                )
-                continue  # drop this row
+            # ── Gate 1: Volatility-Adjusted Price Spike Detection ─────────────
+            if not np.isnan(ret):
+                # Calculate volatility from the current batch of history
+                ticker_std = group['daily_return'].std()
+                # If we have < 10 points or std is 0, use a default high floor (25%)
+                # Normal stocks move 1-3%. 5*sigma = 15%. 20% is a safe floor.
+                vol_threshold = max(0.20, 5 * ticker_std) if (len(group) > 10 and ticker_std > 0) else 0.30
+                
+                if abs(ret) > vol_threshold:
+                    violations.append({
+                        'date':       row['date'],
+                        'ticker':     ticker,
+                        'issue_type': 'price_spike',
+                        'raw_value':  round(float(ret), 6),
+                        'action':     'rejected',
+                        'detail':     f'{ret:.1%} move > {vol_threshold:.1%} threshold (std: {ticker_std:.2%})',
+                    })
+                    logger.warning(
+                        f"⚠️  REJECTED {ticker} on {row['date']}: "
+                        f"{ret:.1%} move > {vol_threshold:.1%} vol-adj gate"
+                    )
+                    continue  # drop this row
 
             # ── Gate 2: Zero or negative price ────────────────────────────────
             if row['adj_close'] <= 0:
@@ -107,7 +115,7 @@ def _log_violations_to_db(violations: list):
         logger.warning(f"Could not log violations to DB: {e}")
 
 
-def check_staleness(df: pd.DataFrame, max_gap_days: int = 5) -> list:
+def check_staleness(df: pd.DataFrame, max_gap_days: int = 3) -> list:
     """
     Detects tickers with gaps larger than max_gap_days.
     Returns list of {ticker, last_date, gap_days} dicts.

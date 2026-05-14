@@ -6,11 +6,23 @@
 <!-- KPI strip — populated from /api/performance -->
 <div class="kpi-strip">
   <div class="kpi good">   <div class="kpi-label">NET P&amp;L</div>    <div class="kpi-value" id="a-pnl">—</div><div class="kpi-sub">EUR</div></div>
-  <div class="kpi neutral"><div class="kpi-label">REAL RETURN</div>  <div class="kpi-value" id="a-ret">—</div><div class="kpi-sub">since first deposit</div></div>
-  <div class="kpi neutral"><div class="kpi-label">SHARPE RATIO</div> <div class="kpi-value" id="a-sharpe">—</div><div class="kpi-sub">annualised</div></div>
-  <div class="kpi neutral"><div class="kpi-label">MAX DRAWDOWN</div> <div class="kpi-value" id="a-dd">—</div><div class="kpi-sub">peak-to-trough</div></div>
-  <div class="kpi neutral"><div class="kpi-label">WIN RATE</div>     <div class="kpi-value" id="a-wr">—</div><div class="kpi-sub">% profitable days</div></div>
-  <div class="kpi neutral"><div class="kpi-label">ANN. VOL</div>     <div class="kpi-value" id="a-vol">—</div><div class="kpi-sub">daily × √252</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="REAL RETURN" data-info="Actual percentage gain/loss since the fund started, accounting for all deposits.">REAL RETURN</div>  <div class="kpi-value" id="a-ret">—</div><div class="kpi-sub">since first deposit</div></div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="SHARPE RATIO" data-info="A measure of risk-adjusted return. It shows how much excess return you receive for the extra volatility you endure. Higher is better (1.0+ is good).">SHARPE RATIO</div>
+    <div class="kpi-value" id="a-sharpe">—</div>
+    <div class="kpi-sub">annualised</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="MAX DRAWDOWN" data-info="The largest peak-to-trough decline in the value of a portfolio. Measures the 'worst-case' historical loss.">MAX DRAWDOWN</div>
+    <div class="kpi-value" id="a-dd">—</div>
+    <div class="kpi-sub">peak-to-trough</div>
+  </div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="WIN RATE" data-info="The percentage of trading days that ended with a positive return.">WIN RATE</div>     <div class="kpi-value" id="a-wr">—</div><div class="kpi-sub">% profitable days</div></div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="ANN. VOLATILITY" data-info="The standard deviation of daily returns, scaled to a full year. Represents the 'bumpiness' of the ride.">ANN. VOL</div>
+    <div class="kpi-value" id="a-vol">—</div>
+    <div class="kpi-sub">daily × √252</div>
+  </div>
 </div>
 
 <!-- Row 1: Equity curve + ratio scorecard -->
@@ -33,21 +45,21 @@
     <div class="panel-body">
       <table class="tbl" id="ratio-tbl">
         <tbody>
-          <tr><td style="color:var(--muted)">Sharpe Ratio</td>     <td id="r-sharpe" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Calmar Ratio</td>     <td id="r-calmar" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Profit Factor</td>    <td id="r-pf" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Info Ratio</td>       <td id="r-ir" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Consistency Score</td><td id="r-cs" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Win / Loss Ratio</td> <td id="r-wl" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Expectancy / day</td> <td id="r-exp" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">VaR 95% (daily)</td>  <td id="r-var95" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">CVaR 95% (daily)</td> <td id="r-cvar" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">VaR 99% (daily)</td>  <td id="r-var99" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Skewness</td>         <td id="r-skew" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Excess Kurtosis</td>  <td id="r-kurt" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Best Day</td>         <td id="r-best" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Worst Day</td>        <td id="r-worst" style="text-align:right">—</td></tr>
-          <tr><td style="color:var(--muted)">Fee Drag</td>         <td id="r-fee" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="SHARPE RATIO" data-info="Risk-adjusted return. Excess return per unit of standard deviation.">Sharpe Ratio</td>     <td id="r-sharpe" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="CALMAR RATIO" data-info="Annualized return divided by maximum drawdown. Measures return relative to 'downside' risk.">Calmar Ratio</td>     <td id="r-calmar" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="PROFIT FACTOR" data-info="Gross Profit divided by Gross Loss. A value > 1.0 means the strategy is profitable.">Profit Factor</td>    <td id="r-pf" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="INFORMATION RATIO" data-info="Excess return relative to a benchmark per unit of active risk (tracking error).">Info Ratio</td>       <td id="r-ir" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="CONSISTENCY SCORE" data-info="Measures how 'smooth' the returns are. Higher values mean more predictable, steady gains.">Consistency Score</td><td id="r-cs" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="WIN/LOSS RATIO" data-info="The average size of a winning trade divided by the average size of a losing trade.">Win / Loss Ratio</td> <td id="r-wl" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="EXPECTANCY" data-info="The average amount you expect to win (or lose) per dollar risked.">Expectancy / day</td> <td id="r-exp" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="VaR (95%)" data-info="Value at Risk. The maximum daily loss expected with 95% confidence.">VaR 95% (daily)</td>  <td id="r-var95" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="CVaR (95%)" data-info="Conditional VaR. The average loss in the worst 5% of trading days.">CVaR 95% (daily)</td> <td id="r-cvar" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="VaR (99%)" data-info="Value at Risk. The maximum daily loss expected with 99% confidence (extreme tail risk).">VaR 99% (daily)</td>  <td id="r-var99" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="SKEWNESS" data-info="A measure of asymmetry. Positive skew means more large upside surprises than large downside ones.">Skewness</td>         <td id="r-skew" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="EXCESS KURTOSIS" data-info="Measures 'fat tails'. High values mean more frequent extreme outliers (black swans).">Excess Kurtosis</td>  <td id="r-kurt" style="text-align:right">—</td></tr>
+          <tr><td>Best Day</td>         <td id="r-best" style="text-align:right">—</td></tr>
+          <tr><td>Worst Day</td>        <td id="r-worst" style="text-align:right">—</td></tr>
+          <tr><td class="info-point" data-title="FEE DRAG" data-info="The percentage of total potential return lost to transaction fees and commissions.">Fee Drag</td>         <td id="r-fee" style="text-align:right">—</td></tr>
         </tbody>
       </table>
     </div>

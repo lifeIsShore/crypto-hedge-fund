@@ -358,4 +358,4 @@ FEE_DRAG_TARGET = 0.005  # 0.5% of total portfolio value
 # ==========================================
 # Halt engine if yfinance reports a daily move greater than this threshold 
 # (protects against unadjusted stock splits).
-MAX_DAILY_MOVE_ANOMALY = 0.30  # +/- 30%
+MAX_DAILY_MOVE_ANOMALY = 0.21  # +/- 21%

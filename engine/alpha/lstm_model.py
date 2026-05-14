@@ -126,12 +126,19 @@ def _load_feature_sequences(ticker: str, seq_len: int = SEQ_LEN) -> tuple:
     session = get_session()
     try:
         # Load features from feature_store
-        result = session.execute(text("""
+        # SQLite text() doesn't handle tuple binding for IN automatically in all versions/drivers.
+        # Since FEATURE_NAMES is a constant, we format the placeholders manually.
+        placeholders = ', '.join([':f' + str(i) for i in range(len(FEATURE_NAMES))])
+        params = {"t": ticker}
+        for i, name in enumerate(FEATURE_NAMES):
+            params[f"f{i}"] = name
+
+        result = session.execute(text(f"""
             SELECT date, feature_name, feature_value
             FROM feature_store
-            WHERE ticker = :t AND feature_name IN :names
+            WHERE ticker = :t AND feature_name IN ({placeholders})
             ORDER BY date ASC
-        """), {"t": ticker, "names": tuple(FEATURE_NAMES)})
+        """), params)
         rows = result.fetchall()
 
         # Load prices for target construction

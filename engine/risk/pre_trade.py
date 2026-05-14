@@ -64,10 +64,12 @@ def run_pre_trade_checks(suggested_weights: pd.Series, sector_map: dict = None) 
     # Log violations to DB
     session = get_session()
     for v in violations:
+        # Try to extract ticker (e.g., "AAPL: weight...")
+        ticker = v.split(':')[0] if ':' in v else None
         session.execute(text("""
-            INSERT INTO risk_events (date, event_type, detail)
-            VALUES (CURRENT_DATE, 'pre_trade_violation', :detail)
-        """), {"detail": v[:200]})
+            INSERT INTO risk_events (date, event_type, ticker, detail)
+            VALUES (CURRENT_DATE, 'pre_trade_violation', :ticker, :detail)
+        """), {"ticker": ticker, "detail": v[:200]})
     session.commit()
     session.close()
 

@@ -18,8 +18,8 @@
 
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title">REBALANCE SUGGESTIONS — TODAY</span>
-    <span class="panel-badge" id="reb-badge">BL OPTIMISED</span>
+    <span class="panel-title info-point" data-title="MPT OPTIMAL WEIGHTS" data-info="The 'perfect' allocation based on historical risk and return (Modern Portfolio Theory).">REBALANCE SUGGESTIONS — TODAY</span>
+    <span class="panel-badge info-point" id="reb-badge" data-title="BLACK-LITTERMAN" data-info="An advanced optimization that adjusts market weights based on our ML signals.">BL OPTIMISED</span>
   </div>
   <div class="panel-body">
     <div id="reb-nodata" class="alert alert-info" style="display:none">
@@ -27,7 +27,12 @@
     </div>
     <table class="tbl" id="reb-tbl">
       <thead><tr>
-        <th>TICKER</th><th>SECTOR</th><th>CURRENT %</th><th>TARGET %</th><th>DELTA %</th><th>BL RETURN</th><th>ACTION</th>
+        <th>TICKER</th><th>SECTOR</th>
+        <th class="info-point" data-title="CURRENT %" data-info="Your current actual allocation in the portfolio.">CURRENT %</th>
+        <th class="info-point" data-title="TARGET %" data-info="The weight the model thinks you should have.">TARGET %</th>
+        <th class="info-point" data-title="DELTA %" data-info="The difference between current and target. Positive means BUY.">DELTA %</th>
+        <th class="info-point" data-title="BL RETURN" data-info="The expected return for this asset according to the Black-Litterman model.">BL RETURN</th>
+        <th>ACTION</th>
       </tr></thead>
       <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>

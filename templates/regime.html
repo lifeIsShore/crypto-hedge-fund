@@ -15,12 +15,12 @@
 </div>
 
 <div class="kpi-strip" id="regime-kpi">
-  <div class="kpi neutral"><div class="kpi-label">RISK APPETITE</div><div class="kpi-value" id="r-risk" style="font-size:16px">—</div><div class="kpi-sub" id="r-risk-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">RATE ENVIRONMENT</div><div class="kpi-value" id="r-rate" style="font-size:16px">—</div><div class="kpi-sub" id="r-rate-sub">Fed policy</div></div>
-  <div class="kpi neutral"><div class="kpi-label">GROWTH CYCLE</div><div class="kpi-value" id="r-growth" style="font-size:16px">—</div><div class="kpi-sub" id="r-streak">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">EARLY WARNINGS</div><div class="kpi-value" id="r-ew">—</div><div class="kpi-sub">of 4 triggers</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="RISK APPETITE" data-info="Market sentiment indicator showing if investors are seeking yield (Risk-On) or seeking safety (Risk-Off).">RISK APPETITE</div><div class="kpi-value" id="r-risk" style="font-size:16px">—</div><div class="kpi-sub" id="r-risk-sub">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="RATE ENVIRONMENT" data-info="Analysis of central bank policy and interest rate trends (Easing, Neutral, or Tightening).">RATE ENVIRONMENT</div><div class="kpi-value" id="r-rate" style="font-size:16px">—</div><div class="kpi-sub" id="r-rate-sub">Fed policy</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="GROWTH CYCLE" data-info="The current macroeconomic phase (Recovery, Expansion, Slowdown, or Contraction).">GROWTH CYCLE</div><div class="kpi-value" id="r-growth" style="font-size:16px">—</div><div class="kpi-sub" id="r-streak">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="EARLY WARNINGS" data-info="Leading indicators (like VIX spikes or curve flattening) signaling potential volatility or regime shifts.">EARLY WARNINGS</div><div class="kpi-value" id="r-ew">—</div><div class="kpi-sub">of 4 triggers</div></div>
   <div class="kpi neutral"><div class="kpi-label">AS OF DATE</div><div class="kpi-value" id="r-date" style="font-size:14px">—</div><div class="kpi-sub">last regime snapshot</div></div>
-  <div class="kpi neutral"><div class="kpi-label">COMPOSITE</div><div class="kpi-value" id="r-comp" style="font-size:11px;line-height:1.4">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label info-point" data-title="REGIME COMPOSITE" data-info="The combined macro signal used to filter strategies and adjust portfolio risk.">COMPOSITE</div><div class="kpi-value" id="r-comp" style="font-size:11px;line-height:1.4">—</div></div>
 </div>
 
 <div id="regime-alert" style="margin-top:14px"></div>
@@ -57,10 +57,10 @@
   <div class="panel-header"><span class="panel-title">SIGNAL RELIABILITY IN CURRENT REGIME</span><span class="panel-badge" id="rel-badge">—</span></div>
   <div class="panel-body">
     <div class="grid grid-4">
-      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">LAGGARD SCREEN</div><div class="kpi-value" id="rel-lag" style="font-size:16px">—</div></div>
-      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">PEAD SETUPS</div><div class="kpi-value" id="rel-pead" style="font-size:16px">—</div></div>
-      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">SHORT SQUEEZE</div><div class="kpi-value" id="rel-sq" style="font-size:16px">—</div></div>
-      <div class="kpi neutral" style="padding:12px"><div class="kpi-label">CORR BREAK</div><div class="kpi-value" id="rel-cb" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="COMPOSITE LAGGARD SCREEN" data-info="Strategy identifying stocks that are falling behind their sector peers despite positive macro.">LAGGARD SCREEN</div><div class="kpi-value" id="rel-lag" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="PEAD SETUPS" data-info="Identifying stocks with earnings-based price momentum (Post-Earnings Announcement Drift).">PEAD SETUPS</div><div class="kpi-value" id="rel-pead" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="SHORT SQUEEZE" data-info="Identifying stocks with high short interest vulnerable to rapid upward moves.">SHORT SQUEEZE</div><div class="kpi-value" id="rel-sq" style="font-size:16px">—</div></div>
+      <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="CORR BREAK" data-info="Correlation Break: Detecting stocks moving independently of their usual market links.">CORR BREAK</div><div class="kpi-value" id="rel-cb" style="font-size:16px">—</div></div>
     </div>
   </div>
 </div>
