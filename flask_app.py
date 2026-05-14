@@ -540,8 +540,8 @@ def pead():
     )
 
 
-@app.route("/labels")
-def labels():
+@app.route("/divergence")
+def divergence():
     rows = _q("""
         SELECT id, ticker, etf_reference, detected_at,
                etf_return_pct, stock_return_pct, divergence_pct, scenario_label
@@ -550,7 +550,7 @@ def labels():
         ORDER BY detected_at DESC
         LIMIT 30
     """)
-    return render_template("labels.html",
+    return render_template("divergence.html",
         rows=rows,
         page="divergence",
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
