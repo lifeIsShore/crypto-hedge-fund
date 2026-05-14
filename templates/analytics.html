@@ -149,7 +149,10 @@
         <tbody>
           {% for p in positions %}
           <tr style="cursor:pointer" onclick="window.location='/ticker/{{ p.ticker }}'">
-            <td style="font-weight:500;color:var(--accent)">{{ p.ticker }}</td>
+            <td style="font-weight:500;color:var(--accent)">
+              {{ p.ticker }}
+              <br><span style="font-size:9px;color:var(--muted);font-weight:400">({{ ticker_names.get(p.ticker, '') }})</span>
+            </td>
             <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
             <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
             <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
@@ -375,7 +378,7 @@ async function loadAnalytics() {
   document.getElementById('s-avgl').textContent  = fmtPct(k.avg_loss_pct || 0, 3);
 
   // ── Allocation chart (from SSR positions) ─────────────────────────────
-  const positions = {{ positions|tojson }};
+  const positions = JSON.parse('{{ positions|tojson|safe }}');
   if (positions.length) {
     new Chart(document.getElementById('allocChart'), {
       type: 'bar',

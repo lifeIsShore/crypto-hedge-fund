@@ -112,6 +112,7 @@
 <script>
 let mcDistChart = null, portMcChart = null;
 let allTargets = [];
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
 function loadTicker(ticker){
   const row = allTargets.find(r=>r.ticker===ticker);
@@ -170,7 +171,14 @@ function loadTicker(ticker){
 function filterTable(q){
   const rows=document.querySelectorAll('#universe-tbody tr[data-ticker]');
   let shown=0;
-  rows.forEach(r=>{const show=r.dataset.ticker.toLowerCase().includes(q.toLowerCase());r.style.display=show?'':'none';if(show)shown++;});
+  q = q.toLowerCase();
+  rows.forEach(r=>{
+    const ticker = r.dataset.ticker.toLowerCase();
+    const name = (tickerNames[r.dataset.ticker] || '').toLowerCase();
+    const show = ticker.includes(q) || name.includes(q);
+    r.style.display=show?'':'none';
+    if(show)shown++;
+  });
   document.getElementById('filter-count').textContent=q?`${shown} shown`:'';
 }
 
@@ -187,7 +195,7 @@ async function loadRisk(){
   allTargets=Array.isArray(tgtRes)?tgtRes:(tgtRes.targets||[]);
   document.getElementById('universe-badge').textContent=`${allTargets.length} TICKERS`;
   const sel=document.getElementById('ticker-sel');
-  sel.innerHTML=allTargets.map(t=>`<option value="${t.ticker}">${t.ticker}</option>`).join('');
+  sel.innerHTML=allTargets.map(t=>`<option value="${t.ticker}">${t.ticker} (${tickerNames[t.ticker] || ''})</option>`).join('');
   if(allTargets.length) loadTicker(allTargets[0].ticker);
 
   document.getElementById('universe-tbody').innerHTML=!allTargets.length?'<tr><td colspan="10" style="color:var(--muted)">No price targets. Run pipeline.</td></tr>':allTargets.map(r=>{
@@ -197,7 +205,21 @@ async function loadRisk(){
       :null;
     const expPctStr=exp_pct!=null?fmtPct(exp_pct):'—';
     const expColor=exp_pct!=null&&exp_pct>=0?'var(--accent)':'var(--accent2)';
-    return `<tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="document.getElementById('ticker-sel').value='${r.ticker}';loadTicker('${r.ticker}')"><td style="font-weight:500;color:#fff">${r.ticker}</td><td>${fmtEur(r.current_price_eur)}</td><td>${fmtEur(r.expected_21d_eur)}</td><td style="color:${expColor}">${expPctStr}</td><td>${fmtEur(r.target_1sigma_eur)}</td><td style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td><td>${r.risk_reward_ratio!=null?(+r.risk_reward_ratio).toFixed(2)+'x':'—'}</td><td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td><td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td><td class="${sigClass(action)}">${sigLabel(action)}</td></tr>`;
+    return `<tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="document.getElementById('ticker-sel').value='${r.ticker}';loadTicker('${r.ticker}')">
+      <td style="font-weight:500;color:#fff">
+        ${r.ticker}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+      </td>
+      <td>${fmtEur(r.current_price_eur)}</td>
+      <td>${fmtEur(r.expected_21d_eur)}</td>
+      <td style="color:${expColor}">${expPctStr}</td>
+      <td>${fmtEur(r.target_1sigma_eur)}</td>
+      <td style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td>
+      <td>${r.risk_reward_ratio!=null?(+r.risk_reward_ratio).toFixed(2)+'x':'—'}</td>
+      <td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td>
+      <td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td>
+      <td class="${sigClass(action)}">${sigLabel(action)}</td>
+    </tr>`;
   }).join('');
 
   const positions=posRes.positions||[], total=posRes.total_eur||positions.reduce((s,p)=>s+(+p.value_eur||0),0);

@@ -89,6 +89,7 @@
 <script>
 let selectedId = null;
 let queueData  = [];
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
 async function loadDivergence(){
   const data = await fetch('/api/divergence').then(r=>r.json()).catch(()=>({unlabeled:[],count:0}));
@@ -108,7 +109,10 @@ async function loadDivergence(){
   tbody.innerHTML = queueData.map(row=>{
     const divColor = Math.abs(+row.divergence_pct||0)>0.10?'var(--accent2)':'var(--accent3)';
     return `<tr style="cursor:pointer" onclick="selectRow(${row.id})" id="div-row-${row.id}">
-      <td style="font-weight:500;color:#fff">${row.ticker}</td>
+      <td style="font-weight:500;color:#fff">
+        ${row.ticker}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[row.ticker] || ''})</span>
+      </td>
       <td style="color:var(--muted)">${row.etf_reference||'—'}</td>
       <td>${(row.detected_at||'—').slice(0,10)}</td>
       <td style="color:${(+row.etf_return_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${row.etf_return_pct!=null?fmtPct((+row.etf_return_pct)*100):'—'}</td>

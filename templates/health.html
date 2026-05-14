@@ -130,6 +130,7 @@
 
 {% block scripts %}
 <script>
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 // ── Kill Switch: polls /api/kill_switch_status every 60s ──────────────────
 let _ksTimer = null;
 async function checkConnectivity(){
@@ -345,7 +346,10 @@ async function loadHealth(){
     riskTbody.innerHTML = riskRows.map(r=>`<tr>
       <td>${r.date||'—'}</td>
       <td><span class="tag tag-red">${r.event_type||'—'}</span></td>
-      <td style="color:#fff;font-weight:500">${r.ticker||'—'}</td>
+      <td style="color:#fff;font-weight:500">
+        ${r.ticker||'—'}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+      </td>
       <td style="color:var(--muted);font-size:10px">${r.detail||'—'}</td>
       <td style="color:var(--muted)">${(r.logged_at||'').slice(0,16)}</td>
     </tr>`).join('');

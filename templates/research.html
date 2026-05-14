@@ -92,10 +92,15 @@
 {% block scripts %}
 <script>
 let featChart = null;
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
 function filterSigs(q){
+  q = q.toLowerCase();
   document.querySelectorAll('#sig-tbody tr[data-row]').forEach(r=>{
-    r.style.display = r.dataset.row.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    const search = r.dataset.row.toLowerCase();
+    const ticker = r.dataset.tk.toLowerCase();
+    const name = (tickerNames[r.dataset.tk] || '').toLowerCase();
+    r.style.display = (search.includes(q) || ticker.includes(q) || name.includes(q)) ? '' : 'none';
   });
 }
 
@@ -135,8 +140,11 @@ async function loadResearch(){
       const action = up>=.60?'BUY':up>=.54?'LEAN_BUY':up<=.40?'SELL':up<=.46?'LEAN_SELL':'NEUTRAL';
       const gated  = auc>=.53;
       const search = `${tk} ${s.sector||''}`;
-      return `<tr data-row="${search}" style="cursor:pointer" onclick="window.location='/ticker/${tk}'">
-        <td style="font-weight:500;color:var(--accent)">${tk}</td>
+      return `<tr data-row="${search}" data-tk="${tk}" style="cursor:pointer" onclick="window.location='/ticker/${tk}'">
+        <td style="font-weight:500;color:var(--accent)">
+          ${tk}
+          <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[tk] || ''})</span>
+        </td>
         <td style="color:var(--muted)">${s.sector||'—'}</td>
         <td style="color:${up>=.55?'var(--accent)':up<=.45?'var(--accent2)':'var(--muted)'}">${(up*100).toFixed(1)}%</td>
         <td>${auc.toFixed(4)}</td>
@@ -194,7 +202,10 @@ async function loadResearch(){
     atbody.innerHTML='<tr><td colspan="7" style="color:var(--muted)">No active entry windows today.</td></tr>';
   } else {
     atbody.innerHTML = active.map(s=>`<tr>
-      <td style="font-weight:500;color:#fff">${s.ticker}</td>
+      <td style="font-weight:500;color:#fff">
+        ${s.ticker}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[s.ticker] || ''})</span>
+      </td>
       <td class="${s.direction==='bullish'?'sig-buy':'sig-sell'}">${s.direction==='bullish'?'🟢 BULL':'🔴 BEAR'}</td>
       <td>${s.quality==='HIGH'?'🔥 HIGH':s.quality==='MEDIUM'?'⭐ MEDIUM':'LOW'}</td>
       <td style="color:${(+s.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${s.surprise_pct!=null?fmtPct(+s.surprise_pct):'—'}</td>
@@ -211,7 +222,10 @@ async function loadResearch(){
   } else {
     htbody.innerHTML = hist.slice(0,50).map(h=>`<tr>
       <td>${h.earnings_date||'—'}</td>
-      <td style="font-weight:500;color:#fff">${h.ticker}</td>
+      <td style="font-weight:500;color:#fff">
+        ${h.ticker}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[h.ticker] || ''})</span>
+      </td>
       <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
       <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
       <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>
