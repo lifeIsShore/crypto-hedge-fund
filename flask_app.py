@@ -1954,134 +1954,124 @@ def api_pairs_correlation():
 @app.route("/api/pairs/scan")
 def api_pairs_scan():
     """
-    Run Engle-Granger cointegration test on a curated list of same-sector pairs.
-    Returns top pairs sorted by |z-score|.
+    Run Engle-Granger cointegration test on a dynamic set of pairs.
+    Includes curated same-sector pairs PLUS any highly correlated pairs 
+    discovered from the top 15 active tickers.
     """
     try:
         from statsmodels.tsa.stattools import coint
         from portfolio.src.config import TRADEABLE_UNIVERSE, TICKER_NAMES, TICKER_SECTORS
 
-        # Curated same-sector candidate pairs drawn from the live universe
+        # 1. Curated same-sector candidate pairs
         CANDIDATE_PAIRS = [
-            # Semiconductors
-            ('NVD.DE', 'AMD.DE'),
-            ('INZ.DE', 'QCI.DE'),
-            ('ASQ.DE', 'KLA.DE') if 'KLA.DE' in TRADEABLE_UNIVERSE else ('ASQ.DE', 'MTH.DE'),
-            ('MTH.DE', 'AMD.DE'),
-            ('TSFA.DE', 'NVD.DE'),
-            # Software / Cloud
-            ('MSF.DE', 'ORC.DE'),
-            ('CAS.DE', '6N0.DE'),
-            ('ADB.DE', 'CAS.DE'),
-            # Financials
-            ('CMC.DE', 'NCB.DE'),
-            ('GOS.DE', 'M9N.DE'),
-            ('3V64.DE', 'M9Z.DE'),
-            # Big Tech
-            ('APC.DE', 'MSF.DE'),
-            ('AMZ.DE', 'ABE.DE'),
-            # Consumer / Entertainment
-            ('NFC.DE', '6SP.DE'),
+            ('NVD.DE', 'AMD.DE'), ('INZ.DE', 'QCI.DE'), ('MTH.DE', 'AMD.DE'), ('TSFA.DE', 'NVD.DE'),
+            ('MSF.DE', 'ORC.DE'), ('CAS.DE', '6N0.DE'), ('ADB.DE', 'CAS.DE'),
+            ('CMC.DE', 'NCB.DE'), ('GOS.DE', 'M9N.DE'), ('3V64.DE', 'M9Z.DE'),
+            ('APC.DE', 'MSF.DE'), ('AMZ.DE', 'ABE.DE'), ('NFC.DE', '6SP.DE'),
         ]
+        # ASQ.DE logic handled carefully
+        asq_b = 'KLA.DE' if 'KLA.DE' in TRADEABLE_UNIVERSE else 'MTH.DE'
+        CANDIDATE_PAIRS.append(('ASQ.DE', asq_b))
 
-        # Flatten to unique tickers needed
-        needed = set(t for pair in CANDIDATE_PAIRS for t in pair)
+        # 2. DYNAMIC DISCOVERY: Find top 15 tickers by activity (same as heatmap)
+        active_tickers_rows = _q("""
+            SELECT ticker, COUNT(*) as cnt FROM prices
+            WHERE ticker IN (%s) AND date >= date('now', '-90 days')
+            GROUP BY ticker HAVING COUNT(*) >= 30
+            ORDER BY cnt DESC LIMIT 15
+        """ % ','.join(f"'{t}'" for t in TRADEABLE_UNIVERSE))
+        
+        active_tickers = [r["ticker"] for r in active_tickers_rows]
+        
+        # 3. Fetch price data for ALL candidate and active tickers
+        all_needed = set(active_tickers)
+        for (ta, tb) in CANDIDATE_PAIRS:
+            all_needed.add(ta); all_needed.add(tb)
 
-        # Fetch 252 days of prices from DB
         price_rows = _q("""
-            SELECT date, ticker, adj_close
-            FROM prices
-            WHERE ticker IN (%s)
-              AND date >= date('now', '-380 days')
+            SELECT date, ticker, adj_close FROM prices
+            WHERE ticker IN (%s) AND date >= date('now', '-380 days')
             ORDER BY date ASC
-        """ % ','.join(f"'{t}'" for t in needed))
+        """ % ','.join(f"'{t}'" for t in all_needed))
 
         if not price_rows:
-            return jsonify({"error": "No price data available for pair scanning."})
+            return jsonify({"error": "No price data available."})
 
         df = pd.DataFrame(price_rows)
         df['adj_close'] = pd.to_numeric(df['adj_close'], errors='coerce')
         pivot = df.pivot_table(index='date', columns='ticker', values='adj_close')
 
+        # 4. Filter for high correlation pairs within the active set
+        dynamic_pairs = set(tuple(sorted(p)) for p in CANDIDATE_PAIRS)
+        if len(active_tickers) >= 2:
+            # Quick 60-day correlation check for discovery
+            returns_60 = pivot[active_tickers].tail(60).pct_change().dropna(how='all')
+            corr_matrix = returns_60.corr()
+            
+            for i in range(len(active_tickers)):
+                for j in range(i + 1, len(active_tickers)):
+                    ta, tb = active_tickers[i], active_tickers[j]
+                    if ta in corr_matrix.index and tb in corr_matrix.columns:
+                        c_val = corr_matrix.at[ta, tb]
+                        if c_val > 0.85: # Threshold for "interesting" pairs
+                            dynamic_pairs.add(tuple(sorted((ta, tb))))
+
+        # 5. Run tests on the combined set
         results = []
-        for (ta, tb) in CANDIDATE_PAIRS:
-            if ta not in pivot.columns or tb not in pivot.columns:
-                continue
+        for (ta, tb) in dynamic_pairs:
+            if ta not in pivot.columns or tb not in pivot.columns: continue
             series = pivot[[ta, tb]].dropna()
-            if len(series) < 60:
-                continue
+            if len(series) < 60: continue
 
-            xa = series[ta].values
-            xb = series[tb].values
-
-            # Pearson correlation
+            xa, xb = series[ta].values, series[tb].values
             corr_val = float(np.corrcoef(xa, xb)[0, 1])
 
-            # Engle-Granger cointegration test
             try:
-                score, pvalue, _ = coint(xa, xb)
+                _, pvalue, _ = coint(xa, xb)
                 pvalue = float(pvalue)
-            except Exception:
-                pvalue = 1.0
+            except: pvalue = 1.0
 
-            # OLS hedge ratio: xa = beta * xb + alpha
-            xb_m = xb.reshape(-1, 1)
             beta = float(np.linalg.lstsq(np.column_stack([np.ones(len(xb)), xb]), xa, rcond=None)[0][1])
-
-            # Spread and z-score
             spread = xa - beta * xb
-            spread_mean = float(np.mean(spread))
-            spread_std  = float(np.std(spread))
-            zscore = float((spread[-1] - spread_mean) / spread_std) if spread_std > 1e-10 else 0.0
-
-            # Half-life via AR(1) regression
-            try:
-                spread_lag = spread[:-1]
-                spread_diff = np.diff(spread)
-                beta_ar = float(np.linalg.lstsq(
-                    np.column_stack([np.ones(len(spread_lag)), spread_lag]),
-                    spread_diff, rcond=None
-                )[0][1])
-                half_life = int(round(-np.log(2) / beta_ar)) if beta_ar < 0 else None
-                if half_life and (half_life < 1 or half_life > 252):
-                    half_life = None
-            except Exception:
-                half_life = None
-
-            # Status classification
-            if pvalue < 0.05:
-                status = 'COINTEGRATED'
-            elif pvalue < 0.15:
-                status = 'WATCHING'
+            
+            # CONSISTENCY FIX: Use Rolling 60-day Z-score (matching the chart)
+            s_series = pd.Series(spread)
+            roll_mean = s_series.rolling(60, min_periods=20).mean().iloc[-1]
+            roll_std  = s_series.rolling(60, min_periods=20).std().iloc[-1]
+            
+            if not np.isnan(roll_std) and roll_std > 1e-10:
+                zscore = float((spread[-1] - roll_mean) / roll_std)
             else:
-                status = 'DRIFTING'
+                # Fallback to global if rolling window is too short or invalid
+                zscore = float((spread[-1] - np.mean(spread)) / np.std(spread)) if np.std(spread) > 1e-10 else 0.0
 
-            # Signal
+            try:
+                spread_lag, spread_diff = spread[:-1], np.diff(spread)
+                beta_ar = float(np.linalg.lstsq(np.column_stack([np.ones(len(spread_lag)), spread_lag]), spread_diff, rcond=None)[0][1])
+                half_life = int(round(-np.log(2) / beta_ar)) if beta_ar < 0 else None
+            except: half_life = None
+
+            if pvalue < 0.05: status = 'COINTEGRATED'
+            elif pvalue < 0.15: status = 'WATCHING'
+            else: status = 'DRIFTING'
+
             signal = 'NEUTRAL'
-            if abs(zscore) >= 2.0:
-                signal = 'LONG_B' if zscore > 0 else 'LONG_A'
+            if abs(zscore) >= 2.0: signal = 'LONG_B' if zscore > 0 else 'LONG_A'
 
-            sector_a = TICKER_SECTORS.get(ta, '—')
-            sector_b = TICKER_SECTORS.get(tb, '—')
-            sector   = sector_a if sector_a == sector_b else f"{sector_a}/{sector_b}"
-
+            s_a, s_b = TICKER_SECTORS.get(ta, '—'), TICKER_SECTORS.get(tb, '—')
             results.append({
-                'ticker_a':   ta,
-                'ticker_b':   tb,
-                'label_a':    ta.replace('.DE','').replace('.AS','').replace('.BR',''),
-                'label_b':    tb.replace('.DE','').replace('.AS','').replace('.BR',''),
-                'sector':     sector,
-                'correlation': round(corr_val, 3),
-                'pvalue':     round(pvalue, 4),
-                'zscore':     round(zscore, 3),
-                'status':     status,
-                'signal':     signal,
-                'half_life':  half_life,
+                'ticker_a': ta, 'ticker_b': tb,
+                'label_a': ta.replace('.DE','').replace('.AS',''), 'label_b': tb.replace('.DE','').replace('.AS',''),
+                'sector': s_a if s_a == s_b else f"{s_a}/{s_b}",
+                'correlation': round(corr_val, 3), 'pvalue': round(pvalue, 4), 'zscore': round(zscore, 3),
+                'status': status, 'signal': signal, 'half_life': half_life,
             })
 
-        # Sort: active signals first, then by |z|
         results.sort(key=lambda r: (-abs(r['zscore']), r['pvalue']))
         return jsonify({'pairs': results})
+    except Exception as e:
+        log.exception("pairs scan error")
+        return jsonify({'error': str(e)}), 500
 
     except ImportError:
         return jsonify({'error': 'statsmodels not installed. Run: pip install statsmodels'}), 500
