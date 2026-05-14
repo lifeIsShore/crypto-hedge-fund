@@ -478,6 +478,72 @@ def step_ml_refresh():
 
 
 def step_lstm_train():
+    from engine.alpha.ml_alpha import train_all_lstms
+    train_all_lstms()
+
+
+def step_performance_log():
+    """
+    Final step: calculate total wealth (Cash + Stocks) and log to performance_history.
+    This is the data source for the dashboard's Equity Curve and Risk Metrics.
+    """
+    from engine.db.db import get_session
+    from sqlalchemy import text
+    session = get_session()
+    
+    # 1. Get current positions market value
+    val_row = session.execute(text("""
+        SELECT SUM(value_eur) FROM positions_history p
+        INNER JOIN (SELECT ticker, MAX(date) AS max_date FROM positions_history GROUP BY ticker)
+        latest ON p.ticker=latest.ticker AND p.date=latest.max_date
+    """)).fetchone()
+    
+    # 2. Get current cash
+    cash_row = session.execute(text("""
+        SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1
+    """)).fetchone()
+    
+    total_val = float(val_row[0] or 0) + float(cash_row[0] if cash_row else 0)
+    
+    # 3. Get previous day's value for return calculation
+    prev_row = session.execute(text("""
+        SELECT portfolio_value_eur FROM performance_history 
+        WHERE date < :d ORDER BY date DESC LIMIT 1
+    """), {'d': TODAY}).fetchone()
+    
+    # 4. Get today's net cash flow (deposits/withdrawals) to adjust return
+    flow_row = session.execute(text("""
+        SELECT SUM(value_eur) FROM (
+            SELECT value_eur FROM trades WHERE date = :d AND action = 'DEPOSIT'
+            UNION ALL
+            SELECT -value_eur FROM trades WHERE date = :d AND action = 'WITHDRAWAL'
+        )
+    """), {'d': TODAY}).fetchone()
+    
+    flow = float(flow_row[0] or 0)
+    prev_val = float(prev_row[0]) if prev_row else total_val - flow
+    
+    # Adjusted Return = (Ending Value - Cash Flow - Starting Value) / Starting Value
+    daily_ret = 0.0
+    if prev_val > 0:
+        daily_ret = (total_val - flow - prev_val) / prev_val
+    
+    # 5. Persist to DB
+    session.execute(text("""
+        INSERT INTO performance_history (date, portfolio_value_eur, daily_return_pct)
+        VALUES (:d, :v, :r)
+        ON CONFLICT(date) DO UPDATE SET
+            portfolio_value_eur = excluded.portfolio_value_eur,
+            daily_return_pct = excluded.daily_return_pct
+    """), {
+        'd': TODAY,
+        'v': round(total_val, 2),
+        'r': round(daily_ret * 100, 4)
+    })
+    
+    session.commit()
+    session.close()
+    logger.info(f"[performance] Logged: €{total_val:,.2f} | Return: {daily_ret*100:+.2f}%")
     """Saturday — walk-forward train LSTM for all tickers and save models."""
     from engine.alpha.lstm_model import LSTMAlpha
     model = LSTMAlpha()
@@ -560,6 +626,7 @@ def run_pipeline(dry_run: bool = False):
     _run_step('10. Outcome fill',            step_outcome_fill,                  dry_run)
     _run_step('11. Portfolio construction',  step_portfolio_construction,        dry_run)
     _run_step('12. Price targets',           step_price_targets,                 dry_run)  # Stream 3
+    _run_step('13. Performance logging',      step_performance_log,               dry_run)
 
     # ── Weekly steps (Monday) ─────────────────────────────────────────────────
     if WEEKDAY == 0:

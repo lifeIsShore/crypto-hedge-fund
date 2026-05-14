@@ -1237,14 +1237,36 @@ def api_performance():
     real_return_pct = (net_pnl / invested_base * 100) if invested_base > 0 else 0.0
     fee_drag_pct    = (total_fees / invested_base * 100) if invested_base > 0 else 0.0
 
-    # ── 5. Daily return series from performance_history OR cash_history proxy ──
+    # ── 5. Daily return series adjusted for cash flows ────────────────────
+    # Map daily flows: net impact of DEPOSIT, DIVIDEND, FEE, etc.
+    flows_by_date = {}
+    for t in trades_rows:
+        dt = t["date"]
+        val = float(t.get("total_eur") or 0)
+        action = t["action"].upper()
+        
+        # Flows that increase balance without being "investment return"
+        # Deposits and dividends (if treated as cash injection)
+        if action == "DEPOSIT":
+            flows_by_date[dt] = flows_by_date.get(dt, 0.0) + val
+        elif action == "DIVIDEND":
+            # Dividends are profit, but we don't want them to spike the day's % 
+            # if they just arrived in cash. However, for TWR, dividends ARE return.
+            # We'll treat them as internal growth (no flow adjustment).
+            pass
+        elif action == "WITHDRAWAL":
+            flows_by_date[dt] = flows_by_date.get(dt, 0.0) - val
+        elif action == "FEE":
+            # Fees are a cost, we subtract them from flow so they count as loss
+            flows_by_date[dt] = flows_by_date.get(dt, 0.0) - val
+
     perf_rows = _q("""
         SELECT date, portfolio_value_eur, daily_return_pct
         FROM performance_history
         ORDER BY date ASC
     """)
 
-    daily_returns = []   # list of {date, r} where r is decimal return
+    daily_returns = []   # list of {date, r}
     equity_series = []   # list of {date, value}
 
     if perf_rows:
@@ -1252,14 +1274,14 @@ def api_performance():
             r = row.get("daily_return_pct")
             v = row.get("portfolio_value_eur")
             if r is not None and v is not None:
-                daily_returns.append({"date": row["date"], "r": float(r) / 100})
+                # Use a sanity cap for production safety
+                r_val = float(r) / 100
+                r_val = max(-0.999, min(r_val, 1.0)) # Cap at -100% to +100%
+                daily_returns.append({"date": row["date"], "r": r_val})
                 equity_series.append({"date": row["date"], "value": float(v)})
     else:
-        # Proxy: reconstruct from cash_history snapshots
-        cash_hist = _q("""
-            SELECT date, cash_eur FROM cash_history ORDER BY date ASC
-        """)
-        # Group by date — take last entry per date
+        # Reconstruct from cash_history with flow adjustment
+        cash_hist = _q("SELECT date, cash_eur FROM cash_history ORDER BY date ASC")
         cash_by_date = {}
         for row in cash_hist:
             cash_by_date[row["date"]] = float(row["cash_eur"])
@@ -1268,11 +1290,15 @@ def api_performance():
         prev_val = None
         for d in dates_sorted:
             val = cash_by_date[d]
-            # Add holdings value proxy (use total_value as constant for now)
-            # This is a rough proxy; proper equity curve needs daily price snapshots
+            flow = flows_by_date.get(d, 0.0)
+            
             if prev_val is not None and prev_val > 0:
-                r = (val - prev_val) / prev_val
+                # Adjusted Return = (Ending Value - Cash Flow - Starting Value) / Starting Value
+                r = (val - flow - prev_val) / prev_val
+                # Sanity check: cap extreme outliers from data glitches
+                r = max(-0.99, min(r, 1.0)) 
                 daily_returns.append({"date": d, "r": r})
+            
             equity_series.append({"date": d, "value": val})
             prev_val = val
 

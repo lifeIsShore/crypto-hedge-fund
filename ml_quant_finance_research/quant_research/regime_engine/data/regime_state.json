@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-11T20:38:19.425112",
-  "as_of_date": "2026-05-11",
+  "generated_at": "2026-05-14T09:46:06.478344",
+  "as_of_date": "2026-05-14",
   "regime_risk": "Risk-On",
   "regime_rates": "Neutral",
   "regime_growth": "Slowdown",
@@ -14,18 +14,18 @@
     "rate_reprice": false
   },
   "macro_snapshot": {
-    "vix": 17.19,
+    "vix": 17.87,
     "yield_spread": 0.48,
-    "hy_spread": 2.81,
-    "ig_spread": 5.08,
+    "hy_spread": 2.82,
+    "ig_spread": 5.16,
     "fed_funds": 3.64
   },
   "regime_changed_today": false,
   "prev_regime_composite": "RiskOn_Neutral_Slowdown",
   "regime_distribution": {
-    "Neutral_Neutral_Slowdown": 25.1,
+    "Neutral_Neutral_Slowdown": 24.7,
     "Neutral_Neutral_Expansion": 15.2,
-    "RiskOn_Neutral_Slowdown": 13.9,
+    "RiskOn_Neutral_Slowdown": 14.3,
     "RiskOn_Neutral_Expansion": 13.5,
     "Neutral_Easing_Expansion": 11.7,
     "RiskOn_Easing_Expansion": 9.4,
@@ -34,5 +34,5 @@
     "RiskOff_Neutral_Expansion": 3.4,
     "RiskOff_Neutral_Slowdown": 0.7
   },
-  "current_streak_days": 23
+  "current_streak_days": 26
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T12:47:35.236970",
+  "generated_at": "2026-05-14T08:49:52.911583",
   "active_setups": [],
   "recent_setups": [
     {
@@ -164,22 +164,22 @@
     }
   ],
   "performance": {
-    "total_setups": 170,
+    "total_setups": 171,
     "high_quality_setups": 0,
     "medium_quality_setups": 13,
-    "overall_avg_drift_21d": 4.384,
+    "overall_avg_drift_21d": 4.396,
     "overall_avg_drift_63d": 4.094,
-    "overall_hit_rate_21d": 0.635,
+    "overall_hit_rate_21d": 0.637,
     "high_avg_drift_21d": null,
     "high_avg_drift_63d": null,
     "high_hit_rate_21d": null,
-    "bullish_avg_drift_21d": 5.342,
+    "bullish_avg_drift_21d": 5.348,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-05-13T12:47:35.231893",
+    "stats_computed_at": "2026-05-14T08:49:52.893818",
     "hit_rate_21d_expansion": 0.0,
     "avg_drift_21d_expansion": -12.384,
-    "hit_rate_21d_slowdown": 0.761,
-    "avg_drift_21d_slowdown": 9.723
+    "hit_rate_21d_slowdown": 0.765,
+    "avg_drift_21d_slowdown": 9.674
   },
-  "total_in_db": 170
+  "total_in_db": 171
 }
