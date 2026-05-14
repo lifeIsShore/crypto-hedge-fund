@@ -40,6 +40,12 @@ log = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates")
 
+# ── inject ticker names into all templates ────────────────────────────────────
+@app.context_processor
+def inject_ticker_names():
+    from portfolio.src.config import TICKER_NAMES
+    return dict(ticker_names=TICKER_NAMES)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────────────────────────────

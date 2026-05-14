@@ -83,6 +83,7 @@
 {% block scripts %}
 <script>
 async function loadHoldings(){
+  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
   const data = await fetch('/api/holdings').then(r=>r.json()).catch(()=>({}));
   const positions = data.positions || [];
   const cash = data.cash_eur || 0;
@@ -114,7 +115,10 @@ async function loadHoldings(){
     const weightCell = p.weight    != null ? ((+p.weight)*100).toFixed(1)+'%' : '<span style="color:var(--muted)">—</span>';
     const rowStyle   = p.price_missing ? 'opacity:0.6' : '';
     return `<tr style="cursor:pointer;${rowStyle}" onclick="window.location='/ticker/${p.ticker}'">
-      <td style="font-weight:500;color:var(--accent)">${p.ticker}${missingBadge}</td>
+      <td style="font-weight:500;color:var(--accent)">
+        ${p.ticker}${missingBadge}
+        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
+      </td>
       <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
       <td>${priceCell}</td>
       <td>${valueCell}</td>
@@ -180,7 +184,7 @@ async function loadMPT() {
     const valE = w.value_eur      != null ? fmtEur(w.value_eur)                        : '—';
     return '<tr>'
       + '<td style="font-weight:500;color:var(--accent);cursor:pointer" onclick="window.location=\'/ticker/' + w.ticker + '\'">'
-        + w.ticker + '</td>'
+        + w.ticker + '<br><span style="font-size:9px;color:var(--muted);font-weight:400">(' + (tickerNames[w.ticker] || '') + ')</span></td>'
       + '<td style="color:var(--accent4)">' + cur + '%</td>'
       + '<td style="color:var(--accent)">'  + opt + '%</td>'
       + '<td>' + barHtml + '</td>'

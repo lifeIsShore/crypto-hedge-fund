@@ -83,6 +83,7 @@
 {% block scripts %}
 <script>
 async function loadPead(){
+  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
   const data = await fetch('/api/pead').then(r=>r.json()).catch(()=>({}));
 
   const perf = data.performance || {};
@@ -120,7 +121,10 @@ async function loadPead(){
   } else {
     noActive.style.display = 'none';
     atbody.innerHTML = active.map(s => `<tr>
-      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${s.ticker}'">${s.ticker}</td>
+      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${s.ticker}'">
+        ${s.ticker}
+        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[s.ticker] || ''})</span>
+      </td>
       <td class="${s.direction==='bullish'||s.direction==='long'?'sig-buy':'sig-sell'}">
         ${s.direction==='bullish'||s.direction==='long'?'🟢 BULL':'🔴 BEAR'}
       </td>
@@ -177,7 +181,10 @@ async function loadPead(){
     noHist.style.display = 'none';
     htbody.innerHTML = hist.slice(0,60).map(h => `<tr>
       <td>${h.earnings_date||'—'}</td>
-      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${h.ticker}'">${h.ticker}</td>
+      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${h.ticker}'">
+        ${h.ticker}
+        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[h.ticker] || ''})</span>
+      </td>
       <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
       <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
       <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>

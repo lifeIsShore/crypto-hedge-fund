@@ -67,6 +67,7 @@
 {% block scripts %}
 <script>
 let suggestions = [];
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
 async function loadRebalance(){
   const data = await fetch('/api/rebalance').then(r=>r.json()).catch(()=>({}));
@@ -97,7 +98,10 @@ async function loadRebalance(){
     const dw = (+r.delta_weight||0)*100;
     const actionTag = r.action==='BUY'?'tag-green':r.action==='SELL'?'tag-red':'tag-muted';
     return `<tr>
-      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${r.ticker}'">${r.ticker}</td>
+      <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${r.ticker}'">
+        ${r.ticker}
+        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+      </td>
       <td>${r.current_weight!=null?((+r.current_weight)*100).toFixed(1)+'%':'—'}</td>
       <td>${r.suggested_weight!=null?((+r.suggested_weight)*100).toFixed(1)+'%':'—'}</td>
       <td style="color:${dw>0?'var(--accent)':dw<0?'var(--accent2)':'var(--muted)'}">${fmtPct(dw)}</td>
@@ -109,7 +113,7 @@ async function loadRebalance(){
   // Populate override ticker dropdown
   const sel = document.getElementById('ov-ticker');
   sel.innerHTML = '<option value="">Select…</option>' +
-    suggestions.map(s=>`<option value="${s.ticker}">${s.ticker}</option>`).join('');
+    suggestions.map(s=>`<option value="${s.ticker}">${s.ticker} (${tickerNames[s.ticker] || ''})</option>`).join('');
 }
 
 async function logOverride(){

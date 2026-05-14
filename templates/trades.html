@@ -50,7 +50,7 @@
                  oninput="this.value=this.value.toUpperCase()">
           <datalist id="ticker-list">
             {% for t in universe %}
-            <option value="{{ t }}"></option>
+            <option value="{{ t }}">{{ t }} ({{ ticker_names.get(t, '') }})</option>
             {% endfor %}
           </datalist>
           <div style="margin-top:6px;font-size:9px;color:var(--muted)">
@@ -212,6 +212,7 @@
 let allTrades   = [];
 let currentCash = 0;
 let currentAction = 'Buy';
+const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
 // ── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -450,7 +451,10 @@ function renderTrades(trades) {
     return `<tr data-ticker="${t.ticker||''}" data-action="${ac}">
       <td>${t.date || '—'}</td>
       <td style="font-weight:500;cursor:pointer;color:var(--accent4)"
-          onclick="window.location='/ticker/${t.ticker}'">${t.ticker || '—'}</td>
+          onclick="window.location='/ticker/${t.ticker}'">
+        ${t.ticker || '—'}
+        <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[t.ticker] || ''})</span>
+      </td>
       <td style="color:${col};font-weight:600">${ac}</td>
       <td>${t.quantity != null ? (+t.quantity).toFixed(+t.quantity % 1 === 0 ? 0 : 4) : '—'}</td>
       <td>${t.price_eur != null ? fmtEur(t.price_eur) : '—'}</td>
@@ -465,7 +469,13 @@ function filterTrades() {
   const q      = document.getElementById('t-filter').value.toLowerCase();
   const action = document.getElementById('t-action-filter').value;
   let filtered = allTrades;
-  if (q)      filtered = filtered.filter(t => (t.ticker || '').toLowerCase().includes(q));
+  if (q) {
+    filtered = filtered.filter(t => {
+      const ticker = (t.ticker || '').toLowerCase();
+      const name = (tickerNames[t.ticker] || '').toLowerCase();
+      return ticker.includes(q) || name.includes(q);
+    });
+  }
   if (action) filtered = filtered.filter(t => t.action === action);
   renderTrades(filtered);
 }

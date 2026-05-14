@@ -132,6 +132,7 @@
 <script>
   let allLedger = [];
   let chartInst = {};
+  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 
   function destroyChart(id) {
     if (chartInst[id]) { chartInst[id].destroy(); delete chartInst[id]; }
@@ -305,7 +306,8 @@
       const qty = t.quantity != null ? ((+t.quantity) % 1 === 0 ? (+t.quantity).toFixed(0) : (+t.quantity).toFixed(4)) : '—';
       return '<tr>'
         + '<td>' + (t.date || '—') + '</td>'
-        + '<td style="font-weight:500;cursor:pointer;color:var(--accent4)" onclick="window.location=\'/ticker/' + t.ticker + '\'">' + (t.ticker || '—') + '</td>'
+        + '<td style="font-weight:500;cursor:pointer;color:var(--accent4)" onclick="window.location=\'/ticker/' + t.ticker + '\'">' 
+        + (t.ticker || '—') + ' <span style="font-size:9px;color:var(--muted);font-weight:400">(' + (tickerNames[t.ticker] || '') + ')</span></td>'
         + '<td style="color:' + (aCol[ac] || 'var(--text)') + ';font-weight:600">' + ac + '</td>'
         + '<td>' + qty + '</td>'
         + '<td>' + (t.price_eur != null ? fmtEur(t.price_eur) : '—') + '</td>'
@@ -320,7 +322,13 @@
     const q = document.getElementById('lf-ticker').value.toLowerCase();
     const ac = document.getElementById('lf-action').value;
     let f = allLedger;
-    if (q) f = f.filter(t => (t.ticker || '').toLowerCase().includes(q));
+    if (q) {
+      f = f.filter(t => {
+        const ticker = (t.ticker || '').toLowerCase();
+        const name = (tickerNames[t.ticker] || '').toLowerCase();
+        return ticker.includes(q) || name.includes(q);
+      });
+    }
     if (ac) f = f.filter(t => (t.action || '').toUpperCase() === ac);
     renderLedger(f);
   }

@@ -5,7 +5,10 @@
 
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
   <a href="/holdings" style="color:var(--muted);font-size:10px;text-decoration:none">← BACK TO HOLDINGS</a>
-  <h1 style="font-size:20px;font-weight:600;color:#fff">{{ ticker }}</h1>
+  <h1 style="font-size:20px;font-weight:600;color:#fff">
+    {{ ticker }}
+    <span style="font-size:14px;color:var(--muted);font-weight:400">({{ ticker_names.get(ticker, '') }})</span>
+  </h1>
   <span id="action-badge" style="font-size:11px">—</span>
 </div>
 
@@ -130,7 +133,7 @@
 <script>
 // Colour the action badge
 (function(){
-  const up = {{ target.up_proba|float if target.up_proba else 0.5 }};
+  const up = Number("{{ target.up_proba|float if target.up_proba else 0.5 }}");
   const action = up>=0.60?'BUY':up>=0.54?'LEAN_BUY':up<=0.40?'SELL':up<=0.46?'LEAN_SELL':'NEUTRAL';
   const el = document.getElementById('action-badge');
   el.textContent = sigLabel(action);

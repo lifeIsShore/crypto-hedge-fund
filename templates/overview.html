@@ -74,6 +74,7 @@
 let weightsChart = null;
 
 async function loadOverview(){
+  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
   const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),
@@ -152,7 +153,10 @@ async function loadOverview(){
     ptbody.innerHTML = positions.map(p=>{
       const action = sigMap[p.ticker] || 'NEUTRAL';
       return `<tr style="cursor:pointer" onclick="window.location='/ticker/${p.ticker}'">
-        <td style="font-weight:500;color:var(--accent)">${p.ticker}</td>
+        <td style="font-weight:500;color:var(--accent)">
+          ${p.ticker}
+          <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
+        </td>
         <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
         <td>${fmtEur(p.price)}</td>
         <td>${fmtEur(p.value_eur)}</td>
@@ -185,7 +189,10 @@ async function loadOverview(){
   } else {
     ttbody.innerHTML = trades.map(t=>`<tr>
       <td>${t.date||'—'}</td>
-      <td style="color:#fff">${t.ticker}</td>
+      <td style="color:#fff">
+        ${t.ticker}
+        <span style="font-size:9px;color:var(--muted)">(${tickerNames[t.ticker] || ''})</span>
+      </td>
       <td class="${t.action==='BUY'?'sig-buy':'sig-sell'}">${t.action}</td>
       <td>${t.quantity!=null?(+t.quantity).toFixed(0):'—'}</td>
       <td>${fmtEur(t.price_eur)}</td>
@@ -205,7 +212,10 @@ async function loadOverview(){
       const cls = r.action==='BUY'?'sig-buy':r.action==='SELL'?'sig-sell':'sig-neutral';
       const aTag = r.action==='BUY'?'tag-green':r.action==='SELL'?'tag-red':'tag-muted';
       return `<tr>
-        <td style="color:#fff;font-weight:500">${r.ticker}</td>
+        <td style="color:#fff;font-weight:500">
+          ${r.ticker}
+          <span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
+        </td>
         <td>${r.current_weight!=null?((+r.current_weight)*100).toFixed(1)+'%':'—'}</td>
         <td>${r.suggested_weight!=null?((+r.suggested_weight)*100).toFixed(1)+'%':'—'}</td>
         <td class="${cls}">${r.delta_weight!=null?fmtPct((+r.delta_weight)*100):'—'}</td>
