@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+{% block title %}Pairs / Stat Arb{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Heatmap ───────────────────────────────────────────────────── */
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+  font-size: 8px;
+  font-family: var(--mono);
+  overflow-x: auto;
+}
+.hm-cell {
+  display: flex; align-items: center; justify-content: center;
+  height: 28px; min-width: 28px;
+  font-size: 7.5px; color: #fff; font-weight: 500;
+  transition: opacity .15s;
+  cursor: default;
+}
+.hm-cell:hover { opacity: .75; outline: 1px solid var(--accent); }
+.hm-label-row { display: flex; gap: 2px; }
+.hm-row-label {
+  width: 72px; min-width: 72px; font-size: 8px; color: var(--muted);
+  display: flex; align-items: center; padding-right: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hm-col-labels {
+  display: flex; gap: 2px; margin-left: 76px; margin-bottom: 2px;
+}
+.hm-col-label {
+  width: 28px; min-width: 28px; font-size: 7px; color: var(--muted);
+  text-align: center; white-space: nowrap; overflow: hidden;
+  text-overflow: clip;
+}
+
+/* ── Spread chart Z-score bands ────────────────────────────────── */
+.zscore-badge {
+  display: inline-block; padding: 3px 10px; font-size: 11px;
+  font-weight: 600; letter-spacing: .05em;
+}
+
+/* ── Signal action badges ───────────────────────────────────────── */
+.sig-long-a  { color: var(--accent);  }
+.sig-long-b  { color: var(--accent2); }
+.sig-watch   { color: var(--accent3); }
+.sig-neutral-p { color: var(--muted); }
+
+/* ── Pair selector ─────────────────────────────────────────────── */
+#pair-select { max-width: 320px; }
+
+/* ── Legend strip ──────────────────────────────────────────────── */
+.legend-strip {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  font-size: 9px; color: var(--muted); letter-spacing: .08em;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ① KPI Strip -->
+<div class="kpi-strip" id="pairs-kpi">
+  <div class="kpi neutral"><div class="kpi-label">ACTIVE SIGNALS</div><div class="kpi-value" id="kpi-active">—</div><div class="kpi-sub">pairs diverged ≥ 2σ</div></div>
+  <div class="kpi neutral"><div class="kpi-label">COINTEGRATED PAIRS</div><div class="kpi-value" id="kpi-coint">—</div><div class="kpi-sub">p &lt; 0.05</div></div>
+  <div class="kpi neutral"><div class="kpi-label">MAX |Z-SCORE|</div><div class="kpi-value" id="kpi-maxz">—</div><div class="kpi-sub">highest divergence</div></div>
+  <div class="kpi neutral"><div class="kpi-label">PAIRS SCANNED</div><div class="kpi-value" id="kpi-scanned">—</div><div class="kpi-sub">same-sector only</div></div>
+  <div class="kpi neutral"><div class="kpi-label">LAST SCAN</div><div class="kpi-value" id="kpi-scan-time" style="font-size:13px">—</div><div class="kpi-sub">on page load</div></div>
+</div>
+
+<div id="pairs-alert" style="margin-top:12px"></div>
+
+<!-- ② Row 1: Heatmap + Pair Scanner -->
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- Correlation Heatmap -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">60-DAY ROLLING CORRELATION HEATMAP</span>
+      <span class="panel-badge" id="hm-badge">TRADEABLE UNIVERSE</span>
+    </div>
+    <div class="panel-body">
+      <div id="heatmap-loading" style="color:var(--muted);font-size:10px;text-align:center;padding:40px 0">
+        COMPUTING CORRELATIONS…
+      </div>
+      <div id="heatmap-wrap" style="display:none">
+        <div class="hm-col-labels" id="hm-col-labels"></div>
+        <div id="heatmap-rows"></div>
+      </div>
+      <div style="margin-top:12px" id="hm-legend">
+        <div class="legend-strip">
+          <span><span class="legend-dot" style="background:#00e5a0"></span>HIGH +CORR</span>
+          <span><span class="legend-dot" style="background:#1e2535"></span>UNCORRELATED</span>
+          <span><span class="legend-dot" style="background:#ff4d6d"></span>NEGATIVE CORR</span>
+        </div>
+        <div style="margin-top:6px;font-size:8px;color:var(--muted)">Showing top 15 tickers by data availability · hover cell for value</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pair Scanner Table -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">PAIR SCANNER — COINTEGRATION RESULTS</span>
+      <span class="panel-badge" id="scan-badge">ENGLE-GRANGER</span>
+    </div>
+    <div class="panel-body" style="padding:0">
+      <div id="scanner-loading" style="color:var(--muted);font-size:10px;text-align:center;padding:40px 0">
+        RUNNING COINTEGRATION TESTS…
+      </div>
+      <table class="tbl" id="pairs-table" style="display:none">
+        <thead>
+          <tr>
+            <th>PAIR</th>
+            <th>SECTOR</th>
+            <th>CORR</th>
+            <th>P-VALUE</th>
+            <th>Z-SCORE</th>
+            <th>STATUS</th>
+            <th>SIGNAL</th>
+          </tr>
+        </thead>
+        <tbody id="pairs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ③ Row 2: Spread Chart (full width) -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="panel-title">SPREAD Z-SCORE CHART</span>
+      <select id="pair-select" onchange="loadSpread()">
+        <option value="">— select a pair —</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="spread-zscore-badge" style="display:none"></span>
+      <span class="panel-badge" id="spread-badge">252-DAY WINDOW</span>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div id="spread-loading" style="display:none;color:var(--muted);font-size:10px;text-align:center;padding:30px 0">
+      COMPUTING SPREAD…
+    </div>
+    <div id="spread-empty" style="color:var(--muted);font-size:10px;text-align:center;padding:30px 0">
+      SELECT A PAIR ABOVE TO VIEW THE SPREAD Z-SCORE
+    </div>
+    <div class="chart-wrap" style="height:280px;display:none" id="spread-chart-wrap">
+      <canvas id="spreadChart"></canvas>
+    </div>
+    <div id="spread-stats" style="display:none;margin-top:14px">
+      <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr)">
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">CURRENT Z</div><div class="kpi-value" style="font-size:18px" id="ss-z">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">MEAN SPREAD</div><div class="kpi-value" style="font-size:18px" id="ss-mean">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HALF-LIFE</div><div class="kpi-value" style="font-size:18px" id="ss-hl">—</div><div class="kpi-sub">days (mean reversion)</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HEDGE RATIO</div><div class="kpi-value" style="font-size:18px" id="ss-hr">—</div><div class="kpi-sub">β (OLS)</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">SIGNAL</div><div class="kpi-value" style="font-size:13px;line-height:1.3" id="ss-signal">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ Active Signals Panel -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">ACTIVE DIVERGENCE SIGNALS</span>
+    <span class="panel-badge">|Z| ≥ 2.0</span>
+  </div>
+  <div class="panel-body" style="padding:0">
+    <div id="signals-loading" style="color:var(--muted);font-size:10px;text-align:center;padding:24px 0">LOADING…</div>
+    <table class="tbl" id="signals-table" style="display:none">
+      <thead>
+        <tr>
+          <th>PAIR</th>
+          <th>Z-SCORE</th>
+          <th>DIRECTION</th>
+          <th>ACTION A</th>
+          <th>ACTION B</th>
+          <th>HALF-LIFE</th>
+          <th>NOTE</th>
+        </tr>
+      </thead>
+      <tbody id="signals-tbody"></tbody>
+    </table>
+    <div id="signals-empty" style="display:none;color:var(--muted);font-size:10px;text-align:center;padding:24px 0">
+      NO PAIRS CURRENTLY DIVERGED ≥ 2σ · ALL SPREADS WITHIN NORMAL RANGE
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ─────────────────────────────────────────────────────────────────
+// CORRELATION HEATMAP
+// ─────────────────────────────────────────────────────────────────
+function corrColor(v) {
+  // v in [-1, 1] → CSS color
+  if (isNaN(v)) return '#131720';
+  if (v > 0) {
+    // 0 → surface2, 1 → accent green
+    const t = Math.pow(v, 0.7);
+    const r = Math.round(0   + t * 0);
+    const g = Math.round(23  + t * (229 - 23));
+    const b = Math.round(19  + t * (160 - 19));
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const t = Math.pow(-v, 0.7);
+    const r = Math.round(13  + t * (255 - 13));
+    const g = Math.round(23  + t * (77  - 23));
+    const b = Math.round(19  + t * (109 - 19));
+    return `rgb(${r},${g},${b})`;
+  }
+}
+
+function buildHeatmap(data) {
+  const tickers = data.tickers;
+  const matrix  = data.matrix;
+
+  // Column labels
+  const colWrap = document.getElementById('hm-col-labels');
+  colWrap.innerHTML = tickers.map(t =>
+    `<div class="hm-col-label" title="${t}">${t.replace('.DE','').replace('.AS','').replace('.BR','').substring(0,5)}</div>`
+  ).join('');
+
+  // Rows
+  const rowsEl = document.getElementById('heatmap-rows');
+  rowsEl.innerHTML = '';
+  tickers.forEach((rowTicker, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'hm-label-row';
+    const label = document.createElement('div');
+    label.className = 'hm-row-label';
+    label.title = rowTicker;
+    label.textContent = rowTicker.replace('.DE','').replace('.AS','').replace('.BR','').substring(0,10);
+    wrap.appendChild(label);
+    const cellWrap = document.createElement('div');
+    cellWrap.style.display = 'flex';
+    cellWrap.style.gap = '2px';
+    matrix[i].forEach((v, j) => {
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell';
+      cell.style.background = corrColor(v);
+      cell.title = `${tickers[i]} / ${tickers[j]}: ${v != null ? v.toFixed(2) : 'N/A'}`;
+      cell.textContent = (i === j) ? '·' : (v != null ? v.toFixed(2) : '');
+      cellWrap.appendChild(cell);
+    });
+    wrap.appendChild(cellWrap);
+    rowsEl.appendChild(wrap);
+  });
+
+  document.getElementById('heatmap-loading').style.display = 'none';
+  document.getElementById('heatmap-wrap').style.display   = 'block';
+  document.getElementById('hm-badge').textContent = `${tickers.length} TICKERS · 60D`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAIR SCANNER TABLE
+// ─────────────────────────────────────────────────────────────────
+let allPairs = [];
+
+function statusTag(status) {
+  const map = {
+    COINTEGRATED: '<span class="tag tag-green">COINTEGRATED</span>',
+    WATCHING:     '<span class="tag tag-yellow">WATCHING</span>',
+    DRIFTING:     '<span class="tag tag-red">DRIFTING</span>',
+  };
+  return map[status] || `<span class="tag tag-muted">${status}</span>`;
+}
+
+function signalTag(signal, ta, tb) {
+  if (!signal || signal === 'NEUTRAL') return '<span class="tag tag-muted">NEUTRAL</span>';
+  if (signal === 'LONG_A') return `<span class="tag tag-green">LONG ${ta}</span>`;
+  if (signal === 'LONG_B') return `<span class="tag tag-red">LONG ${tb}</span>`;
+  return '<span class="tag tag-muted">NEUTRAL</span>';
+}
+
+function buildScannerTable(pairs) {
+  allPairs = pairs;
+  const tbody = document.getElementById('pairs-tbody');
+  tbody.innerHTML = '';
+
+  let activeCnt = 0, cointCnt = 0, maxZ = 0;
+
+  pairs.forEach(p => {
+    const z = parseFloat(p.zscore) || 0;
+    if (p.status === 'COINTEGRATED') cointCnt++;
+    if (Math.abs(z) >= 2.0) activeCnt++;
+    if (Math.abs(z) > maxZ) maxZ = Math.abs(z);
+
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.title = 'Click to view spread chart';
+    tr.onclick = () => {
+      document.getElementById('pair-select').value = `${p.ticker_a}|${p.ticker_b}`;
+      loadSpread();
+    };
+    const zClass = Math.abs(z) >= 2 ? (z > 0 ? 'sig-buy' : 'sig-sell') : 'sig-neutral';
+    tr.innerHTML = `
+      <td><strong>${p.label_a}</strong> / ${p.label_b}</td>
+      <td style="font-size:9px;color:var(--muted)">${p.sector}</td>
+      <td>${parseFloat(p.correlation).toFixed(2)}</td>
+      <td>${parseFloat(p.pvalue).toFixed(3)}</td>
+      <td class="${zClass}">${z >= 0 ? '+' : ''}${z.toFixed(2)}σ</td>
+      <td>${statusTag(p.status)}</td>
+      <td>${signalTag(p.signal, p.label_a, p.label_b)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Update KPIs
+  document.getElementById('kpi-active').textContent  = activeCnt;
+  document.getElementById('kpi-coint').textContent   = `${cointCnt}/${pairs.length}`;
+  document.getElementById('kpi-maxz').textContent    = maxZ.toFixed(2) + 'σ';
+  document.getElementById('kpi-scanned').textContent = pairs.length;
+  document.getElementById('kpi-scan-time').textContent = new Date().toLocaleTimeString('de-DE', {hour12:false});
+
+  // Color KPIs
+  const kpiActive = document.querySelector('#pairs-kpi .kpi:nth-child(1)');
+  if (kpiActive) kpiActive.className = `kpi ${activeCnt > 0 ? 'warn' : 'good'}`;
+
+  // Populate pair selector
+  const sel = document.getElementById('pair-select');
+  sel.innerHTML = '<option value="">— select a pair —</option>';
+  pairs.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = `${p.ticker_a}|${p.ticker_b}`;
+    opt.textContent = `${p.label_a} / ${p.label_b}`;
+    sel.appendChild(opt);
+  });
+
+  // Build active signals panel
+  buildSignalsPanel(pairs.filter(p => Math.abs(parseFloat(p.zscore) || 0) >= 2.0));
+
+  document.getElementById('scanner-loading').style.display = 'none';
+  document.getElementById('pairs-table').style.display = '';
+  document.getElementById('scan-badge').textContent = `${pairs.length} PAIRS TESTED`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ACTIVE SIGNALS PANEL
+// ─────────────────────────────────────────────────────────────────
+function buildSignalsPanel(active) {
+  document.getElementById('signals-loading').style.display = 'none';
+  if (active.length === 0) {
+    document.getElementById('signals-empty').style.display = '';
+    document.getElementById('signals-table').style.display = 'none';
+    return;
+  }
+  document.getElementById('signals-empty').style.display = 'none';
+  document.getElementById('signals-table').style.display = '';
+  const tbody = document.getElementById('signals-tbody');
+  tbody.innerHTML = '';
+  active.forEach(p => {
+    const z = parseFloat(p.zscore);
+    const direction = z > 0 ? 'A EXPENSIVE vs B' : 'B EXPENSIVE vs A';
+    const actionA   = z > 0 ? '<span class="tag tag-red">SHORT</span>' : '<span class="tag tag-green">LONG</span>';
+    const actionB   = z > 0 ? '<span class="tag tag-green">LONG</span>'  : '<span class="tag tag-red">SHORT</span>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${p.label_a}</strong> / ${p.label_b}</td>
+      <td class="${Math.abs(z) >= 2 ? 'sig-buy' : 'sig-neutral'}">${z >= 0 ? '+' : ''}${z.toFixed(2)}σ</td>
+      <td style="font-size:9px">${direction}</td>
+      <td>${actionA}</td>
+      <td>${actionB}</td>
+      <td>${p.half_life ? p.half_life + 'd' : '—'}</td>
+      <td style="font-size:9px;color:var(--muted)">${p.status === 'COINTEGRATED' ? 'Cointegrated — high quality signal' : 'Not cointegrated — use caution'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SPREAD CHART
+// ─────────────────────────────────────────────────────────────────
+let spreadChart = null;
+
+function loadSpread() {
+  const val = document.getElementById('pair-select').value;
+  if (!val) return;
+  const [ta, tb] = val.split('|');
+
+  document.getElementById('spread-empty').style.display      = 'none';
+  document.getElementById('spread-loading').style.display    = 'block';
+  document.getElementById('spread-chart-wrap').style.display = 'none';
+  document.getElementById('spread-stats').style.display      = 'none';
+  document.getElementById('spread-zscore-badge').style.display = 'none';
+
+  fetch(`/api/pairs/spread/${encodeURIComponent(ta)}/${encodeURIComponent(tb)}`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('spread-loading').style.display = 'none';
+      if (d.error) {
+        document.getElementById('spread-empty').textContent = d.error;
+        document.getElementById('spread-empty').style.display = '';
+        return;
+      }
+      renderSpreadChart(d);
+    })
+    .catch(() => {
+      document.getElementById('spread-loading').style.display = 'none';
+      document.getElementById('spread-empty').textContent = 'Failed to load spread data.';
+      document.getElementById('spread-empty').style.display = '';
+    });
+}
+
+function renderSpreadChart(d) {
+  document.getElementById('spread-chart-wrap').style.display = '';
+  document.getElementById('spread-stats').style.display      = '';
+
+  // Z-score badge
+  const zNow = parseFloat(d.current_zscore);
+  const badge = document.getElementById('spread-zscore-badge');
+  badge.style.display = 'inline-block';
+  badge.className = 'zscore-badge tag ' + (Math.abs(zNow) >= 2 ? (zNow > 0 ? 'tag-red' : 'tag-green') : 'tag-muted');
+  badge.textContent = `Z = ${zNow >= 0 ? '+' : ''}${zNow.toFixed(2)}σ`;
+
+  // Stat strip
+  document.getElementById('ss-z').textContent      = `${zNow >= 0 ? '+' : ''}${zNow.toFixed(2)}σ`;
+  document.getElementById('ss-z').className        = Math.abs(zNow) >= 2 ? 'kpi-value sig-buy' : 'kpi-value';
+  document.getElementById('ss-mean').textContent   = parseFloat(d.spread_mean).toFixed(3);
+  document.getElementById('ss-hl').textContent     = d.half_life ? `${d.half_life}d` : '—';
+  document.getElementById('ss-hr').textContent     = parseFloat(d.hedge_ratio).toFixed(3);
+
+  const sigEl = document.getElementById('ss-signal');
+  if (!d.signal || d.signal === 'NEUTRAL') {
+    sigEl.textContent = '⚪ NEUTRAL'; sigEl.style.color = 'var(--muted)';
+  } else if (d.signal === 'LONG_A') {
+    sigEl.innerHTML = `🟢 LONG ${d.label_a}<br><span style="color:var(--accent2)">🔴 SHORT ${d.label_b}</span>`;
+  } else {
+    sigEl.innerHTML = `🟢 LONG ${d.label_b}<br><span style="color:var(--accent2)">🔴 SHORT ${d.label_a}</span>`;
+  }
+
+  // Build band data arrays (constant ±1, ±2 sigma lines)
+  const n = d.dates.length;
+  const upper2 = Array(n).fill(2);
+  const upper1 = Array(n).fill(1);
+  const lower1 = Array(n).fill(-1);
+  const lower2 = Array(n).fill(-2);
+  const zero   = Array(n).fill(0);
+
+  if (spreadChart) { spreadChart.destroy(); spreadChart = null; }
+
+  const ctx = document.getElementById('spreadChart').getContext('2d');
+  spreadChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: d.dates,
+      datasets: [
+        // Shaded band +2/–2
+        {
+          label: '+2σ',  data: upper2,
+          borderColor: 'rgba(255,77,109,0.35)', borderWidth: 1, borderDash: [4,3],
+          pointRadius: 0, fill: false, tension: 0,
+        },
+        {
+          label: '+1σ', data: upper1,
+          borderColor: 'rgba(245,166,35,0.3)', borderWidth: 1, borderDash: [2,3],
+          pointRadius: 0, fill: false, tension: 0,
+        },
+        {
+          label: 'Zero', data: zero,
+          borderColor: 'rgba(74,85,104,0.4)', borderWidth: 1,
+          pointRadius: 0, fill: false, tension: 0,
+        },
+        {
+          label: '−1σ', data: lower1,
+          borderColor: 'rgba(245,166,35,0.3)', borderWidth: 1, borderDash: [2,3],
+          pointRadius: 0, fill: false, tension: 0,
+        },
+        {
+          label: '−2σ', data: lower2,
+          borderColor: 'rgba(0,229,160,0.35)', borderWidth: 1, borderDash: [4,3],
+          pointRadius: 0, fill: false, tension: 0,
+        },
+        // Z-score line (main)
+        {
+          label: 'Z-Score',
+          data: d.zscores,
+          borderColor: '#6495ed',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          labels: { boxWidth: 12, font: { size: 9 }, filter: (item) => item.text !== 'Zero' }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.label === 'Z-Score') return ` Z: ${parseFloat(ctx.raw).toFixed(3)}σ`;
+              return null;
+            },
+            filter: item => item.dataset.label === 'Z-Score',
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksLimit: 8, maxRotation: 0 },
+          grid: { color: 'rgba(30,37,53,.5)' }
+        },
+        y: {
+          title: { display: true, text: 'Z-Score (σ)', color: '#4a5568', font: { size: 9 } },
+          grid: { color: 'rgba(30,37,53,.5)' },
+          ticks: { callback: v => `${v >= 0 ? '+' : ''}${v.toFixed(1)}σ` }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INIT — load heatmap + scanner in parallel
+// ─────────────────────────────────────────────────────────────────
+Promise.all([
+  fetch('/api/pairs/correlation').then(r => r.json()),
+  fetch('/api/pairs/scan').then(r => r.json()),
+]).then(([corrData, scanData]) => {
+  if (corrData.tickers && corrData.matrix) buildHeatmap(corrData);
+  else document.getElementById('heatmap-loading').textContent = corrData.error || 'No correlation data available.';
+
+  if (scanData.pairs)  buildScannerTable(scanData.pairs);
+  else {
+    document.getElementById('scanner-loading').textContent = scanData.error || 'No scan data.';
+    document.getElementById('signals-loading').style.display = 'none';
+    document.getElementById('signals-empty').style.display  = '';
+  }
+}).catch(err => {
+  document.getElementById('heatmap-loading').textContent = 'Failed to load — see console.';
+  document.getElementById('scanner-loading').textContent = 'Failed to load.';
+  document.getElementById('signals-loading').style.display = 'none';
+  document.getElementById('signals-empty').style.display  = '';
+  console.error('Pairs page init error:', err);
+});
+</script>
+{% endblock %}

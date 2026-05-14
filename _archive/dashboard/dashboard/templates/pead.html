@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}PEAD Setups{% endblock %}
+
+{% block content %}
+
+<div class="alert alert-info" style="margin-bottom:14px">
+  Post-Earnings Announcement Drift — systematic underreaction to earnings surprises.
+  High-quality setups in Risk-On regimes have historically shown 60–70% 21d hit rates.
+</div>
+
+<div class="kpi-strip" id="pead-kpi">
+  <div class="kpi neutral"><div class="kpi-label">TOTAL SETUPS</div><div class="kpi-value" id="pk-total">—</div><div class="kpi-sub">all time</div></div>
+  <div class="kpi good"   ><div class="kpi-label">21D HIT RATE</div><div class="kpi-value" id="pk-hr">—</div><div class="kpi-sub">correct direction</div></div>
+  <div class="kpi neutral"><div class="kpi-label">AVG 21D DRIFT</div><div class="kpi-value" id="pk-drift">—</div><div class="kpi-sub">realised drift</div></div>
+  <div class="kpi warn"   ><div class="kpi-label">ACTIVE WINDOWS</div><div class="kpi-value" id="pk-active">—</div><div class="kpi-sub">entry open now</div></div>
+  <div class="kpi neutral"><div class="kpi-label">DATA FRESHNESS</div><div class="kpi-value" id="pk-fresh" style="font-size:12px">—</div><div class="kpi-sub">hours since last run</div></div>
+</div>
+
+<!-- Active setups -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">ACTIVE ENTRY WINDOWS</span>
+    <span class="panel-badge" id="active-badge">OPEN NOW</span>
+  </div>
+  <div class="panel-body">
+    <div id="no-active" class="alert alert-ok" style="display:none">No active entry windows today.</div>
+    <table class="tbl" id="active-tbl">
+      <thead><tr>
+        <th>TICKER</th><th>DIRECTION</th><th>QUALITY</th><th>SURPRISE %</th>
+        <th>ENTRY DATE</th><th>UNDERREACTION</th><th>REGIME</th>
+      </tr></thead>
+      <tbody id="active-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- Performance by quality -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">PERFORMANCE BY SETUP QUALITY</span><span class="panel-badge">HISTORICAL</span></div>
+    <div class="panel-body">
+      <table class="tbl" id="quality-tbl">
+        <thead><tr><th>QUALITY</th><th>SETUPS</th><th>HIT RATE</th><th>AVG DRIFT</th></tr></thead>
+        <tbody id="quality-tbody"><tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Performance by regime -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">PERFORMANCE BY REGIME</span><span class="panel-badge">HISTORICAL</span></div>
+    <div class="panel-body">
+      <table class="tbl" id="regime-tbl">
+        <thead><tr><th>REGIME</th><th>SETUPS</th><th>HIT RATE</th><th>AVG DRIFT</th></tr></thead>
+        <tbody id="regime-tbody"><tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Historical setups -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">HISTORICAL SETUPS — LAST 60</span>
+    <span class="panel-badge" id="hist-badge">DB / CSV</span>
+  </div>
+  <div class="panel-body">
+    <div id="no-hist" class="alert alert-info" style="display:none">No historical data yet. Run PEAD engine.</div>
+    <table class="tbl" id="hist-tbl">
+      <thead><tr>
+        <th>EARNINGS DATE</th><th>TICKER</th><th>DIRECTION</th>
+        <th>SURPRISE %</th><th>DRIFT 21D</th><th>CORRECT?</th><th>REGIME</th>
+      </tr></thead>
+      <tbody id="hist-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadPead(){
+  const data = await fetch('/api/pead').then(r=>r.json()).catch(()=>({}));
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  const perf = data.performance || {};
+  document.getElementById('pk-total').textContent = perf.total_setups || '—';
+  const hr = perf.overall_hit_rate_21d;
+  const hrEl = document.getElementById('pk-hr');
+  if(hr != null){
+    hrEl.textContent = ((+hr)*100).toFixed(1)+'%';
+    hrEl.style.color = (+hr) > 0.55 ? 'var(--accent)' : (+hr) < 0.45 ? 'var(--accent2)' : 'var(--accent3)';
+  } else {
+    hrEl.textContent = '—';
+  }
+  const drift = perf.overall_avg_drift_21d;
+  const driftEl = document.getElementById('pk-drift');
+  if(drift != null){
+    driftEl.textContent = ((+drift)>=0?'+':'')+(+drift).toFixed(2)+'%';
+    driftEl.style.color = (+drift)>0?'var(--accent)':'var(--accent2)';
+  } else {
+    driftEl.textContent = '—';
+  }
+
+  const freshRes = await fetch('/api/freshness').then(r=>r.json()).catch(()=>({}));
+  const peadAge = (freshRes.file_ages_hours||{}).pead_state;
+  const freshEl = document.getElementById('pk-fresh');
+  if(peadAge != null){
+    freshEl.textContent = peadAge+'h';
+    freshEl.style.color = peadAge > 24 ? 'var(--accent2)' : peadAge > 12 ? 'var(--accent3)' : 'var(--accent)';
+  } else {
+    freshEl.textContent = 'no file';
+    freshEl.style.color = 'var(--muted)';
+  }
+
+  // ── Active setups ─────────────────────────────────────────────────────────
+  const active = data.active_setups || [];
+  document.getElementById('pk-active').textContent = active.length;
+  document.getElementById('active-badge').textContent = `${active.length} OPEN`;
+
+  const atbody = document.getElementById('active-tbody');
+  const noActive = document.getElementById('no-active');
+  if(!active.length){
+    noActive.style.display = 'block';
+    atbody.innerHTML = '';
+  } else {
+    noActive.style.display = 'none';
+    atbody.innerHTML = active.map(s => `<tr>
+      <td style="font-weight:500;color:#fff">${s.ticker}</td>
+      <td class="${s.direction==='bullish'||s.direction==='long'?'sig-buy':'sig-sell'}">
+        ${s.direction==='bullish'||s.direction==='long'?'🟢 BULL':'🔴 BEAR'}
+      </td>
+      <td>${s.quality==='HIGH'?'<span class="tag tag-green">🔥 HIGH</span>':s.quality==='MEDIUM'?'<span class="tag tag-yellow">⭐ MED</span>':'<span class="tag tag-muted">LOW</span>'}</td>
+      <td style="color:${(+s.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${s.surprise_pct!=null?fmtPct(+s.surprise_pct):'—'}</td>
+      <td>${s.entry_date||'—'}</td>
+      <td>${s.underreaction?'<span class="tag tag-yellow">⚠️ YES</span>':'<span style="color:var(--muted)">No</span>'}</td>
+      <td style="color:var(--muted)">${s.regime_composite||'—'}</td>
+    </tr>`).join('');
+  }
+
+  // ── Quality breakdown ─────────────────────────────────────────────────────
+  const byQuality = data.by_quality || {};
+  const qbody = document.getElementById('quality-tbody');
+  const qKeys = Object.keys(byQuality);
+  if(!qKeys.length){
+    qbody.innerHTML='<tr><td colspan="4" style="color:var(--muted)">No breakdown available yet.</td></tr>';
+  } else {
+    qbody.innerHTML = qKeys.map(k => {
+      const q = byQuality[k];
+      const qhr = q.hit_rate_21d;
+      const qdrift = q.avg_drift_21d;
+      return `<tr>
+        <td>${k==='HIGH'?'<span class="tag tag-green">HIGH</span>':k==='MEDIUM'?'<span class="tag tag-yellow">MEDIUM</span>':'<span class="tag tag-muted">LOW</span>'}</td>
+        <td>${q.count||0}</td>
+        <td style="color:${qhr!=null&&(+qhr)>0.55?'var(--accent)':qhr!=null&&(+qhr)<0.45?'var(--accent2)':'var(--muted)'}">${qhr!=null?((+qhr)*100).toFixed(1)+'%':'—'}</td>
+        <td style="color:${qdrift!=null&&(+qdrift)>=0?'var(--accent)':'var(--accent2)'}">${qdrift!=null?((+qdrift)>=0?'+':'')+(+qdrift).toFixed(2)+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Regime breakdown ──────────────────────────────────────────────────────
+  const byRegime = data.by_regime || {};
+  const rbody = document.getElementById('regime-tbody');
+  const rKeys = Object.keys(byRegime);
+  if(!rKeys.length){
+    rbody.innerHTML='<tr><td colspan="4" style="color:var(--muted)">No breakdown available yet.</td></tr>';
+  } else {
+    rbody.innerHTML = rKeys.map(k => {
+      const r = byRegime[k];
+      const rhr = r.hit_rate_21d;
+      const rdrift = r.avg_drift_21d;
+      return `<tr>
+        <td style="color:var(--text)">${k}</td>
+        <td>${r.count||0}</td>
+        <td style="color:${rhr!=null&&(+rhr)>0.55?'var(--accent)':rhr!=null&&(+rhr)<0.45?'var(--accent2)':'var(--muted)'}">${rhr!=null?((+rhr)*100).toFixed(1)+'%':'—'}</td>
+        <td style="color:${rdrift!=null&&(+rdrift)>=0?'var(--accent)':'var(--accent2)'}">${rdrift!=null?((+rdrift)>=0?'+':'')+(+rdrift).toFixed(2)+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Historical setups ─────────────────────────────────────────────────────
+  const hist = data.db_history || [];
+  document.getElementById('hist-badge').textContent = `${hist.length} SETUPS`;
+  const htbody = document.getElementById('hist-tbody');
+  const noHist = document.getElementById('no-hist');
+  if(!hist.length){
+    noHist.style.display = 'block';
+    htbody.innerHTML = '';
+  } else {
+    noHist.style.display = 'none';
+    htbody.innerHTML = hist.slice(0,60).map(h => `<tr>
+      <td>${h.earnings_date||'—'}</td>
+      <td style="font-weight:500;color:#fff">${h.ticker}</td>
+      <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
+      <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
+      <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>
+      <td>${h.outcome_label_correct!=null?(['❌','✅'][+h.outcome_label_correct]||'—'):'—'}</td>
+      <td style="color:var(--muted)">${h.regime_composite||'—'}</td>
+    </tr>`).join('');
+  }
+}
+
+loadPead();
+</script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Pipeline Health{% endblock %}
+
+{% block content %}
+
+<div class="kpi-strip" id="health-kpi">
+  <div class="kpi neutral"><div class="kpi-label">DB STATUS</div><div class="kpi-value" id="h-db" style="font-size:16px">—</div><div class="kpi-sub">SQLite engine_data.db</div></div>
+  <div class="kpi neutral"><div class="kpi-label">LAST PIPELINE RUN</div><div class="kpi-value" id="h-last" style="font-size:14px">—</div><div class="kpi-sub">successful step</div></div>
+  <div class="kpi neutral"><div class="kpi-label">ML STATE AGE</div><div class="kpi-value" id="h-ml-age">—</div><div class="kpi-sub">hours since last run</div></div>
+  <div class="kpi neutral"><div class="kpi-label">REGIME AGE</div><div class="kpi-value" id="h-reg-age">—</div><div class="kpi-sub">hours since last run</div></div>
+  <div class="kpi neutral"><div class="kpi-label">PEAD AGE</div><div class="kpi-value" id="h-pead-age">—</div><div class="kpi-sub">hours since last run</div></div>
+</div>
+
+<div id="stale-alert" style="margin-top:14px"></div>
+
+<div class="grid grid-2" style="margin-top:14px">
+
+  <!-- State file freshness -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">STATE FILE FRESHNESS</span>
+      <span class="panel-badge">shared/state/</span>
+    </div>
+    <div class="panel-body">
+      <table class="tbl" id="freshness-tbl">
+        <thead><tr><th>FILE</th><th>AGE (HOURS)</th><th>STATUS</th></tr></thead>
+        <tbody id="freshness-tbody"><tr><td colspan="3" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pipeline step summary (last run) -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">LAST PIPELINE RUN — STEP SUMMARY</span>
+      <span class="panel-badge" id="run-date-badge">—</span>
+    </div>
+    <div class="panel-body">
+      <div id="no-pipeline" class="alert alert-info" style="display:none">
+        No pipeline runs recorded. Run: <code>python -m engine.scheduler</code>
+      </div>
+      <table class="tbl" id="steps-tbl">
+        <thead><tr><th>STEP</th><th>STATUS</th><th>DURATION</th><th>STARTED</th></tr></thead>
+        <tbody id="steps-tbody"><tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Full pipeline history -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">PIPELINE HISTORY — LAST 7 DAYS</span>
+    <span class="panel-badge" id="history-badge">ALL RUNS</span>
+  </div>
+  <div class="panel-body">
+    <div id="pipeline-history"></div>
+  </div>
+</div>
+
+<!-- Risk events -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">RISK EVENTS LOG</span>
+    <span class="panel-badge">LAST 20</span>
+  </div>
+  <div class="panel-body">
+    <div id="no-risk" class="alert alert-ok" style="display:none">No risk events logged.</div>
+    <table class="tbl" id="risk-tbl">
+      <thead><tr><th>DATE</th><th>TYPE</th><th>TICKER</th><th>DETAIL</th></tr></thead>
+      <tbody id="risk-tbody"><tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadHealth(){
+  const [freshRes, pipeRes] = await Promise.all([
+    fetch('/api/freshness').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/pipeline').then(r=>r.json()).catch(()=>({runs:[]})),
+  ]);
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  const dbEl = document.getElementById('h-db');
+  if(freshRes.db_available !== false){
+    dbEl.textContent = '✅ OK'; dbEl.style.color = 'var(--accent)';
+  } else {
+    dbEl.textContent = '❌ DOWN'; dbEl.style.color = 'var(--accent2)';
+  }
+
+  const lastRun = freshRes.last_pipeline_run;
+  document.getElementById('h-last').textContent = lastRun || '—';
+
+  const ages = freshRes.file_ages_hours || {};
+  const ageEl = (id, val, warn=12, crit=48) => {
+    const el = document.getElementById(id);
+    if(val == null){ el.textContent='—'; el.style.color='var(--muted)'; return; }
+    el.textContent = val+'h';
+    el.style.color = val > crit ? 'var(--accent2)' : val > warn ? 'var(--accent3)' : 'var(--accent)';
+    el.closest('.kpi').classList.remove('neutral','warn','danger');
+    el.closest('.kpi').classList.add(val > crit ? 'danger' : val > warn ? 'warn' : 'good');
+  };
+  ageEl('h-ml-age',   ages.ml_state);
+  ageEl('h-reg-age',  ages.regime_state);
+  ageEl('h-pead-age', ages.pead_state);
+
+  // Stale alert
+  const staleFiles = Object.entries(ages).filter(([,v])=>v!=null && v > 24).map(([k])=>k);
+  const alertEl = document.getElementById('stale-alert');
+  if(staleFiles.length){
+    alertEl.innerHTML = `<div class="alert alert-warn">⚠️ Stale state files (&gt;24h): ${staleFiles.join(', ')}. Run the pipeline to refresh.</div>`;
+  } else if(Object.values(ages).every(v=>v==null)){
+    alertEl.innerHTML = '<div class="alert alert-warn">No state files found. Run engines first.</div>';
+  } else {
+    alertEl.innerHTML = '<div class="alert alert-ok">✅ All state files are fresh.</div>';
+  }
+
+  // ── Freshness table ────────────────────────────────────────────────────────
+  const FILE_LABELS = {
+    ml_state:       'ml_state.json',
+    pead_setups:    'pead_setups.csv',
+    pead_state:     'pead_state.json',
+    regime_state:   'regime_state.json',
+    regime_history: 'regime_history.csv',
+  };
+  const ftbody = document.getElementById('freshness-tbody');
+  const entries = Object.entries(FILE_LABELS);
+  if(!entries.length){
+    ftbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">No state files.</td></tr>';
+  } else {
+    ftbody.innerHTML = entries.map(([k, label]) => {
+      const age = ages[k];
+      let statusHtml, ageText;
+      if(age == null){
+        ageText = '—';
+        statusHtml = '<span class="tag tag-muted">MISSING</span>';
+      } else if(age > 48){
+        ageText = `<span style="color:var(--accent2)">${age}h</span>`;
+        statusHtml = '<span class="tag tag-red">STALE</span>';
+      } else if(age > 12){
+        ageText = `<span style="color:var(--accent3)">${age}h</span>`;
+        statusHtml = '<span class="tag tag-yellow">AGING</span>';
+      } else {
+        ageText = `<span style="color:var(--accent)">${age}h</span>`;
+        statusHtml = '<span class="tag tag-green">FRESH</span>';
+      }
+      return `<tr><td style="color:var(--text)">${label}</td><td>${ageText}</td><td>${statusHtml}</td></tr>`;
+    }).join('');
+  }
+
+  // ── Pipeline runs ──────────────────────────────────────────────────────────
+  const runs = pipeRes.runs || [];
+  const noPipeEl  = document.getElementById('no-pipeline');
+  const stepsTbody = document.getElementById('steps-tbody');
+  const runDateBadge = document.getElementById('run-date-badge');
+
+  if(!runs.length){
+    noPipeEl.style.display = 'block';
+    stepsTbody.innerHTML = '';
+    runDateBadge.textContent = 'NO RUNS';
+  } else {
+    noPipeEl.style.display = 'none';
+    const latest = runs[0];
+    runDateBadge.textContent = latest.date || '—';
+    stepsTbody.innerHTML = (latest.steps || []).map(s => {
+      const ok = s.status === 'success';
+      const statusHtml = ok
+        ? '<span class="tag tag-green">✅ OK</span>'
+        : s.status === 'skipped'
+          ? '<span class="tag tag-muted">⏭ SKIP</span>'
+          : `<span class="tag tag-red">❌ ${s.status||'FAIL'}</span>`;
+      const dur = s.duration_sec != null ? `${(+s.duration_sec).toFixed(1)}s` : '—';
+      const started = s.started_at ? s.started_at.slice(11,19) : '—';
+      return `<tr>
+        <td style="color:#fff">${s.step_name}</td>
+        <td>${statusHtml}</td>
+        <td style="color:var(--muted)">${dur}</td>
+        <td style="color:var(--muted)">${started}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Pipeline history (grouped by day) ─────────────────────────────────────
+  const histEl = document.getElementById('pipeline-history');
+  const histBadge = document.getElementById('history-badge');
+  histBadge.textContent = `${runs.length} DAYS`;
+
+  if(!runs.length){
+    histEl.innerHTML = '<div class="alert alert-info">No pipeline history found.</div>';
+  } else {
+    histEl.innerHTML = runs.map((run, idx) => {
+      const steps = run.steps || [];
+      const ok    = steps.filter(s=>s.status==='success').length;
+      const fail  = steps.filter(s=>s.status!=='success'&&s.status!=='skipped').length;
+      const total = steps.length;
+      const overallOk = fail === 0;
+      const summaryColor = overallOk ? 'var(--accent)' : 'var(--accent2)';
+      const summaryIcon  = overallOk ? '✅' : '❌';
+
+      const stepsHtml = steps.map(s => {
+        const scls = s.status==='success'?'sig-buy':s.status==='skipped'?'sig-neutral':'sig-sell';
+        const sIcon = s.status==='success'?'●':s.status==='skipped'?'○':'✕';
+        const errTxt = s.error_msg ? `<br><span style="color:var(--accent2);font-size:9px">${s.error_msg.slice(0,80)}</span>` : '';
+        return `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid rgba(30,37,53,.4)">
+          <span class="${scls}" style="flex-shrink:0">${sIcon}</span>
+          <span style="flex:1;font-size:10px">${s.step_name}${errTxt}</span>
+          <span style="color:var(--muted);font-size:10px">${s.duration_sec!=null?(+s.duration_sec).toFixed(1)+'s':'—'}</span>
+        </div>`;
+      }).join('');
+
+      const collapsed = idx > 0;
+      return `<div style="margin-bottom:10px;border:1px solid var(--border)">
+        <div onclick="toggleRun(${idx})" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--surface2)">
+          <span style="font-size:10px;color:${summaryColor}">${summaryIcon} ${run.date}</span>
+          <span style="font-size:10px;color:var(--muted)">${ok}/${total} steps OK · click to ${collapsed?'expand':'collapse'}</span>
+        </div>
+        <div id="run-${idx}" style="display:${collapsed?'none':'block'};padding:12px 14px">
+          ${stepsHtml || '<span style="color:var(--muted);font-size:10px">No step detail.</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Risk events ────────────────────────────────────────────────────────────
+  // Fetch from pipeline_status (which includes risk events indirectly via DB)
+  // We'll use a direct API fetch
+  const riskRes = await fetch('/api/pipeline_status').then(r=>r.json()).catch(()=>({steps:[]}));
+  // Risk events not in pipeline_status; show a placeholder message
+  const riskTbody = document.getElementById('risk-tbody');
+  const noRiskEl  = document.getElementById('no-risk');
+  // For now, show a helpful message if no route; in full setup this comes from risk_events table
+  riskTbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Risk events are logged by the engine. Run the pipeline to populate.</td></tr>';
+}
+
+function toggleRun(idx){
+  const el = document.getElementById(`run-${idx}`);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+loadHealth();
+</script>
+{% endblock %}

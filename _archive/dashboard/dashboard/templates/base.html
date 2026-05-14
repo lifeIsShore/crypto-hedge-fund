@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Control Tower{% endblock %} · Risk Engine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:       #07080a;
+  --surface:  #0d0f13;
+  --surface2: #131720;
+  --border:   #1e2535;
+  --accent:   #00e5a0;
+  --accent2:  #ff4d6d;
+  --accent3:  #f5a623;
+  --accent4:  #6495ed;
+  --text:     #c8d4e8;
+  --muted:    #4a5568;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 36px;
+}
+
+/* scanline */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-mark {
+  width: 28px; height: 28px; border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--accent); font-weight: 600;
+  position: relative; overflow: hidden;
+}
+.logo-mark::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 40%; background: var(--accent); opacity: .15;
+}
+.logo-text { font-size: 13px; font-weight: 500; letter-spacing: .08em; color: #fff; }
+.logo-sub  { font-size: 10px; color: var(--muted); letter-spacing: .12em; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 20px; }
+.live-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--accent); letter-spacing: .1em; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.timestamp { font-size: 10px; color: var(--muted); }
+
+/* ── Nav tabs ────────────────────────────────────────────────────────────── */
+nav.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--surface); padding: 0 24px; overflow-x: auto;
+}
+nav.tabs a {
+  padding: 10px 16px; font-size: 10px; letter-spacing: .1em;
+  color: var(--muted); text-decoration: none;
+  border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap;
+}
+nav.tabs a:hover { color: var(--text); }
+nav.tabs a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Main content ────────────────────────────────────────────────────────── */
+main { padding: 20px 24px; }
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 14px 16px; position: relative; overflow: hidden;
+}
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--kpi-accent, var(--accent)); }
+.kpi-label { font-size: 9px; color: var(--muted); letter-spacing: .12em; margin-bottom: 6px; }
+.kpi-value { font-size: 22px; font-weight: 600; color: var(--kpi-color, #fff); line-height: 1; }
+.kpi-sub   { font-size: 9px; color: var(--muted); margin-top: 4px; }
+.kpi.danger  { --kpi-accent: var(--accent2); --kpi-color: var(--accent2); }
+.kpi.warn    { --kpi-accent: var(--accent3); --kpi-color: var(--accent3); }
+.kpi.good    { --kpi-accent: var(--accent);  --kpi-color: var(--accent);  }
+.kpi.info    { --kpi-accent: var(--accent4); --kpi-color: var(--accent4); }
+.kpi.neutral { --kpi-accent: #6c7a9c; --kpi-color: #fff; }
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.panel { background: var(--surface); border: 1px solid var(--border); }
+.panel + .panel { margin-top: 14px; }
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+}
+.panel-title  { font-size: 10px; letter-spacing: .1em; color: var(--text); }
+.panel-badge  { font-size: 9px; padding: 2px 7px; border: 1px solid var(--border); color: var(--muted); letter-spacing: .07em; }
+.panel-body   { padding: 16px; }
+
+/* grid helpers */
+.grid { display: grid; gap: 14px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-2-1 { grid-template-columns: 2fr 1fr; }
+.grid-3-2 { grid-template-columns: 3fr 2fr; }
+.grid-5-7 { grid-template-columns: 5fr 7fr; }
+.grid-7-5 { grid-template-columns: 7fr 5fr; }
+@media(max-width:900px){ .grid-2,.grid-3,.grid-4,.grid-2-1,.grid-3-2,.grid-5-7,.grid-7-5{ grid-template-columns:1fr; } }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th {
+  font-size: 9px; letter-spacing: .1em; color: var(--muted);
+  text-align: left; padding: 0 10px 9px 0;
+  border-bottom: 1px solid var(--border); font-weight: 400;
+}
+.tbl td { padding: 8px 10px 8px 0; font-size: 11px; border-bottom: 1px solid rgba(30,37,53,.5); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr:hover { background: rgba(255,255,255,.02); }
+
+/* ── Tags / pills ────────────────────────────────────────────────────────── */
+.tag { display: inline-block; padding: 2px 7px; font-size: 9px; letter-spacing: .06em; }
+.tag-green  { background: rgba(0,229,160,.10); color: var(--accent); }
+.tag-red    { background: rgba(255,77,109,.10); color: var(--accent2); }
+.tag-yellow { background: rgba(245,166,35,.10); color: var(--accent3); }
+.tag-blue   { background: rgba(100,149,237,.10); color: var(--accent4); }
+.tag-muted  { background: rgba(74,85,104,.15); color: var(--muted); }
+
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+select, input[type=text], input[type=number], textarea {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 11px;
+  padding: 7px 10px; outline: none; width: 100%;
+}
+select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+
+.btn {
+  background: transparent; border: 1px solid var(--accent);
+  color: var(--accent); font-family: var(--mono); font-size: 10px;
+  letter-spacing: .08em; padding: 8px 18px; cursor: pointer; transition: all .15s;
+}
+.btn:hover { background: var(--accent); color: var(--bg); }
+.btn-danger { border-color: var(--accent2); color: var(--accent2); }
+.btn-danger:hover { background: var(--accent2); color: var(--bg); }
+
+/* ── Bar charts (regime) ─────────────────────────────────────────────────── */
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-label { font-size: 10px; width: 100px; color: var(--text); flex-shrink: 0; }
+.bar-bg { flex: 1; height: 6px; background: var(--border); overflow: hidden; }
+.bar-fill { height: 100%; transition: width .5s ease; }
+.bar-pct { font-size: 10px; width: 40px; text-align: right; flex-shrink: 0; }
+
+/* ── Alerts ──────────────────────────────────────────────────────────────── */
+.alert { padding: 10px 14px; font-size: 11px; margin-bottom: 14px; border-left: 3px solid; }
+.alert-warn  { border-color: var(--accent3); background: rgba(245,166,35,.06); color: var(--accent3); }
+.alert-ok    { border-color: var(--accent);  background: rgba(0,229,160,.06);  color: var(--accent); }
+.alert-error { border-color: var(--accent2); background: rgba(255,77,109,.06); color: var(--accent2); }
+.alert-info  { border-color: var(--accent4); background: rgba(100,149,237,.06);color: var(--accent4); }
+
+/* ── Chart container ─────────────────────────────────────────────────────── */
+.chart-wrap { position: relative; width: 100%; }
+
+/* ── Skeleton loader ─────────────────────────────────────────────────────── */
+.skeleton { background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; height: 20px; border-radius: 2px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── Footer status bar ───────────────────────────────────────────────────── */
+footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 6px 24px; display: flex; gap: 24px; align-items: center; z-index: 100;
+}
+.status-item { font-size: 9px; color: var(--muted); letter-spacing: .08em; }
+.status-item span { color: var(--text); }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.panel { animation: fadeUp .35s ease both; }
+
+/* ── Signal color classes ────────────────────────────────────────────────── */
+.sig-buy      { color: var(--accent); }
+.sig-lean-buy { color: #7ef5c8; }
+.sig-neutral  { color: var(--muted); }
+.sig-lean-sell{ color: var(--accent3); }
+.sig-sell     { color: var(--accent2); }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-mark">Ψ</div>
+    <div>
+      <div class="logo-text">CONTROL TOWER</div>
+      <div class="logo-sub">HEDGE FUND ANALYTICS</div>
+    </div>
+  </a>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <div class="timestamp" id="clock"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <a href="/"           class="{{ 'active' if page=='overview'   }}">OVERVIEW</a>
+  <a href="/risk"       class="{{ 'active' if page=='risk'       }}">RISK &amp; STRATEGY</a>
+  <a href="/research"   class="{{ 'active' if page=='research'   }}">ML RESEARCH</a>
+  <a href="/regime"     class="{{ 'active' if page=='regime'     }}">MACRO REGIME</a>
+  <a href="/pairs"      class="{{ 'active' if page=='pairs'      }}">PAIRS / STAT ARB</a>
+  <a href="/divergence" class="{{ 'active' if page=='divergence' }}">ETF DIVERGENCE</a>
+  <a href="/rebalance"  class="{{ 'active' if page=='rebalance'  }}">REBALANCE</a>
+  <a href="/health"     class="{{ 'active' if page=='health'     }}">PIPELINE HEALTH</a>
+</nav>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="status-item">ENGINE <span>FLASK + SQLITE</span></div>
+  <div class="status-item">CURRENCY <span>EUR</span></div>
+  <div class="status-item">HORIZON <span>21D</span></div>
+  <div class="status-item" id="footer-freshness"></div>
+  <div class="status-item" style="margin-left:auto">ASSUMPTIONS: lognormal MC · half-Kelly sizing · 7d purge buffer</div>
+</footer>
+
+<script>
+// Clock
+(function tick(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('de-DE',{hour12:false}); setTimeout(tick,1000); })();
+
+// Footer freshness
+fetch('/api/freshness').then(r=>r.json()).then(d=>{
+  const el = document.getElementById('footer-freshness');
+  if(!el) return;
+  const ml = d.file_ages_hours?.ml_state;
+  const rg = d.file_ages_hours?.regime_state;
+  const mlTxt = ml != null ? `ML ${ml}h` : 'ML —';
+  const rgTxt = rg != null ? `REG ${rg}h` : 'REG —';
+  el.innerHTML = `DATA AGE <span>${mlTxt} · ${rgTxt}</span>`;
+}).catch(()=>{});
+
+// Global helpers
+function fmtEur(v){ return v==null?'—':'€'+(+v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPct(v,dp=1){ return v==null?'—':(+v>=0?'+':'')+( +v).toFixed(dp)+'%'; }
+function sigClass(action){
+  return {BUY:'sig-buy',LEAN_BUY:'sig-lean-buy',NEUTRAL:'sig-neutral',LEAN_SELL:'sig-lean-sell',SELL:'sig-sell'}[action]||'sig-neutral';
+}
+function sigLabel(action){
+  return {BUY:'🟢 BUY',LEAN_BUY:'🟡 LEAN BUY',NEUTRAL:'⚪ NEUTRAL',LEAN_SELL:'🟠 LEAN SELL',SELL:'🔴 SELL'}[action]||action;
+}
+
+// Chart defaults
+Chart.defaults.color = '#4a5568';
+Chart.defaults.borderColor = '#1e2535';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 10;
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
