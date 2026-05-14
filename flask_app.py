@@ -735,7 +735,14 @@ def api_ml_signals():
 
 @app.route("/api/regime")
 def api_regime():
-    return jsonify(_load_json(REGIME_STATE_PATH))
+    data = _load_json(REGIME_STATE_PATH)
+    try:
+        history = _q("SELECT * FROM regime_history ORDER BY date DESC LIMIT 90")
+        data['history'] = history
+    except Exception as e:
+        log.error(f"Failed to load regime history: {e}")
+        data['history'] = []
+    return jsonify(data)
 
 
 @app.route("/api/portfolio_mc")

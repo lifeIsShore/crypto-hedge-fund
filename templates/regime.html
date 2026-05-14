@@ -133,9 +133,40 @@ async function loadRegime(){
     const counts={};
     hist.forEach(h=>{ const k=h.regime_composite||'Unknown'; counts[k]=(counts[k]||0)+1; });
     const labels=Object.keys(counts),vals=Object.values(counts);
-    const colors=['var(--accent)','var(--accent3)','var(--accent2)','var(--accent4)','#a78bfa'];
+    const colors=['#10b981','#f59e0b','#ef4444','#3b82f6','#a78bfa'];
     if(regDistChart) regDistChart.destroy();
-    regDistChart=new Chart(document.getElementById('regimeDistChart'),{type:'bar',data:{labels,datasets:[{label:'Days',data:vals,backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+    regDistChart=new Chart(document.getElementById('regimeDistChart'),{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'Days',
+          data:vals,
+          backgroundColor:colors.slice(0,labels.length),
+          borderRadius: 4,
+          borderWidth:0
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        indexAxis:'y',
+        plugins:{
+          legend:{display:false},
+          tooltip: {
+            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+            titleColor: '#f1f5f9',
+            bodyColor: '#f1f5f9',
+            borderColor: '#334155',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+          y: { grid: { display: false }, ticks: { color: '#f1f5f9' } }
+        }
+      }
+    });
   }
 }
 loadRegime();
