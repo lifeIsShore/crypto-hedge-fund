@@ -37,7 +37,7 @@ Date,Action,Ticker,Quantity,Price,Total,Notes
 2026-04-27,Deposit,CASH,,,200,
 2026-05-08,Buy,ATAI,14,3.47,48.580000000000005,
 2026-05-08,Fee,CASH,,,1,Trading fee
-2026-05-13,Buy,1S2.DE,5.0,16.62,83.1,Manual entry sync
+2026-05-13,Buy,FIG,5.0,16.62,83.1,Manual entry sync
 2026-05-13,Fee,CASH,,,1.0,Fee for Buy FIG
 2026-05-13,Sell,AMZ.DE,0.115868,230.05,26.655433,Manual entry sync
 2026-05-13,Fee,CASH,,,1.0,Fee for Sell AMZN

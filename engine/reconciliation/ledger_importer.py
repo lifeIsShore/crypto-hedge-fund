@@ -27,15 +27,39 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
+# FX Logic (mirrors ingestion.py)
+EUR_SUFFIXES = ('.DE', '.AS', '.PA')
+GBP_SUFFIXES = ('.L',)
+FALLBACK_USDEUR = 0.92
+FALLBACK_GBPEUR = 1.17
+
+def _apply_fx_if_needed(ticker: str, price: float) -> float:
+    """Converts price to EUR if ticker is non-EUR (US/UK)."""
+    if any(ticker.endswith(s) for s in EUR_SUFFIXES):
+        return price
+        
+    rate = FALLBACK_USDEUR
+    if any(ticker.endswith(s) for s in GBP_SUFFIXES):
+        rate = FALLBACK_GBPEUR
+    
+    # Try to get live rate if possible (minimal period for speed)
+    try:
+        import yfinance as yf
+        pair = "GBPEUR=X" if rate == FALLBACK_GBPEUR else "EURUSD=X"
+        data = yf.download(pair, period='1d', progress=False)
+        if not data.empty:
+            live_rate = float(data['Close'].iloc[-1])
+            if pair == "EURUSD=X": live_rate = 1.0 / live_rate
+            rate = live_rate
+    except:
+        pass # use fallback
+        
+    return price * rate
+
 # Path to ledger.csv relative to project root
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
 LEDGER_PATH = os.path.join(_ROOT, 'portfolio', 'data', 'ledger.csv')
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# LEDGER REPLAY
-# ─────────────────────────────────────────────────────────────────────────────
 
 def replay_ledger(filepath: str = None) -> tuple:
     """
@@ -376,7 +400,8 @@ def run_ledger_import(date: str = None, filepath: str = None) -> dict:
                     col = t if t in close.columns else None
                     if col:
                         val = close[col].dropna().iloc[-1] if not close[col].dropna().empty else 0
-                        prices[t] = float(val)
+                        # --- APPLY FX CONVERSION HERE ---
+                        prices[t] = _apply_fx_if_needed(t, float(val))
         except Exception as e:
             logger.warning(f"[ledger] Live price fetch failed: {e}")
 

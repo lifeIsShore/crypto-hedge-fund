@@ -75,7 +75,7 @@ ASSET_UNIVERSE = [
     'APC.DE', 'MSF.DE', 'AMZ.DE', 'NVD.DE', 'ABE.DE', 'FB2A.DE', 'TL0.DE', 
     'CAS.DE', 'ADB.DE', 'NFC.DE', 'AMD.DE', 'INZ.DE', 'QCI.DE', 'ASQ.DE', 
     'MTH.DE', 'TNA.DE', 'ORC.DE', 'TSFA.DE', '6N0.DE', '6SN.DE', '18U.DE', 
-    '2PY.DE', '6SP.DE', '2H1.DE', '1S2.DE',
+    '2PY.DE', '6SP.DE', '2H1.DE', 'FIG',
     
     # --- European Blue Chips ---
     'SAP.DE', 'ALV.DE', 'SIE.DE', 'BAYN.DE', 'BMW.DE', 'DTE.DE', 'BAS.DE', 

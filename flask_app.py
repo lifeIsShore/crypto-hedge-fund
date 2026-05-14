@@ -1244,8 +1244,10 @@ def api_performance():
         float(t.get("total_eur") or 0)
         for t in trades_rows if t["action"] == "DIVIDEND"
     )
+    # WORKFLOW-AWARE FIX: Sum both standalone FEE rows and fees integrated into trade rows
     total_fees = sum(
-        float(t.get("fee_eur") or 0) + (float(t.get("total_eur") or 0) if t["action"] == "FEE" else 0)
+        (float(t.get("total_eur") or 0) if t["action"] == "FEE" else 0) + 
+        float(t.get("fee_eur") or 0)
         for t in trades_rows
     )
 
