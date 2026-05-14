@@ -23,22 +23,15 @@ Cons: Makes the math in the optimizer slightly more complex.
 Verdict: 🟢 Highly Recommended. You can easily implement this by requiring a minimum "Edge Threshold" before suggesting a rebalance.
 
 
-5. Correlation Intelligence Engine (Pairs Trading / Stat Arb)
-Source: quant_portfolio_framework-research.md
-What it is: A module that runs "Cointegration tests" and "DCC-GARCH" on your asset universe to find pairs of assets that historically move perfectly together. When the engine detects that the pair has temporarily diverged (e.g., Coca-Cola drops while Pepsi rises for no fundamental reason), it flags it as a "Tradeable Pair".
-Pros: This gives you a completely new, uncorrelated strategy (Statistical Arbitrage) that makes money in both bull and bear markets, significantly improving your fund's overall Sharpe ratio.
-Cons: The math is complex, and the strategy requires tighter risk controls.
-Verdict: 🔵 Future Expansion. Do not build this before going live. It is an excellent Phase 2 project once the core system is running smoothly.
 
 
 
-light mode (we have only dark mode)
 
-create cold start backfill for all of the needed parts of the app. so that if i will set that app in another pc i will be able to run the app without any error and fully functional with all the data needed and graphs so on.
 
 
 
 ----------------------------------
+light mode (we have only dark mode)
 
 
 This is a sophisticated choice. A **"Cream/Ivory"** theme (often called "Solarized Light" or "Paper" mode) is much easier on the eyes than pure white for long-term data analysis, as it reduces blue light strain while maintaining high contrast for text.
