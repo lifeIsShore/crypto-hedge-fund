@@ -201,6 +201,10 @@ def _sync_to_db(holdings: dict, cash_eur: float, date: str, prices: dict):
             holdings.get(t, 0) * prices.get(t, 0) for t in holdings
         ) + max(cash_eur, 0)
 
+        # --- CLEANUP: Prevent duplication if run multiple times today ---
+        session.execute(text("DELETE FROM positions_history WHERE date = :date"), {'date': date})
+        session.execute(text("DELETE FROM cash_history WHERE date = :date"), {'date': date})
+        
         count = 0
         for ticker, qty in holdings.items():
             price = prices.get(ticker, 0.0)

@@ -544,12 +544,18 @@ def step_performance_log():
     session.commit()
     session.close()
     logger.info(f"[performance] Logged: €{total_val:,.2f} | Return: {daily_ret*100:+.2f}%")
+
+
+def step_lstm_train():
     """Saturday — walk-forward train LSTM for all tickers and save models."""
     from engine.alpha.lstm_model import LSTMAlpha
-    model = LSTMAlpha()
-    summary = model.train_all(tickers=TICKERS, date=TODAY)
-    passed = sum(1 for v in summary.values() if v.get('auc', 0) >= 0.53)
-    logger.info(f"[lstm_train] {passed}/{len(summary)} tickers above AUC gate")
+    try:
+        model = LSTMAlpha()
+        summary = model.train_all(tickers=TICKERS, date=TODAY)
+        passed = sum(1 for v in summary.values() if v.get('auc', 0) >= 0.53)
+        logger.info(f"[lstm_train] {passed}/{len(summary)} tickers above AUC gate")
+    except Exception as e:
+        logger.error(f"[lstm_train] Training failed: {e}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

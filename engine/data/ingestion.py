@@ -7,7 +7,7 @@ _ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from portfolio.src.config import ASSET_UNIVERSE
+from portfolio.src.config import ASSET_UNIVERSE, TICKER_MAPPING
 """
 Production data ingestion pipeline.
 Primary source:  Polygon.io (requires POLYGON_API_KEY env var)
@@ -272,6 +272,7 @@ def _fetch_yfinance_single(ticker: str, from_date: str, to_date: str) -> pd.Data
 async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.DataFrame:
     """
     Async multi-ticker fetch with per-ticker Polygon→yfinance fallback.
+    Now includes a secondary fallback to a US ticker if the primary (Xetra) fails.
     """
     frames = []
     use_polygon = bool(POLYGON_API_KEY)
@@ -281,22 +282,39 @@ async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.Da
 
     async with aiohttp.ClientSession() as http_session:
         for ticker in tickers:
-            if use_polygon:
-                try:
+            df = pd.DataFrame()
+            
+            # --- Try Primary Ticker ---
+            try:
+                if use_polygon:
                     df = await _fetch_polygon_single(http_session, ticker, from_date, to_date)
-                    frames.append(df)
-                    logger.debug(f"[Polygon] {ticker}: {len(df)} rows")
-                    continue
-                except Exception as e:
-                    logger.warning(f"[Polygon] {ticker} failed ({e}) → yfinance fallback")
+                else:
+                    df = _fetch_yfinance_single(ticker, from_date, to_date)
+            except Exception as e:
+                logger.warning(f"Primary fetch failed for {ticker}: {e}")
 
-            # yfinance fallback (sync inside async — acceptable for small universes)
-            df = _fetch_yfinance_single(ticker, from_date, to_date)
+            # --- Fallback to US Ticker if Primary fails ---
+            if df.empty and ticker in TICKER_MAPPING:
+                fallback_ticker = TICKER_MAPPING[ticker]
+                logger.info(f"Primary {ticker} failed or empty — trying fallback: {fallback_ticker}")
+                try:
+                    if use_polygon:
+                        df = await _fetch_polygon_single(http_session, fallback_ticker, from_date, to_date)
+                    else:
+                        df = _fetch_yfinance_single(fallback_ticker, from_date, to_date)
+                    
+                    if not df.empty:
+                        # CRITICAL: We tag the data with the ORIGINAL (Primary) ticker
+                        # so the rest of the engine (ledger, optimizer) recognizes it.
+                        df['ticker'] = ticker
+                        logger.info(f"Successfully fetched fallback data for {ticker} using {fallback_ticker}")
+                except Exception as e:
+                    logger.warning(f"Fallback fetch failed for {fallback_ticker}: {e}")
+
             if not df.empty:
                 frames.append(df)
-                logger.debug(f"[yfinance] {ticker}: {len(df)} rows")
             else:
-                logger.warning(f"[yfinance] {ticker}: no data returned — skipped")
+                logger.warning(f"All sources failed for {ticker} — skipped")
 
     if not frames:
         return pd.DataFrame()

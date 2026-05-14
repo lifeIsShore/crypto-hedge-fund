@@ -18,136 +18,78 @@ with mathematical or logical justification.
 """
 
 # ==========================================
-# 1. ASSET UNIVERSE
+# 1. ASSET UNIVERSE & MAPPING
 # ==========================================
-# All tickers must use the Xetra/Frankfurt (.DE) suffix to match EUR
-# pricing on the Trade Republic app (routed via Lang & Schwarz).
-# US-only tickers fall back to NASDAQ/NYSE quotes via yfinance.
-# EUR/USD FX conversion is applied automatically by the engine.
-ASSET_UNIVERSE = [
+# We prefer Xetra/Frankfurt (.DE) tickers to match Trade Republic EUR pricing.
+# If a ticker is US-based, we provide a mapping to its EUR equivalent.
+# The ingestion engine will try the PRIMARY first, then the FALLBACK.
+
+# Format: PRIMARY_TICKER: FALLBACK_TICKER (usually the US version)
+TICKER_MAPPING = {
     # --- US Big Tech ---
-    'APC.DE',   # Apple Inc.
-    'MSF.DE',   # Microsoft Corp.
-    'AMZN',     # Amazon Inc.
-    'NVDA',     # NVIDIA Corp.
-    'GOOGL',    # Alphabet Inc. (Class A)
-    'META',     # Meta Platforms
-    'TSLA',     # Tesla Inc.
-    'CRM',      # Salesforce Inc.
-    'ADBE',     # Adobe Inc.
-    'NFLX',     # Netflix Inc.
-    'MSFT',     # Microsoft Corp. (US)
-
-    # --- US Semiconductors & Hardware ---
-    'AMD',      # Advanced Micro Devices
-    'INTC',     # Intel Corp.
-    'QCOM',     # Qualcomm Inc.
-    'AMAT',     # Applied Materials
-    'MU',       # Micron Technology
-    'TXN',      # Texas Instruments
-    'ORCL',     # Oracle Corp.
-    'TSM',      # Taiwan Semiconductor (TSMC)
-
-    # --- US Software & Internet ---
-    'NOW',      # ServiceNow
-    'SNOW',     # Snowflake
-    'UBER',     # Uber Technologies
-    'PYPL',     # PayPal Holdings
-    'SPOT',     # Spotify Technology
-    'SHOP',     # Shopify Inc.
-    'FIG',      # Figma Inc. (US: FIG / GER: 1S2)
-
-    # --- European Blue Chips — DAX (.DE) ---
-    'SAP.DE',   # SAP SE
-    'ALV.DE',   # Allianz SE
-    'SIE.DE',   # Siemens AG
-    'BAYN.DE',  # Bayer AG
-    'BMW.DE',   # BMW AG
-    'DTE.DE',   # Deutsche Telekom AG
-    'BAS.DE',   # BASF SE
-    'MBG.DE',   # Mercedes-Benz Group AG
-    'ADS.DE',   # adidas AG
-    'MUV2.DE',  # Munich Re (Münchener Rück)
-    'DBK.DE',   # Deutsche Bank AG
-    'ENR.DE',   # Siemens Energy AG
-    'IFX.DE',   # Infineon Technologies AG
-    'VOW3.DE',  # Volkswagen AG (Pref.)
-    'RWE.DE',   # RWE AG
-    'CON.DE',   # Continental AG
-    'FRE.DE',   # Fresenius SE
-    'VNA.DE',   # Vonovia SE
-    'HEN3.DE',  # Henkel AG (Pref.)
-    'BEI.DE',   # Beiersdorf AG
-    'ZAL.DE',   # Zalando SE
-    'MTX.DE',   # MTU Aero Engines AG
-    'NDX1.DE',  # Nordex SE
-    'ARGX.BR',  # Argenx SE
-    'UCB.BR',   # UCB SA
-    'SHL.DE',   # Siemens Healthineers AG
-    'COK.DE',   # Cancom SE
-
-    # --- European Blue Chips — Other (primary exchange) ---
-    'AIR.DE',   # Airbus SE (Xetra)
-    'AZN.L',    # AstraZeneca PLC (London — no Xetra data via yfinance)
-    'SHELL.AS', # Shell PLC (Amsterdam Euronext)
-    'TTE.PA',   # TotalEnergies SE (Paris Euronext)
-    'BP.L',     # BP PLC (London — no Xetra data via yfinance)
-    'ASML.AS',  # ASML Holding NV (Amsterdam Euronext)
-    'NOV.DE',   # Novo Nordisk A/S (Xetra)
-
+    'APC.DE':  'AAPL',  # Apple
+    'MSF.DE':  'MSFT',  # Microsoft
+    'AMZ.DE':  'AMZN',  # Amazon
+    'NVD.DE':  'NVDA',  # NVIDIA
+    'ABE.DE':  'GOOGL', # Alphabet
+    'FB2A.DE': 'META',  # Meta
+    'TL0.DE':  'TSLA',  # Tesla
+    'CAS.DE':  'CRM',   # Salesforce
+    'ADB.DE':  'ADBE',  # Adobe
+    'NFC.DE':  'NFLX',  # Netflix
+    
+    # --- US Semiconductors ---
+    'AMD.DE':  'AMD',   # AMD
+    'INZ.DE':  'INTC',  # Intel
+    'QCI.DE':  'QCOM',  # Qualcomm
+    'ASQ.DE':  'AMAT',  # Applied Materials
+    'MTH.DE':  'MU',    # Micron
+    'TNA.DE':  'TXN',   # Texas Instruments
+    'ORC.DE':  'ORCL',  # Oracle
+    'TSFA.DE': 'TSM',   # TSMC
+    
+    # --- US Software ---
+    '6N0.DE':  'NOW',   # ServiceNow
+    '6SN.DE':  'SNOW',  # Snowflake
+    '18U.DE':  'UBER',  # Uber
+    '2PY.DE':  'PYPL',  # PayPal
+    '6SP.DE':  'SPOT',  # Spotify
+    '2H1.DE':  'SHOP',  # Shopify
+    '1S2.DE':  'FIG',   # Figma (1S2.DE on Xetra)
+    
     # --- US Financials ---
-    'V',        # Visa Inc.
-    'MA',       # Mastercard Inc.
-    'JPM',      # JPMorgan Chase & Co.
-    'BAC',      # Bank of America Corp.
-    'GS',       # Goldman Sachs Group
-    'MS',       # Morgan Stanley
-    'BRK-B',    # Berkshire Hathaway Class B
-    'AXP',      # American Express Co.
-    'BLK',      # BlackRock Inc.
+    '3V64.DE': 'V',      # Visa
+    'M9Z.DE':  'MA',     # Mastercard
+    'CMC.DE':  'JPM',    # JPMorgan
+    'NCB.DE':  'BAC',    # Bank of America
+    'GOS.DE':  'GS',     # Goldman Sachs
+    'M9N.DE':  'MS',     # Morgan Stanley
+    'BRYN.DE': 'BRK-B',  # Berkshire
+    'AEC.DE':  'AXP',    # Amex
+    'BLA.DE':  'BLK',    # BlackRock
+}
 
-    # --- US Healthcare ---
-    'UNH',      # UnitedHealth Group Inc.
-    'JNJ',      # Johnson & Johnson
-    'PFE',      # Pfizer Inc.
-    'LLY',      # Eli Lilly and Company
-    'ABBV',     # AbbVie Inc.
-    'MRK',      # Merck & Co. Inc.
-    'AMGN',     # Amgen Inc.
-    'GILD',     # Gilead Sciences Inc.
-    'TMO',      # Thermo Fisher Scientific
-    'BNTX',     # BioNTech SE
+# The active universe used by the engine (Primary Tickers)
+ASSET_UNIVERSE = [
+    # --- Tech ---
+    'APC.DE', 'MSF.DE', 'AMZ.DE', 'NVD.DE', 'ABE.DE', 'FB2A.DE', 'TL0.DE', 
+    'CAS.DE', 'ADB.DE', 'NFC.DE', 'AMD.DE', 'INZ.DE', 'QCI.DE', 'ASQ.DE', 
+    'MTH.DE', 'TNA.DE', 'ORC.DE', 'TSFA.DE', '6N0.DE', '6SN.DE', '18U.DE', 
+    '2PY.DE', '6SP.DE', '2H1.DE', '1S2.DE',
+    
+    # --- European Blue Chips ---
+    'SAP.DE', 'ALV.DE', 'SIE.DE', 'BAYN.DE', 'BMW.DE', 'DTE.DE', 'BAS.DE', 
+    'MBG.DE', 'ADS.DE', 'MUV2.DE', 'DBK.DE', 'ENR.DE', 'IFX.DE', 'VOW3.DE', 
+    'RWE.DE', 'CON.DE', 'FRE.DE', 'VNA.DE', 'HEN3.DE', 'BEI.DE', 'ZAL.DE', 
+    'MTX.DE', 'NDX1.DE', 'ARGX.BR', 'UCB.BR', 'SHL.DE', 'COK.DE', 'AIR.DE',
+    'AZN.L', 'SHELL.AS', 'TTE.PA', 'BP.L', 'ASML.AS', 'NOV.DE',
 
-    # --- US Consumer & Retail ---
-    'KO',       # Coca-Cola Co.
-    'MCD',      # McDonald's Corp.
-    'WMT',      # Walmart Inc.
-    'HD',       # Home Depot Inc.
-    'COST',     # Costco Wholesale Corp.
-    'NKE',      # Nike Inc.
-    'SBUX',     # Starbucks Corp.
-    'DIS',      # Walt Disney Co.
-    'LOW',      # Lowe's Companies Inc.
-
-    # --- US Energy ---
-    'XOM',      # ExxonMobil Corp.
-    'CVX',      # Chevron Corp.
-    'NEE',      # NextEra Energy Inc.
-    'FSLR',     # First Solar Inc.
-
-    # --- Psychedelic Biotech ---
-    'ATAI',     # AtaiBeckley Inc. (NASDAQ)
-
-    # --- Industrials & Defense ---
-    'BA',       # Boeing Co.
-    'CAT',      # Caterpillar Inc.
-    'LMT',      # Lockheed Martin Corp.
-    'RTX',      # RTX Corp. (Raytheon)
-    'GE',       # GE Aerospace
-    'HON',      # Honeywell International
-    'UPS',      # United Parcel Service
-    'DE',       # Deere & Company
-    'RHM.DE',   # Rheinmetall AG
+    # --- Financials & Health ---
+    '3V64.DE', 'CMC.DE', 'NCB.DE', 'GOS.DE', 'M9N.DE', 'BRYN.DE', 'AEC.DE', 
+    'BLA.DE', 'UNH', 'JNJ', 'PFE', 'LLY', 'ABBV', 'MRK', 'AMGN', 'GILD', 
+    'TMO', 'BNTX', 'KO', 'MCD', 'WMT', 'HD', 'COST', 'NKE', 'SBUX', 'DIS', 
+    'LOW', 'XOM', 'CVX', 'NEE', 'FSLR', 'BA', 'CAT', 'LMT', 'RTX', 'GE', 
+    'HON', 'UPS', 'DE', 'RHM.DE', 'ATAI'
 ]
 
 # List of broad-market ETFs. These are excluded from "Tradeable Pairs" scoring 

@@ -131,6 +131,28 @@ def _persist_single_price(ticker, price, currency):
         log.warning(f"Failed to persist live price for {ticker}: {e}")
 
 
+def _append_to_ledger_csv(trade_date, action, ticker, qty, price, total, notes):
+    """Append a single trade row to portfolio/data/ledger.csv to keep it in sync with SQL."""
+    try:
+        ledger_path = ROOT / "portfolio" / "data" / "ledger.csv"
+        # Ensure directory exists
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Format values for CSV (handle None/NaN)
+        s_qty = f"{qty}" if qty is not None else ""
+        s_price = f"{price}" if price is not None else ""
+        s_total = f"{total}" if total is not None else ""
+        
+        # Create the row string
+        row = f"{trade_date},{action},{ticker},{s_qty},{s_price},{s_total},{notes}\n"
+        
+        with open(ledger_path, "a", encoding="utf-8") as f:
+            f.write(row)
+        log.info(f"Successfully synced trade to {ledger_path.name}")
+    except Exception as e:
+        log.error(f"Failed to sync trade to ledger.csv: {e}")
+
+
 def _q_execute(sql, params=None):
     """Helper for write operations."""
     session = get_session()
@@ -1126,6 +1148,16 @@ def api_log_trade():
     })
     if not ok:
         return jsonify({"ok": False, "error": "DB write failed for trade row"}), 500
+
+    # ── Auto-Sync to Ledger CSV ───────────────────────────────────────────────
+    # We append the primary trade. 
+    # Actions in CSV are Title Cased (Buy, Sell, Deposit, etc.)
+    _append_to_ledger_csv(trade_date, action.title(), ticker, qty, price, total_eur, notes)
+    
+    # If there was an explicit fee, log it as a separate row in the CSV 
+    # to match the user's manual ledger style.
+    if fee_eur > 0:
+        _append_to_ledger_csv(trade_date, "Fee", "CASH", None, None, fee_eur, f"Fee for {action} {ticker}")
 
     # ── Update cash_history ───────────────────────────────────────────────────
     # Get current cash balance
