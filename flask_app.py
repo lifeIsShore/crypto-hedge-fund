@@ -1883,7 +1883,6 @@ def pairs_page():
     return render_template("pairs.html", page="pairs",
                            now=datetime.now().strftime("%Y-%m-%d %H:%M"))
 
-
 @app.route("/api/pairs/correlation")
 def api_pairs_correlation():
     """
@@ -1956,56 +1955,69 @@ def api_pairs_scan():
     """
     Run Engle-Granger cointegration test on a dynamic set of pairs.
     Includes curated same-sector pairs PLUS any highly correlated pairs 
-    discovered from the top 15 active tickers.
+    discovered from the top 100 active tickers.
     """
     try:
         from statsmodels.tsa.stattools import coint
-        from portfolio.src.config import TRADEABLE_UNIVERSE, TICKER_NAMES, TICKER_SECTORS
+        from portfolio.src.config import TRADEABLE_UNIVERSE, TICKER_NAMES, TICKER_SECTORS, TICKER_MAPPING
 
-        # 1. Curated same-sector candidate pairs
+        # 1. Curated same-sector candidate pairs (Base list)
         CANDIDATE_PAIRS = [
             ('NVD.DE', 'AMD.DE'), ('INZ.DE', 'QCI.DE'), ('MTH.DE', 'AMD.DE'), ('TSFA.DE', 'NVD.DE'),
             ('MSF.DE', 'ORC.DE'), ('CAS.DE', '6N0.DE'), ('ADB.DE', 'CAS.DE'),
             ('CMC.DE', 'NCB.DE'), ('GOS.DE', 'M9N.DE'), ('3V64.DE', 'M9Z.DE'),
             ('APC.DE', 'MSF.DE'), ('AMZ.DE', 'ABE.DE'), ('NFC.DE', '6SP.DE'),
+            ('SAP.DE', 'ORC.DE'), ('IFX.DE', 'INZ.DE'), ('ADS.DE', 'NKE'),
         ]
-        # ASQ.DE logic handled carefully
-        asq_b = 'KLA.DE' if 'KLA.DE' in TRADEABLE_UNIVERSE else 'MTH.DE'
-        CANDIDATE_PAIRS.append(('ASQ.DE', asq_b))
-
-        # 2. DYNAMIC DISCOVERY: Find top 15 tickers by activity (same as heatmap)
+        
+        # 2. DYNAMIC DISCOVERY: Find top 100 tickers by activity
         active_tickers_rows = _q("""
             SELECT ticker, COUNT(*) as cnt FROM prices
-            WHERE ticker IN (%s) AND date >= date('now', '-90 days')
-            GROUP BY ticker HAVING COUNT(*) >= 30
-            ORDER BY cnt DESC LIMIT 15
+            WHERE ticker IN (%s) AND date >= date('now', '-120 days')
+            GROUP BY ticker HAVING COUNT(*) >= 20
+            ORDER BY cnt DESC LIMIT 100
         """ % ','.join(f"'{t}'" for t in TRADEABLE_UNIVERSE))
         
         active_tickers = [r["ticker"] for r in active_tickers_rows]
         
-        # 3. Fetch price data for ALL candidate and active tickers
-        all_needed = set(active_tickers)
-        for (ta, tb) in CANDIDATE_PAIRS:
-            all_needed.add(ta); all_needed.add(tb)
+        # 3. Resolve curated tickers based on actual DB presence
+        db_tickers_set = set(active_tickers)
+        def resolve(t):
+            if t in db_tickers_set: return t
+            mapped = TICKER_MAPPING.get(t)
+            if mapped and mapped in db_tickers_set: return mapped
+            # Reverse lookup
+            for k, v in TICKER_MAPPING.items():
+                if v == t and k in db_tickers_set: return k
+            return t
 
+        normalized_curated = []
+        for (ta, tb) in CANDIDATE_PAIRS:
+            normalized_curated.append((resolve(ta), resolve(tb)))
+
+        # 4. Fetch price data for ALL candidate and active tickers
+        all_needed = set(active_tickers)
+        for (ta, tb) in normalized_curated:
+            all_needed.add(ta); all_needed.add(tb)
+ 
         price_rows = _q("""
             SELECT date, ticker, adj_close FROM prices
-            WHERE ticker IN (%s) AND date >= date('now', '-380 days')
+            WHERE ticker IN (%s) AND date >= date('now', '-400 days')
             ORDER BY date ASC
         """ % ','.join(f"'{t}'" for t in all_needed))
-
+ 
         if not price_rows:
             return jsonify({"error": "No price data available."})
-
+ 
         df = pd.DataFrame(price_rows)
         df['adj_close'] = pd.to_numeric(df['adj_close'], errors='coerce')
         pivot = df.pivot_table(index='date', columns='ticker', values='adj_close')
-
-        # 4. Filter for high correlation pairs within the active set
-        dynamic_pairs = set(tuple(sorted(p)) for p in CANDIDATE_PAIRS)
+ 
+        # 5. Filter for high correlation pairs within the active set
+        dynamic_pairs = set(tuple(sorted(p)) for p in normalized_curated)
         if len(active_tickers) >= 2:
-            # Quick 60-day correlation check for discovery
-            returns_60 = pivot[active_tickers].tail(60).pct_change().dropna(how='all')
+            subset = pivot[active_tickers].tail(90)
+            returns_60 = subset.pct_change().dropna(how='all')
             corr_matrix = returns_60.corr()
             
             for i in range(len(active_tickers)):
@@ -2013,18 +2025,20 @@ def api_pairs_scan():
                     ta, tb = active_tickers[i], active_tickers[j]
                     if ta in corr_matrix.index and tb in corr_matrix.columns:
                         c_val = corr_matrix.at[ta, tb]
-                        if c_val > 0.85: # Threshold for "interesting" pairs
+                        if not np.isnan(c_val) and c_val > 0.60: 
                             dynamic_pairs.add(tuple(sorted((ta, tb))))
-
-        # 5. Run tests on the combined set
+ 
+        # 6. Run tests on the combined set
         results = []
         for (ta, tb) in dynamic_pairs:
+            if ta == tb: continue
             if ta not in pivot.columns or tb not in pivot.columns: continue
             series = pivot[[ta, tb]].dropna()
             if len(series) < 60: continue
-
+ 
             xa, xb = series[ta].values, series[tb].values
             corr_val = float(np.corrcoef(xa, xb)[0, 1])
+            if np.isnan(corr_val): continue
 
             try:
                 _, pvalue, _ = coint(xa, xb)
