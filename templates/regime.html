@@ -3,9 +3,20 @@
 
 {% block content %}
 
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+  <h2 style="margin:0; font-size:18px; color:var(--muted)">MACRO REGIME ANALYTICS</h2>
+  <div style="display:flex; align-items:center; gap:12px">
+    <span style="font-size:11px; color:var(--muted); letter-spacing:0.1em; font-weight:600">ACTIVE REGION</span>
+    <select id="region-selector" class="input" style="width:180px; padding:6px 12px; font-size:13px; border-color:var(--accent); color:var(--accent); font-weight:bold; cursor:pointer" onchange="loadRegime(this.value)">
+      <option value="US" selected>UNITED STATES (US)</option>
+      <option value="EU">EUROZONE (EU)</option>
+    </select>
+  </div>
+</div>
+
 <div class="kpi-strip" id="regime-kpi">
   <div class="kpi neutral"><div class="kpi-label">RISK APPETITE</div><div class="kpi-value" id="r-risk" style="font-size:16px">—</div><div class="kpi-sub" id="r-risk-sub">—</div></div>
-  <div class="kpi neutral"><div class="kpi-label">RATE ENVIRONMENT</div><div class="kpi-value" id="r-rate" style="font-size:16px">—</div><div class="kpi-sub">Fed policy</div></div>
+  <div class="kpi neutral"><div class="kpi-label">RATE ENVIRONMENT</div><div class="kpi-value" id="r-rate" style="font-size:16px">—</div><div class="kpi-sub" id="r-rate-sub">Fed policy</div></div>
   <div class="kpi neutral"><div class="kpi-label">GROWTH CYCLE</div><div class="kpi-value" id="r-growth" style="font-size:16px">—</div><div class="kpi-sub" id="r-streak">—</div></div>
   <div class="kpi neutral"><div class="kpi-label">EARLY WARNINGS</div><div class="kpi-value" id="r-ew">—</div><div class="kpi-sub">of 4 triggers</div></div>
   <div class="kpi neutral"><div class="kpi-label">AS OF DATE</div><div class="kpi-value" id="r-date" style="font-size:14px">—</div><div class="kpi-sub">last regime snapshot</div></div>
@@ -16,14 +27,14 @@
 
 <div class="grid grid-2" style="margin-top:14px">
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">LIVE MACRO INPUTS (US)</span><span class="panel-badge">LATEST SNAPSHOT</span></div>
+    <div class="panel-header"><span class="panel-title" id="inputs-title">LIVE MACRO INPUTS (US)</span><span class="panel-badge">LATEST SNAPSHOT</span></div>
     <div class="panel-body">
       <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr)">
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">VIX</div><div class="kpi-value" style="font-size:18px" id="m-vix">—</div><div class="kpi-sub">&lt;20 calm</div></div>
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">10Y-2Y SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-spread">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="vix-label">VIX</div><div class="kpi-value" style="font-size:18px" id="m-vix">—</div><div class="kpi-sub" id="vix-sub">&lt;20 calm</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="spread-label">10Y-2Y SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-spread">—</div></div>
         <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HY SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-hy">—</div></div>
         <div class="kpi neutral" style="padding:10px"><div class="kpi-label">IG SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-ig">—</div></div>
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">FED FUNDS</div><div class="kpi-value" style="font-size:18px" id="m-fed">—</div></div>
+    <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="rate-label">FED FUNDS</div><div class="kpi-value" style="font-size:18px" id="m-fed">—</div></div>
       </div>
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">EARLY WARNING FLAGS</div>
@@ -37,7 +48,7 @@
     </div>
   </div>
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">HISTORICAL DISTRIBUTION (US) — LAST 90 DAYS</span><span class="panel-badge">DB</span></div>
+    <div class="panel-header"><span class="panel-title" id="dist-title">HISTORICAL DISTRIBUTION (US) — LAST 90 DAYS</span><span class="panel-badge">DB</span></div>
     <div class="panel-body"><div class="chart-wrap" style="height:220px"><canvas id="regimeDistChart"></canvas></div></div>
   </div>
 </div>
@@ -55,10 +66,10 @@
 </div>
 
 <div class="panel" style="margin-top:14px">
-  <div class="panel-header"><span class="panel-title">REGIME HISTORY (US) — LAST 30 DAYS</span><span class="panel-badge">SQLITE</span></div>
+  <div class="panel-header"><span class="panel-title" id="hist-title">REGIME HISTORY (US) — LAST 30 DAYS</span><span class="panel-badge">SQLITE</span></div>
   <div class="panel-body">
     <table class="tbl">
-      <thead><tr><th>DATE</th><th>RISK</th><th>RATES</th><th>GROWTH</th><th>COMPOSITE</th><th>VIX</th><th>SPREAD</th><th>TRANSITION ⚠️</th></tr></thead>
+      <thead><tr><th>DATE</th><th>RISK</th><th>RATES</th><th>GROWTH</th><th>COMPOSITE</th><th id="vix-col">VIX</th><th id="spr-col">SPREAD</th><th>TRANSITION ⚠️</th></tr></thead>
       <tbody id="hist-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
@@ -81,10 +92,23 @@ const GUIDANCE = {
 const REL_COLOR={'HIGH':'var(--accent)','MOD':'var(--accent3)','MED':'var(--accent3)','LOW':'var(--accent2)','AVOID':'var(--accent2)','UNKNOWN':'var(--muted)'};
 let regDistChart = null;
 
-async function loadRegime(){
-  const data = await fetch('/api/regime').then(r=>r.json()).catch(()=>({}));
+async function loadRegime(region = 'US'){
+  const data = await fetch(`/api/regime?region=${region}`).then(r=>r.json()).catch(()=>({}));
+  
+  // Dynamic labels
+  const isEU = region === 'EU';
+  document.getElementById('inputs-title').textContent = `LIVE MACRO INPUTS (${region})`;
+  document.getElementById('dist-title').textContent = `HISTORICAL DISTRIBUTION (${region}) — LAST 90 DAYS`;
+  document.getElementById('hist-title').textContent = `REGIME HISTORY (${region}) — LAST 30 DAYS`;
+  document.getElementById('vix-label').textContent = isEU ? 'VSTOXX' : 'VIX';
+  document.getElementById('vix-sub').textContent = isEU ? '<20 calm' : '<20 calm';
+  document.getElementById('spread-label').textContent = isEU ? 'STOXX-DAX' : '10Y-2Y SPREAD';
+  document.getElementById('vix-col').textContent = isEU ? 'VSTOXX' : 'VIX';
+  document.getElementById('rate-label').textContent = isEU ? 'ECB RATE' : 'FED FUNDS';
+  document.getElementById('r-rate-sub').textContent = isEU ? 'ECB policy' : 'Fed policy';
+
   if(!data.regime_risk){
-    document.getElementById('regime-alert').innerHTML='<div class="alert alert-warn">No regime state. Run: <code>python run_engine.py</code> in regime_engine/</div>';
+    document.getElementById('regime-alert').innerHTML='<div class="alert alert-warn">No regime data for ' + region + '.</div>';
     return;
   }
   const risk=data.regime_risk,rate=data.regime_rates,growth=data.regime_growth;

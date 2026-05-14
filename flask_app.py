@@ -735,13 +735,34 @@ def api_ml_signals():
 
 @app.route("/api/regime")
 def api_regime():
+    region = request.args.get('region', 'US').upper()
     data = _load_json(REGIME_STATE_PATH)
     try:
-        history = _q("SELECT * FROM regime_history ORDER BY date DESC LIMIT 90")
+        # Load the history for the selected region
+        history = _q("SELECT * FROM regime_history WHERE region = :r ORDER BY date DESC LIMIT 90", {"r": region})
         data['history'] = history
+        
+        # If the history has a recent entry, use it to override the snapshot's regime
+        if history:
+            latest = history[0]
+            data['regime_risk'] = latest.get('regime_risk')
+            data['regime_rates'] = latest.get('regime_rates')
+            data['regime_growth'] = latest.get('regime_growth')
+            data['regime_composite'] = latest.get('regime_composite')
+            data['as_of_date'] = latest.get('date')
+            data['macro_snapshot'] = {
+                'vix': latest.get('vix'),
+                'yield_spread': latest.get('yield_spread'),
+                'hy_spread': latest.get('hy_spread'),
+                'ig_spread': latest.get('ig_spread'),
+                'fed_funds': latest.get('fed_funds')
+            }
+            
     except Exception as e:
-        log.error(f"Failed to load regime history: {e}")
+        log.error(f"Failed to load regime history for {region}: {e}")
         data['history'] = []
+    
+    data['region'] = region
     return jsonify(data)
 
 
