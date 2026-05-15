@@ -16,9 +16,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: 2. MACRO & REGIME
-echo [2/6] Updating Macro Regime Intelligence...
+echo [2/6] Updating Macro Regime Intelligence (Global)...
 cd /d "%~dp0ml_quant_finance_research\quant_research\regime_engine"
-python run_engine.py
+python run_engine.py --region ALL
 if %ERRORLEVEL% NEQ 0 (
     echo [WARN] Regime engine failed - continuing with last state.
 )

@@ -31,31 +31,31 @@ TICKER_MAPPING = {
     'MSF.DE':  'MSFT',  # Microsoft
     'AMZ.DE':  'AMZN',  # Amazon
     'NVD.DE':  'NVDA',  # NVIDIA
-    'ABE.DE':  'GOOGL', # Alphabet
+    'ABEA.DE': 'GOOGL', # Alphabet
     'FB2A.DE': 'META',  # Meta
     'TL0.DE':  'TSLA',  # Tesla
-    'CAS.DE':  'CRM',   # Salesforce
+    'SFC.DE':  'CRM',   # Salesforce
     'ADB.DE':  'ADBE',  # Adobe
     'NFC.DE':  'NFLX',  # Netflix
     
     # --- US Semiconductors ---
     'AMD.DE':  'AMD',   # AMD
-    'INZ.DE':  'INTC',  # Intel
+    '1IN.DE':  'INTC',  # Intel
     'QCI.DE':  'QCOM',  # Qualcomm
-    'ASQ.DE':  'AMAT',  # Applied Materials
-    'MTH.DE':  'MU',    # Micron
-    'TNA.DE':  'TXN',   # Texas Instruments
+    'AP2.DE':  'AMAT',  # Applied Materials
+    'MTU.DE':  'MU',    # Micron
+    'TII.DE':  'TXN',   # Texas Instruments
     'ORC.DE':  'ORCL',  # Oracle
-    'TSFA.DE': 'TSM',   # TSMC
+    'TSM.DE':  'TSM',   # TSMC
     'KLA.DE':  'KLAC',  # KLA Corp
     
     # --- US Software ---
-    '6N0.DE':  'NOW',   # ServiceNow
-    '6SN.DE':  'SNOW',  # Snowflake
-    '18U.DE':  'UBER',  # Uber
-    '2PY.DE':  'PYPL',  # PayPal
-    '6SP.DE':  'SPOT',  # Spotify
-    '2H1.DE':  'SHOP',  # Shopify
+    'NOW.DE':  'NOW',   # ServiceNow
+    'SNW.DE':  'SNOW',  # Snowflake
+    'UT8.DE':  'UBER',  # Uber
+    'PYPL.DE': 'PYPL',  # PayPal
+    '639.DE':  'SPOT',  # Spotify
+    'SHOP.DE': 'SHOP',  # Shopify
     '1S2.DE':  'FIG',   # Figma
     
     # --- US Financials ---
@@ -64,10 +64,10 @@ TICKER_MAPPING = {
     'CMC.DE':  'JPM',    # JPMorgan
     'NCB.DE':  'BAC',    # Bank of America
     'GOS.DE':  'GS',     # Goldman Sachs
-    'M9N.DE':  'MS',     # Morgan Stanley
+    'DWD.DE':  'MS',     # Morgan Stanley
     'BRYN.DE': 'BRK-B',  # Berkshire
-    'AEC.DE':  'AXP',    # Amex
-    'BLA.DE':  'BLK',    # BlackRock
+    'AXP.DE':  'AXP',    # Amex
+    'BLQA.DE': 'BLK',    # BlackRock
 
     # --- New Energy & Mining (US fallback) ---
     'GEV.DE':  'GEV',   # GE Vernova
@@ -75,11 +75,11 @@ TICKER_MAPPING = {
     'CEG.DE':  'CEG',   # Constellation
     'NUS.DE':  'SMR',   # NuScale
     'OKL.DE':  'OKLO',  # Oklo
-    'REP.DE':  'REP',   # Repsol
-    'ENB.DE':  'ENB',   # Enbridge
-    'EGI.DE':  'ENGI',  # Engie
-    'BLM.DE':  'BE',    # Bloom Energy
-    'BRP.DE':  'BEP',   # Brookfield
+    'REP.DE':  'REPYY',   # Repsol
+    'ENB.DE':  'ENB',     # Enbridge
+    'EGI.DE':  'ENGIY',   # Engie
+    'BLM.DE':  'BE',      # Bloom Energy
+    'BRP.DE':  'BEP',     # Brookfield
     'RIO.DE':  'RIO',   # Rio Tinto
     'ERO.DE':  'ERO',   # Ero Copper
     'FPM.DE':  'FCX',   # Freeport
@@ -97,37 +97,37 @@ TICKER_NAMES = {
     'MSF.DE': 'Microsoft Corporation', 'MSFT': 'Microsoft Corporation',
     'AMZ.DE': 'Amazon.com, Inc.', 'AMZN': 'Amazon.com, Inc.',
     'NVD.DE': 'NVIDIA Corporation', 'NVDA': 'NVIDIA Corporation',
-    'ABE.DE': 'Alphabet Inc.', 'GOOGL': 'Alphabet Inc.',
+    'ABEA.DE': 'Alphabet Inc.', 'GOOGL': 'Alphabet Inc.',
     'FB2A.DE': 'Meta Platforms, Inc.', 'META': 'Meta Platforms, Inc.',
     'TL0.DE': 'Tesla, Inc.', 'TSLA': 'Tesla, Inc.',
-    'CAS.DE': 'Salesforce, Inc.', 'CRM': 'Salesforce, Inc.',
+    'SFC.DE': 'Salesforce, Inc.', 'CRM': 'Salesforce, Inc.',
     'ADB.DE': 'Adobe Inc.', 'ADBE': 'Adobe Inc.',
     'NFC.DE': 'Netflix, Inc.', 'NFLX': 'Netflix, Inc.',
     'AMD.DE': 'Advanced Micro Devices, Inc.', 'AMD': 'Advanced Micro Devices, Inc.',
-    'INZ.DE': 'Intel Corporation', 'INTC': 'Intel Corporation',
+    '1IN.DE': 'Intel Corporation', 'INTC': 'Intel Corporation',
     'QCI.DE': 'QUALCOMM Incorporated', 'QCOM': 'QUALCOMM Incorporated',
-    'ASQ.DE': 'Applied Materials, Inc.', 'AMAT': 'Applied Materials, Inc.',
-    'MTH.DE': 'Micron Technology, Inc.', 'MU': 'Micron Technology, Inc.',
-    'TNA.DE': 'Texas Instruments Incorporated', 'TXN': 'Texas Instruments Incorporated',
+    'AP2.DE': 'Applied Materials, Inc.', 'AMAT': 'Applied Materials, Inc.',
+    'MTU.DE': 'Micron Technology, Inc.', 'MU': 'Micron Technology, Inc.',
+    'TII.DE': 'Texas Instruments Incorporated', 'TXN': 'Texas Instruments Incorporated',
     'ORC.DE': 'Oracle Corporation', 'ORCL': 'Oracle Corporation',
-    'TSFA.DE': 'Taiwan Semiconductor Manufacturing Co.', 'TSM': 'Taiwan Semiconductor Manufacturing Co.',
+    'TSM.DE': 'Taiwan Semiconductor Manufacturing Co.', 'TSM': 'Taiwan Semiconductor Manufacturing Co.',
     'KLA.DE': 'KLA Corporation', 'KLAC': 'KLA Corporation',
-    '6N0.DE': 'ServiceNow, Inc.', 'NOW': 'ServiceNow, Inc.',
-    '6SN.DE': 'Snowflake Inc.', 'SNOW': 'Snowflake Inc.',
-    '18U.DE': 'Uber Technologies, Inc.', 'UBER': 'Uber Technologies, Inc.',
-    '2PY.DE': 'PayPal Holdings, Inc.', 'PYPL': 'PayPal Holdings, Inc.',
-    '6SP.DE': 'Spotify Technology S.A.', 'SPOT': 'Spotify Technology S.A.',
-    '2H1.DE': 'Shopify Inc.', 'SHOP': 'Shopify Inc.',
+    'NOW.DE': 'ServiceNow, Inc.', 'NOW': 'ServiceNow, Inc.',
+    'SNW.DE': 'Snowflake Inc.', 'SNOW': 'Snowflake Inc.',
+    'UT8.DE': 'Uber Technologies, Inc.', 'UBER': 'Uber Technologies, Inc.',
+    'PYPL.DE': 'PayPal Holdings, Inc.', 'PYPL': 'PayPal Holdings, Inc.',
+    '639.DE': 'Spotify Technology S.A.', 'SPOT': 'Spotify Technology S.A.',
+    'SHOP.DE': 'Shopify Inc.', 'SHOP': 'Shopify Inc.',
     '1S2.DE': 'Figma', 'FIG': 'Figma',
     '3V64.DE': 'Visa Inc.', 'V': 'Visa Inc.',
     'M9Z.DE': 'Mastercard Incorporated', 'MA': 'Mastercard Incorporated',
     'CMC.DE': 'JPMorgan Chase & Co.', 'JPM': 'JPMorgan Chase & Co.',
     'NCB.DE': 'Bank of America Corporation', 'BAC': 'Bank of America Corporation',
     'GOS.DE': 'The Goldman Sachs Group, Inc.', 'GS': 'The Goldman Sachs Group, Inc.',
-    'M9N.DE': 'Morgan Stanley', 'MS': 'Morgan Stanley',
+    'DWD.DE': 'Morgan Stanley', 'MS': 'Morgan Stanley',
     'BRYN.DE': 'Berkshire Hathaway Inc.', 'BRK-B': 'Berkshire Hathaway Inc.',
-    'AEC.DE': 'American Express Company', 'AXP': 'American Express Company',
-    'BLA.DE': 'BlackRock, Inc.', 'BLK': 'BlackRock, Inc.',
+    'AXP.DE': 'American Express Company', 'AXP': 'American Express Company',
+    'BLQA.DE': 'BlackRock, Inc.', 'BLK': 'BlackRock, Inc.',
     'SAP.DE': 'SAP SE', 'ALV.DE': 'Allianz SE', 'SIE.DE': 'Siemens AG',
     'BAYN.DE': 'Bayer AG', 'BMW.DE': 'BMW AG', 'DTE.DE': 'Deutsche Telekom AG',
     'BAS.DE': 'BASF SE', 'MBG.DE': 'Mercedes-Benz Group AG', 'ADS.DE': 'Adidas AG',
@@ -136,12 +136,12 @@ TICKER_NAMES = {
     'CON.DE': 'Continental AG', 'FRE.DE': 'Fresenius SE & Co. KGaA', 'VNA.DE': 'Vonovia SE',
     'HEN3.DE': 'Henkel AG & Co. KGaA', 'BEI.DE': 'Beiersdorf AG', 'ZAL.DE': 'Zalando SE',
     'MTX.DE': 'MTU Aero Engines AG', 'NDX1.DE': 'Nordex SE',
-    'ARGX.BR': 'argenx SE', 'ARGX.DE': 'argenx SE',
-    'UCB.BR': 'UCB S.A.', 'UCB.DE': 'UCB S.A.',
+    'ARGX.BR': 'argenx SE',
+    'UCB.BR': 'UCB S.A.',
     'SHL.DE': 'Siemens Healthineers AG', 'COK.DE': 'CANCOM SE', 'AIR.DE': 'Airbus SE',
     'AZN.L': 'AstraZeneca PLC', 'SHELL.AS': 'Shell PLC', 'TTE.PA': 'TotalEnergies SE',
-    'BP.L': 'BP p.l.c.', 'ASML.AS': 'ASML Holding N.V.', 'ASML.NA': 'ASML Holding N.V.',
-    'NOV.DE': 'Novartis AG', 'NVS': 'Novartis AG', 'S92G.DE': 'SMA Solar Technology AG',
+    'BP.L': 'BP p.l.c.', 'ASML.AS': 'ASML Holding N.V.',
+    'NOV.DE': 'Novartis AG', 'NVS': 'Novartis AG', 'S92.DE': 'SMA Solar Technology AG',
     'UNH': 'UnitedHealth Group Incorporated', 'JNJ': 'Johnson & Johnson',
     'PFE': 'Pfizer Inc.', 'LLY': 'Eli Lilly and Company', 'ABBV': 'AbbVie Inc.',
     'MRK': 'Merck & Co., Inc.', 'AMGN': 'Amgen Inc.', 'GILD': 'Gilead Sciences, Inc.',
@@ -181,7 +181,7 @@ TICKER_NAMES = {
     'EXXT.DE': 'iShares Nasdaq-100', 'SPPW.DE': 'SPDR MSCI World',
     'IS3N.DE': 'iShares Core EM IMI', 'IUSN.DE': 'iShares MSCI World Small Cap',
     'XDWD.DE': 'Xtrackers MSCI World Swap', 'ZPRV.DE': 'SPDR MSCI USA Small Cap Value',
-    'DBXD.DE': 'Xtrackers DAX',
+    'DBXD.DE': 'Xtrackers DAX', 'IS04.DE': 'iShares MSCI World', 'EGLN.DE': 'iShares Physical Gold',
 }
 
 # --- ASSET SECTORS ---
@@ -268,30 +268,30 @@ TICKER_SECTORS = {
 # The active universe used by the engine (Primary Tickers)
 ASSET_UNIVERSE = [
     # --- Tech & Semiconductors ---
-    'APC.DE', 'MSF.DE', 'AMZ.DE', 'NVD.DE', 'ABE.DE', 'FB2A.DE', 'TL0.DE', 
-    'CAS.DE', 'ADB.DE', 'NFC.DE', 'AMD.DE', 'INZ.DE', 'QCI.DE', 'ASQ.DE', 
-    'MTH.DE', 'TNA.DE', 'ORC.DE', 'TSFA.DE', 'KLAC', '6N0.DE', '6SN.DE', 
-    '18U.DE', '2PY.DE', '6SP.DE', '2H1.DE', 'FIG',
+    'APC.DE', 'MSF.DE', 'AMZ.DE', 'NVD.DE', 'ABEA.DE', 'FB2A.DE', 'TL0.DE', 
+    'SFC.DE', 'ADB.DE', 'NFC.DE', 'AMD.DE', '1IN.DE', 'QCI.DE', 'AP2.DE', 
+    'MTU.DE', 'TII.DE', 'ORC.DE', 'TSM.DE', 'KLAC', 'NOW.DE', 'SNW.DE', 
+    'UT8.DE', 'PYPL.DE', '639.DE', 'SHOP.DE', 'FIG',
     
     # --- European Blue Chips ---
     'SAP.DE', 'ALV.DE', 'SIE.DE', 'BAYN.DE', 'BMW.DE', 'DTE.DE', 'BAS.DE', 
     'MBG.DE', 'ADS.DE', 'MUV2.DE', 'DBK.DE', 'ENR.DE', 'IFX.DE', 'VOW3.DE', 
     'RWE.DE', 'CON.DE', 'FRE.DE', 'VNA.DE', 'HEN3.DE', 'BEI.DE', 'ZAL.DE', 
-    'MTX.DE', 'NDX1.DE', 'ARGX.BR', 'ARGX.DE', 'UCB.BR', 'UCB.DE', 'SHL.DE', 
+    'MTX.DE', 'NDX1.DE', 'ARGX.BR', 'UCB.BR', 'SHL.DE', 
     'COK.DE', 'AIR.DE', 'AZN.L', 'SHELL.AS', 'TTE.PA', 'BP.L', 'ASML.AS', 
-    'ASML.NA', 'NOV.DE', 'S92G.DE',
+    'NOV.DE', 'S92.DE',
 
     # --- Financials & Consumer ---
-    '3V64.DE', 'CMC.DE', 'NCB.DE', 'GOS.DE', 'M9N.DE', 'BRYN.DE', 'AEC.DE', 
-    'BLA.DE', 'KO', 'MCD', 'WMT', 'HD', 'COST', 'NKE', 'SBUX', 'DIS', 'LOW',
+    '3V64.DE', 'CMC.DE', 'NCB.DE', 'GOS.DE', 'DWD.DE', 'BRYN.DE', 'AXP.DE', 
+    'BLQA.DE', 'KO', 'MCD', 'WMT', 'HD', 'COST', 'NKE', 'SBUX', 'DIS', 'LOW',
     
     # --- Healthcare & Biotech ---
     'UNH', 'JNJ', 'PFE', 'LLY', 'ABBV', 'MRK', 'AMGN', 'GILD', 'TMO', 'BNTX', 
     'VRTX', 'AXSM', 'NVS', 'ATAI',
 
     # --- Energy, Mining & Industrials ---
-    'XOM', 'CVX', 'NEE', 'FSLR', 'GEV', 'CCJ', 'CEG', 'SMR', 'OKLO', 'REP', 
-    'ENB', 'ENGI', 'BE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN', 'C1E.DE',
+    'XOM', 'CVX', 'NEE', 'FSLR', 'GEV', 'CCJ', 'CEG', 'SMR', 'OKLO', 'REP.DE', 
+    'ENB.DE', 'EGI.DE', 'BLM.DE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN', 'C1E.DE',
     'BA', 'CAT', 'LMT', 'RTX', 'GE', 'HON', 'UPS', 'DE', 'RHM.DE'
 ]
 

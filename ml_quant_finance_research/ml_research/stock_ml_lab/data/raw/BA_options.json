@@ -1,16 +1,16 @@
 {
   "ticker": "BA",
-  "fetched_at": "2026-05-13T12:49:45",
-  "iv_atm": 0.002,
-  "iv_call_atm": 0.0039,
+  "fetched_at": "2026-05-15T11:29:25",
+  "iv_atm": 0.0039,
+  "iv_call_atm": 0.0078,
   "iv_put_atm": 0.0,
   "iv_skew": 0.0,
-  "iv_rv_spread": -0.3311,
-  "iv_change_5d": -0.3611,
-  "pc_ratio": 0.2782,
-  "short_pct_float": 0.002,
-  "short_ratio": 0.24,
-  "shares_short": 1572642.0,
-  "shares_short_prior": 1955447.0,
-  "short_change": -0.1958
+  "iv_rv_spread": -0.3292,
+  "iv_change_5d": 0.0019,
+  "pc_ratio": 0.2403,
+  "short_pct_float": 0.0023999999,
+  "short_ratio": 0.29,
+  "shares_short": 1856254.0,
+  "shares_short_prior": 1318427.0,
+  "short_change": 0.4079
 }

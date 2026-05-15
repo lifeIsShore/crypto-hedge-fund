@@ -244,18 +244,19 @@ def _sync_regime_history_to_db(csv_path: str):
             for _, row in df.iterrows():
                 session.execute(text("""
                     INSERT INTO regime_history
-                        (date, regime_risk, regime_rates, regime_growth, regime_composite,
+                        (date, region, regime_risk, regime_rates, regime_growth, regime_composite,
                          transition_warning, ew_active_count,
                          vix, yield_spread, hy_spread, fed_funds, computed_at)
-                    VALUES (:date,:risk,:rates,:growth,:composite,:ew_flag,:ew_count,
+                    VALUES (:date,:region,:risk,:rates,:growth,:composite,:ew_flag,:ew_count,
                             :vix,:yield_spread,:hy_spread,:fed_funds,datetime('now'))
-                    ON CONFLICT(date) DO UPDATE SET
+                    ON CONFLICT(date, region) DO UPDATE SET
                         regime_risk=:risk, regime_rates=:rates, regime_growth=:growth,
                         regime_composite=:composite, transition_warning=:ew_flag,
                         ew_active_count=:ew_count, vix=:vix,
                         yield_spread=:yield_spread, hy_spread=:hy_spread, fed_funds=:fed_funds
                 """), {
                     'date': str(row.get('date', '')),
+                    'region': row.get('region', 'US'),
                     'risk': row.get('regime_risk'), 'rates': row.get('regime_rates'),
                     'growth': row.get('regime_growth'), 'composite': row.get('regime_composite'),
                     'ew_flag': int(row.get('transition_warning', 0)),

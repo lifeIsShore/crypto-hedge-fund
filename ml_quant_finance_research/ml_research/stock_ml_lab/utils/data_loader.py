@@ -14,66 +14,25 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# UNIVERSE  (matches portfolio/src/config.py ASSET_UNIVERSE)
+# UNIVERSE  (Single Source of Truth: syncs with portfolio/src/config.py)
 # ─────────────────────────────────────────────────────────────────────────────
+import sys
+from pathlib import Path
 
-UNIVERSE = {
-    # ── US Mega-Cap Tech ──────────────────────────────────────────────────────
-    "APC.DE": "Technology",   "MSF.DE": "Technology",   "AMZN": "Consumer Disc",
-    "NVDA":   "Technology",   "GOOGL":  "Technology",   "META": "Communication",
-    "TSLA":   "Consumer Disc","CRM":    "Technology",   "ADBE": "Technology",
-    "NFLX":   "Communication","NOW":    "Technology",   "ORCL": "Technology",
-    "SNOW":   "Technology",   "UBER":   "Technology",   "MSFT":   "Technology",
+# Resolve repo root and add to sys.path to import central config
+_HERE = Path(__file__).resolve()
+_ROOT = _HERE.parents[4]  # ml_research/stock_ml_lab/utils/data_loader.py -> root
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
-    # ── US Semiconductors ─────────────────────────────────────────────────────
-    "AMD":  "Semiconductors", "INTC": "Semiconductors", "QCOM": "Semiconductors",
-    "AMAT": "Semiconductors", "MU":   "Semiconductors", "TXN":  "Semiconductors",
-    "TSM":  "Semiconductors",
-
-    # ── US Financials ─────────────────────────────────────────────────────────
-    "V":    "Financials", "MA":    "Financials", "JPM":   "Financials",
-    "BAC":  "Financials", "GS":    "Financials", "MS":    "Financials",
-    "BRK-B":"Diversified", "AXP":  "Financials", "BLK":   "Financials",
-    "PYPL": "Financials",
-
-    # ── US Healthcare ─────────────────────────────────────────────────────────
-    "UNH":  "Healthcare", "JNJ":  "Healthcare", "PFE":  "Healthcare",
-    "LLY":  "Healthcare", "ABBV": "Healthcare", "MRK":  "Healthcare",
-    "AMGN": "Healthcare", "GILD": "Healthcare", "TMO":  "Healthcare",
-    "BNTX": "Healthcare",
-
-    # ── US Consumer ───────────────────────────────────────────────────────────
-    "KO":   "Consumer Staples", "MCD":  "Consumer Disc", "WMT": "Consumer Staples",
-    "HD":   "Consumer Disc",    "COST": "Consumer Staples","NKE": "Consumer Disc",
-    "SBUX": "Consumer Disc",    "DIS":  "Communication",  "LOW": "Consumer Disc",
-
-    # ── US Energy & Industrials ───────────────────────────────────────────────
-    "XOM":  "Energy",      "CVX":  "Energy",      "NEE":  "Energy",
-    "BA":   "Industrials", "CAT":  "Industrials", "LMT":  "Industrials",
-    "RTX":  "Industrials", "GE":   "Industrials", "HON":  "Industrials",
-    "UPS":  "Industrials", "DE":   "Industrials", "FSLR": "Energy",
-
-    # ── European Blue-Chips — DAX ─────────────────────────────────────────────
-    "SAP.DE":  "Technology",    "ALV.DE":  "Financials",    "SIE.DE":  "Industrials",
-    "BAYN.DE": "Healthcare",    "BMW.DE":  "Consumer Disc", "DTE.DE":  "Communication",
-    "BAS.DE":  "Chemicals",     "MBG.DE":  "Consumer Disc", "ADS.DE":  "Consumer Disc",
-    "MUV2.DE": "Financials",    "DBK.DE":  "Financials",    "ENR.DE":  "Energy",
-    "IFX.DE":  "Semiconductors","VOW3.DE": "Consumer Disc", "RWE.DE":  "Energy",
-    "CON.DE":  "Industrials",   "AIR.DE":  "Aerospace",
-    "NDX1.DE": "Energy",      "ARGX.BR": "Healthcare",    "UCB.BR":  "Healthcare",
-    "SHL.DE":  "Healthcare",    "COK.DE":  "Technology",
-
-    # ── European — Other exchanges ────────────────────────────────────────────
-    "ASML.AS": "Semiconductors","SHELL.AS": "Energy",       "TTE.PA":  "Energy",
-    "NOV.DE":  "Healthcare",
-
-    # ── Psychedelic Biotech ───────────────────────────────────────────────────
-    "ATAI": "Healthcare",
-
-    # ── ETFs (broad-market proxies) ───────────────────────────────────────────
-    "EUNL.DE": "ETF", "VUSA.DE": "ETF", "VWCE.DE": "ETF",
-    "EXS1.DE": "ETF", "EXXT.DE": "ETF", "SPPW.DE": "ETF",
-}
+try:
+    from portfolio.src.config import ASSET_UNIVERSE, TICKER_SECTORS
+    # Create the UNIVERSE dict expected by the ML pipeline (ticker -> sector)
+    UNIVERSE = {t: TICKER_SECTORS.get(t, "Unknown") for t in ASSET_UNIVERSE}
+except ImportError:
+    log.error("Could not import central config from portfolio.src.config. Check PYTHONPATH.")
+    # Fallback to empty if absolutely necessary, but this should error in production
+    UNIVERSE = {}
 
 MACRO_SERIES = {
     "fed_funds":  "FEDFUNDS",

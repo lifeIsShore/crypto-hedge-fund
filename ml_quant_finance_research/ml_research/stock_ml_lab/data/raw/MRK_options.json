@@ -1,16 +1,16 @@
 {
   "ticker": "MRK",
-  "fetched_at": "2026-05-13T12:49:36",
+  "fetched_at": "2026-05-15T11:29:17",
   "iv_atm": 0.0039,
   "iv_call_atm": 0.0,
   "iv_put_atm": 0.0078,
   "iv_skew": 0.0,
   "iv_rv_spread": -0.2636,
-  "iv_change_5d": -0.3211,
-  "pc_ratio": 7.4844,
-  "short_pct_float": 0.0111,
-  "short_ratio": 2.82,
-  "shares_short": 27495690.0,
-  "shares_short_prior": 29144880.0,
-  "short_change": -0.0566
+  "iv_change_5d": 0.0,
+  "pc_ratio": 3.3431,
+  "short_pct_float": 0.0106,
+  "short_ratio": 2.77,
+  "shares_short": 26205868.0,
+  "shares_short_prior": 27720957.0,
+  "short_change": -0.0547
 }

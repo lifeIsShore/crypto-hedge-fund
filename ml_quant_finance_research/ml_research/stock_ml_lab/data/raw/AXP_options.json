@@ -1,16 +1,16 @@
 {
   "ticker": "AXP",
-  "fetched_at": "2026-05-13T12:49:30",
-  "iv_atm": 0.002,
-  "iv_call_atm": 0.0039,
-  "iv_put_atm": 0.0,
+  "fetched_at": "2026-05-15T11:29:12",
+  "iv_atm": 0.001,
+  "iv_call_atm": 0.0,
+  "iv_put_atm": 0.002,
   "iv_skew": 0.0,
-  "iv_rv_spread": -0.2645,
-  "iv_change_5d": -0.3093,
-  "pc_ratio": 1.1311,
-  "short_pct_float": 0.0209,
-  "short_ratio": 3.5,
-  "shares_short": 11051829.0,
-  "shares_short_prior": 11020698.0,
-  "short_change": 0.0028
+  "iv_rv_spread": -0.2655,
+  "iv_change_5d": -0.001,
+  "pc_ratio": 0.1257,
+  "short_pct_float": 0.0277,
+  "short_ratio": 4.65,
+  "shares_short": 14694400.0,
+  "shares_short_prior": 12456994.0,
+  "short_change": 0.1796
 }

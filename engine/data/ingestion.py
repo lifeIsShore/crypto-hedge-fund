@@ -83,16 +83,21 @@ def fetch_fx_history(from_date: str, to_date: str) -> dict:
                 else:
                     series = data['Close']
                 
-                # Squeeze to handle redundant dimensions
-                series = series.squeeze()
-                if isinstance(series, pd.DataFrame):
+                # Squeeze to handle redundant dimensions, but ensure we have a Series/DataFrame
+                if isinstance(series, pd.DataFrame) and series.shape[1] == 1:
                     series = series.iloc[:, 0]
                 
-                series = series.dropna()
+                if hasattr(series, 'dropna'):
+                    series = series.dropna()
+                
                 if invert: series = 1 / series
                 
-                for date_idx, val in series.items():
-                    rates[name][str(date_idx.date())] = float(val)
+                if isinstance(series, (float, np.float64)):
+                    # Handle scalar case if squeeze was too aggressive
+                    rates[name][from_date] = float(series)
+                else:
+                    for date_idx, val in series.items():
+                        rates[name][str(date_idx.date())] = float(val)
                 logger.info(f"FX fetched from yfinance: {name}")
                 continue
         except Exception as e:
@@ -441,62 +446,49 @@ async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.Da
         for ticker in tickers:
             df = pd.DataFrame()
             
-            # --- Try Primary Ticker ---
-            # Sequence: yfinance (Free) -> Polygon -> TwelveData -> Finnhub -> AlphaVantage
+            # 1. Try Primary Ticker (Yahoo Finance & Polygon)
             try:
-                # 1. yfinance
                 df = _fetch_yfinance_single(ticker, from_date, to_date)
-                
-                # 2. Polygon
                 if df.empty and use_polygon:
                     df = await _fetch_polygon_single(http_session, ticker, from_date, to_date)
-                
-                # 3. TwelveData
-                if df.empty:
-                    df = await _fetch_twelvedata_single(http_session, ticker, from_date, to_date)
-                
-                # 4. Finnhub
-                if df.empty:
-                    df = await _fetch_finnhub_single(http_session, ticker, from_date, to_date)
-
-                # 5. AlphaVantage
-                if df.empty:
-                    df = await _fetch_alphavantage_single(http_session, ticker, from_date, to_date)
-                    
             except Exception as e:
-                logger.warning(f"Primary fetch chain failed for {ticker}: {e}")
+                logger.warning(f"Primary fetch failed for {ticker}: {e}")
 
-            # --- Fallback to US Ticker if Primary fails ---
+            # 2. Try Fallback Ticker (yfinance -> Backups)
             if df.empty and ticker in TICKER_MAPPING:
                 fallback_ticker = TICKER_MAPPING[ticker]
-                logger.info(f"Primary {ticker} failed or empty — trying fallback: {fallback_ticker}")
+                logger.info(f"Primary {ticker} failed/empty — trying fallback: {fallback_ticker}")
                 try:
-                    # 1. yfinance
+                    # Try Yahoo for US version
                     df = _fetch_yfinance_single(fallback_ticker, from_date, to_date)
                     
-                    # 2. Polygon
-                    if df.empty and use_polygon:
-                        df = await _fetch_polygon_single(http_session, fallback_ticker, from_date, to_date)
-                    
-                    # 3. TwelveData
+                    # Try Backups for US version (these are more likely to succeed than for .DE)
                     if df.empty:
                         df = await _fetch_twelvedata_single(http_session, fallback_ticker, from_date, to_date)
-                    
-                    # 4. Finnhub
                     if df.empty:
                         df = await _fetch_finnhub_single(http_session, fallback_ticker, from_date, to_date)
-
-                    # 5. AlphaVantage
                     if df.empty:
                         df = await _fetch_alphavantage_single(http_session, fallback_ticker, from_date, to_date)
                     
                     if not df.empty:
-                        # CRITICAL: We tag the data with the ORIGINAL (Primary) ticker
-                        # so the rest of the engine (ledger, optimizer) recognizes it.
-                        df['ticker'] = ticker
-                        logger.info(f"Successfully fetched fallback data for {ticker} using {fallback_ticker}")
+                        df['ticker'] = ticker  # Tag with original
+                        logger.info(f"Successfully fetched fallback data for {ticker} via {fallback_ticker}")
                 except Exception as e:
-                    logger.warning(f"Fallback fetch chain failed for {fallback_ticker}: {e}")
+                    logger.warning(f"Fallback fetch failed for {fallback_ticker}: {e}")
+
+            # 3. Final Backup for Primary (if no fallback exists or fallback also failed)
+            if df.empty:
+                try:
+                    df = await _fetch_twelvedata_single(http_session, ticker, from_date, to_date)
+                    if df.empty:
+                        df = await _fetch_finnhub_single(http_session, ticker, from_date, to_date)
+                except Exception:
+                    pass
+
+            if not df.empty:
+                frames.append(df)
+            else:
+                logger.warning(f"All sources failed for {ticker} — skipped")
 
             if not df.empty:
                 frames.append(df)

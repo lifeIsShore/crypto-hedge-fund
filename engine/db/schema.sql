@@ -265,7 +265,8 @@ CREATE TABLE IF NOT EXISTS laggard_screen_results (
 -- Replaces regime_history.csv. JOINable with signals and price_targets
 -- for regime-stratified hit rate queries.
 CREATE TABLE IF NOT EXISTS regime_history (
-    date               TEXT    PRIMARY KEY,
+    date               TEXT    NOT NULL,
+    region             TEXT    NOT NULL DEFAULT 'US',
     regime_risk        TEXT,   -- 'Risk-On' | 'Risk-Off' | 'Neutral'
     regime_rates       TEXT,   -- 'Easing'  | 'Tightening' | 'Neutral'
     regime_growth      TEXT,   -- 'Expansion' | 'Slowdown' | 'Contraction' | 'Recovery'
@@ -276,7 +277,8 @@ CREATE TABLE IF NOT EXISTS regime_history (
     yield_spread       REAL,
     hy_spread          REAL,
     fed_funds          REAL,
-    computed_at        TEXT    DEFAULT (datetime('now'))
+    computed_at        TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, region)
 );
 
 -- ─────────────────────────────────────────────────────────────

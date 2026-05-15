@@ -1,0 +1,18 @@
+{
+  "region": "EU",
+  "generated_at": "2026-05-15T12:38:07.417381",
+  "as_of_date": "2026-05-15",
+  "regime_risk": "Neutral",
+  "regime_rates": "Neutral",
+  "regime_growth": "Slowdown",
+  "regime_composite": "Neutral_Neutral_Slowdown",
+  "transition_warning": false,
+  "ew_active_count": 0,
+  "macro_snapshot": {
+    "vix": 18.72,
+    "yield_spread": 0.0,
+    "hy_spread": 2.62,
+    "fed_funds": 0.0
+  },
+  "regime_changed_today": true
+}

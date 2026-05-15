@@ -1,16 +1,16 @@
 {
   "ticker": "JNJ",
-  "fetched_at": "2026-05-13T12:49:33",
+  "fetched_at": "2026-05-15T11:29:14",
   "iv_atm": 0.0039,
-  "iv_call_atm": 0.0078,
-  "iv_put_atm": 0.0,
+  "iv_call_atm": 0.0,
+  "iv_put_atm": 0.0078,
   "iv_skew": 0.0,
   "iv_rv_spread": -0.1637,
-  "iv_change_5d": -0.2913,
-  "pc_ratio": 1.0356,
-  "short_pct_float": 0.0091,
-  "short_ratio": 2.59,
-  "shares_short": 19671868.0,
-  "shares_short_prior": 23327094.0,
-  "short_change": -0.1567
+  "iv_change_5d": 0.0,
+  "pc_ratio": 0.555,
+  "short_pct_float": 0.010299999,
+  "short_ratio": 2.94,
+  "shares_short": 22349005.0,
+  "shares_short_prior": 22265636.0,
+  "short_change": 0.0037
 }

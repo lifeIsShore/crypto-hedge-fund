@@ -52,7 +52,7 @@
 
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title info-point" data-title="RETURN DISTRIBUTION" data-info="A histogram showing the frequency of different price outcomes from 10,000 random 'walks'.">RETURN DISTRIBUTION — 10,000 PATHS · 21D</span>
+      <span class="panel-title info-point" data-title="RETURN DISTRIBUTION" data-info="A histogram showing the frequency of different price outcomes from 10,000 random 'walks'." id="mc-title">RETURN DISTRIBUTION — 10,000 PATHS · 21D</span>
       <span class="panel-badge info-point" data-title="LOGNORMAL MONTE CARLO" data-info="A simulation method assuming prices follow a lognormal distribution (prices stay positive, returns are compounded).">LOGNORMAL MC</span>
     </div>
     <div class="panel-body">
@@ -93,7 +93,7 @@
 
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
-    <span class="panel-title info-point" data-title="PORTFOLIO-LEVEL RISK" data-info="Aggregated risk assessment of all your holdings based on 10,000 simulated market paths.">PORTFOLIO-LEVEL RISK — WEIGHTED MONTE CARLO</span>
+    <span class="panel-title info-point" data-title="YOUR PORTFOLIO RISK" data-info="Based on your holdings: Aggregated risk assessment of your actual capital across 10,000 simulated market paths.">YOUR PORTFOLIO RISK — WEIGHTED MONTE CARLO</span>
     <span class="panel-badge">21D HORIZON</span>
   </div>
   <div class="panel-body">
@@ -115,6 +115,19 @@
         </div>
       </div>
       <div class="chart-wrap" style="height:160px;margin-top:14px"><canvas id="portMcChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title info-point" data-title="INSTITUTIONAL COMPARISON" data-info="Monte Carlo simulations for key market benchmarks and your largest portfolio positions.">INSTITUTIONAL BENCHMARKS &amp; TOP HOLDINGS</span>
+    <span class="panel-tag">21D HORIZON</span>
+  </div>
+  <div class="panel-body">
+    <div id="inst-mc-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px">
+      <!-- Cards will be injected here -->
+      <div style="color:var(--muted); font-size:11px">Loading institutional benchmarks...</div>
     </div>
   </div>
 </div>
@@ -174,6 +187,7 @@ function loadTicker(ticker){
   document.getElementById('k-stop-sub').textContent=`-${dn_pct.toFixed(1)}%`;
   document.getElementById('k-rr').textContent=rr.toFixed(2)+'x';
   document.getElementById('k-kelly').textContent=kelly.toFixed(1)+'%';
+  document.getElementById('mc-title').textContent=`RETURN DISTRIBUTION — ${ticker}`;
 
   // ── Ticker MC: call Python endpoint instead of browser RNG ──
   fetch(`/api/ticker_mc/${ticker}`)
@@ -288,6 +302,70 @@ async function loadRisk(){
       });
     })
     .catch(e=>console.error('portfolio_mc error:', e));
+
+  // ── Institutional MC: benchmarks + top holdings ──
+  loadInstitutionalMC();
+}
+
+async function loadInstitutionalMC() {
+  try {
+    const res = await fetch('/api/institutional_mc');
+    const data = await res.json();
+    const grid = document.getElementById('inst-mc-grid');
+    grid.innerHTML = '';
+
+    const all = [
+      ...(data.benchmarks || []),
+      ...(data.holdings || [])
+    ];
+
+    if (!all.length) {
+      grid.innerHTML = '<div style="color:var(--muted); font-size:11px">No simulation data available.</div>';
+      return;
+    }
+
+    all.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'panel';
+      card.style.background = 'var(--panel-bg)';
+      card.style.border = '1px solid var(--border)';
+      card.style.padding = '12px';
+      
+      const isNegative = s.exp_ret_pct < 0;
+      const retColor = isNegative ? 'var(--accent2)' : 'var(--accent)';
+      const typeLabel = s.type === 'benchmark' ? 'BENCHMARK' : s.type === 'holding' ? 'TOP HOLDING' : 'AD-HOC';
+      const typeColor = s.type === 'benchmark' ? 'var(--accent3)' : s.type === 'holding' ? 'var(--accent)' : 'var(--accent4)';
+
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px">
+          <div>
+            <div style="font-size:16px; font-weight:700; color:#fff; letter-spacing:0.02em">${s.ticker} <span style="font-size:11px; color:rgba(255,255,255,0.4); font-weight:400">(${tickerNames[s.ticker] || ''})</span></div>
+            <div style="font-size:10px; color:${typeColor}; letter-spacing:.1em; font-weight:700">${typeLabel}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px; color:${retColor}; font-weight:700">${s.exp_ret_pct > 0 ? '+' : ''}${s.exp_ret_pct}%</div>
+            <div style="font-size:9px; color:rgba(255,255,255,0.5); font-weight:600">EXPECTED 21D</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px">
+          <div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.5); font-weight:600; text-transform:uppercase">Win Prob</div>
+            <div style="font-size:13px; color:#fff; font-weight:700">${s.win_prob}%</div>
+          </div>
+          <div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.5); font-weight:600; text-transform:uppercase">VaR (5%)</div>
+            <div style="font-size:13px; color:var(--accent2); font-weight:700">${s.var5_pct}%</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; height:5px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden">
+          <div style="height:100%; width:${s.win_prob}%; background:${retColor}"></div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  } catch (e) {
+    console.error('Failed to load institutional MC:', e);
+  }
 }
 
 loadRisk();

@@ -1,16 +1,16 @@
 {
   "ticker": "JPM",
-  "fetched_at": "2026-05-13T12:49:26",
+  "fetched_at": "2026-05-15T11:29:08",
   "iv_atm": 0.0005,
   "iv_call_atm": 0.001,
   "iv_put_atm": 0.0,
   "iv_skew": 0.0,
   "iv_rv_spread": -0.1997,
-  "iv_change_5d": -0.2772,
-  "pc_ratio": 0.6573,
-  "short_pct_float": 0.0101,
-  "short_ratio": 2.66,
-  "shares_short": 27013153.0,
-  "shares_short_prior": 23969779.0,
-  "short_change": 0.127
+  "iv_change_5d": 0.0,
+  "pc_ratio": 0.4728,
+  "short_pct_float": 0.0094,
+  "short_ratio": 2.93,
+  "shares_short": 25148393.0,
+  "shares_short_prior": 26075881.0,
+  "short_change": -0.0356
 }

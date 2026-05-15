@@ -75,6 +75,46 @@
 
 </div>
 
+<div class="grid grid-2-1" style="margin-top:14px">
+  <!-- Portfolio Risk -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title info-point" data-title="YOUR PORTFOLIO RISK" data-info="Based on your holdings: Aggregated risk assessment of your actual capital across 10,000 simulated market paths.">YOUR PORTFOLIO RISK — WEIGHTED MONTE CARLO</span>
+      <span class="panel-badge">21D HORIZON</span>
+    </div>
+    <div class="panel-body">
+      <div id="port-risk-content">
+        <div class="kpi-strip" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
+          <div class="kpi danger" style="padding:10px">
+            <div class="kpi-label info-point" data-title="VaR (95%)" data-info="Max loss expected over 21 days with 95% confidence.">VaR 95%</div>
+            <div class="kpi-value" style="font-size:18px" id="pv-var5">—</div>
+          </div>
+          <div class="kpi danger" style="padding:10px">
+            <div class="kpi-label info-point" data-title="CVaR (95%)" data-info="Average loss in the worst 5% of outcomes.">CVaR 95%</div>
+            <div class="kpi-value" style="font-size:18px" id="pv-cvar5">—</div>
+          </div>
+          <div class="kpi danger" style="padding:10px">
+            <div class="kpi-label info-point" data-title="VaR (99%)" data-info="Extreme tail risk with 99% confidence.">VaR 99%</div>
+            <div class="kpi-value" style="font-size:18px" id="pv-var1">—</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:140px;margin-top:14px"><canvas id="portMcChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Institutional Benchmarks -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title info-point" data-title="INSTITUTIONAL CONTEXT" data-info="Comparison of your portfolio risk against major market benchmarks.">MARKET vs TOP HOLDINGS</span>
+      <span class="panel-badge">MONTE CARLO</span>
+    </div>
+    <div class="panel-body" id="inst-mc-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:4px">
+      <div style="color:var(--muted); font-size:11px">Loading simulations...</div>
+    </div>
+  </div>
+</div>
+
 <!-- Trade Advisor -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
@@ -104,12 +144,12 @@
 <script id="ticker-sectors-data" type="application/json">{{ ticker_sectors | tojson | safe }}</script>
 
 <script>
-let weightsChart = null;
+let weightsChart = null, portMcChart = null;
 
 async function loadOverview(){
   const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
   const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
-  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes] = await Promise.all([
+  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes, pmRes, instRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),
     fetch('/api/ml').then(r=>r.json()).catch(()=>({})),
@@ -117,6 +157,8 @@ async function loadOverview(){
     fetch('/api/rebalance').then(r=>r.json()).catch(()=>({})),
     fetch('/api/trades').then(r=>r.json()).catch(()=>([])),
     fetch('/api/price_targets').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/portfolio_mc').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/institutional_mc').then(r=>r.json()).catch(()=>({})),
   ]);
 
   const positions = posRes.positions || [];
@@ -235,6 +277,44 @@ async function loadOverview(){
       <td>${t.quantity!=null?(+t.quantity).toFixed(0):'—'}</td>
       <td>${fmtEur(t.price_eur)}</td>
     </tr>`).join('');
+  }
+
+  // Portfolio MC Chart
+  if(pmRes && pmRes.counts){
+    document.getElementById('pv-var5').textContent = pmRes.var5_pct + '%';
+    document.getElementById('pv-cvar5').textContent = pmRes.cvar5_pct + '%';
+    document.getElementById('pv-var1').textContent = pmRes.var1_pct + '%';
+    if(portMcChart) portMcChart.destroy();
+    portMcChart = new Chart(document.getElementById('portMcChart'),{
+      type:'bar',
+      data:{labels:pmRes.labels.map(e=>e.toFixed(1)+'%'),datasets:[{label:'Portfolio return %',data:pmRes.counts,backgroundColor:pmRes.labels.map(e=>e>=0?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8},grid:{display:false}},y:{ticks:{maxTicksLimit:4}}}}
+    });
+  }
+
+  // Institutional Context
+  if(instRes){
+    const instList = document.getElementById('inst-mc-list');
+    const all = [...(instRes.benchmarks || []), ...(instRes.holdings || [])];
+    instList.innerHTML = all.map(s => {
+      const isNeg = s.exp_ret_pct < 0;
+      const typeColor = s.type === 'benchmark' ? 'var(--accent3)' : 'var(--accent)';
+      return `
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#fff; letter-spacing:0.02em">${s.ticker} <span style="font-size:10px; color:rgba(255,255,255,0.4); font-weight:400">(${tickerNames[s.ticker] || ''})</span></div>
+            <div style="font-size:9px; color:${typeColor}; letter-spacing:0.05em; font-weight:600">${s.type.toUpperCase()}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px; color:${isNeg?'var(--accent2)':'var(--accent)'}; font-weight:700">${s.exp_ret_pct>0?'+':''}${s.exp_ret_pct}%</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.5); font-weight:500">
+              <span style="color:#fff">${s.win_prob}%</span> Win | 
+              <span style="color:var(--accent2)">${s.var5_pct}%</span> VaR
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   // Trade advisor (rebalance)

@@ -46,7 +46,7 @@ import pandas as pd
 # ── Config ────────────────────────────────────────────────────────────────────
 HORIZONS      = [5, 21, 63]
 PRIMARY_HOR   = 21            # main horizon for signals / ensemble
-SCENARIO_TICKERS = ["MSFT", "TSLA", "AMZN", "META"]   # tickers to run MC on
+SCENARIO_TICKERS = ["MSF.DE", "TL0.DE", "AMZ.DE", "FB2A.DE"]   # Xetra versions matching central config
 MODELS = {
     "Baseline_Random":    None,   # coin-flip
     "Baseline_Momentum":  None,   # yesterday's direction

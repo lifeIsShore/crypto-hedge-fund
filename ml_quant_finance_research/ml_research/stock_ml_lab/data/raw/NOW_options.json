@@ -1,16 +1,16 @@
 {
   "ticker": "NOW",
-  "fetched_at": "2026-05-13T12:49:16",
-  "iv_atm": 0.0001,
-  "iv_call_atm": 0.0001,
-  "iv_put_atm": 0.0001,
+  "fetched_at": "2026-05-15T11:28:58",
+  "iv_atm": 0.0078,
+  "iv_call_atm": 0.0156,
+  "iv_put_atm": 0.0,
   "iv_skew": 0.0,
-  "iv_rv_spread": -0.9143,
-  "iv_change_5d": -0.5705,
-  "pc_ratio": 0.6338,
-  "short_pct_float": 0.0378,
-  "short_ratio": 2.0,
-  "shares_short": 38945953.0,
-  "shares_short_prior": 27906982.0,
-  "short_change": 0.3956
+  "iv_rv_spread": -0.9066,
+  "iv_change_5d": 0.0077,
+  "pc_ratio": 0.2687,
+  "short_pct_float": 0.0478,
+  "short_ratio": 1.81,
+  "shares_short": 49223239.0,
+  "shares_short_prior": 29878635.0,
+  "short_change": 0.6474
 }

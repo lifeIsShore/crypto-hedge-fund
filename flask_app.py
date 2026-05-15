@@ -830,6 +830,79 @@ def api_portfolio_mc():
     })
 
 
+def _get_single_mc_summary(ticker, n_paths=5000):
+    """Helper to run a quick MC and return key metrics (no full histogram)."""
+    rows = _q("""
+        SELECT up_proba, vol_ann, current_price_eur
+        FROM price_targets
+        WHERE ticker = :t
+        AND date = (SELECT MAX(date) FROM price_targets WHERE ticker = :t)
+    """, {"t": ticker})
+    if not rows:
+        return None
+    
+    r = rows[0]
+    cur   = float(r["current_price_eur"] or 0)
+    up_p  = float(r["up_proba"] or 0.5)
+    vol   = float(r["vol_ann"] or 0.25)
+    t_val = 21 / 252
+    edge  = (up_p - 0.5) * 2
+    drift = edge * vol * t_val
+    sigma = vol * np.sqrt(t_val)
+
+    rng = np.random.default_rng()
+    sim_ret = rng.normal(drift, sigma, n_paths)
+    sim_prices = cur * np.exp(sim_ret)
+
+    var5  = float(np.percentile(sim_prices, 5))
+    p_profit = float(np.mean(sim_prices > cur) * 100)
+    exp_21d  = float(np.mean(sim_prices))
+
+    return {
+        "ticker": ticker,
+        "current": round(cur, 2),
+        "expected": round(exp_21d, 2),
+        "var5": round(var5, 2),
+        "var5_pct": round((var5/cur - 1)*100, 2) if cur > 0 else 0,
+        "win_prob": round(p_profit, 1),
+        "exp_ret_pct": round((exp_21d/cur - 1)*100, 2) if cur > 0 else 0
+    }
+
+
+@app.route("/api/institutional_mc")
+def api_institutional_mc():
+    """Return MC summaries for an expanded set of benchmarks and top holdings."""
+    # 1. Benchmarks (Multi-Asset Class Context)
+    benchmarks = [
+        "VUSA.DE",  # S&P 500
+        "EXXT.DE",  # Nasdaq 100
+        "DBXD.DE",  # DAX 40 (EU/Local)
+        "IS04.DE",  # MSCI World (Global)
+        "EGLN.DE"   # Gold (Safe Haven)
+    ]
+    bench_results = []
+    for b in benchmarks:
+        summary = _get_single_mc_summary(b)
+        if summary:
+            summary["type"] = "benchmark"
+            bench_results.append(summary)
+            
+    # 2. All Portfolio Holdings (Dynamic from Ledger)
+    positions, _ = _live_positions()
+    pos_results = []
+    for p in positions:
+        ticker = p["ticker"]
+        summary = _get_single_mc_summary(ticker)
+        if summary:
+            summary["type"] = "holding"
+            pos_results.append(summary)
+            
+    return jsonify({
+        "benchmarks": bench_results,
+        "holdings": pos_results
+    })
+
+
 @app.route("/api/pipeline_status")
 def api_pipeline_status():
     rows = _q("""

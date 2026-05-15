@@ -1,16 +1,16 @@
 {
   "ticker": "V",
-  "fetched_at": "2026-05-13T12:49:25",
-  "iv_atm": 0.0039,
-  "iv_call_atm": 0.0078,
-  "iv_put_atm": 0.0,
+  "fetched_at": "2026-05-15T11:29:07",
+  "iv_atm": 0.0001,
+  "iv_call_atm": 0.0,
+  "iv_put_atm": 0.0003,
   "iv_skew": 0.0,
-  "iv_rv_spread": -0.3143,
-  "iv_change_5d": -0.2375,
-  "pc_ratio": 0.2889,
-  "short_pct_float": 0.014099999,
-  "short_ratio": 3.34,
-  "shares_short": 23418610.0,
-  "shares_short_prior": 26634362.0,
-  "short_change": -0.1207
+  "iv_rv_spread": -0.3181,
+  "iv_change_5d": -0.0038,
+  "pc_ratio": 0.0853,
+  "short_pct_float": 0.0139,
+  "short_ratio": 3.26,
+  "shares_short": 23124607.0,
+  "shares_short_prior": 23464129.0,
+  "short_change": -0.0145
 }

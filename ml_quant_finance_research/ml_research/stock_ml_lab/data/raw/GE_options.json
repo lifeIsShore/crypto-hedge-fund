@@ -1,16 +1,16 @@
 {
   "ticker": "GE",
-  "fetched_at": "2026-05-13T12:49:48",
-  "iv_atm": 0.0003,
-  "iv_call_atm": 0.0005,
+  "fetched_at": "2026-05-15T11:29:28",
+  "iv_atm": 0.0039,
+  "iv_call_atm": 0.0078,
   "iv_put_atm": 0.0,
   "iv_skew": 0.0,
-  "iv_rv_spread": -0.4453,
-  "iv_change_5d": -0.4037,
-  "pc_ratio": 0.1574,
-  "short_pct_float": 0.0121,
-  "short_ratio": 2.27,
-  "shares_short": 12654740.0,
-  "shares_short_prior": 11664907.0,
-  "short_change": 0.0849
+  "iv_rv_spread": -0.4417,
+  "iv_change_5d": 0.0036,
+  "pc_ratio": 0.5647,
+  "short_pct_float": 0.0162,
+  "short_ratio": 2.43,
+  "shares_short": 16874479.0,
+  "shares_short_prior": 12173633.0,
+  "short_change": 0.3861
 }
