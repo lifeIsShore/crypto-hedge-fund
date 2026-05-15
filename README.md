@@ -16,19 +16,23 @@ This platform executes a strict, sequential "Quant Assembly Line" every trading 
 
 ```mermaid
 graph TD
-    A[Data Ingestion<br>Polygon/yfinance + FX Convert] --> B[Feature Engineering<br>Momentum, Volatility, Techs]
-    B --> C(Alpha Models<br>ML + Quant Rules)
+    A[Data Ingestion<br>Polygon/yfinance/FRED<br>TwelveData/AlphaVantage/Finnhub] --> B[Feature Engineering<br>Momentum, Volatility, Techs]
+    B --> C(Alpha Models<br>ML + PEAD + Pairs/StatArb)
     C -->|Expected Returns + Confidence| D[Portfolio Construction<br>Black-Litterman Optimizer]
-    D -->|Constrained Target Weights| E[Risk Engine<br>VaR, Drawdown, Regime]
-    E --> F((Dashboard<br>Rebalance & Overrides))
+    D -->|Constrained Target Weights| E[Risk Engine<br>VaR, US/EU Regimes, Stress Tests]
+    E --> F((Flask Dashboard<br>Rebalance & Overrides))
 ```
 
-1. **Data Ingestion:** Safely pulls split/dividend-adjusted price data, handling FX rates automatically.
-2. **Feature Engineering:** Calculates indicators like Momentum, Volatility, and RSI.
-3. **Alpha Models:** Multiple independent models (including your ML models and PEAD engine) generate predictions.
-4. **Portfolio Construction:** Uses the **Black-Litterman** framework. It blends market equilibrium returns with your models' predictions to find stable, optimal portfolio weights.
-5. **Risk Engine:** Subjects the portfolio to stress tests (e.g., 2008 Crash, 2020 COVID) and tracks probabilistic regimes. 
-6. **Execution / Control Tower:** Displays the final suggestions on the Streamlit dashboard for you to review, approve, or override.
+1. **Data Ingestion:** Multi-tier fallback pipeline pulling data from **yfinance, FRED, TwelveData, AlphaVantage, and Finnhub**. Handles FX conversion and split-adjustments automatically.
+2. **Feature Engineering:** Calculates 50+ technical and fundamental indicators (Momentum, Volatility, RSI, etc.).
+3. **Alpha Models:** 
+    * **ML Stack:** XGBoost and LSTM models predicting 21-day returns.
+    * **PEAD Engine:** Post-Earnings Announcement Drift screener.
+    * **Pairs / Stat Arb:** Cointegration-based mean reversion scanner.
+    * **ETF Divergence:** Tracks internal asset flows vs index price action.
+4. **Portfolio Construction:** Uses the **Black-Litterman** framework. It blends market equilibrium returns with model predictions to find stable, optimal weights.
+5. **Risk Engine:** Subjects the portfolio to stress tests and tracks probabilistic **US and EU Macro Regimes** (Risk-On/Off, Growth Cycle, Rate Environment). 
+6. **Execution / Control Tower:** Displays final suggestions on the **Flask Terminal** for you to review, approve, or override.
 
 ---
 
@@ -37,8 +41,8 @@ graph TD
 Retail traders lose money because they optimize for raw returns without understanding risk, correlation, and transaction costs. This system is useful because it enforces **institutional constraints**:
 
 * **It prevents error amplification:** Standard Markowitz optimizers can confidently tell you to put 90% of your portfolio in one asset if it has a slightly higher historical return. The Black-Litterman framework prevents these absurd edge cases.
-* **It incorporates slippage:** The optimizer models a 0.05% bid-ask spread and turnover penalties. If an asset is suggested as a `BUY`, it's because the expected edge mathematically outweighs the cost to trade it.
-* **It catches silent risk:** The Risk Engine tracks VaR (Value at Risk) and CVaR (Expected Shortfall). If the market enters a high-stress regime, the dashboard will warn you before you blindly execute aggressive trades.
+* **It incorporates slippage:** The optimizer models bid-ask spreads and turnover penalties. If an asset is suggested as a `BUY`, it's because the expected edge mathematically outweighs the cost to trade it.
+* **It catches silent risk:** The Risk Engine tracks VaR (Value at Risk) and CVaR (Expected Shortfall). If the market enters a high-stress regime, the dashboard will warn you before you execute.
 
 ---
 
@@ -46,51 +50,45 @@ Retail traders lose money because they optimize for raw returns without understa
 
 Machine Learning models are notoriously difficult to trust in finance due to overfitting. This system is designed to **defend the portfolio against its own ML models**. 
 
-Here is how you monitor ML health, and how the system mathematically protects you:
+Here is how you monitor ML health:
 
 ### Metric 1: The Information Coefficient (IC)
-The system calculates the **Rolling IC** for every model. IC is the correlation between what the ML model predicted today and what the stock actually did tomorrow.
+The system calculates the **Rolling IC** (correlation between prediction and actual outcome).
 - **IC < 0.05**: Random noise. The model has no edge.
 - **IC 0.05 - 0.08**: Solid performance.
 - **IC > 0.10**: Exceptional performance.
 
 > [!TIP]
-> **Check the Dashboard:** Go to the "Model Health" page on your dashboard to view the rolling 21-day, 63-day, and 252-day IC for your ML models. If the 63-day IC starts trending negative, the market regime has shifted and the model needs retraining.
+> **Check the Dashboard:** Navigate to the **ML Research** tab to view rolling IC metrics. If the 63-day IC trends negative, the market regime has likely shifted.
 
-### Metric 2: Live-Approval Gates & Minimum AUC
-Your ML model evaluates probability (AUC - Area Under the Curve). 
-* **The Minimum AUC Gate:** If the ML model outputs an AUC of less than `0.53` for an asset, it means the model is effectively guessing a coin flip. The system automatically ignores the signal for that asset.
-* **Live-Approval Check:** A model must sustain an IC `> 0.05` for 21 consecutive trading days before it is allowed to heavily influence the portfolio weights.
-
-### The Ultimate Safety Net: Bayesian Confidence Scaling
-The Black-Litterman model requires two inputs from the ML model: an **Expected Return** and an **Uncertainty Scalar (Omega)**.
-The system dynamically scales Omega based on the ML model's recent IC:
-* If the ML model has a **high IC** (it's been highly accurate lately), Omega is lowered. The optimizer trusts the ML and aggressively alters your portfolio weights.
-* If the ML model has a **low IC** (it's currently failing), Omega skyrockets. The optimizer effectively ignores the ML model and defaults back to safe, standard market-cap weights.
-
-> [!CAUTION]
-> **The ML must earn its allocation.** It cannot blow up your portfolio because its influence is mathematically throttled by its own historical accuracy.
-
-### The Feedback Loop (Man vs. Machine)
-On the `Rebalance Suggestions` dashboard, you have the option to **Log an Override**.
-If the ML says "BUY AAPL" but you disagree because of macroeconomic news, you log a skip/override. 
-Over time, the database tracks your overrides vs. the ML's suggestions and records the 30-day outcome. After 6 months, you will have empirical proof of whether your intuition beats the machine, or if you should trust the machine more often.
+### Metric 2: Live-Approval Gates & Bayesian Scaling
+* **AUC Gate:** If the model's AUC (Area Under the Curve) is `< 0.53`, the signal is ignored.
+* **Bayesian Scaling:** The Black-Litterman model uses an **Uncertainty Scalar (Omega)**. If a model's recent IC is low, Omega skyrockets, and the optimizer effectively ignores the ML, defaulting to safe market-cap weights.
 
 ---
 
 ## Getting Started
 
-1. **Run the Master Pipeline:**
-   Execute the batch script to run data ingestion, machine learning research, and optimization.
+1. **Setup Environment:**
+   Create a `.env` file at the root with your API keys:
+   ```env
+   FRED_API_KEY=your_key
+   TWELVEDATA_API_KEY=your_key
+   ALPHAVANTAGE_API_KEY=your_key
+   FINNHUB_API_KEY=your_key
+   ```
+
+2. **Run the Master Pipeline:**
+   Executes data ingestion, macro classification, ML research, and portfolio optimization.
    ```bash
    RUN_FUND_TOTAL.bat
    ```
 
-2. **Launch the Control Tower Dashboard:**
-   The dashboard has been upgraded to a high-performance Flask application.
+3. **Launch the Control Tower Dashboard:**
+   The dashboard is a high-performance Flask application.
    ```bash
    DASHBOARD_ONLY.bat
    # OR
    python flask_app.py
    ```
-   *Open `http://localhost:5000` in your browser. Navigate to the **Rebalance** tab to view today's mathematically verified targets.*
+   *Open `http://localhost:5000` in your browser. Navigate to the **Rebalance** tab to view today's target allocations.*

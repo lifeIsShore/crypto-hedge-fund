@@ -15,7 +15,7 @@ When a company significantly beats estimates but the stock barely moves on earni
 ```
 pead_engine/
 ├── config.py             # All thresholds — edit only here
-├── data_fetcher.py       # Earnings + price data, Xetra→NASDAQ mapping
+├── data_fetcher.py       # Earnings + price data, uses portfolio/src/config.py for mapping
 ├── regression_model.py   # Per-ticker surprise→reaction OLS regression
 ├── screener.py           # Setup screening + quality scoring
 ├── pead_db.py            # CSV log + JSON state + outcome backfill
