@@ -56,7 +56,7 @@ API_KEYS = {
 def fetch_fx_history(from_date: str, to_date: str) -> dict:
     """
     Fetches daily USD→EUR and GBP→EUR rates.
-    Tries yfinance (Primary) -> TwelveData (Backup 1) -> AlphaVantage (Backup 2)
+    Tries yfinance (Primary) -> TwelveData (Backup 1) -> AlphaVantage (Backup 2) -> Finnhub (Backup 3)
     Returns: {'USDEUR': {date_str: rate}, 'GBPEUR': {date_str: rate}}
     """
     rates = {'USDEUR': {}, 'GBPEUR': {}}
@@ -107,6 +107,41 @@ def fetch_fx_history(from_date: str, to_date: str) -> dict:
                 continue
         except Exception as e:
             logger.warning(f"TwelveData FX failed: {e}")
+
+        # 3. Try AlphaVantage Backup
+        try:
+            from_sym = "USD" if name == "USDEUR" else "GBP"
+            url = f"https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_sym}&to_symbol=EUR&apikey={API_KEYS['alphavantage']}"
+            resp = requests.get(url).json()
+            time_series = resp.get('Time Series FX (Daily)', {})
+            if time_series:
+                for dt, vals in time_series.items():
+                    # AlphaVantage returns last 100 days, filter by range
+                    if from_date <= dt <= to_date:
+                        rates[name][dt] = float(vals['4. close'])
+                logger.info(f"FX fetched from AlphaVantage: {name}")
+                continue
+        except Exception as e:
+            logger.warning(f"AlphaVantage FX failed: {e}")
+
+        # 4. Try Finnhub Backup
+        try:
+            # Finnhub uses OANDA symbols for FX candles
+            symbol = "OANDA:EUR_USD" if name == "USDEUR" else "OANDA:GBP_EUR"
+            from_ts = int(pd.Timestamp(from_date).timestamp())
+            to_ts = int(pd.Timestamp(to_date).timestamp())
+            url = f"https://finnhub.io/api/v1/forex/candle?symbol={symbol}&resolution=D&from={from_ts}&to={to_ts}&token={API_KEYS['finnhub']}"
+            resp = requests.get(url).json()
+            if resp.get('s') == 'ok':
+                for t, c in zip(resp['t'], resp['c']):
+                    dt = str(pd.Timestamp(t, unit='s').date())
+                    rate = float(c)
+                    if name == "USDEUR": rate = 1 / rate
+                    rates[name][dt] = rate
+                logger.info(f"FX fetched from Finnhub: {name}")
+                continue
+        except Exception as e:
+            logger.warning(f"Finnhub FX failed: {e}")
 
     # Persist to fx_rates table
     _persist_fx_rates(rates)
