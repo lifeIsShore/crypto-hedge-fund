@@ -119,39 +119,64 @@ def run(
 
 def _attach_regime_labels(setups_df):
     """
-    Attempts to join regime labels from regime_engine output.
+    Attempts to join regime labels from regime_engine output using merge_asof.
     Non-fatal — PEAD runs fine without regime context.
     """
-    import os, sys
+    import os
     base_dir = os.path.dirname(__file__)
-    regime_state_path = os.path.join(base_dir, "..", "regime_engine", "data", "regime_state.json")
-    regime_history_path = os.path.join(base_dir, "..", "regime_engine", "data", "regime_history.csv")
+    # Try both possible locations for regime history
+    regime_paths = [
+        os.path.join(base_dir, "..", "regime_engine", "data", "regime_history.csv"),
+        os.path.join(base_dir, "..", "..", "quant_research", "regime_engine", "data", "regime_history.csv")
+    ]
+    
+    regime_history_path = None
+    for p in regime_paths:
+        if os.path.exists(p):
+            regime_history_path = p
+            break
 
-    if not os.path.exists(regime_history_path):
-        log.info("  Regime history not found — skipping regime tagging (run regime_engine first)")
+    if not regime_history_path:
+        log.info("  Regime history not found — skipping regime tagging")
         return
 
     try:
         import pandas as pd
-        # Read the CSV directly to avoid sys.path manipulation and module collisions
-        regime = pd.read_csv(regime_history_path, index_col=0, parse_dates=True)
-        regime = regime[["regime_risk", "regime_rates", "regime_growth", "regime_composite"]]
+        regime = pd.read_csv(regime_history_path, parse_dates=True)
+        # Ensure 'Date' is the column name for merging
+        if "Unnamed: 0" in regime.columns:
+            regime.rename(columns={"Unnamed: 0": "Date"}, inplace=True)
+        elif regime.columns[0] != "Date":
+            regime.rename(columns={regime.columns[0]: "Date"}, inplace=True)
+        
+        regime["Date"] = pd.to_datetime(regime["Date"])
+        regime = regime.sort_values("Date")
+        
+        # Prepare setups_df for merge_asof
+        setups_df["Date"] = pd.to_datetime(setups_df["earnings_date"])
+        setups_df.sort_values("Date", inplace=True)
+        
+        # Merge on nearest past regime state
+        cols_to_keep = ["Date", "regime_risk", "regime_rates", "regime_growth", "regime_composite"]
+        regime_subset = regime[[c for c in cols_to_keep if c in regime.columns]]
+        
+        # merge_asof requires both DFs to be sorted by 'on' column
+        merged = pd.merge_asof(
+            setups_df,
+            regime_subset,
+            on="Date",
+            direction="backward"
+        )
+        
+        # Copy back to setups_df (which is modified in place)
+        for col in ["regime_risk", "regime_growth", "regime_composite"]:
+            if col in merged.columns:
+                setups_df[col] = merged[col].values
 
-        setups_df["earnings_date_ts"] = pd.to_datetime(setups_df["earnings_date"])
-        # Join on nearest date
-        for i, row in setups_df.iterrows():
-            ts = row["earnings_date_ts"]
-            matches = regime.index[regime.index <= ts]
-            if len(matches):
-                r = regime.loc[matches[-1]]
-                setups_df.at[i, "regime_risk"]      = r["regime_risk"]
-                setups_df.at[i, "regime_growth"]     = r["regime_growth"]
-                setups_df.at[i, "regime_composite"]  = r["regime_composite"]
-
-        setups_df.drop(columns=["earnings_date_ts"], inplace=True, errors="ignore")
-        log.info("  Regime labels attached to setups.")
+        setups_df.drop(columns=["Date"], inplace=True, errors="ignore")
+        log.info("  Regime labels attached to setups via merge_asof.")
     except Exception as e:
-        log.info(f"  Regime tagging skipped: {e}")
+        log.warning(f"  Regime tagging failed: {e}")
 
 
 def _print_summary(state: dict) -> None:

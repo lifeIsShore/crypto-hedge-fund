@@ -37,6 +37,17 @@
   </div>
 </div>
 
+<!-- Weight comparison bar chart — moved up so it can be seen early -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">WEIGHT COMPARISON — CURRENT vs OPTIMAL</span>
+    <span class="panel-badge">VISUAL ALLOCATION</span>
+  </div>
+  <div class="panel-body">
+    <div class="chart-wrap" style="height:250px"><canvas id="mptChart"></canvas></div>
+  </div>
+</div>
+
 <!-- MPT Optimal Weights panel -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">
@@ -58,12 +69,6 @@
       </tr></thead>
       <tbody id="mpt-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
-
-    <!-- Weight comparison bar chart -->
-    <div style="margin-top:24px">
-      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:12px;text-align:center">WEIGHT COMPARISON — CURRENT vs OPTIMAL</div>
-      <div class="chart-wrap" style="height:250px"><canvas id="mptChart"></canvas></div>
-    </div>
   </div>
 </div>
 

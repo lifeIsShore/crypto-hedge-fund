@@ -43,8 +43,8 @@ app = Flask(__name__, template_folder="templates")
 # ── inject ticker names into all templates ────────────────────────────────────
 @app.context_processor
 def inject_metadata():
-    from portfolio.src.config import TICKER_NAMES, TICKER_SECTORS
-    return dict(ticker_names=TICKER_NAMES, ticker_sectors=TICKER_SECTORS)
+    from portfolio.src.config import TICKER_NAMES, TICKER_SECTORS, ASSET_UNIVERSE
+    return dict(ticker_names=TICKER_NAMES, ticker_sectors=TICKER_SECTORS, asset_universe=ASSET_UNIVERSE)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -461,17 +461,9 @@ def risk():
         ORDER BY ticker
     """)
 
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(id) AS mid
-            FROM positions_history
-            WHERE date = (SELECT MAX(date) FROM positions_history)
-            GROUP BY ticker
-        ) l ON p.id = l.mid
-    """)
-
+    # Live Reconstruction — so MC updates instantly after a trade
+    positions, _ = _live_positions()
+    
     regime = _load_json(REGIME_STATE_PATH)
 
     # Portfolio MC
@@ -780,16 +772,9 @@ def api_regime():
 
 @app.route("/api/portfolio_mc")
 def api_portfolio_mc():
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(id) AS mid
-            FROM positions_history
-            WHERE date = (SELECT MAX(date) FROM positions_history)
-            GROUP BY ticker
-        ) l ON p.id = l.mid
-    """)
+    # Use live reconstruction for instant feedback after trading
+    positions, _ = _live_positions()
+    
     targets = _q("""
         SELECT ticker, up_proba, vol_ann
         FROM price_targets
@@ -965,17 +950,12 @@ def regime():
 
 @app.route("/analytics")
 def analytics():
-    positions = _q("""
-        SELECT p.ticker, p.quantity, p.price, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(id) AS mid
-            FROM positions_history
-            WHERE date = (SELECT MAX(date) FROM positions_history)
-            GROUP BY ticker
-        ) l ON p.id = l.mid
-        ORDER BY p.value_eur DESC
-    """)
+    # Use Live Reconstruction to ensure sync after trades
+    positions, cash_eur = _live_positions()
+    
+    # Sort positions by value for the breakdown table
+    positions = sorted(positions, key=lambda x: x.get('value_eur') or 0, reverse=True)
+
     trades = _q("""
         SELECT date, ticker, action, quantity, price_eur,
                value_eur AS total_eur, notes
@@ -1663,38 +1643,49 @@ def api_performance():
 
 @app.route("/api/mpt_weights")
 def api_mpt_weights():
-    """MPT optimal weights from latest model_outputs, vs current holdings."""
-    model = _q("""
-        SELECT ticker, current_weight, suggested_weight, delta_weight, expected_return, bl_return
+    """MPT optimal weights from latest model_outputs, vs live current holdings."""
+    model_rows = _q("""
+        SELECT ticker, suggested_weight, delta_weight, expected_return, bl_return
         FROM model_outputs
         WHERE date = (SELECT MAX(date) FROM model_outputs)
         ORDER BY suggested_weight DESC
     """)
-    # Current positions for cross-reference
-    positions = _q("""
-        SELECT p.ticker, p.value_eur, p.weight
-        FROM positions_history p
-        INNER JOIN (
-            SELECT ticker, MAX(id) AS mid
-            FROM positions_history
-            WHERE date = (SELECT MAX(date) FROM positions_history)
-            GROUP BY ticker
-        ) l ON p.id = l.mid
-    """)
-    pos_map = {p["ticker"]: p for p in positions}
+    
+    # Get ground-truth live positions
+    live_positions, cash_eur = _live_positions()
+    live_weights = {p["ticker"]: p["weight"] for p in live_positions}
+    live_values  = {p["ticker"]: p["value_eur"] for p in live_positions}
+
     result = []
-    for row in model:
+    for row in model_rows:
         t = row["ticker"]
-        cur = pos_map.get(t, {})
+        cur_w = live_weights.get(t, 0.0)
+        opt_w = row["suggested_weight"] or 0.0
+        
         result.append({
             "ticker":           t,
-            "current_weight":   row.get("current_weight"),
-            "optimal_weight":   row.get("suggested_weight"),
-            "delta":            row.get("delta_weight"),
+            "current_weight":   cur_w,
+            "optimal_weight":   opt_w,
+            "delta":            opt_w - cur_w,
             "expected_return":  row.get("expected_return"),
             "bl_return":        row.get("bl_return"),
-            "value_eur":        cur.get("value_eur"),
+            "value_eur":        live_values.get(t),
         })
+    
+    # Add any held tickers that aren't in the model (the "excess" holdings)
+    model_tickers = {r["ticker"] for r in model_rows}
+    for t, w in live_weights.items():
+        if t not in model_tickers:
+            result.append({
+                "ticker": t,
+                "current_weight": w,
+                "optimal_weight": 0.0,
+                "delta": -w,
+                "expected_return": 0,
+                "bl_return": 0,
+                "value_eur": live_values.get(t),
+            })
+
     return jsonify({"weights": result, "count": len(result)})
 
 

@@ -24,7 +24,7 @@ Verdict: 🟢 Highly Recommended. You can easily implement this by requiring a m
 
 
 
-
+logs-what are failed, what pipeline, what ticker is not trained etc. all needed warnings and so on.
 
 
 

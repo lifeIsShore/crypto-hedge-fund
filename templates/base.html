@@ -17,8 +17,8 @@
   --accent2:  #ff4d6d;
   --accent3:  #f5a623;
   --accent4:  #6495ed;
-  --text:     #c8d4e8;
-  --muted:    #94a3b8;
+  --text:     #f1f5f9;
+  --muted:    #cbd5e1;
   --mono:     'IBM Plex Mono', monospace;
   --sans:     'IBM Plex Sans', sans-serif;
 }
@@ -226,6 +226,9 @@ th.sort-desc::after { content: '↓'; opacity: 1; color: var(--accent); }
   border-bottom: 1px dotted var(--muted);
   position: relative;
   display: inline-block;
+}
+th.info-point, td.info-point {
+  display: table-cell;
 }
 .info-point:hover {
   border-bottom-color: var(--accent);

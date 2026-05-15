@@ -37,6 +37,8 @@ def save_setups(new_setups_df: pd.DataFrame) -> None:
 
     if os.path.exists(PEAD_DB_PATH):
         existing = pd.read_csv(PEAD_DB_PATH)
+        # Drop all-NA columns from new_setups to avoid FutureWarning
+        new_setups_df = new_setups_df.dropna(axis=1, how="all")
         combined = pd.concat([existing, new_setups_df], ignore_index=True)
         combined = combined.drop_duplicates(subset=["ticker", "earnings_date"], keep="last")
     else:

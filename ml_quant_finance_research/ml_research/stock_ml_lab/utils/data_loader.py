@@ -26,13 +26,14 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 try:
-    from portfolio.src.config import ASSET_UNIVERSE, TICKER_SECTORS
+    from portfolio.src.config import ASSET_UNIVERSE, TICKER_SECTORS, TICKER_MAPPING
     # Create the UNIVERSE dict expected by the ML pipeline (ticker -> sector)
     UNIVERSE = {t: TICKER_SECTORS.get(t, "Unknown") for t in ASSET_UNIVERSE}
 except ImportError:
     log.error("Could not import central config from portfolio.src.config. Check PYTHONPATH.")
     # Fallback to empty if absolutely necessary, but this should error in production
     UNIVERSE = {}
+    TICKER_MAPPING = {}
 
 MACRO_SERIES = {
     "fed_funds":  "FEDFUNDS",
@@ -85,8 +86,19 @@ def fetch_price_data(tickers=None, start="2014-01-01", end=None, force_refresh=F
             continue
 
         if raw.empty:
-            log.warning(f"[{ticker}] No data returned — skipped")
-            continue
+            # Fallback logic
+            fallback = TICKER_MAPPING.get(ticker)
+            if fallback and fallback != ticker:
+                log.info(f"[{ticker}] Primary failed — trying fallback: {fallback}")
+                try:
+                    raw = yf.download(fallback, start=start, end=end,
+                                      auto_adjust=False, progress=False)
+                except Exception as e:
+                    log.warning(f"[{ticker}] Fallback {fallback} also failed: {e}")
+            
+            if raw.empty:
+                log.warning(f"[{ticker}] No data returned (even after fallback) — skipped")
+                continue
 
         # Handle yfinance multi-level column output
         if isinstance(raw.columns, pd.MultiIndex):
@@ -176,6 +188,13 @@ def fetch_fundamentals(tickers=None, force_refresh=False):
 
         try:
             info = yf.Ticker(ticker).info
+            if not info or "symbol" not in info:
+                # Try fallback for fundamentals
+                fallback = TICKER_MAPPING.get(ticker)
+                if fallback and fallback != ticker:
+                    log.info(f"[{ticker}] Fundamental primary failed — trying fallback: {fallback}")
+                    info = yf.Ticker(fallback).info
+            
             data = {k: info.get(k) for k in FIELDS}
             data["fetched_at"] = datetime.today().isoformat()
             with open(out_path, "w") as f:

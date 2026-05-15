@@ -19,11 +19,13 @@ FRED_SERIES_US = {
 # EU Series
 FRED_SERIES_EU = {
     "vix":           "^V2TX",        # VSTOXX (via yfinance)
-    "yield_spread":  "DEU10Y2Y",     # Proxy or calculated
-    "hy_spread":     "BAMLHE00EHYIOAS", # ICE BofA Euro High Yield OAS
-    "ig_spread":     "BAMLC0A0CMEY",    # Using US IG as proxy if EU missing
-    "fed_funds":     "ECBMAIN",      # ECB Main Refinancing Operations Rate
-    "ism_mfg":       "MANEMP",       # Proxy
+    "yield_10y":     "IRLTLT01DEM156N", # API Compatible German 10Y
+    "yield_3m":      "IR3TIB01DEM156N", # API Compatible German 3M
+    "hy_spread":     "BAMLHE00EHYIOAS", 
+    "ig_spread":     "BAMLC0A0CMEY",    
+    "fed_funds":     "ECBDFR",          # API Compatible ECB Rate
+    "fed_funds_alt": "ECBMLFR",        
+    "ism_mfg":       "MANEMP",       
 }
 
 # Mapping for data fetcher

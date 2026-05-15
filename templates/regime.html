@@ -7,7 +7,7 @@
   <h2 style="margin:0; font-size:18px; color:var(--muted)">MACRO REGIME ANALYTICS</h2>
   <div style="display:flex; align-items:center; gap:12px">
     <span style="font-size:11px; color:var(--muted); letter-spacing:0.1em; font-weight:600">ACTIVE REGION</span>
-    <select id="region-selector" class="input" style="width:180px; padding:6px 12px; font-size:13px; border-color:var(--accent); color:var(--accent); font-weight:bold; cursor:pointer" onchange="loadRegime(this.value)">
+    <select id="region-selector" class="input" style="min-width:180px; width:auto; padding:6px 32px 6px 12px; font-size:13px; border-color:var(--accent); color:var(--accent); font-weight:bold; cursor:pointer" onchange="loadRegime(this.value)">
       <option value="US" selected>UNITED STATES (US)</option>
       <option value="EU">EUROZONE (EU)</option>
     </select>
@@ -27,22 +27,25 @@
 
 <div class="grid grid-2" style="margin-top:14px">
   <div class="panel">
-    <div class="panel-header"><span class="panel-title" id="inputs-title">LIVE MACRO INPUTS (US)</span><span class="panel-badge">LATEST SNAPSHOT</span></div>
+    <div class="panel-header">
+      <span class="panel-title info-point" id="inputs-title" data-title="MACRO INPUTS" data-info="Real-time indicators used to determine the current economic regime and market risk levels.">LIVE MACRO INPUTS (US)</span>
+      <span class="panel-badge info-point" data-title="SNAPSHOT DATA" data-info="The most recent readings available from central banks and market indices (FRED / ECB / Stoxx).">LATEST SNAPSHOT</span>
+    </div>
     <div class="panel-body">
       <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr)">
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="vix-label">VIX</div><div class="kpi-value" style="font-size:18px" id="m-vix">—</div><div class="kpi-sub" id="vix-sub">&lt;20 calm</div></div>
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="spread-label">10Y-2Y SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-spread">—</div></div>
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HY SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-hy">—</div></div>
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">IG SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-ig">—</div></div>
-    <div class="kpi neutral" style="padding:10px"><div class="kpi-label" id="rate-label">FED FUNDS</div><div class="kpi-value" style="font-size:18px" id="m-fed">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" id="vix-label" data-title="VOLATILITY INDEX" data-info="Measures expected market volatility. Higher values indicate fear and uncertainty.">VIX</div><div class="kpi-value" style="font-size:18px" id="m-vix">—</div><div class="kpi-sub" id="vix-sub">&lt;20 calm</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" id="spread-label" data-title="YIELD SPREAD" data-info="Difference between long-term and short-term interest rates. Inversion signals recession.">10Y-2Y SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-spread">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="HY SPREAD" data-info="High Yield Spread: The extra yield risky companies pay over safe government bonds. Higher = higher default risk.">HY SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-hy">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="IG SPREAD" data-info="Investment Grade Spread: The extra yield safe companies pay. Widening indicates tightening credit conditions.">IG SPREAD</div><div class="kpi-value" style="font-size:18px" id="m-ig">—</div></div>
+    <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" id="rate-label" data-title="BASE RATE" data-info="The target interest rate set by the central bank to control inflation and growth.">FED FUNDS</div><div class="kpi-value" style="font-size:18px" id="m-fed">—</div></div>
       </div>
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">EARLY WARNING FLAGS</div>
+        <div class="info-point" data-title="WARNING FLAGS" data-info="Binary triggers that signal abnormal market behavior or rapid changes in economic conditions." style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px">EARLY WARNING FLAGS</div>
         <div class="grid grid-4">
-          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">VIX RISING</div><div class="kpi-value" id="ew-vix" style="font-size:14px">—</div></div>
-          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">CURVE FLAT</div><div class="kpi-value" id="ew-curve" style="font-size:14px">—</div></div>
-          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">HY WIDENING</div><div class="kpi-value" id="ew-hy" style="font-size:14px">—</div></div>
-          <div class="kpi neutral" style="padding:10px"><div class="kpi-label">RATE REPRICE</div><div class="kpi-value" id="ew-rate" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="VIX RISING" data-info="Volatility is trending up, suggesting growing market fear and potential for a sharp sell-off.">VIX RISING</div><div class="kpi-value" id="ew-vix" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="CURVE FLAT" data-info="The gap between long and short term yields is closing, historically a warning of economic slowdown.">CURVE FLAT</div><div class="kpi-value" id="ew-curve" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="HY WIDENING" data-info="Credit risk is increasing. Investors demand more for holding risky corporate debt.">HY WIDENING</div><div class="kpi-value" id="ew-hy" style="font-size:14px">—</div></div>
+          <div class="kpi neutral" style="padding:10px"><div class="kpi-label info-point" data-title="RATE REPRICE" data-info="Market expectations for rates are shifting rapidly, causing volatility in bonds and stocks.">RATE REPRICE</div><div class="kpi-value" id="ew-rate" style="font-size:14px">—</div></div>
         </div>
       </div>
     </div>
@@ -100,11 +103,33 @@ async function loadRegime(region = 'US'){
   document.getElementById('inputs-title').textContent = `LIVE MACRO INPUTS (${region})`;
   document.getElementById('dist-title').textContent = `HISTORICAL DISTRIBUTION (${region}) — LAST 90 DAYS`;
   document.getElementById('hist-title').textContent = `REGIME HISTORY (${region}) — LAST 30 DAYS`;
-  document.getElementById('vix-label').textContent = isEU ? 'VSTOXX' : 'VIX';
+  const vixLabel = document.getElementById('vix-label');
+  const spreadLabel = document.getElementById('spread-label');
+  const rateLabel = document.getElementById('rate-label');
+  
+  if (isEU) {
+    vixLabel.textContent = 'VSTOXX';
+    vixLabel.setAttribute('data-title', 'EURO VOLATILITY');
+    vixLabel.setAttribute('data-info', 'Expected volatility for European stocks (Euro Stoxx 50). Values below 20 suggest market calm.');
+    spreadLabel.textContent = 'STOXX-DAX';
+    spreadLabel.setAttribute('data-title', 'REGIONAL SPREAD');
+    spreadLabel.setAttribute('data-info', 'Relative performance of Eurozone (STOXX) vs Germany (DAX). Spreads can signal regional stress.');
+    rateLabel.textContent = 'ECB RATE';
+    rateLabel.setAttribute('data-title', 'ECB DEPOSIT RATE');
+    rateLabel.setAttribute('data-info', 'The European Central Bank base rate. Influences borrowing costs and liquidity across the Eurozone.');
+  } else {
+    vixLabel.textContent = 'VIX';
+    vixLabel.setAttribute('data-title', 'US VOLATILITY');
+    vixLabel.setAttribute('data-info', 'Expected volatility for US stocks (S&P 500). The "Fear Index". Values below 20 suggest market calm.');
+    spreadLabel.textContent = '10Y-2Y SPREAD';
+    spreadLabel.setAttribute('data-title', 'US YIELD CURVE');
+    spreadLabel.setAttribute('data-info', 'Gap between 10-year and 2-year US yields. Inversion (negative) is a classic recession predictor.');
+    rateLabel.textContent = 'FED FUNDS';
+    rateLabel.setAttribute('data-title', 'FED FUNDS RATE');
+    rateLabel.setAttribute('data-info', 'The US Federal Reserve benchmark interest rate. The world\'s most influential cost of capital.');
+  }
   document.getElementById('vix-sub').textContent = isEU ? '<20 calm' : '<20 calm';
-  document.getElementById('spread-label').textContent = isEU ? 'STOXX-DAX' : '10Y-2Y SPREAD';
   document.getElementById('vix-col').textContent = isEU ? 'VSTOXX' : 'VIX';
-  document.getElementById('rate-label').textContent = isEU ? 'ECB RATE' : 'FED FUNDS';
   document.getElementById('r-rate-sub').textContent = isEU ? 'ECB policy' : 'Fed policy';
 
   if(!data.regime_risk){

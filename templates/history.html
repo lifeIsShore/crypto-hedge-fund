@@ -176,7 +176,7 @@
           labels: equity.map(x => x.date),
           datasets: [{
             label: 'Portfolio Value EUR', data: equity.map(x => x.value),
-            borderColor: 'var(--accent)', backgroundColor: 'rgba(0,229,160,.07)',
+            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
             fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3
           }]
         },
@@ -211,8 +211,8 @@
           labels: volDates,
           datasets: [{
             label: 'Rolling 21D Vol %', data: volVals,
-            borderColor: 'var(--accent3)', backgroundColor: 'rgba(245,166,35,.06)',
-            fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.3
+            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
+            fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3
           }]
         },
         options: {
@@ -275,8 +275,8 @@
           labels: ddDates,
           datasets: [{
             label: 'Drawdown %', data: ddVals,
-            borderColor: 'var(--accent2)', backgroundColor: 'rgba(255,77,109,.08)',
-            fill: true, pointRadius: 0, borderWidth: 1.5, tension: 0.2
+            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
+            fill: true, pointRadius: 0, borderWidth: 2, tension: 0.2
           }]
         },
         options: {

@@ -31,11 +31,21 @@ python run_engine.py --lookback 90
 cd /d "%~dp0"
 
 :: 4. OPTIONAL ML TRAINING
-set /p train="[4/6] Run FULL ML training? (Takes ~10-45 mins) (y/n): "
-if /i "%train%"=="y" (
-    echo [ACTION] Training ML Models for 95 tickers...
+echo.
+echo [4/6] ML INTELLIGENCE UPDATE
+set train=n
+set /p train="Do you want to run FULL ML training? (Takes ~10-45 mins) (y/n): "
+
+if /i "!train!"=="y" (
+    echo [ACTION] Training ML Models...
     cd /d "%~dp0ml_quant_finance_research\ml_research\stock_ml_lab"
     python run_ml_pipeline.py
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo [CRITICAL ERROR] The ML Pipeline crashed. 
+        echo Please check the error message above.
+        pause
+    )
     cd /d "%~dp0"
 ) else (
     echo [SKIP] Using existing ML intelligence.

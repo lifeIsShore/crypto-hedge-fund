@@ -3,13 +3,28 @@
 
 {% block content %}
 
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-  <a href="/holdings" style="color:var(--muted);font-size:10px;text-decoration:none">← BACK TO HOLDINGS</a>
-  <h1 style="font-size:20px;font-weight:600;color:#fff">
-    {{ ticker }}
-    <span style="font-size:14px;color:var(--muted);font-weight:400">({{ ticker_names.get(ticker, '') }})</span>
-  </h1>
-  <span id="action-badge" style="font-size:11px">—</span>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="/holdings" style="color:var(--muted);font-size:10px;text-decoration:none">← BACK TO HOLDINGS</a>
+    <h1 style="font-size:20px;font-weight:600;color:#fff;margin:0">
+      {{ ticker }}
+      <span style="font-size:14px;color:var(--muted);font-weight:400">({{ ticker_names.get(ticker, '') }})</span>
+    </h1>
+    <span id="action-badge" style="font-size:11px">—</span>
+  </div>
+  
+  <div style="display:flex; align-items:center; gap:12px">
+    <span style="font-size:11px; color:var(--muted); letter-spacing:0.1em; font-weight:600">SELECT TICKER</span>
+    <select class="input" style="min-width:200px; width:auto; padding:6px 32px 6px 12px; font-size:13px; border-color:var(--accent); color:var(--accent); font-weight:bold; cursor:pointer" onchange="window.location.href='/ticker/'+this.value">
+      {% for t in asset_universe %}
+        {% if not t.endswith('.DE') or t in asset_universe %}
+          <option value="{{ t }}" {% if t == ticker %}selected{% endif %}>
+            {{ t }} {% if ticker_names.get(t) %}({{ ticker_names.get(t) }}){% endif %}
+          </option>
+        {% endif %}
+      {% endfor %}
+    </select>
+  </div>
 </div>
 
 <!-- KPI strip -->

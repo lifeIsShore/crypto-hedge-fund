@@ -42,3 +42,5 @@ Date,Action,Ticker,Quantity,Price,Total,Notes
 2026-05-13,Sell,AMZ.DE,0.115868,230.05,26.655433,Manual entry sync
 2026-05-13,Fee,CASH,,,1.0,Fee for Sell AMZN
 2026-05-14,Buy,RHM.DE,0.07994,1150.61,91.979763,
+2026-05-15,Sell,APC.DE,0.115393,253.9,29.298283,
+2026-05-15,Fee,CASH,,,1.0,Fee for Sell APC.DE

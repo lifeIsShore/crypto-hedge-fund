@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-15T12:38:15.587992",
+  "generated_at": "2026-05-15T13:34:21.763198",
   "active_setups": [],
   "recent_setups": [
     {
@@ -11,43 +11,11 @@
       "drift_63d": null
     },
     {
-      "ticker": "MRK",
-      "direction": "bullish",
-      "quality": "Medium",
-      "surprise_pct": 13.15,
-      "drift_21d": -6.42,
-      "drift_63d": null
-    },
-    {
-      "ticker": "GOOGL",
+      "ticker": "ORCL",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 91.59,
-      "drift_21d": 29.577,
-      "drift_63d": null
-    },
-    {
-      "ticker": "BA",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 70.26,
-      "drift_21d": 6.282,
-      "drift_63d": null
-    },
-    {
-      "ticker": "AMZN",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 68.18,
-      "drift_21d": 29.69,
-      "drift_63d": null
-    },
-    {
-      "ticker": "META",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 56.79,
-      "drift_21d": 6.258,
+      "surprise_pct": 5.69,
+      "drift_21d": -3.931,
       "drift_63d": null
     },
     {
@@ -59,91 +27,123 @@
       "drift_63d": null
     },
     {
-      "ticker": "LLY",
+      "ticker": "FSLR",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 25.9,
-      "drift_21d": 3.458,
+      "surprise_pct": 8.26,
+      "drift_21d": 8.228,
       "drift_63d": null
     },
     {
-      "ticker": "TXN",
+      "ticker": "AMGN",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 22.76,
-      "drift_21d": 44.142,
+      "surprise_pct": 8.04,
+      "drift_21d": -6.924,
       "drift_63d": null
     },
     {
-      "ticker": "CAT",
+      "ticker": "ASML.AS",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 19.3,
-      "drift_21d": 22.2,
+      "surprise_pct": 7.99,
+      "drift_21d": 12.652,
       "drift_63d": null
     },
     {
-      "ticker": "SPOT",
+      "ticker": "JPM",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 17.99,
-      "drift_21d": -10.371,
+      "surprise_pct": 7.78,
+      "drift_21d": 4.964,
       "drift_63d": null
     },
     {
-      "ticker": "TSLA",
+      "ticker": "AXP",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 17.15,
-      "drift_21d": 8.852,
+      "surprise_pct": 7.18,
+      "drift_21d": 6.34,
       "drift_63d": null
     },
     {
-      "ticker": "RTX",
+      "ticker": "GS",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 16.95,
-      "drift_21d": -11.88,
+      "surprise_pct": 7.06,
+      "drift_21d": 4.661,
       "drift_63d": null
     },
     {
-      "ticker": "GE",
+      "ticker": "GILD",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 16.31,
-      "drift_21d": -0.228,
+      "surprise_pct": 6.24,
+      "drift_21d": -5.025,
       "drift_63d": null
     },
     {
-      "ticker": "SBUX",
+      "ticker": "SHOP",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 14.51,
-      "drift_21d": 16.156,
+      "surprise_pct": 8.56,
+      "drift_21d": 7.865,
       "drift_63d": null
     },
     {
-      "ticker": "MS",
+      "ticker": "KO",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 13.66,
-      "drift_21d": 13.998,
+      "surprise_pct": 5.88,
+      "drift_21d": 1.916,
       "drift_63d": null
     },
     {
-      "ticker": "NDX1.DE",
+      "ticker": "AMD",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 12.28,
-      "drift_21d": 5.309,
+      "surprise_pct": 5.82,
+      "drift_21d": 57.03,
       "drift_63d": null
     },
     {
-      "ticker": "ARGX.BR",
+      "ticker": "PYPL",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 11.98,
-      "drift_21d": 6.366,
+      "surprise_pct": 5.59,
+      "drift_21d": 11.138,
+      "drift_63d": null
+    },
+    {
+      "ticker": "HON",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.55,
+      "drift_21d": -8.655,
+      "drift_63d": null
+    },
+    {
+      "ticker": "MSF.DE",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.22,
+      "drift_21d": 9.605,
+      "drift_63d": null
+    },
+    {
+      "ticker": "V",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 6.79,
+      "drift_21d": 8.66,
+      "drift_63d": null
+    },
+    {
+      "ticker": "BAC",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 8.78,
+      "drift_21d": 5.691,
       "drift_63d": null
     },
     {
@@ -155,11 +155,11 @@
       "drift_63d": null
     },
     {
-      "ticker": "BAC",
+      "ticker": "ARGX.BR",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 8.78,
-      "drift_21d": 5.691,
+      "surprise_pct": 11.98,
+      "drift_21d": 6.366,
       "drift_63d": null
     }
   ],
@@ -175,11 +175,9 @@
     "high_hit_rate_21d": null,
     "bullish_avg_drift_21d": 5.348,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-05-15T12:38:15.581898",
-    "hit_rate_21d_expansion": 0.0,
-    "avg_drift_21d_expansion": -12.384,
-    "hit_rate_21d_slowdown": 0.765,
-    "avg_drift_21d_slowdown": 9.674
+    "stats_computed_at": "2026-05-15T13:34:21.758146",
+    "hit_rate_21d_slowdown": 0.703,
+    "avg_drift_21d_slowdown": 7.886
   },
   "total_in_db": 173
 }

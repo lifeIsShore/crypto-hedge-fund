@@ -29,16 +29,20 @@ THIS_DIR        = Path(__file__).parent.resolve()           # .../stock_ml_lab/
 UTILS_DIR       = THIS_DIR / "utils"
 DATA_DIR        = THIS_DIR / "data"
 RESULTS_DIR     = THIS_DIR / "results"
-OUTPUT_JSON        = THIS_DIR.parent.parent.parent / "shared" / "state" / "ml_state.json"
-OUTPUT_JSON_LEGACY = THIS_DIR.parent.parent.parent / "portfolio" / "data" / "ml_state.json"
+ROOT_DIR        = THIS_DIR.parent.parent.parent             # Repository Root
 
-sys.path.insert(0, str(UTILS_DIR))
+# Primary outputs
+OUTPUT_JSON        = ROOT_DIR / "shared" / "state" / "ml_state.json"
+OUTPUT_JSON_LEGACY = ROOT_DIR / "portfolio" / "data" / "ml_state.json"
 
-from data_loader     import fetch_price_data, fetch_macro_data, fetch_fundamentals, UNIVERSE
-from feature_builder import build_features, select_features, get_feature_selection_report
-from evaluator       import walk_forward_splits, evaluate_fold, log_experiment
-from scenario_engine import generate_scenarios, ensemble_sentiment
-from options_scraper import fetch_all_options_features
+# Ensure imports can find local utils and central config
+sys.path.insert(0, str(ROOT_DIR))
+
+from utils.data_loader     import fetch_price_data, fetch_macro_data, fetch_fundamentals, UNIVERSE
+from utils.feature_builder import build_features, select_features, get_feature_selection_report
+from utils.evaluator       import walk_forward_splits, evaluate_fold, log_experiment
+from utils.scenario_engine import generate_scenarios, ensemble_sentiment
+from utils.options_scraper import fetch_all_options_features
 
 import numpy as np
 import pandas as pd
