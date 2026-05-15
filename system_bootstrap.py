@@ -1,16 +1,16 @@
 # system_bootstrap.py
 """
-Cold Start System Bootstrap — Deep Dive Version.
+Cold Start System Bootstrap — Production Architecture V2.0.
 Initializes the fund on a clean environment:
-1.  Creates SQLite schema.
-2.  Ingests 2 years of historical price data (EUR-converted).
-3.  Populates FX rates and Benchmarks.
-4.  Backfills 2 years of Macro Regime history (Regime Engine).
-5.  Backfills 1 year of PEAD setups and regression models (PEAD Engine).
-6.  Backfills 1 year of alpha features (Feature Store).
-7.  Trains initial LSTM models for all tickers.
-8.  Replays ledger.csv and reconstructs full performance history.
-9.  Syncs metadata (Names/Sectors) to all operational tables.
+1.  Environment Validation: Checks dependencies, .env file, and API keys (FRED, Polygon, etc.).
+2.  Database Connection: Creates SQLite schema.
+3.  Historical Ingestion: Fetches 2 years of price history (EUR-converted) via multi-tier fallbacks.
+4.  Macro Regime Backfill: Rebuilds US and EU regional macro history using FRED API.
+5.  PEAD Engine Backfill: Replays earnings drift detection and regime-aware setup logic.
+6.  Feature Store Backfill: Computes technical and fundamental alpha features for the full history.
+7.  LSTM Model Training: Trains/retrains the ensemble stack for all active tickers.
+8.  Ledger Reconciliation: Replays trade ledger and reconstructs full performance history.
+9.  Metadata Sync: Hardens the single-source-of-truth mapping between config and database.
 """
 
 import os
@@ -26,6 +26,13 @@ from sqlalchemy import text
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
+
+# Load .env early for all downstream imports
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 from engine.db.db import execute_schema, test_connection, get_session
 from engine.data.ingestion import run_ingestion, fetch_fx_history
@@ -73,15 +80,17 @@ def populate_fx_and_benchmarks():
 
 def run_engines_backfill():
     """Run Macro Regime and PEAD engines in backfill mode."""
-    # 1. Macro Regime
+    # 1. Macro Regime (Multi-Region: US + EU)
     regime_dir = os.path.join(_HERE, 'ml_quant_finance_research', 'quant_research', 'regime_engine')
     if os.path.exists(regime_dir):
-        run_step("Macro Regime Backfill", [sys.executable, "run_engine.py", "--backfill"], cwd=regime_dir)
+        logger.info("Running Regional Macro Regime backfill (US/EU)...")
+        run_step("Macro Regime Backfill", [sys.executable, "run_engine.py", "--region", "ALL", "--backfill"], cwd=regime_dir)
     
     # 2. PEAD Engine
     pead_dir = os.path.join(_HERE, 'ml_quant_finance_research', 'quant_research', 'pead_engine')
     if os.path.exists(pead_dir):
         # We use a 365 day lookback for the cold start
+        logger.info("Running PEAD Signal backfill...")
         run_step("PEAD Backfill", [sys.executable, "run_engine.py", "--backfill", "--lookback", "365"], cwd=pead_dir)
 
 def sync_metadata():
@@ -141,6 +150,10 @@ def reconstruct_performance_history():
         return
 
     ledger_path = os.path.join(_HERE, 'portfolio', 'data', 'ledger.csv')
+    if not os.path.exists(ledger_path):
+        logger.warning(f"Ledger file not found at {ledger_path}. Skipping.")
+        return
+
     ledger_df = pd.read_csv(ledger_path, comment='#')
     ledger_df.columns = [c.strip().lower() for c in ledger_df.columns]
     ledger_df['date'] = pd.to_datetime(ledger_df['date']).dt.strftime('%Y-%m-%d')
@@ -208,7 +221,7 @@ def reconstruct_performance_history():
             'daily_return_pct': round(daily_ret * 100, 4)
         })
         prev_total_val = total_val
-
+    
     # Persist to performance_history
     if perf_data:
         session = get_session()
@@ -246,39 +259,48 @@ def validate_environment():
     
     # 2. Critical Dependencies
     missing = []
-    try: 
-        import yfinance
-        logger.info(f"[OK] yfinance OK (v{yfinance.__version__})")
-    except ImportError: missing.append("yfinance")
-    
-    try: 
-        import torch
-        logger.info(f"[OK] torch OK (v{torch.__version__})")
-    except ImportError: missing.append("torch")
-    
-    try: 
-        import sqlalchemy
-        logger.info("[OK] sqlalchemy OK")
-    except ImportError: missing.append("sqlalchemy")
-    
-    try:
-        import pandas as pd
-        logger.info(f"[OK] pandas OK (v{pd.__version__})")
-    except ImportError: missing.append("pandas")
+    deps = [
+        ('yfinance', 'yfinance'),
+        ('torch', 'torch'),
+        ('sqlalchemy', 'sqlalchemy'),
+        ('pandas', 'pandas'),
+        ('dotenv', 'python-dotenv'),
+        ('psutil', 'psutil')
+    ]
+    for module_name, pip_name in deps:
+        try:
+            mod = __import__(module_name)
+            version = getattr(mod, '__version__', 'unknown')
+            logger.info(f"[OK] {pip_name} OK (v{version})")
+        except ImportError:
+            missing.append(pip_name)
 
     if missing:
         logger.error(f"[FAIL] Missing critical dependencies: {', '.join(missing)}")
-        logger.error("Please run: pip install yfinance torch sqlalchemy pandas requests")
+        logger.error(f"Please run: pip install {' '.join(missing)}")
         sys.exit(1)
 
-    # 3. DB Availability & Lock Check
+    # 3. .env and API Keys check
+    env_path = os.path.join(_HERE, '.env')
+    if not os.path.exists(env_path):
+        logger.warning("[!] .env file missing. API fallbacks and Macro engine will fail.")
+        logger.warning("Create a .env file with FRED_API_KEY, TWELVEDATA_API_KEY, etc.")
+    else:
+        logger.info("[OK] .env file detected.")
+        # Check specific critical keys
+        critical_keys = ['FRED_API_KEY', 'POLYGON_API_KEY']
+        for k in critical_keys:
+            if not os.getenv(k):
+                logger.warning(f"[!] {k} is missing in environment. Some features will be degraded.")
+
+    # 4. DB Availability & Lock Check
     if not test_connection():
-        logger.error("[FAIL] Database connection failed. Check if engine_data.db is locked or missing.")
+        logger.error("[FAIL] Database connection failed. Check if engine_data.db is locked by another process.")
         sys.exit(1)
     logger.info("[OK] Database connection OK")
 
 def bootstrap():
-    logger.info("🚀 Starting Deep-Dive Cold Start Bootstrap...")
+    logger.info("🚀 Starting Production Bootstrap V2.0...")
 
     # Step 0: Environment Validation
     validate_environment()
@@ -293,6 +315,7 @@ def bootstrap():
     
     logger.info(f"Ingesting 2 years of price history for {len(ASSET_UNIVERSE)} tickers...")
     try:
+        # ingestion.py handles multi-tier fallback automatically
         run_ingestion(ASSET_UNIVERSE, start_date, end_date)
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
@@ -300,7 +323,7 @@ def bootstrap():
     # 3. FX and Benchmarks
     populate_fx_and_benchmarks()
 
-    # 4. Engine Backfills (Macro & PEAD)
+    # 4. Engine Backfills (Regional Macro & PEAD)
     run_engines_backfill()
 
     # 5. Metadata Sync
@@ -336,9 +359,7 @@ def bootstrap():
     except Exception as e:
         logger.error(f"Final recalculation failed: {e}")
 
-    logger.info("✅ Bootstrap deep-dive complete. System is fully production-ready.")
-
-
+    logger.info("✅ Bootstrap complete. System is fully production-ready (US/EU Regional Aware).")
 
 if __name__ == '__main__':
     bootstrap()
