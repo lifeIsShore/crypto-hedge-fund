@@ -8,6 +8,13 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from portfolio.src.config import ASSET_UNIVERSE, TICKER_MAPPING
+
+# Load .env if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 """
 Production data ingestion pipeline.
 Primary source:  Polygon.io (requires POLYGON_API_KEY env var)
@@ -46,11 +53,11 @@ POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
 FALLBACK_USDEUR = float(os.getenv('FALLBACK_USDEUR', '0.92'))
 FALLBACK_GBPEUR = float(os.getenv('FALLBACK_GBPEUR', '1.17'))
 
-# API Keys for backups
+# API Keys for backups (loaded from .env)
 API_KEYS = {
-    'twelvedata': '4ac48ac6588d473ca2151c4eadb8022b',
-    'alphavantage': '75JQ8RG89HGRI5Z4',
-    'finnhub': 'd82nd81r01qmgc0gq7c0d82nd81r01qmgc0gq7cg'
+    'twelvedata':   os.getenv('TWELVEDATA_API_KEY', ''),
+    'alphavantage': os.getenv('ALPHAVANTAGE_API_KEY', ''),
+    'finnhub':      os.getenv('FINNHUB_API_KEY', '')
 }
 
 def fetch_fx_history(from_date: str, to_date: str) -> dict:
@@ -281,6 +288,100 @@ async def _fetch_polygon_single(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# BACKUP STOCK SOURCES (TwelveData & Finnhub)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def _fetch_twelvedata_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
+    """Fetch history from TwelveData (Backup 1)."""
+    api_key = API_KEYS['twelvedata']
+    if not api_key: return pd.DataFrame()
+    
+    url = f"https://api.twelvedata.com/time_series?symbol={ticker}&interval=1day&start_date={from_date}&end_date={to_date}&apikey={api_key}"
+    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+        data = await resp.json()
+    
+    if data.get('status') != 'ok' or not data.get('values'):
+        return pd.DataFrame()
+    
+    rows = []
+    for v in data['values']:
+        rows.append({
+            'date':      pd.to_datetime(v['datetime']).date(),
+            'ticker':    ticker,
+            'open':      float(v['open']),
+            'high':      float(v['high']),
+            'low':       float(v['low']),
+            'close':     float(v['close']),
+            'volume':    int(v['volume']) if v.get('volume') else None,
+            'adj_close': float(v['close']),
+            'source':    'twelvedata',
+        })
+    return pd.DataFrame(rows)
+
+
+async def _fetch_finnhub_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
+    """Fetch history from Finnhub (Backup 2)."""
+    api_key = API_KEYS['finnhub']
+    if not api_key: return pd.DataFrame()
+    
+    from_ts = int(pd.Timestamp(from_date).timestamp())
+    to_ts = int(pd.Timestamp(to_date).timestamp())
+    url = f"https://finnhub.io/api/v1/stock/candle?symbol={ticker}&resolution=D&from={from_ts}&to={to_ts}&token={api_key}"
+    
+    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+        data = await resp.json()
+    
+    if data.get('s') != 'ok':
+        return pd.DataFrame()
+    
+    rows = []
+    for t, o, h, l, c, v in zip(data['t'], data['o'], data['h'], data['l'], data['c'], data['v']):
+        rows.append({
+            'date':      pd.Timestamp(t, unit='s').date(),
+            'ticker':    ticker,
+            'open':      float(o),
+            'high':      float(h),
+            'low':       float(l),
+            'close':     float(c),
+            'volume':    int(v),
+            'adj_close': float(c),
+            'source':    'finnhub',
+        })
+    return pd.DataFrame(rows)
+
+
+async def _fetch_alphavantage_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
+    """Fetch history from AlphaVantage (Deep Backup)."""
+    api_key = API_KEYS['alphavantage']
+    if not api_key: return pd.DataFrame()
+    
+    # Using TIME_SERIES_DAILY_ADJUSTED for stock history
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={api_key}"
+    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+        data = await resp.json()
+    
+    time_series = data.get('Time Series (Daily)', {})
+    if not time_series:
+        return pd.DataFrame()
+    
+    rows = []
+    for dt, v in time_series.items():
+        if from_date <= dt <= to_date:
+            rows.append({
+                'date':      pd.to_datetime(dt).date(),
+                'ticker':    ticker,
+                'open':      float(v['1. open']),
+                'high':      float(v['2. high']),
+                'low':       float(v['3. low']),
+                'close':     float(v['4. close']),
+                'volume':    int(v['6. volume']),
+                'adj_close': float(v['5. adjusted close']),
+                'source':    'alphavantage',
+            })
+    return pd.DataFrame(rows)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # YFINANCE FALLBACK SOURCE
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -330,37 +431,64 @@ def _fetch_yfinance_single(ticker: str, from_date: str, to_date: str) -> pd.Data
 
 async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.DataFrame:
     """
-    Async multi-ticker fetch with per-ticker Polygon→yfinance fallback.
+    Async multi-ticker fetch with per-ticker Polygon→TwelveData→Finnhub→yfinance fallback.
     Now includes a secondary fallback to a US ticker if the primary (Xetra) fails.
     """
     frames = []
     use_polygon = bool(POLYGON_API_KEY)
-
-    if not use_polygon:
-        logger.info("POLYGON_API_KEY not set — using yfinance for all tickers")
 
     async with aiohttp.ClientSession() as http_session:
         for ticker in tickers:
             df = pd.DataFrame()
             
             # --- Try Primary Ticker ---
+            # Sequence: yfinance (Free) -> Polygon -> TwelveData -> Finnhub -> AlphaVantage
             try:
-                if use_polygon:
+                # 1. yfinance
+                df = _fetch_yfinance_single(ticker, from_date, to_date)
+                
+                # 2. Polygon
+                if df.empty and use_polygon:
                     df = await _fetch_polygon_single(http_session, ticker, from_date, to_date)
-                else:
-                    df = _fetch_yfinance_single(ticker, from_date, to_date)
+                
+                # 3. TwelveData
+                if df.empty:
+                    df = await _fetch_twelvedata_single(http_session, ticker, from_date, to_date)
+                
+                # 4. Finnhub
+                if df.empty:
+                    df = await _fetch_finnhub_single(http_session, ticker, from_date, to_date)
+
+                # 5. AlphaVantage
+                if df.empty:
+                    df = await _fetch_alphavantage_single(http_session, ticker, from_date, to_date)
+                    
             except Exception as e:
-                logger.warning(f"Primary fetch failed for {ticker}: {e}")
+                logger.warning(f"Primary fetch chain failed for {ticker}: {e}")
 
             # --- Fallback to US Ticker if Primary fails ---
             if df.empty and ticker in TICKER_MAPPING:
                 fallback_ticker = TICKER_MAPPING[ticker]
                 logger.info(f"Primary {ticker} failed or empty — trying fallback: {fallback_ticker}")
                 try:
-                    if use_polygon:
+                    # 1. yfinance
+                    df = _fetch_yfinance_single(fallback_ticker, from_date, to_date)
+                    
+                    # 2. Polygon
+                    if df.empty and use_polygon:
                         df = await _fetch_polygon_single(http_session, fallback_ticker, from_date, to_date)
-                    else:
-                        df = _fetch_yfinance_single(fallback_ticker, from_date, to_date)
+                    
+                    # 3. TwelveData
+                    if df.empty:
+                        df = await _fetch_twelvedata_single(http_session, fallback_ticker, from_date, to_date)
+                    
+                    # 4. Finnhub
+                    if df.empty:
+                        df = await _fetch_finnhub_single(http_session, fallback_ticker, from_date, to_date)
+
+                    # 5. AlphaVantage
+                    if df.empty:
+                        df = await _fetch_alphavantage_single(http_session, fallback_ticker, from_date, to_date)
                     
                     if not df.empty:
                         # CRITICAL: We tag the data with the ORIGINAL (Primary) ticker
@@ -368,7 +496,7 @@ async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.Da
                         df['ticker'] = ticker
                         logger.info(f"Successfully fetched fallback data for {ticker} using {fallback_ticker}")
                 except Exception as e:
-                    logger.warning(f"Fallback fetch failed for {fallback_ticker}: {e}")
+                    logger.warning(f"Fallback fetch chain failed for {fallback_ticker}: {e}")
 
             if not df.empty:
                 frames.append(df)
