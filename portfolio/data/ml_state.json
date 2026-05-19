@@ -1,6 +1,6 @@
 {
   "available": true,
-  "generated_at": "2026-05-15T13:57:37",
+  "generated_at": "2026-05-19T12:00:52",
   "ensemble": {
     "weighted_score": 0.4899,
     "median_score": 0.4769,
@@ -557,7 +557,7 @@
     }
   },
   "experiment_summary": {
-    "total_runs": 660,
+    "total_runs": 670,
     "best_model": "XGBoost",
     "best_accuracy": 0.521,
     "best_auc": 0.6129,

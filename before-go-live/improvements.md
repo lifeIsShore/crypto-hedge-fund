@@ -132,3 +132,105 @@ Current Portfolio Value & daily P&L.
 *   **The Best Practice:** Backtests are inherently "perfect." Real trading is messy.
 *   **The Rule:** Take your backtested Sharpe Ratio and apply a **50% "Haircut."** If the strategy still makes sense with half the expected return, it is robust enough to trade.
 *   **Benefit:** Prevents the psychological trap of "Backtest Euphoria" and ensures you are prepared for realistic, lower-than-expected returns.
+
+
+Edited how-desktop.md
+Edited flask_app.py
+Edited state_paths.py
+Edited improvements.md
+Viewed improvements.md:152-181
+Viewed improvements.md:1-135
+Viewed improvements.md:135-135
+
+Here is the professionally expanded, institutional-grade documentation for your 6 strategic improvements. It is fully formatted in GitHub markdown, matching the exact style of your existing `improvements.md` document so you can copy and paste it directly.
+
+```markdown
+### 1. Tax-Aware Selling Optimization (Abgeltungsteuer)
+*Preserving compounding capital by penalizing frictional tax drag.*
+
+> [!IMPORTANT]  
+> **The Context:** Germany enforces a flat capital gains tax (*Abgeltungsteuer*) of approximately 26.375% (including solidarity surcharge). Unlike jurisdictions with long-term capital gains exemptions, German tax liability attaches immediately upon realization, permanently reducing your compounding capital base.
+
+*   **The Problem:** Standard Mean-Variance and Black-Litterman rebalancing algorithms routinely suggest trimming winning positions to reallocate capital to assets with marginally higher Alpha scores. Doing so triggers an immediate 26.375% tax drag on the realized profit, creating a severe cash friction that degrades long-term net returns.
+*   **The Implementation (`optimizer.py`):** Introduce a `tax_penalty` vector directly into the optimization objective function. When evaluating a potential sell order, the optimizer calculates the estimated tax liability: `(current_price - cost_basis) * 0.26375`. This frictional drag is subtracted from the expected return of the replacement asset.
+*   **The Benefit (Tax Alpha):** The optimizer establishes a dynamic hurdle rate. It will naturally let winning positions run longer (deferring tax realization) unless the replacement asset's expected Alpha is large enough to overcome the 26.375% tax friction.
+
+---
+
+### 2. Benchmark Equity Curve Overlay & Active Share Tracking
+*Defending the fund mandate through absolute mathematical transparency.*
+
+> [!WARNING]  
+> **The Trap:** "Closet Indexing"—charging active management or performance fees while maintaining a portfolio structure that essentially mimics the broader market index. Without direct visual and quantitative benchmarking, allocators cannot verify if returns are true Alpha or disguised Beta.
+
+*   **The Implementation (`analytics.html` & `performance_history`):** 
+    1. **Visual Overlay:** Plot the fund's live equity curve directly against primary institutional benchmarks: **SPY** (S&P 500) and **EUNL.DE** (iShares Core MSCI World UCITS ETF for European dual-currency context).
+    2. **Active Share Calculation:** Continuously calculate and display the portfolio's Active Share: $$\text{Active Share} = \frac{1}{2} \sum |w_{\text{fund}} - w_{\text{benchmark}}|$$
+*   **The Benefit:** Institutional accountability. Proves conclusively to clients and stakeholders that the fund is generating genuine, uncorrelated Alpha rather than riding market Beta.
+
+---
+
+### 3. Hard Stop-Loss "Circuit Breakers"
+*An absolute, non-negotiable safety net for catastrophic structural breaks.*
+
+> [!CAUTION]  
+> **The Risk:** Machine learning models reliant on rolling historical windows or lagging technical indicators can be dangerously slow to react to black swan events, corporate accounting fraud, or overnight geopolitical crises.
+
+*   **The Implementation (`pre_trade.py` & `risk_events`):** Build a deterministic, rule-based execution layer that executes before any optimizer or model order is routed. The system monitors the absolute drawdown of every holding from its execution cost basis.
+*   **The Rule:** If an asset breaches a strict absolute floor (e.g., **-15.0% from entry**), the Circuit Breaker instantly overrides any ML `Hold` or `Buy` signal, generates an immediate market liquidation order, and logs a high-severity alert to the `risk_events` table.
+*   **The Benefit:** Eliminates single-stock wipeout risk. Provides a robust mathematical circuit breaker that protects client capital when real-world events move faster than historical training data.
+
+---
+
+### 4. Signal Explainability Layer (SHAP Attribution)
+*Transforming the AI "Black Box" into an institutional "Glass Box."*
+
+> [!TIP]  
+> **The Opportunity:** As the human pilot in the Control Tower, you cannot confidently approve or override a major model rebalance (e.g., shifting 10% into a volatile tech asset) without understanding the underlying economic drivers.
+
+*   **The Implementation (`model_outputs` table & `rebalance.html`):** Integrate **SHAP (SHapley Additive exPlanations)** values into the inference pipeline. When the model writes target weights to `model_outputs`, it attaches feature attribution arrays.
+*   **The Dashboard Visual:** On `rebalance.html`, clicking any suggested trade expands an interactive waterfall chart displaying the exact percentage breakdown of the recommendation (e.g., *"BUY suggestion driven 40% by Volatility Compression, 30% by Momentum, -10% by RSI Overbought"*).
+*   **The Benefit:** Empowers the portfolio manager to ground manual override decisions in verifiable data science rather than gut intuition.
+
+---
+
+### 5. Override Outcome Tracking & Attribution
+*The scientific evolution and auditing of human intuition.*
+
+> [!NOTE]  
+> **The Problem:** Portfolio managers frequently override quantitative models based on discretionary news or intuition. However, human memory suffers from confirmation bias—managers vividly remember their successful overrides while forgetting the times their intervention degraded returns.
+
+*   **The Implementation (`override_log` & `scheduler.py`):** The `override_log` table already contains `outcome_30d` and `outcome_90d` columns, but they remain unpopulated. Wire an automated background task in `scheduler.py` that executes every weekend to backfill these columns.
+*   **The Calculation:** The job computes the forward 30-day and 90-day P&L difference between the *Manager's Override Choice* and the *Model's Original Suggestion*.
+*   **The Benefit:** Ultimate manager accountability. Within 6 months, a statistical audit will reveal the exact market regimes where human intervention generates positive Alpha versus where the machine should have been trusted.
+
+---
+
+### 6. Correlation Cluster Constraints (k-Means)
+*Preventing hidden cross-sector factor blowups.*
+
+```mermaid
+flowchart LR
+    subgraph Traditional Sectors [Nominal Sector Labels]
+        TSM[TSM: Semiconductors]
+        QCI[QCI: Software]
+        NVDA[NVDA: Hardware]
+    end
+    subgraph KMeans Cluster [True Statistical Co-Movement]
+        TSM --> CL[AI / Tech Momentum Cluster]
+        QCI --> CL
+        NVDA --> CL
+        CL -- Capped at 25% Max --> OPT[Optimizer]
+    end
+```
+
+*   **The Problem:** Traditional sector concentration limits (e.g., capping "Technology" at 30%) fail to protect against hidden cross-sector co-movements. For example, a semiconductor foundry (`TSM`), an AI software developer (`QCI`), a GPU manufacturer (`NVDA`), and a consumer electronics giant (`AAPL`) may sit in different sub-industries but will collapse simultaneously during a tech liquidation event.
+*   **The Implementation (`optimizer.py` - ~50 lines):** Before executing the Mean-Variance optimization, run a dynamic **k-means clustering algorithm** across the asset correlation matrix to group stocks by their true statistical co-movement.
+*   **The Constraint:** Enforce a strict **25% maximum portfolio weight cap** on any single mathematical cluster, completely superseding nominal sector labels.
+*   **The Benefit:** True structural diversification. Eliminates hidden factor concentration and protects the fund from correlated multi-stock drawdowns.
+```
+
+---
+### Summary of Work
+- Analyzed the 6 strategic enhancement notes provided by the user (Tax-aware selling, Benchmark overlay, Hard stop-losses, SHAP explainability, Override tracking, and k-Means correlation clustering).
+- Expanded the raw concepts into highly polished, institutional-grade documentation sections formatted in GitHub markdown with custom alert callouts and mermaid diagrams, ready for direct copy-pasting into `improvements.md`.

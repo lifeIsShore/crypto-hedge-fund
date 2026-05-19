@@ -87,6 +87,7 @@ TICKER_MAPPING = {
     'MNR.DE':  'MIN',   # Mineral Resources
     'C1E.DE':  'LEU',   # Centrus Energy
     'VO51.DE': 'UUUU',  # Energy Fuels
+    'U6Z.DE':  'UEC',   # Uranium Energy
     'VRT.DE':  'VRTX',  # Vertex
     'AXS.DE':  'AXSM',  # Axsome
 }
@@ -169,6 +170,7 @@ TICKER_NAMES = {
     'MIN': 'Mineral Resources Limited', 'MNR.DE': 'Mineral Resources Limited',
     'LEU': 'Centrus Energy Corp.', 'C1E.DE': 'Centrus Energy Corp.',
     'VO51.DE': 'Energy Fuels Inc.', 'UUUU': 'Energy Fuels Inc.',
+    'U6Z.DE': 'Uranium Energy Corp.', 'UEC': 'Uranium Energy Corp.',
     'BA': 'The Boeing Company', 'CAT': 'Caterpillar Inc.',
     'LMT': 'Lockheed Martin Corporation', 'RTX': 'RTX Corporation',
     'GE': 'General Electric Company', 'HON': 'Honeywell International Inc.',
@@ -258,6 +260,7 @@ TICKER_SECTORS = {
     'MIN': 'Mining', 'MNR.DE': 'Mining',
     'LEU': 'Energy', 'C1E.DE': 'Energy',
     'VO51.DE': 'Energy', 'UUUU': 'Energy',
+    'U6Z.DE': 'Energy', 'UEC': 'Energy',
     'BA': 'Industrial', 'CAT': 'Industrial', 'LMT': 'Industrial',
     'RTX': 'Industrial', 'GE': 'Industrial', 'HON': 'Industrial',
     'UPS': 'Transportation', 'DE': 'Industrial', 'RHM.DE': 'Industrial',
@@ -294,7 +297,7 @@ ASSET_UNIVERSE = [
 
     # --- Energy, Mining & Industrials ---
     'XOM', 'CVX', 'NEE', 'FSLR', 'GEV', 'CCJ', 'CEG', 'SMR', 'OKLO', 'REP.DE', 
-    'ENB.DE', 'EGI.DE', 'BLM.DE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN', 'C1E.DE', 'VO51.DE',
+    'ENB.DE', 'EGI.DE', 'BLM.DE', 'BEP', 'RIO', 'ERO', 'FCX', 'ALB', 'MIN', 'C1E.DE', 'VO51.DE', 'U6Z.DE',
     'BA', 'CAT', 'LMT', 'RTX', 'GE', 'HON', 'UPS', 'DE', 'RHM.DE'
 ]
 
