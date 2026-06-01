@@ -28,7 +28,7 @@ import datetime
 logger = logging.getLogger(__name__)
 
 # FX Logic (mirrors ingestion.py)
-EUR_SUFFIXES = ('.DE', '.AS', '.PA')
+EUR_SUFFIXES = ('.DE', '.AS', '.PA', '.SG')
 GBP_SUFFIXES = ('.L',)
 FALLBACK_USDEUR = 0.92
 FALLBACK_GBPEUR = 1.17

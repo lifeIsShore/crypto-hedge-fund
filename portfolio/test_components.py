@@ -186,7 +186,7 @@ try:
     
     # Test KPI report (with corrected signature)
     benchmark_returns = log_returns[BENCHMARK_TICKER] if BENCHMARK_TICKER in log_returns.columns else log_returns.iloc[:, 0]
-    kpis = generate_kpi_report(port_returns, benchmark_returns, RISK_FREE_RATE)
+    kpis, _ = generate_kpi_report(port_returns, benchmark_returns, 1000.0, 1000.0, 0.0, RISK_FREE_RATE)
     print(f"  {GREEN}✅{RESET} KPI report generated")
     print(f"     - Keys: {', '.join(kpis.keys())}")
     print()

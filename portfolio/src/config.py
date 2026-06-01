@@ -90,6 +90,7 @@ TICKER_MAPPING = {
     'U6Z.DE':  'UEC',   # Uranium Energy
     'VRT.DE':  'VRTX',  # Vertex
     'AXS.DE':  'AXSM',  # Axsome
+    'PPFD.SG': 'SLV',   # Silver
 }
 
 # --- HUMAN READABLE NAMES ---
@@ -186,6 +187,7 @@ TICKER_NAMES = {
     'IS3N.DE': 'iShares Core EM IMI', 'IUSN.DE': 'iShares MSCI World Small Cap',
     'XDWD.DE': 'Xtrackers MSCI World Swap', 'ZPRV.DE': 'SPDR MSCI USA Small Cap Value',
     'DBXD.DE': 'Xtrackers DAX', 'IS04.DE': 'iShares MSCI World', 'EGLN.DE': 'iShares Physical Gold',
+    'PPFD.SG': 'iShares Physical Silver ETC', 'SLV': 'iShares Silver Trust',
 }
 
 # --- ASSET SECTORS ---
@@ -269,6 +271,7 @@ TICKER_SECTORS = {
     'LOW': 'Consumer', 'EUNL.DE': 'ETF', 'VUSA.DE': 'ETF', 'VWCE.DE': 'ETF',
     'EXS1.DE': 'ETF', 'EXXT.DE': 'ETF', 'SPPW.DE': 'ETF', 'IS3N.DE': 'ETF',
     'IUSN.DE': 'ETF', 'XDWD.DE': 'ETF', 'ZPRV.DE': 'ETF', 'DBXD.DE': 'ETF',
+    'PPFD.SG': 'ETF', 'SLV': 'ETF',
 }
 
 # The active universe used by the engine (Primary Tickers)
@@ -315,6 +318,7 @@ ETF_TICKERS = [
     'XDWD.DE',  # Xtrackers MSCI World Swap UCITS ETF
     'ZPRV.DE',  # SPDR MSCI USA Small Cap Value ETF
     'DBXD.DE',  # Xtrackers DAX UCITS ETF
+    'PPFD.SG',  # iShares Physical Silver ETC
 ]
 
 ASSET_UNIVERSE.extend(ETF_TICKERS)

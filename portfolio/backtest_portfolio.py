@@ -159,7 +159,7 @@ class BacktestUI(tk.Tk):
             fx_series = fx_series.reindex(prices_df.index, method="ffill").fillna(0.92)
 
             self.logger.info("Applying dynamic EUR/USD FX rate to US stocks...")
-            EUR_SUFFIXES = ('.DE', '.AS', '.PA')
+            EUR_SUFFIXES = ('.DE', '.AS', '.PA', '.SG')
             for col in prices_df.columns:
                 if not any(col.endswith(s) for s in EUR_SUFFIXES):
                     prices_df[col] = prices_df[col] * fx_series

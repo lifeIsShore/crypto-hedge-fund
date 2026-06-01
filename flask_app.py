@@ -1110,7 +1110,7 @@ def api_positions():
 @app.route("/api/cash")
 def api_cash():
     """Latest cash balance."""
-    rows = _q("SELECT cash_eur, date FROM cash_history ORDER BY date DESC LIMIT 1")
+    rows = _q("SELECT cash_eur, date FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
     if rows:
         return jsonify({"cash_eur": float(rows[0]["cash_eur"]), "date": rows[0]["date"]})
     return jsonify({"cash_eur": 0.0, "date": None})
@@ -1794,7 +1794,7 @@ def api_stress_tests():
             GROUP BY ticker
         ) l ON p.id = l.mid
     """)
-    cash_row = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC LIMIT 1")
+    cash_row = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
     cash_eur = float(cash_row[0]["cash_eur"]) if cash_row else 0.0
     total_value = sum(float(p["value_eur"]) for p in positions) + cash_eur
 

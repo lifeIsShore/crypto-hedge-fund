@@ -45,7 +45,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 logger = logging.getLogger(__name__)
 
 # FX suffix detection (mirrors portfolio/src/data_loader.py)
-EUR_SUFFIXES = ('.DE', '.AS', '.PA')
+EUR_SUFFIXES = ('.DE', '.AS', '.PA', '.SG')
 GBP_SUFFIXES = ('.L',)
 
 POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')

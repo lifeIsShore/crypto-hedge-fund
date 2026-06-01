@@ -146,11 +146,11 @@ def fetch_historical(tickers, lookback_days=504, cache_path='data/historical_pri
         prices = prices.reindex(columns=tickers)
         prices = prices.tail(lookback_days)
 
+        # Remove tickers with absolutely no data before validating/caching
+        prices = _drop_dead_columns(prices)
+
         # Non-fatal sanity gate (warns only, never raises)
         validate_data(prices)
-
-        # Remove tickers with absolutely no data before caching
-        prices = _drop_dead_columns(prices)
 
         prices.to_csv(cache_path)
         logging.info(
@@ -218,7 +218,7 @@ def convert_usd_prices_to_eur(prices_df, usd_eur_rate):
 
     Everything else (no suffix, .L, etc.) is treated as USD and converted.
     """
-    EUR_SUFFIXES = ('.DE', '.AS', '.PA')
+    EUR_SUFFIXES = ('.DE', '.AS', '.PA', '.SG')
 
     converted   = prices_df.copy()
     n_converted = 0
