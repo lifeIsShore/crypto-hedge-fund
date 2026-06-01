@@ -107,9 +107,19 @@ def write_regime_state(regime_df: pd.DataFrame, region: str = "US") -> dict:
     # Parameterize the state path by region for the dashboard to consume
     state_path = REGIME_STATE_PATH.replace(".json", f"_{region.lower()}.json")
     os.makedirs(os.path.dirname(state_path) if os.path.dirname(state_path) else ".", exist_ok=True)
-    
+
     with open(state_path, "w") as f:
         json.dump(state, f, indent=2)
-
     log.info(f"Regime state ({region}) written → {state_path}")
+
+    # Always update the canonical regime_state.json so the dashboard's
+    # staleness check (which monitors REGIME_STATE_PATH) sees a fresh file.
+    # For multi-region runs (ALL), the last region written wins — US runs first
+    # so EU will be the final snapshot, but the file_age check just needs it fresh.
+    canonical_path = REGIME_STATE_PATH
+    os.makedirs(os.path.dirname(canonical_path) if os.path.dirname(canonical_path) else ".", exist_ok=True)
+    with open(canonical_path, "w") as f:
+        json.dump(state, f, indent=2)
+    log.info(f"Regime state (canonical) written → {canonical_path}")
+
     return state
