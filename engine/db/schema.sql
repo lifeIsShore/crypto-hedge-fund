@@ -387,3 +387,18 @@ CREATE TABLE IF NOT EXISTS pipeline_logs (
 
 CREATE INDEX IF NOT EXISTS idx_pipeline_logs_date  ON pipeline_logs (run_date, logged_at DESC);
 CREATE INDEX IF NOT EXISTS idx_pipeline_logs_level ON pipeline_logs (level, logged_at DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- PORTFOLIO LAB
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS saved_portfolios (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    tickers     TEXT NOT NULL, -- JSON array of tickers
+    weights     TEXT NOT NULL, -- JSON object of ticker -> weight
+    objective   TEXT,
+    metrics     TEXT,          -- JSON object of metrics
+    saved_at    TEXT DEFAULT (datetime('now'))
+);
+

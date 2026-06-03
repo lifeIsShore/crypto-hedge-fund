@@ -301,7 +301,7 @@ th.info-point, td.info-point {
   <a href="/history"     class="{{ 'active' if page=='history'    }}">HISTORY</a>
   <a href="/divergence"  class="{{ 'active' if page=='divergence' }}">ETF DIVERGENCE</a>
   <a href="/health"      class="{{ 'active' if page=='health'     }}">PIPELINE HEALTH</a>
-  <a href="/lab"         class="{{ 'active' if page=='lab'        }}" style="color:var(--accent3);{% if page=='lab' %}border-bottom-color:var(--accent3){% endif %}">⚗ PORTFOLIO LAB</a>
+  <a href="/lab"         class="{{ 'active' if page=='lab'        }}" {% if page=='lab' %}style="color:var(--accent3); border-bottom-color:var(--accent3);"{% else %}style="color:var(--accent3);"{% endif %}>⚗ PORTFOLIO LAB</a>
 </nav>
 
 <main>

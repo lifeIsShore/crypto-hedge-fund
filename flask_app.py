@@ -2314,6 +2314,69 @@ def api_lab_optimize():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/lab/save_portfolio", methods=["POST"])
+def api_lab_save_portfolio():
+    data = request.get_json(force=True) or {}
+    name = data.get("name", "").strip()
+    tickers = data.get("tickers", [])
+    weights = data.get("weights", {})
+    objective = data.get("objective", "")
+    metrics = data.get("metrics", {})
+
+    if not name:
+        return jsonify({"error": "Portfolio name is required"}), 400
+    if not tickers or not weights:
+        return jsonify({"error": "No portfolio data to save"}), 400
+
+    try:
+        _exec("""
+            INSERT INTO saved_portfolios (name, tickers, weights, objective, metrics)
+            VALUES (:name, :tickers, :weights, :objective, :metrics)
+        """, {
+            "name": name,
+            "tickers": json.dumps(tickers),
+            "weights": json.dumps(weights),
+            "objective": objective,
+            "metrics": json.dumps(metrics)
+        })
+        return jsonify({"ok": True, "message": f"Portfolio '{name}' saved successfully!"})
+    except Exception as e:
+        log.exception("Error saving portfolio")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/lab/saved_portfolios", methods=["GET"])
+def api_lab_saved_portfolios():
+    try:
+        rows = _q("""
+            SELECT id, name, tickers, weights, objective, metrics, saved_at
+            FROM saved_portfolios
+            ORDER BY saved_at DESC
+        """)
+        # Parse JSON fields
+        for row in rows:
+            row["tickers"] = json.loads(row["tickers"]) if row["tickers"] else []
+            row["weights"] = json.loads(row["weights"]) if row["weights"] else {}
+            row["metrics"] = json.loads(row["metrics"]) if row["metrics"] else {}
+        return jsonify({"portfolios": rows})
+    except Exception as e:
+        log.exception("Error loading saved portfolios")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/lab/delete_portfolio/<int:pid>", methods=["DELETE"])
+def api_lab_delete_portfolio(pid):
+    try:
+        success = _exec("DELETE FROM saved_portfolios WHERE id = :pid", {"pid": pid})
+        if not success:
+            return jsonify({"error": "Database deletion failed"}), 500
+        return jsonify({"ok": True})
+    except Exception as e:
+        log.exception("Error deleting portfolio")
+        return jsonify({"error": str(e)}), 500
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

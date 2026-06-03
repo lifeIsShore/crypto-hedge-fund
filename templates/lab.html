@@ -163,6 +163,16 @@
   transition: all .15s;
 }
 .quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Saved Portfolios */
+.saved-port-item {
+  padding: 8px 10px; border: 1px solid var(--border);
+  background: var(--surface2); margin-bottom: 6px; cursor: pointer;
+  transition: border-color .15s;
+}
+.saved-port-item:hover { border-color: var(--accent); }
+.saved-port-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.saved-port-meta { font-size: 9px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 </style>
 {% endblock %}
 
@@ -183,6 +193,15 @@
 
   <!-- ══════════════════ SIDEBAR ══════════════════ -->
   <div id="lab-sidebar">
+
+    <!-- Saved Portfolios panel -->
+    <div class="panel" style="margin-bottom:10px">
+      <div class="panel-header"><span class="panel-title">SAVED PORTFOLIOS</span></div>
+      <div class="panel-body" style="padding:12px; max-height:180px; overflow-y:auto" id="saved-ports-list">
+        <div style="font-size:10px;color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">TICKER SELECTION</span>
@@ -270,6 +289,11 @@
 
     <!-- Results (shown after run) -->
     <div id="results-area">
+
+      <!-- Action bar -->
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px">
+        <button class="btn btn-primary" onclick="savePortfolio()" id="save-port-btn" style="padding:6px 12px; font-size:10px; letter-spacing:0.1em; background:var(--accent); color:var(--bg); border:none; cursor:pointer;">💾 SAVE PORTFOLIO</button>
+      </div>
 
       <!-- KPI strip -->
       <div class="kpi-strip" id="kpi-strip" style="margin-bottom:14px"></div>
@@ -504,6 +528,100 @@ function switchTab(name) {
   document.querySelectorAll('.result-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
 }
+
+// ── Save & Load Portfolios ────────────────────────────────────────────────────
+async function loadSavedPortfolios() {
+  try {
+    const res = await fetch('/api/lab/saved_portfolios');
+    const data = await res.json();
+    const el = document.getElementById('saved-ports-list');
+    if (!data.portfolios || data.portfolios.length === 0) {
+      el.innerHTML = '<div style="font-size:10px;color:var(--muted)">No saved portfolios</div>';
+      return;
+    }
+    el.innerHTML = data.portfolios.map(p => `
+      <div class="saved-port-item">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div onclick='applySavedPortfolio(${JSON.stringify(p.tickers)}, "${p.objective}")' style="flex:1">
+            <div class="saved-port-name">${p.name}</div>
+            <div class="saved-port-meta">
+              ${p.tickers.length} tickers · ${(p.objective||'').replace('_', ' ').toUpperCase()}<br>
+              Sharpe: ${(p.metrics.sharpe||0).toFixed(2)} | Ret: ${(p.metrics.ret_ann||0).toFixed(1)}%
+            </div>
+          </div>
+          <button onclick="deletePortfolio(${p.id}, event)" style="background:transparent; border:none; color:var(--muted); cursor:pointer; padding:2px; font-size:12px;" title="Delete portfolio">✕</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('saved-ports-list').innerHTML = '<div style="font-size:10px;color:red">Failed to load</div>';
+  }
+}
+
+function applySavedPortfolio(tickers, objective) {
+  selected.clear();
+  tickers.forEach(t => selected.add(t));
+  buildTickerList();
+  renderChips();
+  updateCount();
+  
+  if (objective) {
+    const objEl = document.getElementById('sel-objective');
+    if (objEl) objEl.value = objective;
+  }
+}
+
+async function deletePortfolio(id, event) {
+  event.stopPropagation();
+  if (!confirm("Delete this saved portfolio?")) return;
+  try {
+    const res = await fetch('/api/lab/delete_portfolio/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.error) alert(data.error);
+    else loadSavedPortfolios();
+  } catch(e) {
+    alert("Error deleting: " + e.message);
+  }
+}
+
+async function savePortfolio() {
+  if (!lastResult) return;
+  const name = prompt("Enter a name for this portfolio:");
+  if (!name) return;
+  
+  const btn = document.getElementById('save-port-btn');
+  const oldText = btn.textContent;
+  btn.textContent = 'SAVING...';
+  btn.disabled = true;
+
+  try {
+    const payload = {
+      name: name,
+      tickers: Object.keys(lastResult.weights),
+      weights: lastResult.weights,
+      objective: lastResult.objective,
+      metrics: lastResult.metrics
+    };
+    const res = await fetch('/api/lab/save_portfolio', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) alert(data.error);
+    else {
+      alert("Saved successfully!");
+      loadSavedPortfolios();
+    }
+  } catch(e) {
+    alert("Error saving: " + e.message);
+  } finally {
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadSavedPortfolios);
 
 // ── Optimise ──────────────────────────────────────────────────────────────────
 async function runOptimization() {
