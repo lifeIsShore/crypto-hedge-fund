@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% block title %}Signal Review Queue{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Queue table overrides ────────────────────────────────────────────────── */
+.queue-row td { vertical-align: middle; }
+.queue-row:hover { background: rgba(255,255,255,.025) !important; }
+
+/* ── Action button group in table ────────────────────────────────────────── */
+.action-group { display: flex; gap: 6px; }
+.q-btn {
+  padding: 5px 10px; font-size: 9px; letter-spacing: .08em;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); cursor: pointer; font-family: var(--mono);
+  transition: all .15s; white-space: nowrap;
+}
+.q-btn:hover { border-color: var(--text); color: var(--text); }
+.q-btn.approve { border-color: var(--accent);  color: var(--accent); }
+.q-btn.approve:hover { background: var(--accent);  color: var(--bg); }
+.q-btn.skip    { border-color: var(--accent2); color: var(--accent2); }
+.q-btn.skip:hover    { background: var(--accent2); color: var(--bg); }
+.q-btn.note    { border-color: var(--accent4); color: var(--accent4); }
+.q-btn.note:hover    { background: var(--accent4); color: var(--bg); }
+.q-btn.done { opacity: .4; cursor: default; pointer-events: none; }
+
+/* ── Conviction mini-bar in table ─────────────────────────────────────────── */
+.conv-mini {
+  display: flex; align-items: center; gap: 6px;
+}
+.conv-mini-bar {
+  flex: 1; height: 4px; background: var(--border); max-width: 60px;
+}
+.conv-mini-fill { height: 100%; }
+
+/* ── Signal type badge ────────────────────────────────────────────────────── */
+.sig-badge {
+  display: inline-block; padding: 2px 7px; font-size: 9px; letter-spacing: .08em;
+}
+.sig-badge.buy   { background: rgba(0,229,160,.12);  color: var(--accent); }
+.sig-badge.short { background: rgba(255,77,109,.12); color: var(--accent2); }
+.sig-badge.sell  { background: rgba(255,77,109,.12); color: var(--accent2); }
+.sig-badge.reduce{ background: rgba(245,166,35,.12); color: var(--accent3); }
+
+/* ── Expiry countdown ─────────────────────────────────────────────────────── */
+.expiry-ok   { color: var(--muted); }
+.expiry-warn { color: var(--accent3); }
+.expiry-crit { color: var(--accent2); }
+
+/* ── Review modal ─────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-backdrop.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 24px; min-width: 400px; max-width: 520px; width: 90%;
+  animation: fadeUp .2s ease;
+}
+.modal-title  { font-size: 12px; letter-spacing: .1em; margin-bottom: 4px; }
+.modal-sub    { font-size: 10px; color: var(--muted); margin-bottom: 16px; }
+.modal-label  { font-size: 9px; color: var(--muted); letter-spacing: .1em; display: block; margin-bottom: 5px; }
+.modal-section { margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+/* ── Regime warning box ───────────────────────────────────────────────────── */
+.regime-warning {
+  background: rgba(255,77,109,.07); border: 1px solid rgba(255,77,109,.3);
+  padding: 10px 14px; margin-bottom: 14px; display: none;
+}
+.regime-warning.show { display: block; }
+.regime-warning-title { font-size: 10px; color: var(--accent2); font-weight: 600; margin-bottom: 4px; }
+.regime-warning-body  { font-size: 10px; color: var(--muted); line-height: 1.6; }
+
+/* ── Reviewed section ─────────────────────────────────────────────────────── */
+.status-approved { color: var(--accent);  }
+.status-skipped  { color: var(--muted);   }
+.status-expired  { color: var(--accent2); opacity: .6; }
+
+/* ── Empty inbox ──────────────────────────────────────────────────────────── */
+.empty-inbox {
+  text-align: center; padding: 50px 20px;
+  color: var(--muted);
+}
+.empty-inbox-icon  { font-size: 36px; margin-bottom: 10px; }
+.empty-inbox-title { font-size: 13px; color: var(--text); margin-bottom: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi neutral">
+    <div class="kpi-label">⏳ PENDING</div>
+    <div class="kpi-value" id="kpi-pending">—</div>
+    <div class="kpi-sub">awaiting decision</div>
+  </div>
+  <div class="kpi good">
+    <div class="kpi-label">✅ APPROVED</div>
+    <div class="kpi-value" id="kpi-approved">—</div>
+    <div class="kpi-sub">total approved</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">❌ SKIPPED</div>
+    <div class="kpi-value" id="kpi-skipped">—</div>
+    <div class="kpi-sub">total skipped</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">💀 EXPIRED</div>
+    <div class="kpi-value" id="kpi-expired">—</div>
+    <div class="kpi-sub">no action taken</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="MACRO REGIME" data-info="A Risk-Off regime triggers a conviction discount warning before approving any long position.">REGIME</div>
+    <div class="kpi-value" id="kpi-regime" style="font-size:14px">—</div>
+    <div class="kpi-sub" id="kpi-regime-sub"></div>
+  </div>
+</div>
+
+<!-- Pending Queue -->
+<div class="panel" style="margin-top:16px">
+  <div class="panel-header">
+    <span class="panel-title">⏳ PENDING REVIEW</span>
+    <span class="panel-badge" id="pending-badge">0 SIGNALS</span>
+  </div>
+  <div class="panel-body" style="padding:0">
+    <div id="pending-empty" class="empty-inbox" style="display:none">
+      <div class="empty-inbox-icon">📭</div>
+      <div class="empty-inbox-title">Queue is empty</div>
+      <div style="font-size:11px">Go to <a href="/highlighted" style="color:var(--accent)">⭐ HIGHLIGHTED</a> and click "Add to Queue" to populate your inbox.</div>
+    </div>
+    <table class="tbl" id="pending-table" style="display:none">
+      <thead><tr>
+        <th onclick="sortTable(0,'pending-table','str')">TICKER</th>
+        <th onclick="sortTable(1,'pending-table','str')">SIGNAL</th>
+        <th onclick="sortTable(2,'pending-table','num')" class="info-point" data-title="CONVICTION" data-info="Composite conviction score = up_proba × AUC × (1+R:R) × regime_mult × pead_boost">CONVICTION</th>
+        <th onclick="sortTable(3,'pending-table','num')">UP PROBA</th>
+        <th onclick="sortTable(4,'pending-table','num')">AUC</th>
+        <th onclick="sortTable(5,'pending-table','num')">R:R</th>
+        <th>PRICE</th>
+        <th>EXPIRES</th>
+        <th>SOURCE</th>
+        <th>ACTION</th>
+      </tr></thead>
+      <tbody id="pending-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Decision Journal / Reviewed -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">📋 DECISION JOURNAL</span>
+    <span class="panel-badge">LAST 30 DECISIONS</span>
+  </div>
+  <div class="panel-body" style="padding:0">
+    <div id="reviewed-empty" class="empty-inbox" style="display:none">
+      <div class="empty-inbox-icon">📖</div>
+      <div class="empty-inbox-title">No decisions yet</div>
+      <div style="font-size:11px">Your approved and skipped signals will appear here as an audit trail.</div>
+    </div>
+    <table class="tbl" id="reviewed-table" style="display:none">
+      <thead><tr>
+        <th onclick="sortTable(0,'reviewed-table','str')">DATE</th>
+        <th onclick="sortTable(1,'reviewed-table','str')">TICKER</th>
+        <th onclick="sortTable(2,'reviewed-table','str')">SIGNAL</th>
+        <th onclick="sortTable(3,'reviewed-table','num')">CONVICTION</th>
+        <th onclick="sortTable(4,'reviewed-table','str')">DECISION</th>
+        <th onclick="sortTable(5,'reviewed-table','str')">REASON</th>
+        <th>NOTE</th>
+      </tr></thead>
+      <tbody id="reviewed-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Review / Approve modal -->
+<div class="modal-backdrop" id="review-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">REVIEW SIGNAL</div>
+    <div class="modal-sub" id="modal-sub"></div>
+
+    <!-- Regime warning (shown if approving BUY in Risk-Off) -->
+    <div class="regime-warning" id="regime-warning">
+      <div class="regime-warning-title">⚠️ REGIME WARNING</div>
+      <div class="regime-warning-body" id="regime-warning-body">
+        You are approving a LONG position in a Risk-Off regime. Conviction score has been discounted.
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <span class="modal-label">REASON CATEGORY</span>
+      <select id="modal-reason" style="width:100%">
+        <option value="">— Select reason (optional) —</option>
+        <option value="MACRO_VIEW">MACRO_VIEW — Macro outlook supports this</option>
+        <option value="EARNINGS_RISK">EARNINGS_RISK — Earnings event risk concern</option>
+        <option value="POSITION_SIZE_TOO_LARGE">POSITION_SIZE_TOO_LARGE — Already over-exposed</option>
+        <option value="ALREADY_HOLDING">ALREADY_HOLDING — Already have a position</option>
+        <option value="REGULATORY">REGULATORY — Regulatory / compliance concern</option>
+        <option value="SIGNAL_STALE">SIGNAL_STALE — Signal too old to act on</option>
+        <option value="OTHER">OTHER — Other reason</option>
+      </select>
+    </div>
+    <div class="modal-section">
+      <span class="modal-label">NOTE (optional)</span>
+      <textarea id="modal-note" rows="3" placeholder="Your thesis, rationale, or reminder…" style="resize:vertical; width:100%"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-approve-btn" onclick="submitAction('approve')">✅ APPROVE</button>
+      <button class="btn btn-danger" id="modal-skip-btn" onclick="submitAction('skip')">❌ SKIP</button>
+      <button class="btn" onclick="closeModal()" style="border-color:var(--border);color:var(--muted)">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script>
+const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+let _modalSigId   = null;
+let _modalAction  = null;
+let _currentRegime = {};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function expiryStr(expiresAt) {
+  if (!expiresAt) return '—';
+  const diff = new Date(expiresAt) - new Date();
+  const hours = diff / 1000 / 3600;
+  if (hours < 0) return '<span class="expiry-crit">EXPIRED</span>';
+  if (hours < 24) return `<span class="expiry-crit">${hours.toFixed(0)}h left</span>`;
+  const days = hours / 24;
+  if (days < 2) return `<span class="expiry-warn">${days.toFixed(1)}d left</span>`;
+  return `<span class="expiry-ok">${days.toFixed(1)}d left</span>`;
+}
+
+function sigBadge(type) {
+  const t = (type||'').toLowerCase();
+  const cls = t === 'buy' ? 'buy' : t === 'short' ? 'short' : t === 'sell' ? 'sell' : 'reduce';
+  const icon = t === 'buy' ? '🟢' : t === 'short' ? '🔴' : t === 'sell' ? '🔴' : '🟠';
+  return `<span class="sig-badge ${cls}">${icon} ${(type||'').toUpperCase()}</span>`;
+}
+
+function convMini(conv) {
+  if (conv == null) return '—';
+  const pct = Math.min(100, conv * 100).toFixed(0);
+  const color = conv >= 0.70 ? 'var(--accent)' : conv >= 0.55 ? 'var(--accent3)' : 'var(--accent4)';
+  return `<div class="conv-mini">
+    <span style="color:${color}; min-width:38px">${(+conv).toFixed(3)}</span>
+    <div class="conv-mini-bar"><div class="conv-mini-fill" style="width:${pct}%; background:${color}"></div></div>
+  </div>`;
+}
+
+function statusBadge(status) {
+  const cls = status === 'approved' ? 'status-approved' : status === 'skipped' ? 'status-skipped' : 'status-expired';
+  const icon = status === 'approved' ? '✅' : status === 'skipped' ? '❌' : '💀';
+  return `<span class="${cls}">${icon} ${status.toUpperCase()}</span>`;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(sigId, sigType, conviction, ticker) {
+  _modalSigId = sigId;
+  const isLong = (sigType||'').toUpperCase() === 'BUY';
+  const isRiskOff = (_currentRegime.risk||'').toLowerCase().includes('risk-off');
+  const name = tickerNames[ticker] || '';
+
+  document.getElementById('modal-title').textContent = `REVIEW SIGNAL — ${ticker}`;
+  document.getElementById('modal-sub').textContent = `${(sigType||'').toUpperCase()} · Conviction: ${(+conviction||0).toFixed(3)} · ${name}`;
+  document.getElementById('modal-reason').value = '';
+  document.getElementById('modal-note').value = '';
+
+  // Regime warning
+  const regWarn = document.getElementById('regime-warning');
+  if (isLong && isRiskOff) {
+    const discounted = ((+conviction||0) * 0.8).toFixed(3);
+    document.getElementById('regime-warning-body').textContent =
+      `You are approving a LONG in a Risk-Off regime. Conviction discounted: ${(+conviction||0).toFixed(3)} → ${discounted}. Proceed with caution.`;
+    regWarn.classList.add('show');
+  } else {
+    regWarn.classList.remove('show');
+  }
+
+  document.getElementById('review-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('review-modal').classList.remove('open');
+  _modalSigId = null;
+}
+
+async function submitAction(action) {
+  if (_modalSigId == null) return;
+  const reason = document.getElementById('modal-reason').value;
+  const note   = document.getElementById('modal-note').value;
+  try {
+    const res = await fetch('/api/signal_queue/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ id: _modalSigId, action, reason_category: reason, note }),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      closeModal();
+      await loadQueue();  // refresh
+    }
+  } catch(e) {
+    console.error('Queue action failed:', e);
+  }
+}
+
+// Close on backdrop click
+document.getElementById('review-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── Load queue data ───────────────────────────────────────────────────────────
+async function loadQueue() {
+  try {
+    const res = await fetch('/api/signal_queue');
+    const d = await res.json();
+
+    _currentRegime = d.regime || {};
+
+    // KPIs
+    const counts = d.counts || {};
+    document.getElementById('kpi-pending').textContent  = counts.pending  || 0;
+    document.getElementById('kpi-approved').textContent = counts.approved || 0;
+    document.getElementById('kpi-skipped').textContent  = counts.skipped  || 0;
+    document.getElementById('kpi-expired').textContent  = counts.expired  || 0;
+
+    const riskLabel = _currentRegime.risk || 'Unknown';
+    const rColor = riskLabel.toLowerCase().includes('risk-on')  ? 'var(--accent)'
+                 : riskLabel.toLowerCase().includes('risk-off') ? 'var(--accent2)'
+                 : 'var(--accent3)';
+    document.getElementById('kpi-regime').textContent   = riskLabel;
+    document.getElementById('kpi-regime').style.color   = rColor;
+    document.getElementById('kpi-regime-sub').textContent =
+      _currentRegime.transition ? '⚠️ TRANSITION' : '';
+
+    // Pending table
+    const pending  = d.pending  || [];
+    const reviewed = d.reviewed || [];
+    const pBadge = document.getElementById('pending-badge');
+    pBadge.textContent = pending.length + ' SIGNAL' + (pending.length !== 1 ? 'S' : '');
+
+    if (!pending.length) {
+      document.getElementById('pending-empty').style.display = 'block';
+      document.getElementById('pending-table').style.display = 'none';
+    } else {
+      document.getElementById('pending-empty').style.display = 'none';
+      document.getElementById('pending-table').style.display = 'table';
+      document.getElementById('pending-tbody').innerHTML = pending.map(s => {
+        const name = tickerNames[s.ticker] || '';
+        return `<tr class="queue-row" id="qrow-${s.id}">
+          <td style="font-weight:600; color:#fff">
+            ${s.ticker}
+            <br><span style="font-size:9px; color:var(--muted); font-weight:400">${name}</span>
+          </td>
+          <td>${sigBadge(s.signal_type)}</td>
+          <td>${convMini(s.conviction)}</td>
+          <td style="color:${(+s.up_proba||0)>=0.55?'var(--accent)':'var(--muted)'}">
+            ${s.up_proba != null ? ((+s.up_proba)*100).toFixed(1)+'%' : '—'}
+          </td>
+          <td>${s.auc != null ? (+s.auc).toFixed(4) : '—'}</td>
+          <td>${s.rr_ratio != null ? (+s.rr_ratio).toFixed(2)+'x' : '—'}</td>
+          <td>${s.current_price != null ? fmtEur(+s.current_price) : '—'}</td>
+          <td>${expiryStr(s.expires_at)}</td>
+          <td><span class="tag tag-muted">${(s.source||'ml').toUpperCase()}</span></td>
+          <td>
+            <div class="action-group">
+              <button class="q-btn approve" onclick="openModal(${s.id},'${s.signal_type}',${s.conviction||0},'${s.ticker}')">✅ APPROVE</button>
+              <button class="q-btn skip"    onclick="openModal(${s.id},'${s.signal_type}',${s.conviction||0},'${s.ticker}'); document.getElementById('modal-approve-btn').style.display='none'; document.getElementById('modal-skip-btn').focus()">❌ SKIP</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Reviewed table
+    if (!reviewed.length) {
+      document.getElementById('reviewed-empty').style.display = 'block';
+      document.getElementById('reviewed-table').style.display = 'none';
+    } else {
+      document.getElementById('reviewed-empty').style.display = 'none';
+      document.getElementById('reviewed-table').style.display = 'table';
+      document.getElementById('reviewed-tbody').innerHTML = reviewed.map(s => {
+        const name = tickerNames[s.ticker] || '';
+        const dateStr = (s.reviewed_at||'').slice(0,16).replace('T',' ');
+        return `<tr class="queue-row">
+          <td style="color:var(--muted); font-size:10px">${dateStr}</td>
+          <td style="font-weight:600; color:#fff">
+            ${s.ticker}
+            <br><span style="font-size:9px; color:var(--muted); font-weight:400">${name}</span>
+          </td>
+          <td>${sigBadge(s.signal_type)}</td>
+          <td>${s.conviction != null ? (+s.conviction).toFixed(3) : '—'}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td><span style="font-size:9px; color:var(--muted)">${s.reason_category || '—'}</span></td>
+          <td style="font-size:10px; color:var(--muted); max-width:200px">${s.review_note || '—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+  } catch(e) {
+    console.error('Failed to load queue:', e);
+  }
+}
+
+loadQueue();
+</script>
+{% endblock %}

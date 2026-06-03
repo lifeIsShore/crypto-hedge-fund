@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}Highlighted Picks{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Conviction card grid ─────────────────────────────────────────────────── */
+.picks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+/* ── Conviction card ──────────────────────────────────────────────────────── */
+.pick-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .15s;
+  animation: fadeUp .35s ease both;
+}
+.pick-card:hover {
+  border-color: rgba(255,255,255,.15);
+  transform: translateY(-2px);
+}
+.pick-card.long-card  { border-top: 3px solid var(--accent); }
+.pick-card.short-card { border-top: 3px solid var(--accent2); }
+
+/* ── Tier badge ───────────────────────────────────────────────────────────── */
+.tier-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; letter-spacing: .1em; font-weight: 600;
+  padding: 3px 8px;
+}
+.tier-high   { background: rgba(0,229,160,.12);  color: var(--accent);  }
+.tier-medium { background: rgba(245,166,35,.12); color: var(--accent3); }
+.tier-low    { background: rgba(100,149,237,.12);color: var(--accent4); }
+
+/* ── Card ticker header ───────────────────────────────────────────────────── */
+.card-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.card-ticker {
+  font-size: 20px; font-weight: 700; color: #fff; letter-spacing: .02em;
+}
+.card-name {
+  font-size: 10px; color: var(--muted); margin-top: 2px;
+}
+
+/* ── Card metrics row ─────────────────────────────────────────────────────── */
+.card-metrics {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin: 12px 0;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 10px 0;
+}
+.card-metric-label { font-size: 8px; color: var(--muted); letter-spacing: .1em; margin-bottom: 2px; }
+.card-metric-value { font-size: 13px; font-weight: 600; }
+
+/* ── Price row ────────────────────────────────────────────────────────────── */
+.card-prices {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px; margin-bottom: 12px;
+  font-size: 11px;
+}
+.price-lbl { font-size: 8px; color: var(--muted); margin-bottom: 1px; }
+.price-val { font-weight: 600; }
+
+/* ── Tags ─────────────────────────────────────────────────────────────────── */
+.card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.card-tag  {
+  font-size: 8px; letter-spacing: .08em; padding: 2px 6px;
+  background: rgba(255,255,255,.05); color: var(--muted);
+}
+.card-tag.pead    { background: rgba(0,229,160,.1);  color: var(--accent);  }
+.card-tag.regime  { background: rgba(245,166,35,.1); color: var(--accent3); }
+.card-tag.warning { background: rgba(255,77,109,.1); color: var(--accent2); }
+.card-tag.strong  { background: rgba(100,149,237,.1);color: var(--accent4); }
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
+.card-actions { display: flex; gap: 8px; }
+.card-btn {
+  flex: 1; padding: 8px 10px; font-size: 9px; letter-spacing: .08em;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); cursor: pointer; font-family: var(--mono);
+  transition: all .15s; text-align: center;
+}
+.card-btn:hover { color: var(--text); border-color: var(--text); }
+.card-btn.primary {
+  border-color: var(--accent); color: var(--accent);
+}
+.card-btn.primary:hover { background: var(--accent); color: var(--bg); }
+.card-btn.short-btn {
+  border-color: var(--accent2); color: var(--accent2);
+}
+.card-btn.short-btn:hover { background: var(--accent2); color: var(--bg); }
+.card-btn.in-queue {
+  border-color: var(--accent3); color: var(--accent3);
+  cursor: default;
+}
+
+/* ── Conviction bar ───────────────────────────────────────────────────────── */
+.conv-bar {
+  height: 3px; background: var(--border); margin-top: 8px; margin-bottom: 4px;
+}
+.conv-bar-fill {
+  height: 100%; transition: width .6s ease;
+}
+
+/* ── Section header ───────────────────────────────────────────────────────── */
+.section-hdr {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 24px; margin-bottom: 4px;
+}
+.section-hdr-title {
+  font-size: 10px; letter-spacing: .12em; color: var(--muted); font-weight: 600;
+}
+.section-hdr-line { flex: 1; height: 1px; background: var(--border); }
+.section-hdr-count {
+  font-size: 9px; color: var(--muted);
+  border: 1px solid var(--border); padding: 2px 8px;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state-title { font-size: 13px; margin-bottom: 6px; color: var(--text); }
+.empty-state-desc  { font-size: 11px; line-height: 1.6; }
+
+/* ── Review modal ─────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; display: none;
+}
+.modal-backdrop.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 24px; min-width: 380px; max-width: 480px; width: 90%;
+}
+.modal-title { font-size: 12px; letter-spacing: .1em; margin-bottom: 16px; color: var(--text); }
+.modal-body  { margin-bottom: 16px; }
+.modal-label { font-size: 10px; color: var(--muted); margin-bottom: 6px; display: block; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+/* ── Short advisory info box ──────────────────────────────────────────────── */
+.short-info-box {
+  background: rgba(255,77,109,.05);
+  border: 1px solid rgba(255,77,109,.2);
+  padding: 10px 14px; font-size: 10px; color: var(--muted);
+  margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Strip -->
+<div class="kpi-strip" id="hl-kpis">
+  <div class="kpi neutral">
+    <div class="kpi-label">LONG PICKS</div>
+    <div class="kpi-value" id="hl-n-long">—</div>
+    <div class="kpi-sub">conviction ≥ 0.54</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">SHORT CANDIDATES</div>
+    <div class="kpi-value" id="hl-n-short">—</div>
+    <div class="kpi-sub">regime-gated</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">AVG CONVICTION</div>
+    <div class="kpi-value" id="hl-avg-conv">—</div>
+    <div class="kpi-sub">long picks</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="MACRO REGIME" data-info="Current regime affects conviction multiplier: Risk-On = ×1.2 for longs, Risk-Off = ×0.8 for longs and ×1.2 for shorts.">REGIME</div>
+    <div class="kpi-value" id="hl-regime" style="font-size:14px">—</div>
+    <div class="kpi-sub" id="hl-regime-sub">—</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">IN REVIEW QUEUE</div>
+    <div class="kpi-value" id="hl-queued">—</div>
+    <div class="kpi-sub">pending decisions</div>
+  </div>
+</div>
+
+<!-- Stale warning -->
+<div id="hl-warn" class="alert alert-warn" style="display:none;margin-top:14px">
+  ⚠️ No signals found. Run the ML pipeline and price targets step first.
+</div>
+
+<!-- LONG PICKS SECTION -->
+<div class="section-hdr">
+  <span class="section-hdr-title">⭐ HIGH-CONVICTION LONG PICKS</span>
+  <div class="section-hdr-line"></div>
+  <span class="section-hdr-count" id="long-count">0</span>
+</div>
+<div style="font-size:10px; color:var(--muted); margin-bottom:4px">
+  Ranked by: <code>up_proba × AUC × (1 + R:R) × regime_mult × pead_boost × vol_score</code>
+  &nbsp;·&nbsp; AUC gate ≥ 0.53 &nbsp;·&nbsp; up_proba ≥ 54%
+</div>
+<div class="picks-grid" id="long-cards">
+  <div style="color:var(--muted); padding:40px; text-align:center; grid-column:1/-1">Loading…</div>
+</div>
+
+<!-- SHORT CANDIDATES SECTION -->
+<div id="short-section" style="display:none">
+  <div class="section-hdr" style="margin-top:32px">
+    <span class="section-hdr-title">🔴 SHORT CANDIDATES / BEARISH ADVISORY</span>
+    <div class="section-hdr-line"></div>
+    <span class="section-hdr-count" id="short-count">0</span>
+  </div>
+  <div class="short-info-box">
+    <span>⚠️</span>
+    <div>
+      <strong style="color:var(--accent2)">INFORMATIONAL ONLY</strong> — Short selling is not directly supported on Trade Republic.
+      Inverse ETF alternatives are suggested where applicable. These signals surface only in Risk-Off regimes or high-confidence bearish setups.
+    </div>
+  </div>
+  <div class="picks-grid" id="short-cards"></div>
+</div>
+
+<!-- Add-to-Queue modal -->
+<div class="modal-backdrop" id="queue-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">⚡ ADD TO REVIEW QUEUE</div>
+    <div class="modal-body">
+      <span class="modal-label">OPTIONAL NOTE</span>
+      <textarea id="modal-note" rows="3" placeholder="Your thesis, context, or reminder…" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="confirmQueue()" id="modal-confirm-btn">⚡ ADD TO QUEUE</button>
+      <button class="btn btn-danger" onclick="closeModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script>
+const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+let _pendingQueuePayload = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function convTierStars(tier) {
+  return tier === 'HIGH' ? '⭐⭐⭐' : tier === 'MEDIUM' ? '⭐⭐' : '⭐';
+}
+function convTierClass(tier) {
+  return tier === 'HIGH' ? 'tier-high' : tier === 'MEDIUM' ? 'tier-medium' : 'tier-low';
+}
+function tagClass(tag) {
+  const t = tag.toLowerCase();
+  if (t.includes('pead'))        return 'pead';
+  if (t.includes('risk-off') || t.includes('transition') || t.includes('warning')) return 'warning';
+  if (t.includes('risk-on'))     return 'regime';
+  if (t.includes('strong') || t.includes('high')) return 'strong';
+  return '';
+}
+
+// ── Build a LONG card ─────────────────────────────────────────────────────────
+function buildLongCard(d) {
+  const name = tickerNames[d.ticker] || '';
+  const winPct = d.up_proba != null ? (d.up_proba * 100).toFixed(1) + '%' : '—';
+  const convBar = Math.min(100, (d.conviction / 1.2) * 100).toFixed(1);
+  const barColor = d.conv_tier === 'HIGH' ? 'var(--accent)' : d.conv_tier === 'MEDIUM' ? 'var(--accent3)' : 'var(--accent4)';
+  const tags = (d.tags || []).map(t => `<span class="card-tag ${tagClass(t)}">${t}</span>`).join('');
+
+  return `
+  <div class="pick-card long-card" id="card-long-${d.ticker}">
+    <div class="card-head">
+      <div>
+        <div class="card-ticker">${d.ticker}</div>
+        <div class="card-name">${name}</div>
+      </div>
+      <div>
+        <span class="tier-badge ${convTierClass(d.conv_tier)}">${convTierStars(d.conv_tier)} ${d.conv_tier} CONVICTION</span>
+      </div>
+    </div>
+    <div class="conv-bar"><div class="conv-bar-fill" style="width:${convBar}%; background:${barColor}"></div></div>
+    <div style="display:flex; gap:14px; font-size:9px; color:var(--muted); margin-bottom:10px">
+      <span>CONVICTION <strong style="color:${barColor}">${d.conviction}</strong></span>
+      <span>R:R <strong style="color:#fff">${d.rr_ratio}x</strong></span>
+      <span>WIN% <strong style="color:var(--accent)">${winPct}</strong></span>
+    </div>
+    <div class="card-metrics">
+      <div>
+        <div class="card-metric-label">UP PROBA</div>
+        <div class="card-metric-value" style="color:var(--accent)">${(d.up_proba*100).toFixed(1)}%</div>
+      </div>
+      <div>
+        <div class="card-metric-label">AUC</div>
+        <div class="card-metric-value">${d.auc.toFixed(4)}</div>
+      </div>
+      <div>
+        <div class="card-metric-label">VOL ANN</div>
+        <div class="card-metric-value">${d.vol_ann_pct}%</div>
+      </div>
+      <div>
+        <div class="card-metric-label">KELLY½</div>
+        <div class="card-metric-value" style="color:var(--accent4)">${d.kelly_half}%</div>
+      </div>
+      <div>
+        <div class="card-metric-label">REGIME</div>
+        <div class="card-metric-value" style="font-size:10px">${d.regime || '—'}</div>
+      </div>
+      <div>
+        <div class="card-metric-label">HORIZON</div>
+        <div class="card-metric-value" style="font-size:10px">21D</div>
+      </div>
+    </div>
+    <div class="card-prices">
+      <div>
+        <div class="price-lbl">CURRENT</div>
+        <div class="price-val">${fmtEur(d.current_price)}</div>
+      </div>
+      <div>
+        <div class="price-lbl">TARGET (+1σ)</div>
+        <div class="price-val" style="color:var(--accent)">${fmtEur(d.target_price)}</div>
+      </div>
+      <div>
+        <div class="price-lbl">STOP (-1σ)</div>
+        <div class="price-val" style="color:var(--accent2)">${fmtEur(d.stop_price)}</div>
+      </div>
+    </div>
+    ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+    <div class="card-actions">
+      <button class="card-btn primary" id="btn-long-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'BUY', ${JSON.stringify(d)})">⚡ ADD TO QUEUE</button>
+      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'" title="View full ticker analysis">🔍 DETAIL</button>
+    </div>
+  </div>`;
+}
+
+// ── Build a SHORT card ────────────────────────────────────────────────────────
+function buildShortCard(d) {
+  const name = tickerNames[d.ticker] || '';
+  const bearPct = d.bear_proba != null ? (d.bear_proba * 100).toFixed(1) + '%' : '—';
+  const convBar = Math.min(100, (d.conviction / 0.8) * 100).toFixed(1);
+  const tags = (d.tags || []).map(t => `<span class="card-tag ${tagClass(t)}">${t}</span>`).join('');
+
+  return `
+  <div class="pick-card short-card" id="card-short-${d.ticker}">
+    <div class="card-head">
+      <div>
+        <div class="card-ticker" style="color:var(--accent2)">${d.ticker}</div>
+        <div class="card-name">${name}</div>
+      </div>
+      <div>
+        <span class="tier-badge ${convTierClass(d.conv_tier)}" style="border:1px solid rgba(255,77,109,.3)">🔴 SHORT CANDIDATE</span>
+      </div>
+    </div>
+    <div class="conv-bar"><div class="conv-bar-fill" style="width:${convBar}%; background:var(--accent2)"></div></div>
+    <div style="display:flex; gap:14px; font-size:9px; color:var(--muted); margin-bottom:10px">
+      <span>BEAR SCORE <strong style="color:var(--accent2)">${d.conviction}</strong></span>
+      <span>R:R <strong style="color:#fff">${d.rr_ratio}x</strong></span>
+      <span>BEAR% <strong style="color:var(--accent2)">${bearPct}</strong></span>
+    </div>
+    <div class="card-metrics">
+      <div>
+        <div class="card-metric-label">BEAR PROBA</div>
+        <div class="card-metric-value" style="color:var(--accent2)">${bearPct}</div>
+      </div>
+      <div>
+        <div class="card-metric-label">AUC</div>
+        <div class="card-metric-value">${d.auc.toFixed(4)}</div>
+      </div>
+      <div>
+        <div class="card-metric-label">VOL ANN</div>
+        <div class="card-metric-value">${d.vol_ann_pct}%</div>
+      </div>
+    </div>
+    <div class="card-prices">
+      <div>
+        <div class="price-lbl">ENTRY ≤</div>
+        <div class="price-val" style="color:var(--accent2)">${fmtEur(d.current_price)}</div>
+      </div>
+      <div>
+        <div class="price-lbl">COVER TARGET</div>
+        <div class="price-val" style="color:var(--accent)">${d.cover_price ? fmtEur(d.cover_price) : '—'}</div>
+      </div>
+      <div>
+        <div class="price-lbl">STOP</div>
+        <div class="price-val" style="color:var(--accent2)">${fmtEur(d.stop_price)}</div>
+      </div>
+    </div>
+    ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+    <div style="font-size:9px; color:var(--muted); padding:6px 0; border-top: 1px solid var(--border); margin-bottom: 8px">
+      📊 INVERSE ETF ALT: <span style="color:var(--accent3)">${d.etf_hint || '—'}</span>
+    </div>
+    <div class="card-actions">
+      <button class="card-btn short-btn" id="btn-short-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'SHORT', ${JSON.stringify(d)})">⚠️ SHORT ADVISORY</button>
+      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'">🔍 DETAIL</button>
+    </div>
+  </div>`;
+}
+
+// ── Queue modal ───────────────────────────────────────────────────────────────
+function openQueueModal(ticker, type, data) {
+  _pendingQueuePayload = {
+    ticker,
+    signal_type: type,
+    conviction:    data.conviction,
+    short_score:   data.side === 'SHORT' ? data.conviction : null,
+    up_proba:      data.up_proba,
+    auc:           data.auc,
+    rr_ratio:      data.rr_ratio,
+    current_price: data.current_price,
+    target_price:  data.target_price || null,
+    stop_price:    data.stop_price,
+    vol_ann:       data.vol_ann_pct != null ? data.vol_ann_pct / 100 : null,
+    source:        'ml',
+  };
+  const icon = type === 'SHORT' ? '⚠️' : '⚡';
+  document.getElementById('modal-title').textContent = `${icon} ADD TO REVIEW QUEUE — ${ticker}`;
+  document.getElementById('modal-confirm-btn').className = type === 'SHORT' ? 'btn btn-danger' : 'btn';
+  document.getElementById('modal-note').value = '';
+  document.getElementById('queue-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('queue-modal').classList.remove('open');
+  _pendingQueuePayload = null;
+}
+
+async function confirmQueue() {
+  if (!_pendingQueuePayload) return;
+  const note = document.getElementById('modal-note').value;
+  try {
+    const res = await fetch('/api/signal_queue/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(_pendingQueuePayload),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      const ticker = _pendingQueuePayload.ticker;
+      const side   = _pendingQueuePayload.signal_type === 'SHORT' ? 'short' : 'long';
+      const btn = document.getElementById(`btn-${side}-${ticker}`);
+      if (btn) { btn.textContent = '✅ IN QUEUE'; btn.className = 'card-btn in-queue'; btn.onclick = null; }
+      document.getElementById('hl-queued').textContent =
+        (+document.getElementById('hl-queued').textContent || 0) + 1;
+    }
+    closeModal();
+  } catch(e) {
+    console.error('Queue add failed:', e);
+    closeModal();
+  }
+}
+
+// Close modal on backdrop click
+document.getElementById('queue-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadHighlighted() {
+  try {
+    const [hlRes, qRes] = await Promise.all([
+      fetch('/api/highlighted').then(r => r.json()),
+      fetch('/api/signal_queue/count').then(r => r.json()).catch(() => ({pending: 0})),
+    ]);
+
+    // Queue count
+    document.getElementById('hl-queued').textContent = qRes.pending ?? '—';
+
+    // Regime
+    const reg = hlRes.regime || {};
+    const riskLabel = reg.risk || 'Unknown';
+    const rColor = riskLabel.toLowerCase().includes('risk-on') ? 'var(--accent)'
+                 : riskLabel.toLowerCase().includes('risk-off') ? 'var(--accent2)'
+                 : 'var(--accent3)';
+    document.getElementById('hl-regime').textContent = riskLabel;
+    document.getElementById('hl-regime').style.color  = rColor;
+    document.getElementById('hl-regime-sub').textContent =
+      reg.growth ? `${reg.growth} · ${reg.rates || ''}` : '—';
+
+    const longs  = hlRes.longs  || [];
+    const shorts = hlRes.shorts || [];
+
+    // KPIs
+    document.getElementById('hl-n-long').textContent  = longs.length;
+    document.getElementById('hl-n-short').textContent = shorts.length;
+    const avgConv = longs.length
+      ? (longs.reduce((s, d) => s + d.conviction, 0) / longs.length).toFixed(3)
+      : '—';
+    document.getElementById('hl-avg-conv').textContent = avgConv;
+    document.getElementById('long-count').textContent = longs.length + ' PICKS';
+
+    // Long cards
+    const longContainer = document.getElementById('long-cards');
+    if (!longs.length) {
+      longContainer.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-title">No long picks available</div>
+          <div class="empty-state-desc">No tickers meet the conviction criteria (up_proba ≥ 54%, AUC ≥ 0.53).<br>Run the ML pipeline to generate signals.</div>
+        </div>`;
+      document.getElementById('hl-warn').style.display = 'block';
+    } else {
+      longContainer.innerHTML = longs.map(buildLongCard).join('');
+    }
+
+    // Short cards
+    if (shorts.length > 0) {
+      document.getElementById('short-section').style.display = 'block';
+      document.getElementById('short-count').textContent = shorts.length + ' CANDIDATES';
+      document.getElementById('short-cards').innerHTML = shorts.map(buildShortCard).join('');
+    }
+
+  } catch(e) {
+    console.error('Failed to load highlighted picks:', e);
+    document.getElementById('long-cards').innerHTML =
+      '<div style="color:var(--accent2); padding:20px; grid-column:1/-1">⚠️ Failed to load picks. Check server logs.</div>';
+  }
+}
+
+loadHighlighted();
+</script>
+{% endblock %}

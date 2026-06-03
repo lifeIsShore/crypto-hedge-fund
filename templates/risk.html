@@ -156,9 +156,40 @@
         <th onclick="sortTable(7,'universe-table','num')" class="info-point" data-title="WIN PROBABILITY" data-info="The percentage of simulated paths that ended with a profit.">WIN %</th>
         <th onclick="sortTable(8,'universe-table','num')" class="info-point" data-title="KELLY SIZING" data-info="Maximum suggested allocation based on the asset's risk and return profile.">KELLY½ %</th>
         <th onclick="sortTable(9,'universe-table','str')">SIGNAL</th>
+        <th onclick="sortTable(10,'universe-table','num')" class="info-point" data-title="CONVICTION SCORE" data-info="Composite score = up_proba × AUC × (1+R:R) × regime_mult. Green=HIGH≥0.70, Yellow=MEDIUM 0.55-0.70, Grey=LOW or AUC-gated.">CONVICTION</th>
       </tr></thead>
       <tbody id="universe-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<!-- ── SHORT CANDIDATES / BEARISH ADVISORY ─────────────────────────────────── -->
+<div class="panel" style="margin-top:14px" id="short-advisory-panel">
+  <div class="panel-header">
+    <span class="panel-title info-point" data-title="SHORT CANDIDATES" data-info="Bearish signals: up_proba ≤ 40% with AUC ≥ 0.53. Only surfaced in Risk-Off regime or high-confidence bear setups. Informational only.">🔴 SHORT CANDIDATES / BEARISH ADVISORY</span>
+    <div style="display:flex; align-items:center; gap:10px">
+      <span class="panel-badge" style="color:var(--accent3)">ℹ️ INFO ONLY — NOT TRADE REPUBLIC SUPPORTED</span>
+      <span class="panel-badge" id="short-regime-badge">REGIME GATED</span>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div id="short-regime-warn" class="alert alert-warn" style="display:none; margin-bottom:10px">
+      ⚠️ Shorts suppressed in Risk-On regime. These are only shown when: Risk-Off active OR transition warning OR up_proba ≤ 38% (high-confidence bear).
+    </div>
+    <div id="short-advisory-content">
+      <table class="tbl" id="short-table">
+        <thead><tr>
+          <th onclick="sortTable(0,'short-table','str')">TICKER</th>
+          <th onclick="sortTable(1,'short-table','num')" class="info-point" data-title="BEAR PROBABILITY" data-info="1 - up_proba: probability the model assigns to a bearish outcome.">BEAR PROB</th>
+          <th onclick="sortTable(2,'short-table','num')">AUC</th>
+          <th onclick="sortTable(3,'short-table','num')" class="info-point" data-title="SHORT R:R" data-info="Short-side Risk/Reward: (entry - cover_target) / (stop - entry). Cover = BB Lower, Stop = MA50.">R:R SHORT</th>
+          <th onclick="sortTable(4,'short-table','num')" class="info-point" data-title="SHORT SCORE" data-info="bear_proba × AUC × rr_short × regime_bear_mult">BEAR SCORE</th>
+          <th onclick="sortTable(5,'short-table','str')">REGIME</th>
+          <th>INVERSE ETF ALTERNATIVE</th>
+        </tr></thead>
+        <tbody id="short-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -260,7 +291,86 @@ async function loadRisk(){
   sel.innerHTML=allTargets.map(t=>`<option value="${t.ticker}">${t.ticker} (${tickerNames[t.ticker] || ''})</option>`).join('');
   if(allTargets.length) loadTicker(allTargets[0].ticker);
 
-  document.getElementById('universe-tbody').innerHTML=!allTargets.length?'<tr><td colspan="10" style="color:var(--muted)">No price targets. Run pipeline.</td></tr>':allTargets.map(r=>{
+  // ── Conviction scoring (client-side for universe table) ──
+  const regimeMult = (riskLabel.toLowerCase().includes('risk-on')) ? 1.2
+                   : (riskLabel.toLowerCase().includes('risk-off')) ? 0.8 : 1.0;
+  const regimeMultShort = (riskLabel.toLowerCase().includes('risk-off')) ? 1.2
+                        : (riskLabel.toLowerCase().includes('risk-on'))  ? 0.7 : 1.0;
+  const isRiskOff = riskLabel.toLowerCase().includes('risk-off');
+  const isTransition = !!regRes.transition_warning;
+
+  // Helper: compute conviction score
+  function convScore(r) {
+    const up = +r.up_proba||0.5, auc = +r.auc||0, rr = +r.risk_reward_ratio||0;
+    if (auc < 0.53) return null;
+    const vol = (+r.vol_ann||0)*100;
+    const volS = (vol>=15&&vol<=40)?1.1:vol>60?0.8:1.0;
+    return up * auc * (1+rr) * regimeMult * volS;
+  }
+
+  // Populate conviction for each row
+  allTargets.forEach(r => {
+    r._conv = convScore(r);
+  });
+
+  // Short advisory table
+  const shortCandidates = allTargets.filter(r => {
+    const up = +r.up_proba||0.5, auc = +r.auc||0;
+    if (auc < 0.53) return false;
+    if (up > 0.40) return false;
+    return isRiskOff || isTransition || up <= 0.38;
+  });
+
+  const INVERSE_ETF_MAP = [
+    {keys:['tech','nvda','amd','intc','crm','orcl','msft','googl','meta','amzn'], hint:'SQQQ / PSQ (Inverse Nasdaq)'},
+    {keys:['dax','dbx','de','sap','bas','vow','bmw','sie'], hint:'XSPS.DE / DBX4 (Inverse DAX)'},
+    {keys:['eu','as','pa'], hint:'XSPS.DE (Inverse EU)'},
+  ];
+  function getEtfHint(ticker) {
+    const t = ticker.toLowerCase();
+    for (const {keys, hint} of INVERSE_ETF_MAP) {
+      if (keys.some(k => t.includes(k))) return hint;
+    }
+    return 'SH / SDS (Inverse S&P 500)';
+  }
+
+  const shortPanel = document.getElementById('short-advisory-panel');
+  const shortRegimeBadge = document.getElementById('short-regime-badge');
+  if (shortCandidates.length > 0) {
+    shortRegimeBadge.textContent = `${shortCandidates.length} CANDIDATE${shortCandidates.length!==1?'S':''}`;
+    shortRegimeBadge.style.color = 'var(--accent2)';
+    document.getElementById('short-tbody').innerHTML = shortCandidates.map(r => {
+      const bear = 1 - (+r.up_proba||0.5);
+      const auc  = +r.auc||0;
+      const rr   = +r.risk_reward_ratio||0;
+      const rrShort = Math.max(0.5, Math.min(rr * 0.8, 5.0));
+      const score = bear * auc * rrShort * regimeMultShort;
+      const etf = getEtfHint(r.ticker);
+      return `<tr>
+        <td style="font-weight:600; color:var(--accent2)">
+          ${r.ticker}
+          <br><span style="font-size:9px; color:var(--muted); font-weight:400">(${tickerNames[r.ticker]||''})</span>
+        </td>
+        <td style="color:var(--accent2)">${(bear*100).toFixed(1)}%</td>
+        <td>${auc.toFixed(4)}</td>
+        <td>${rrShort.toFixed(2)}x</td>
+        <td style="color:${score>=0.55?'var(--accent2)':score>=0.40?'var(--accent3)':'var(--muted)'}">${score.toFixed(3)}</td>
+        <td>${riskLabel}</td>
+        <td style="font-size:9px; color:var(--accent3)">${etf}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    document.getElementById('short-tbody').innerHTML = `<tr><td colspan="7" style="color:var(--muted); padding:20px">
+      No short candidates. Shorts are surfaced in Risk-Off regime or when up_proba ≤ 38%. Current: ${riskLabel}.
+    </td></tr>`;
+    if (!isRiskOff && !isTransition) {
+      document.getElementById('short-regime-warn').style.display = 'block';
+    }
+    shortRegimeBadge.textContent = 'NO CANDIDATES';
+    shortRegimeBadge.style.color = 'var(--muted)';
+  }
+
+  document.getElementById('universe-tbody').innerHTML=!allTargets.length?'<tr><td colspan="11" style="color:var(--muted)">No price targets. Run pipeline.</td></tr>':allTargets.map(r=>{
     const action=r.action||'NEUTRAL';
     const exp_pct=(r.current_price_eur&&r.expected_21d_eur&&+r.current_price_eur>0)
       ?(((+r.expected_21d_eur)-(+r.current_price_eur))/(+r.current_price_eur)*100)
@@ -281,8 +391,17 @@ async function loadRisk(){
       <td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td>
       <td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td>
       <td class="${sigClass(action)}">${sigLabel(action)}</td>
+      <td>${renderConv(r._conv)}</td>
     </tr>`;
   }).join('');
+
+  // ── Conviction renderer ──
+  function renderConv(conv) {
+    if (conv == null) return '<span style="color:var(--muted); font-size:9px">⚫ GATED</span>';
+    const cls = conv >= 0.70 ? 'tag-green' : conv >= 0.55 ? 'tag-yellow' : 'tag-muted';
+    const lbl = conv >= 0.70 ? '🟢' : conv >= 0.55 ? '🟡' : '🔴';
+    return `<span class="tag ${cls}">${lbl} ${conv.toFixed(3)}</span>`;
+  }
 
   const positions=posRes.positions||[], total=posRes.total_eur||positions.reduce((s,p)=>s+(+p.value_eur||0),0);
   if(!positions.length){ document.getElementById('port-no-pos').style.display='block'; document.getElementById('port-risk-content').style.display='none'; return; }

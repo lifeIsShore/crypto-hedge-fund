@@ -290,6 +290,7 @@ th.info-point, td.info-point {
 
 <nav class="tabs">
   <a href="/"            class="{{ 'active' if page=='overview'   }}">OVERVIEW</a>
+  <a href="/highlighted" class="{{ 'active' if page=='highlighted' }} nav-gold">⭐ HIGHLIGHTED</a>
   <a href="/risk"        class="{{ 'active' if page=='risk'       }}">RISK &amp; STRATEGY</a>
   <a href="/research"    class="{{ 'active' if page=='research'   }}">ML RESEARCH</a>
   <a href="/regime"      class="{{ 'active' if page=='regime'     }}">MACRO REGIME</a>
@@ -301,6 +302,7 @@ th.info-point, td.info-point {
   <a href="/history"     class="{{ 'active' if page=='history'    }}">HISTORY</a>
   <a href="/divergence"  class="{{ 'active' if page=='divergence' }}">ETF DIVERGENCE</a>
   <a href="/health"      class="{{ 'active' if page=='health'     }}">PIPELINE HEALTH</a>
+  <a href="/queue"       class="{{ 'active' if page=='queue'      }}" id="nav-queue" style="position:relative">⏳ REVIEW QUEUE</a>
   <a href="/lab"         class="{{ 'active' if page=='lab'        }}" {% if page=='lab' %}style="color:var(--accent3); border-bottom-color:var(--accent3);"{% else %}style="color:var(--accent3);"{% endif %}>⚗ PORTFOLIO LAB</a>
 </nav>
 
@@ -334,6 +336,20 @@ fetch('/api/freshness').then(r=>r.json()).then(d=>{
   // Show stale banner if any files > 24h
   if((d.stale_files||[]).length > 0){
     document.getElementById('stale-banner').style.display = 'block';
+  }
+}).catch(()=>{});
+
+// Nav badge: pending queue count
+fetch('/api/signal_queue/count').then(r=>r.json()).then(d=>{
+  const n = d.pending || 0;
+  const el = document.getElementById('nav-queue');
+  if (el && n > 0) {
+    el.innerHTML = `⏳ REVIEW QUEUE <span style="
+      display:inline-block; background:var(--accent2); color:var(--bg);
+      font-size:8px; font-weight:700; padding:1px 5px;
+      border-radius:2px; margin-left:4px; letter-spacing:.06em;
+      vertical-align:middle;
+    ">${n}</span>`;
   }
 }).catch(()=>{});
 

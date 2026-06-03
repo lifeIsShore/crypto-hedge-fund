@@ -56,3 +56,6 @@ Date,Action,Ticker,Quantity,Price,Total,Notes
 2026-05-20,Fee,CASH,,,1.0,Fee for Sell FIG
 2026-05-20,Buy,PPFD.SG,1.98,61.5,121.77,
 2026-05-20,Fee,CASH,,,1.0,Fee for Buy PPFD.SG
+2026-06-03,Buy,AMZ.DE,1.0,216.5,216.5,
+2026-06-03,Fee,CASH,,,1.0,Fee for Buy AMZ.DE
+2026-06-03,Deposit,CASH,,500.0,500.0,

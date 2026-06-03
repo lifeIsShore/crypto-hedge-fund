@@ -670,7 +670,14 @@ def api_price_targets():
         WHERE date = (SELECT MAX(date) FROM price_targets)
         ORDER BY ticker
     """)
+    # Overlay AUC from ml_state so the frontend can compute conviction / gate by AUC
+    ml = _load_json(ML_STATE_PATH)
+    ml_signals = ml.get("model_signals", {}) or {}
+    for row in data:
+        sig = ml_signals.get(row["ticker"]) or {}
+        row["auc"] = sig.get("auc")
     return jsonify(data)
+
 
 
 @app.route("/api/ticker_mc/<ticker>")
@@ -2378,8 +2385,398 @@ def api_lab_delete_portfolio(pid):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SIGNAL QUEUE — DB INIT
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _ensure_signal_queue_table():
+    """Create the signal_queue table if it doesn't exist yet."""
+    _exec("""
+        CREATE TABLE IF NOT EXISTS signal_queue (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            generated_at     TEXT DEFAULT (datetime('now')),
+            ticker           TEXT NOT NULL,
+            signal_type      TEXT,
+            conviction       REAL,
+            short_score      REAL,
+            up_proba         REAL,
+            auc              REAL,
+            rr_ratio         REAL,
+            current_price    REAL,
+            target_price     REAL,
+            stop_price       REAL,
+            vol_ann          REAL,
+            expires_at       TEXT,
+            status           TEXT DEFAULT 'pending',
+            reviewed_at      TEXT,
+            review_note      TEXT,
+            reason_category  TEXT,
+            source           TEXT DEFAULT 'ml'
+        )
+    """)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HIGHLIGHTED TAB — Conviction Scoring
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compute_conviction_scores():
+    """
+    Build scored conviction picks from price_targets + ml_state + regime + PEAD.
+    Returns (longs, shorts) — each a list of dicts sorted by score desc.
+    """
+    targets = _q("""
+        SELECT ticker, current_price_eur, expected_21d_eur,
+               target_1sigma_eur, stop_1sigma_eur, stop_tight_eur,
+               support_bb_lower, resistance_ma50,
+               risk_reward_ratio, up_proba, vol_ann, kelly_half, computed_at
+        FROM price_targets
+        WHERE date = (SELECT MAX(date) FROM price_targets)
+    """)
+    if not targets:
+        return [], []
+
+    ml    = _load_json(ML_STATE_PATH)
+    reg   = _load_json(REGIME_STATE_PATH)
+    ml_signals = ml.get("model_signals", {})
+
+    # Regime multiplier
+    regime_risk = (reg.get("regime_risk") or "").lower()
+    regime_mult_long  = 1.2 if "risk-on"  in regime_risk else 0.8 if "risk-off" in regime_risk else 1.0
+    regime_mult_short = 1.2 if "risk-off" in regime_risk else 0.7 if "risk-on"  in regime_risk else 1.0
+    transition_warning = reg.get("transition_warning", False)
+    regime_label = reg.get("regime_risk") or "Unknown"
+
+    # PEAD active setups → set for quick lookup
+    pead_active = _q("""
+        SELECT ticker, direction, pead_setup_quality
+        FROM pead_setups
+        WHERE earnings_date >= date('now', '-60 days')
+        ORDER BY earnings_date DESC
+    """)
+    pead_map = {}
+    for p in pead_active:
+        t = p["ticker"]
+        if t not in pead_map:
+            pead_map[t] = p
+
+    longs, shorts = [], []
+
+    for row in targets:
+        ticker   = row["ticker"]
+        up_proba = float(row.get("up_proba") or 0.5)
+        auc      = float((ml_signals.get(ticker) or {}).get("auc") or 0)
+        rr_ratio = float(row.get("risk_reward_ratio") or 0)
+        vol_ann  = float(row.get("vol_ann") or 0)
+        cur      = float(row.get("current_price_eur") or 0)
+        tgt      = float(row.get("target_1sigma_eur") or 0)
+        stop     = float(row.get("stop_1sigma_eur") or 0)
+        kelly    = float(row.get("kelly_half") or 0)
+
+        # AUC gate
+        if auc < 0.53:
+            continue
+
+        # PEAD boost
+        pead_info = pead_map.get(ticker)
+        pead_boost = 1.0
+        pead_tags  = []
+        if pead_info:
+            q = (pead_info.get("pead_setup_quality") or "").upper()
+            d = (pead_info.get("direction") or "").lower()
+            pead_boost = 1.15 if q == "HIGH" else 1.08 if q == "MEDIUM" else 1.03
+            pead_tags = [f"PEAD {d.upper()}"]
+
+        # Vol score (favour 15–40% ann)
+        vol_pct = vol_ann * 100
+        vol_score = 1.0
+        if 15 <= vol_pct <= 40:
+            vol_score = 1.1
+        elif vol_pct > 60:
+            vol_score = 0.8
+
+        # ── Long conviction ────────────────────────────────────────────────
+        if up_proba >= 0.54:
+            conv = up_proba * auc * (1 + rr_ratio) * regime_mult_long * pead_boost * vol_score
+            tags = list(pead_tags)
+            if regime_mult_long > 1.0: tags.append("RISK-ON")
+            if transition_warning:     tags.append("TRANSITION RISK")
+            if rr_ratio >= 2.0:        tags.append("STRONG R:R")
+            if up_proba >= 0.70:       tags.append("HIGH PROBA")
+            conv_tier = "HIGH" if conv >= 0.70 else "MEDIUM" if conv >= 0.55 else "LOW"
+            longs.append({
+                "ticker":      ticker,
+                "conviction":  round(conv, 4),
+                "conv_tier":   conv_tier,
+                "up_proba":    round(up_proba, 4),
+                "auc":         round(auc, 4),
+                "rr_ratio":    round(rr_ratio, 2),
+                "vol_ann_pct": round(vol_pct, 1),
+                "kelly_half":  round(kelly, 1),
+                "current_price": round(cur, 2),
+                "target_price":  round(tgt, 2),
+                "stop_price":    round(stop, 2),
+                "regime":      regime_label,
+                "tags":        tags,
+                "side":        "LONG",
+                "computed_at": row.get("computed_at") or "",
+            })
+
+        # ── Short conviction ───────────────────────────────────────────────
+        # Only surface in Risk-Off OR transition OR high-confidence bear OR bearish PEAD
+        is_bearish_pead = pead_info and (pead_info.get("direction") or "").lower() in ("bearish", "bear")
+        show_short = (
+            "risk-off" in regime_risk
+            or transition_warning
+            or up_proba <= 0.38
+            or is_bearish_pead
+        )
+        if up_proba <= 0.40 and show_short:
+            # Derive short R:R: cover at support_bb_lower, stop at stop_tight or +1sigma
+            cover = float(row.get("support_bb_lower") or 0)
+            short_stop = float(row.get("resistance_ma50") or 0) or (cur * 1.05 if cur > 0 else 0)
+            if cur > 0 and cover > 0 and short_stop > cur:
+                rr_short = (cur - cover) / (short_stop - cur) if short_stop > cur else rr_ratio * 0.8
+            else:
+                rr_short = rr_ratio * 0.8
+            rr_short = max(0.5, min(rr_short, 5.0))
+
+            bear_proba = 1.0 - up_proba
+            short_score = bear_proba * auc * rr_short * regime_mult_short * pead_boost
+
+            # Inverse ETF suggestions (hardcoded lookup)
+            INVERSE_ETF_MAP = {
+                "tech":     "SQQQ / PSQ (Inverse Nasdaq)",
+                "nasdaq":   "SQQQ / PSQ (Inverse Nasdaq)",
+                "sp500":    "SH / SDS (Inverse S&P 500)",
+                "dax":      "XSPS.DE / DBX4 (Inverse DAX)",
+                "eu":       "XSPS.DE (Inverse EU)",
+            }
+            ml_sig = ml_signals.get(ticker, {})
+            sector_raw = (ml_sig.get("sector") or "").lower()
+            etf_hint = "SH / SDS (Inverse S&P 500)"  # default
+            for key, val in INVERSE_ETF_MAP.items():
+                if key in sector_raw or key in ticker.lower():
+                    etf_hint = val
+                    break
+
+            stags = list(pead_tags)
+            if regime_mult_short > 1.0: stags.append("RISK-OFF")
+            if transition_warning:       stags.append("TRANSITION RISK")
+            if bear_proba >= 0.65:       stags.append("HIGH BEAR PROBA")
+            conv_tier = "HIGH" if short_score >= 0.55 else "MEDIUM" if short_score >= 0.40 else "LOW"
+
+            shorts.append({
+                "ticker":       ticker,
+                "conviction":   round(short_score, 4),
+                "conv_tier":    conv_tier,
+                "up_proba":     round(up_proba, 4),
+                "bear_proba":   round(bear_proba, 4),
+                "auc":          round(auc, 4),
+                "rr_ratio":     round(rr_short, 2),
+                "vol_ann_pct":  round(vol_pct, 1),
+                "current_price": round(cur, 2),
+                "cover_price":   round(cover, 2) if cover > 0 else None,
+                "stop_price":    round(short_stop, 2),
+                "regime":       regime_label,
+                "tags":         stags,
+                "etf_hint":     etf_hint,
+                "side":         "SHORT",
+                "computed_at":  row.get("computed_at") or "",
+            })
+
+    longs.sort(key=lambda x: x["conviction"], reverse=True)
+    shorts.sort(key=lambda x: x["conviction"], reverse=True)
+    return longs[:12], shorts[:6]
+
+
+@app.route("/highlighted")
+def highlighted():
+    regime = _load_json(REGIME_STATE_PATH)
+    ages   = state_file_ages()
+    return render_template("highlighted.html",
+        regime=regime,
+        ages=ages,
+        page="highlighted",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route("/api/highlighted")
+def api_highlighted():
+    """Return top conviction picks (long + short) with regime context."""
+    longs, shorts = _compute_conviction_scores()
+    reg = _load_json(REGIME_STATE_PATH)
+    return jsonify({
+        "longs":   longs,
+        "shorts":  shorts,
+        "regime":  {
+            "risk":       reg.get("regime_risk"),
+            "growth":     reg.get("regime_growth"),
+            "rates":      reg.get("regime_rates"),
+            "composite":  reg.get("regime_composite"),
+            "transition": reg.get("transition_warning", False),
+        },
+        "generated_at": datetime.now().isoformat(),
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SIGNAL REVIEW QUEUE (HITL)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route("/queue")
+def queue():
+    regime = _load_json(REGIME_STATE_PATH)
+    ages   = state_file_ages()
+    return render_template("queue.html",
+        regime=regime,
+        ages=ages,
+        page="queue",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route("/api/signal_queue", methods=["GET"])
+def api_signal_queue():
+    """Return pending + recently reviewed signals."""
+    _ensure_signal_queue_table()
+    pending = _q("""
+        SELECT id, generated_at, ticker, signal_type, conviction, short_score,
+               up_proba, auc, rr_ratio, current_price, target_price, stop_price,
+               vol_ann, expires_at, status, source
+        FROM signal_queue
+        WHERE status = 'pending'
+          AND (expires_at IS NULL OR expires_at > datetime('now'))
+        ORDER BY conviction DESC
+    """)
+    reviewed = _q("""
+        SELECT id, reviewed_at, ticker, signal_type, conviction, status,
+               review_note, reason_category, source
+        FROM signal_queue
+        WHERE status IN ('approved', 'skipped', 'expired')
+        ORDER BY reviewed_at DESC
+        LIMIT 30
+    """)
+    # Auto-expire old pending signals (>3 days)
+    _exec("""
+        UPDATE signal_queue
+        SET status = 'expired', reviewed_at = datetime('now')
+        WHERE status = 'pending'
+          AND expires_at IS NOT NULL
+          AND expires_at <= datetime('now')
+    """)
+    counts = _q("""
+        SELECT status, COUNT(*) AS n
+        FROM signal_queue
+        GROUP BY status
+    """)
+    counts_map = {r["status"]: r["n"] for r in counts}
+    regime = _load_json(REGIME_STATE_PATH)
+    return jsonify({
+        "pending":  pending,
+        "reviewed": reviewed,
+        "counts":   counts_map,
+        "regime":   {
+            "risk":       regime.get("regime_risk"),
+            "transition": regime.get("transition_warning", False),
+        },
+    })
+
+
+@app.route("/api/signal_queue/add", methods=["POST"])
+def api_signal_queue_add():
+    """
+    Add a signal to the review queue from the Highlighted tab.
+    Body: {ticker, signal_type, conviction, short_score, up_proba, auc, rr_ratio,
+           current_price, target_price, stop_price, vol_ann, source}
+    """
+    _ensure_signal_queue_table()
+    data = request.get_json(force=True) or {}
+    ticker = (data.get("ticker") or "").strip().upper()
+    if not ticker:
+        return jsonify({"ok": False, "error": "ticker required"}), 400
+
+    # Check not already pending for this ticker/signal_type
+    existing = _q("""
+        SELECT id FROM signal_queue
+        WHERE ticker = :t AND signal_type = :st AND status = 'pending'
+          AND generated_at > datetime('now', '-3 days')
+    """, {"t": ticker, "st": data.get("signal_type", "BUY")})
+    if existing:
+        return jsonify({"ok": True, "already_exists": True, "id": existing[0]["id"]})
+
+    expires = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+    ok = _exec("""
+        INSERT INTO signal_queue
+            (ticker, signal_type, conviction, short_score, up_proba, auc, rr_ratio,
+             current_price, target_price, stop_price, vol_ann, expires_at, source)
+        VALUES
+            (:ticker, :signal_type, :conviction, :short_score, :up_proba, :auc,
+             :rr_ratio, :cur, :tgt, :stop, :vol, :expires, :source)
+    """, {
+        "ticker":      ticker,
+        "signal_type": data.get("signal_type", "BUY"),
+        "conviction":  data.get("conviction"),
+        "short_score": data.get("short_score"),
+        "up_proba":    data.get("up_proba"),
+        "auc":         data.get("auc"),
+        "rr_ratio":    data.get("rr_ratio"),
+        "cur":         data.get("current_price"),
+        "tgt":         data.get("target_price"),
+        "stop":        data.get("stop_price"),
+        "vol":         data.get("vol_ann"),
+        "expires":     expires,
+        "source":      data.get("source", "ml"),
+    })
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/signal_queue/action", methods=["POST"])
+def api_signal_queue_action():
+    """
+    Approve or skip a signal in the queue.
+    Body: {id, action: 'approve'|'skip', note, reason_category}
+    """
+    _ensure_signal_queue_table()
+    data   = request.get_json(force=True) or {}
+    sig_id = data.get("id")
+    action = data.get("action", "").lower()  # 'approve' or 'skip'
+    note   = data.get("note", "") or ""
+    reason = data.get("reason_category", "") or ""
+
+    if action not in ("approve", "skip"):
+        return jsonify({"ok": False, "error": "action must be 'approve' or 'skip'"}), 400
+    if not sig_id:
+        return jsonify({"ok": False, "error": "id required"}), 400
+
+    new_status = "approved" if action == "approve" else "skipped"
+    ok = _exec("""
+        UPDATE signal_queue
+        SET status = :status,
+            reviewed_at = datetime('now'),
+            review_note = :note,
+            reason_category = :reason
+        WHERE id = :id AND status = 'pending'
+    """, {"status": new_status, "note": note, "reason": reason, "id": int(sig_id)})
+    return jsonify({"ok": ok, "new_status": new_status})
+
+
+@app.route("/api/signal_queue/count")
+def api_signal_queue_count():
+    """Quick count of pending signals — used by nav badge."""
+    _ensure_signal_queue_table()
+    rows = _q("""
+        SELECT COUNT(*) AS n FROM signal_queue
+        WHERE status = 'pending'
+          AND (expires_at IS NULL OR expires_at > datetime('now'))
+    """)
+    return jsonify({"pending": rows[0]["n"] if rows else 0})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    _ensure_signal_queue_table()
     start_scheduler()
     log.info("Control Tower (Flask) starting — http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
