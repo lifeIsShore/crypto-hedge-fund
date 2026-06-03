@@ -163,20 +163,31 @@ def _mirror_all_state_files():
                       'pead_engine',   'data', 'regime_history.csv'),   REGIME_HISTORY_PATH),
     ]
 
-    copied, skipped = 0, 0
+    copied, skipped, newer = 0, 0, 0
     seen_dest = set()
     for src, dst in copies:
         if dst in seen_dest:          # don't overwrite with a less-preferred source
             continue
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
-            seen_dest.add(dst)
-            copied += 1
-            logger.info(f"[mirror] {os.path.basename(src)} → shared/state/")
-        else:
+        if not os.path.exists(src):
             skipped += 1
+            continue
+        # Don't overwrite a NEWER destination with an OLDER source.
+        # This prevents stale regime_engine/data/ copies from clobbering
+        # the fresh shared/state/ files that regime_db.py just wrote.
+        if os.path.exists(dst):
+            src_mtime = os.path.getmtime(src)
+            dst_mtime = os.path.getmtime(dst)
+            if dst_mtime >= src_mtime:
+                seen_dest.add(dst)   # dst is already the freshest version
+                newer += 1
+                logger.debug(f"[mirror] {os.path.basename(dst)} already up-to-date (skipping stale source)")
+                continue
+        shutil.copy2(src, dst)
+        seen_dest.add(dst)
+        copied += 1
+        logger.info(f"[mirror] {os.path.basename(src)} → shared/state/")
 
-    logger.info(f"[mirror] {copied} files copied, {skipped} sources not found")
+    logger.info(f"[mirror] {copied} copied, {newer} already fresh, {skipped} sources not found")
 
 
 def step_regime_refresh():
@@ -194,7 +205,7 @@ def step_regime_refresh():
 
     try:
         result = subprocess.run(
-            [sys.executable, 'run_engine.py'],
+            [sys.executable, 'run_engine.py', '--region', 'ALL'],
             cwd=regime_dir, capture_output=True, text=True, timeout=300,
         )
         if result.returncode != 0:

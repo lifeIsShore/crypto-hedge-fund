@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T22:09:12.553554",
+  "generated_at": "2026-06-03T10:10:38.711594",
   "active_setups": [],
   "recent_setups": [
     {
@@ -164,8 +164,8 @@
     }
   ],
   "performance": {
-    "total_setups": 175,
-    "high_quality_setups": 1,
+    "total_setups": 178,
+    "high_quality_setups": 2,
     "medium_quality_setups": 12,
     "overall_avg_drift_21d": 4.661,
     "overall_avg_drift_63d": 4.094,
@@ -175,9 +175,9 @@
     "high_hit_rate_21d": null,
     "bullish_avg_drift_21d": 5.654,
     "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-06-01T22:09:12.527552",
+    "stats_computed_at": "2026-06-03T10:10:38.705596",
     "hit_rate_21d_slowdown": 0.74,
     "avg_drift_21d_slowdown": 8.551
   },
-  "total_in_db": 175
+  "total_in_db": 178
 }
