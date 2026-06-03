@@ -265,7 +265,7 @@ function tagClass(tag) {
 }
 
 // ── Build a LONG card ─────────────────────────────────────────────────────────
-function buildLongCard(d) {
+function buildLongCard(d, isWatched, isQueued) {
   const name = tickerNames[d.ticker] || '';
   const winPct = d.up_proba != null ? (d.up_proba * 100).toFixed(1) + '%' : '—';
   const convBar = Math.min(100, (d.conviction / 1.2) * 100).toFixed(1);
@@ -331,14 +331,21 @@ function buildLongCard(d) {
     </div>
     ${tags ? `<div class="card-tags">${tags}</div>` : ''}
     <div class="card-actions">
-      <button class="card-btn primary" id="btn-long-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'BUY', ${JSON.stringify(d)})">⚡ ADD TO QUEUE</button>
-      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'" title="View full ticker analysis">🔍 DETAIL</button>
+      ${isQueued
+        ? `<button class="card-btn in-queue">✅ IN QUEUE</button>`
+        : `<button class="card-btn primary" id="btn-long-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'BUY', ${JSON.stringify(d).replace(/\"/g, '&quot;')})">⚡ ADD TO QUEUE</button>`
+      }
+      ${isWatched
+        ? `<button class="card-btn in-queue">✅ WATCHING</button>`
+        : `<button class="card-btn" id="btn-watch-long-${d.ticker}" onclick="addToWatchlist('${d.ticker}', 'LONG', ${JSON.stringify(d).replace(/\"/g, '&quot;')})">👁 WATCH</button>`
+      }
+      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'" title="View full ticker analysis">🔍</button>
     </div>
   </div>`;
 }
 
 // ── Build a SHORT card ────────────────────────────────────────────────────────
-function buildShortCard(d) {
+function buildShortCard(d, isWatched, isQueued) {
   const name = tickerNames[d.ticker] || '';
   const bearPct = d.bear_proba != null ? (d.bear_proba * 100).toFixed(1) + '%' : '—';
   const convBar = Math.min(100, (d.conviction / 0.8) * 100).toFixed(1);
@@ -394,8 +401,15 @@ function buildShortCard(d) {
       📊 INVERSE ETF ALT: <span style="color:var(--accent3)">${d.etf_hint || '—'}</span>
     </div>
     <div class="card-actions">
-      <button class="card-btn short-btn" id="btn-short-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'SHORT', ${JSON.stringify(d)})">⚠️ SHORT ADVISORY</button>
-      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'">🔍 DETAIL</button>
+      ${isQueued
+        ? `<button class="card-btn in-queue">✅ IN QUEUE</button>`
+        : `<button class="card-btn short-btn" id="btn-short-${d.ticker}" onclick="openQueueModal('${d.ticker}', 'SHORT', ${JSON.stringify(d).replace(/\"/g, '&quot;')})">⚠️ SHORT ADVISORY</button>`
+      }
+      ${isWatched
+        ? `<button class="card-btn in-queue">✅ WATCHING</button>`
+        : `<button class="card-btn" id="btn-watch-short-${d.ticker}" onclick="addToWatchlist('${d.ticker}', 'SHORT', ${JSON.stringify(d).replace(/\"/g, '&quot;')})">👁 WATCH</button>`
+      }
+      <button class="card-btn" onclick="window.location='/ticker/${d.ticker}'">🔍</button>
     </div>
   </div>`;
 }
@@ -458,13 +472,51 @@ document.getElementById('queue-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
+// ── Add to Watchlist ─────────────────────────────────────────────────────────
+async function addToWatchlist(ticker, side, data) {
+  const payload = {
+    ticker,
+    side,
+    snap_up_proba:   data.up_proba,
+    snap_conviction: data.conviction,
+    snap_price:      data.current_price,
+    alert_threshold: 0.70,
+    notes:           '',
+  };
+  try {
+    const res = await fetch('/api/watchlist/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      const btnId = side === 'SHORT' ? `btn-watch-short-${ticker}` : `btn-watch-long-${ticker}`;
+      const btn = document.getElementById(btnId);
+      if (btn) { btn.textContent = '✅ WATCHING'; btn.className = 'card-btn in-queue'; btn.onclick = null; }
+      // Update nav badge
+      const navEl = document.getElementById('nav-watchlist');
+      if (navEl) {
+        const cur = parseInt(navEl.dataset.count || '0');
+        navEl.dataset.count = cur + 1;
+      }
+    }
+  } catch(e) {
+    console.error('Watchlist add failed:', e);
+  }
+}
+
 // ── Load data ─────────────────────────────────────────────────────────────────
 async function loadHighlighted() {
   try {
-    const [hlRes, qRes] = await Promise.all([
+    const [hlRes, qRes, stateRes] = await Promise.all([
       fetch('/api/highlighted').then(r => r.json()),
       fetch('/api/signal_queue/count').then(r => r.json()).catch(() => ({pending: 0})),
+      fetch('/api/user_state').then(r => r.json()).catch(() => ({watched:[], queued:[]})),
     ]);
+
+    const watchedSet = new Set(stateRes.watched || []);
+    const queuedSet  = new Set(stateRes.queued  || []);
 
     // Queue count
     document.getElementById('hl-queued').textContent = qRes.pending ?? '—';
@@ -503,14 +555,14 @@ async function loadHighlighted() {
         </div>`;
       document.getElementById('hl-warn').style.display = 'block';
     } else {
-      longContainer.innerHTML = longs.map(buildLongCard).join('');
+      longContainer.innerHTML = longs.map(d => buildLongCard(d, watchedSet.has(d.ticker), queuedSet.has(d.ticker))).join('');
     }
 
     // Short cards
     if (shorts.length > 0) {
       document.getElementById('short-section').style.display = 'block';
       document.getElementById('short-count').textContent = shorts.length + ' CANDIDATES';
-      document.getElementById('short-cards').innerHTML = shorts.map(buildShortCard).join('');
+      document.getElementById('short-cards').innerHTML = shorts.map(d => buildShortCard(d, watchedSet.has(d.ticker), queuedSet.has(d.ticker))).join('');
     }
 
   } catch(e) {

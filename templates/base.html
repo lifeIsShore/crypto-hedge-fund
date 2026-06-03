@@ -293,6 +293,7 @@ th.info-point, td.info-point {
 <nav class="tabs">
   <a href="/"            class="{{ 'active' if page=='overview'   }}">OVERVIEW</a>
   <a href="/highlighted" class="{{ 'active' if page=='highlighted' }} nav-gold">⭐ HIGHLIGHTED</a>
+  <a href="/watchlist"   class="{{ 'active' if page=='watchlist'   }}" id="nav-watchlist" data-count="0">👁 WATCHLIST</a>
   <a href="/risk"        class="{{ 'active' if page=='risk'       }}">RISK &amp; STRATEGY</a>
   <a href="/research"    class="{{ 'active' if page=='research'   }}">ML RESEARCH</a>
   <a href="/regime"      class="{{ 'active' if page=='regime'     }}">MACRO REGIME</a>
@@ -341,7 +342,22 @@ fetch('/api/freshness').then(r=>r.json()).then(d=>{
   }
 }).catch(()=>{});
 
-// Nav badge: pending queue count
+// Nav badge: watchlist count
+fetch('/api/watchlist/count').then(r=>r.json()).then(d=>{
+  const n = d.total || 0;
+  const el = document.getElementById('nav-watchlist');
+  if (el) {
+    el.dataset.count = n;
+    if (n > 0) {
+      el.innerHTML = `👁 WATCHLIST <span style="
+        display:inline-block; background:var(--accent4); color:var(--bg);
+        font-size:8px; font-weight:700; padding:1px 5px;
+        border-radius:2px; margin-left:4px; letter-spacing:.06em;
+        vertical-align:middle;
+      ">${n}</span>`;
+    }
+  }
+}).catch(()=>{});
 fetch('/api/signal_queue/count').then(r=>r.json()).then(d=>{
   const n = d.pending || 0;
   const el = document.getElementById('nav-queue');

@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Watchlist{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Promote banner ───────────────────────────────────────────────────────── */
+.promote-banner {
+  background: rgba(0,229,160,.06);
+  border: 1px solid rgba(0,229,160,.3);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+  animation: fadeUp .3s ease;
+}
+.promote-banner-left { display: flex; align-items: center; gap: 10px; }
+.promote-banner-title { font-size: 11px; color: var(--accent); font-weight: 600; }
+.promote-banner-desc  { font-size: 10px; color: var(--muted); }
+
+/* ── Watchlist rows ───────────────────────────────────────────────────────── */
+.wl-row { transition: background .15s; }
+.wl-row:hover { background: rgba(255,255,255,.025) !important; }
+.wl-row.promote-ready { background: rgba(0,229,160,.04) !important; }
+.wl-row.promote-ready:hover { background: rgba(0,229,160,.07) !important; }
+
+/* ── Trend indicator ──────────────────────────────────────────────────────── */
+.trend-up      { color: var(--accent);  }
+.trend-down    { color: var(--accent2); }
+.trend-stable  { color: var(--muted);  }
+.trend-unknown { color: var(--muted);  }
+
+/* ── Conviction trend bar ─────────────────────────────────────────────────── */
+.conv-cell {
+  display: flex; align-items: center; gap: 6px;
+}
+.conv-pill {
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 2px;
+}
+.conv-high   { background: rgba(0,229,160,.12);  color: var(--accent);  }
+.conv-medium { background: rgba(245,166,35,.12); color: var(--accent3); }
+.conv-low    { background: rgba(100,149,237,.12);color: var(--accent4); }
+.conv-gated  { background: rgba(74,85,104,.15);  color: var(--muted);   }
+
+/* ── Delta badges ─────────────────────────────────────────────────────────── */
+.delta-up   { color: var(--accent);  font-size: 10px; }
+.delta-down { color: var(--accent2); font-size: 10px; }
+.delta-flat { color: var(--muted);   font-size: 10px; }
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
+.wl-btn {
+  padding: 4px 9px; font-size: 9px; letter-spacing: .07em;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); cursor: pointer; font-family: var(--mono);
+  transition: all .15s; white-space: nowrap;
+}
+.wl-btn:hover   { border-color: var(--text); color: var(--text); }
+.wl-btn.queue   { border-color: var(--accent);  color: var(--accent);  }
+.wl-btn.queue:hover  { background: var(--accent);  color: var(--bg); }
+.wl-btn.remove  { border-color: var(--accent2); color: var(--accent2); }
+.wl-btn.remove:hover { background: var(--accent2); color: var(--bg); }
+
+/* ── Add modal ────────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-backdrop.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 24px; min-width: 380px; max-width: 480px; width: 90%;
+  animation: fadeUp .2s ease;
+}
+.modal-title   { font-size: 12px; letter-spacing: .1em; margin-bottom: 16px; }
+.modal-label   { font-size: 9px; color: var(--muted); letter-spacing: .1em; display: block; margin-bottom: 5px; }
+.modal-section { margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.wl-empty {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.wl-empty-icon  { font-size: 40px; margin-bottom: 14px; }
+.wl-empty-title { font-size: 14px; color: var(--text); margin-bottom: 8px; }
+.wl-empty-desc  { font-size: 11px; line-height: 1.7; max-width: 400px; margin: 0 auto; }
+.wl-empty-desc a { color: var(--accent); }
+
+/* ── Notes cell ───────────────────────────────────────────────────────────── */
+.notes-cell {
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 10px; color: var(--muted); font-style: italic;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI strip -->
+<div class="kpi-strip" id="wl-kpis">
+  <div class="kpi neutral">
+    <div class="kpi-label">👁️ WATCHING</div>
+    <div class="kpi-value" id="kpi-total">—</div>
+    <div class="kpi-sub">tickers tracked</div>
+  </div>
+  <div class="kpi good">
+    <div class="kpi-label info-point" data-title="READY TO PROMOTE" data-info="Tickers whose conviction has crossed your alert threshold (default 0.70) — strong enough to move from watchlist to Review Queue.">🚀 READY TO QUEUE</div>
+    <div class="kpi-value" id="kpi-promote">—</div>
+    <div class="kpi-sub">conviction ≥ threshold</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">📈 IMPROVING</div>
+    <div class="kpi-value" id="kpi-improving">—</div>
+    <div class="kpi-sub">vs when added</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">📉 WEAKENING</div>
+    <div class="kpi-value" id="kpi-weakening">—</div>
+    <div class="kpi-sub">conviction declining</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">REGIME</div>
+    <div class="kpi-value" id="kpi-regime" style="font-size:13px">—</div>
+    <div class="kpi-sub" id="kpi-regime-sub"></div>
+  </div>
+</div>
+
+<!-- Auto-promote banner (hidden until there are candidates) -->
+<div id="promote-banner" class="promote-banner" style="display:none">
+  <div class="promote-banner-left">
+    <span style="font-size:20px">🚀</span>
+    <div>
+      <div class="promote-banner-title">TICKERS READY TO PROMOTE</div>
+      <div class="promote-banner-desc" id="promote-banner-desc">—</div>
+    </div>
+  </div>
+  <a href="/queue" class="btn" style="font-size:9px; padding:6px 14px">VIEW QUEUE →</a>
+</div>
+
+<!-- Add manually button -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+  <div style="font-size:10px; color:var(--muted)">
+    Add tickers from <a href="/highlighted" style="color:var(--accent)">⭐ Highlighted</a>
+    or <a href="/risk" style="color:var(--accent)">Risk & Strategy</a> using the 👁 button, or add manually below.
+  </div>
+  <button class="btn" onclick="openAddModal()" style="font-size:9px; padding:7px 16px">+ ADD TICKER</button>
+</div>
+
+<!-- Main watchlist table -->
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">👁️ WATCHLIST — STALKER SCREEN</span>
+    <span class="panel-badge" id="wl-badge">0 TICKERS</span>
+  </div>
+  <div class="panel-body" style="padding:0">
+
+    <!-- Empty state -->
+    <div id="wl-empty" class="wl-empty">
+      <div class="wl-empty-icon">👁️</div>
+      <div class="wl-empty-title">Your watchlist is empty</div>
+      <div class="wl-empty-desc">
+        Add tickers you're monitoring but not ready to trade.
+        When conviction crosses 0.70, you'll get a promote alert.
+        <br><br>
+        Go to <a href="/highlighted">⭐ Highlighted</a> and click <strong>👁 WATCH</strong> on any card,
+        or use the <strong>+ ADD TICKER</strong> button above.
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table class="tbl" id="wl-table" style="display:none">
+      <thead><tr>
+        <th onclick="sortTable(0,'wl-table','str')">TICKER</th>
+        <th onclick="sortTable(1,'wl-table','str')">SIDE</th>
+        <th onclick="sortTable(2,'wl-table','num')" class="info-point" data-title="UP PROBABILITY" data-info="Current ML directional probability. Arrow shows change since you added it.">UP PROBA</th>
+        <th onclick="sortTable(3,'wl-table','num')" class="info-point" data-title="CONVICTION" data-info="Composite score = up_proba × AUC × (1+R:R) × regime_mult. Arrow shows trend since added.">CONVICTION</th>
+        <th onclick="sortTable(4,'wl-table','str')" class="info-point" data-title="TREND" data-info="IMPROVING = conviction up >0.02 vs when you added. WEAKENING = down >0.02. STABLE = within range.">TREND</th>
+        <th onclick="sortTable(5,'wl-table','str')">SIGNAL</th>
+        <th onclick="sortTable(6,'wl-table','num')">PRICE</th>
+        <th onclick="sortTable(7,'wl-table','num')">Δ PRICE</th>
+        <th onclick="sortTable(8,'wl-table','str')">ADDED</th>
+        <th>NOTES</th>
+        <th>ACTIONS</th>
+      </tr></thead>
+      <tbody id="wl-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add manually modal -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal-box">
+    <div class="modal-title">+ ADD TO WATCHLIST</div>
+    <div class="modal-section">
+      <span class="modal-label">TICKER SYMBOL</span>
+      <input type="text" id="add-ticker" placeholder="e.g. NVDA, ASML.AS, SAP.DE" style="text-transform:uppercase">
+    </div>
+    <div class="modal-section">
+      <span class="modal-label">SIDE</span>
+      <select id="add-side">
+        <option value="LONG">LONG — watching for bullish setup</option>
+        <option value="SHORT">SHORT — watching for bearish setup</option>
+      </select>
+    </div>
+    <div class="modal-section">
+      <span class="modal-label">ALERT THRESHOLD (conviction)</span>
+      <input type="number" id="add-threshold" value="0.70" min="0.40" max="1.0" step="0.05"
+             style="width:120px">
+      <span style="font-size:9px; color:var(--muted); margin-left:8px">Auto-promote to queue when conviction ≥ this</span>
+    </div>
+    <div class="modal-section">
+      <span class="modal-label">NOTE (optional)</span>
+      <textarea id="add-note" rows="2" placeholder="Why you're watching…" style="resize:vertical; width:100%"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="submitAdd()">👁️ ADD TO WATCHLIST</button>
+      <button class="btn btn-danger" onclick="closeAddModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script>
+const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function trendIcon(trend) {
+  if (trend === 'IMPROVING') return '<span class="trend-up">▲ IMPROVING</span>';
+  if (trend === 'WEAKENING') return '<span class="trend-down">▼ WEAKENING</span>';
+  if (trend === 'STABLE')    return '<span class="trend-stable">● STABLE</span>';
+  return '<span class="trend-unknown">— UNKNOWN</span>';
+}
+
+function convPill(conv, aucGated) {
+  if (aucGated || conv == null) return '<span class="conv-pill conv-gated">⚫ GATED</span>';
+  const cls = conv >= 0.70 ? 'conv-high' : conv >= 0.55 ? 'conv-medium' : 'conv-low';
+  const lbl = conv >= 0.70 ? '🟢' : conv >= 0.55 ? '🟡' : '🔴';
+  return `<span class="conv-pill ${cls}">${lbl} ${conv.toFixed(3)}</span>`;
+}
+
+function deltaArrow(delta, decimals=3) {
+  if (delta == null) return '<span class="delta-flat">—</span>';
+  const sign = delta > 0 ? '+' : '';
+  const cls  = delta > 0.001 ? 'delta-up' : delta < -0.001 ? 'delta-down' : 'delta-flat';
+  return `<span class="${cls}">${sign}${delta.toFixed(decimals)}</span>`;
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const diff = Date.now() - d;
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins  < 60)  return `${mins}m ago`;
+  if (hours < 24)  return `${hours}h ago`;
+  if (days  < 7)   return `${days}d ago`;
+  return d.toISOString().slice(0,10);
+}
+
+// ── Add to queue from watchlist ───────────────────────────────────────────────
+async function addToQueueFromWatchlist(item) {
+  const payload = {
+    ticker:       item.ticker,
+    signal_type:  item.side === 'SHORT' ? 'SHORT' : 'BUY',
+    conviction:   item.conviction,
+    up_proba:     item.up_proba,
+    auc:          item.auc,
+    rr_ratio:     item.rr_ratio,
+    current_price:item.current_price,
+    target_price: item.target_price,
+    stop_price:   item.stop_price,
+    vol_ann:      item.vol_ann_pct != null ? item.vol_ann_pct / 100 : null,
+    source:       'watchlist',
+  };
+  try {
+    const res = await fetch('/api/signal_queue/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      window.location.href = '/queue';
+    }
+  } catch(e) {
+    console.error('Failed to add to queue:', e);
+  }
+}
+
+// ── Remove ────────────────────────────────────────────────────────────────────
+async function removeFromWatchlist(ticker) {
+  try {
+    await fetch(`/api/watchlist/remove/${ticker}`, {method: 'DELETE'});
+    loadWatchlist();
+  } catch(e) {
+    console.error('Remove failed:', e);
+  }
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function loadWatchlist() {
+  try {
+    const res = await fetch('/api/watchlist');
+    const d   = await res.json();
+    const items = d.items || [];
+
+    // Regime
+    const regimes = items.map(i => i.regime).filter(Boolean);
+
+    // KPIs
+    document.getElementById('kpi-total').textContent     = items.length;
+    document.getElementById('kpi-promote').textContent   = d.promote_count || 0;
+    document.getElementById('kpi-improving').textContent = items.filter(i => i.trend === 'IMPROVING').length;
+    document.getElementById('kpi-weakening').textContent = items.filter(i => i.trend === 'WEAKENING').length;
+    document.getElementById('wl-badge').textContent = items.length + ' TICKER' + (items.length !== 1 ? 'S' : '');
+
+    // Promote banner
+    const promotable = items.filter(i => i.auto_promote);
+    if (promotable.length > 0) {
+      document.getElementById('promote-banner').style.display = 'flex';
+      document.getElementById('promote-banner-desc').textContent =
+        `${promotable.length} ticker${promotable.length > 1 ? 's have' : ' has'} crossed the conviction threshold: ${promotable.map(i => i.ticker).join(', ')}`;
+    }
+
+    // Regime KPI
+    if (items.length > 0) {
+      const firstItem = items[0];
+      // We'll fetch regime from API
+    }
+    fetch('/api/regime').then(r => r.json()).then(reg => {
+      const label = reg.regime_risk || '—';
+      const rColor = label.toLowerCase().includes('risk-on')  ? 'var(--accent)'
+                   : label.toLowerCase().includes('risk-off') ? 'var(--accent2)'
+                   : 'var(--accent3)';
+      document.getElementById('kpi-regime').textContent   = label;
+      document.getElementById('kpi-regime').style.color   = rColor;
+      document.getElementById('kpi-regime-sub').textContent = reg.regime_growth || '—';
+    }).catch(() => {});
+
+    // Empty / table
+    if (!items.length) {
+      document.getElementById('wl-empty').style.display  = 'block';
+      document.getElementById('wl-table').style.display  = 'none';
+      return;
+    }
+    document.getElementById('wl-empty').style.display  = 'none';
+    document.getElementById('wl-table').style.display  = 'table';
+
+    document.getElementById('wl-tbody').innerHTML = items.map(item => {
+      const name = tickerNames[item.ticker] || '';
+      const sideColor = item.side === 'SHORT' ? 'var(--accent2)' : 'var(--accent4)';
+      const promoteClass = item.auto_promote ? 'wl-row promote-ready' : 'wl-row';
+      const promoteBadge = item.auto_promote
+        ? '<span style="font-size:8px; background:rgba(0,229,160,.15); color:var(--accent); padding:1px 5px; margin-left:4px">🚀 PROMOTE</span>'
+        : '';
+
+      return `<tr class="${promoteClass}" id="wlrow-${item.ticker}">
+        <td style="font-weight:600; color:#fff">
+          ${item.ticker} ${promoteBadge}
+          <br><span style="font-size:9px; color:var(--muted); font-weight:400">${name}</span>
+        </td>
+        <td><span style="font-size:9px; color:${sideColor}; font-weight:600">${item.side}</span></td>
+        <td>
+          <span style="color:${item.up_proba>=0.55?'var(--accent)':item.up_proba<=0.45?'var(--accent2)':'var(--muted)'}">
+            ${(item.up_proba * 100).toFixed(1)}%
+          </span>
+          ${item.up_delta != null ? `<br>${deltaArrow(item.up_delta*100, 1)}<span style="font-size:8px; color:var(--muted)"> pp</span>` : ''}
+        </td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap">
+            ${convPill(item.conviction, item.auc_gated)}
+            ${item.conv_delta != null ? deltaArrow(item.conv_delta) : ''}
+          </div>
+        </td>
+        <td>${trendIcon(item.trend)}</td>
+        <td class="${sigClass(item.action)}">${sigLabel(item.action)}</td>
+        <td>
+          ${item.current_price ? fmtEur(item.current_price) : '—'}
+          ${item.snap_price ? `<br><span style="font-size:9px; color:var(--muted)">was ${fmtEur(item.snap_price)}</span>` : ''}
+        </td>
+        <td>${item.px_delta_pct != null ? `<span class="${item.px_delta_pct>=0?'trend-up':'trend-down'}">${item.px_delta_pct>=0?'+':''}${item.px_delta_pct.toFixed(1)}%</span>` : '—'}</td>
+        <td style="font-size:10px; color:var(--muted)">${relativeTime(item.added_at)}</td>
+        <td class="notes-cell" title="${item.notes || ''}">${item.notes || '—'}</td>
+        <td>
+          <div style="display:flex; gap:5px">
+            <button class="wl-btn queue" onclick="addToQueueFromWatchlist(${JSON.stringify(item).replace(/\"/g, '&quot;')})" title="Send to Review Queue">⚡ QUEUE</button>
+            <button class="wl-btn remove" onclick="removeFromWatchlist('${item.ticker}')" title="Remove from watchlist">✕</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('Failed to load watchlist:', e);
+  }
+}
+
+// ── Add modal ─────────────────────────────────────────────────────────────────
+function openAddModal(prefill) {
+  if (prefill) {
+    document.getElementById('add-ticker').value    = prefill.ticker || '';
+    document.getElementById('add-side').value      = prefill.side   || 'LONG';
+    document.getElementById('add-note').value      = prefill.note   || '';
+    document.getElementById('add-threshold').value = prefill.threshold || 0.70;
+  } else {
+    document.getElementById('add-ticker').value    = '';
+    document.getElementById('add-side').value      = 'LONG';
+    document.getElementById('add-note').value      = '';
+    document.getElementById('add-threshold').value = 0.70;
+  }
+  document.getElementById('add-modal').classList.add('open');
+  document.getElementById('add-ticker').focus();
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('open');
+}
+
+document.getElementById('add-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+// Uppercase ticker input
+document.getElementById('add-ticker').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+
+async function submitAdd() {
+  const ticker    = document.getElementById('add-ticker').value.trim().toUpperCase();
+  const side      = document.getElementById('add-side').value;
+  const note      = document.getElementById('add-note').value;
+  const threshold = parseFloat(document.getElementById('add-threshold').value) || 0.70;
+  if (!ticker) { document.getElementById('add-ticker').focus(); return; }
+
+  try {
+    const res = await fetch('/api/watchlist/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ ticker, side, notes: note, alert_threshold: threshold }),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      closeAddModal();
+      loadWatchlist();
+    }
+  } catch(e) {
+    console.error('Add failed:', e);
+  }
+}
+
+// Enter key in ticker input
+document.getElementById('add-ticker').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitAdd();
+});
+
+loadWatchlist();
+</script>
+{% endblock %}

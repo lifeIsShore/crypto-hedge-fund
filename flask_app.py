@@ -2620,6 +2620,20 @@ def api_highlighted():
     })
 
 
+@app.route("/api/user_state")
+def api_user_state():
+    """Returns tickers currently in the watchlist and pending in the queue."""
+    _ensure_watchlist_table()
+    _ensure_signal_queue_table()
+    watched = [r["ticker"] for r in _q("SELECT ticker FROM watchlist")]
+    queued  = [r["ticker"] for r in _q("SELECT ticker FROM signal_queue WHERE status = 'pending'")]
+    return jsonify({
+        "watched": watched,
+        "queued":  queued
+    })
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # SIGNAL REVIEW QUEUE (HITL)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2774,9 +2788,232 @@ def api_signal_queue_count():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# WATCHLIST
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _ensure_watchlist_table():
+    """Create the watchlist table if it doesn't exist yet."""
+    _exec("""
+        CREATE TABLE IF NOT EXISTS watchlist (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker           TEXT NOT NULL UNIQUE,
+            added_at         TEXT DEFAULT (datetime('now')),
+            notes            TEXT,
+            side             TEXT DEFAULT 'LONG',   -- LONG | SHORT
+            snap_up_proba    REAL,                  -- snapshot when added
+            snap_conviction  REAL,                  -- snapshot when added
+            snap_price       REAL,                  -- snapshot when added
+            alert_threshold  REAL DEFAULT 0.70      -- auto-promote threshold
+        )
+    """)
+
+
+def _get_watchlist_enriched():
+    """
+    Return all watchlist rows enriched with current signals (price_targets + ml_state).
+    Computes conviction trend vs snapshot taken when ticker was added.
+    Flags auto-promote if conviction >= alert_threshold.
+    """
+    _ensure_watchlist_table()
+    rows = _q("""
+        SELECT id, ticker, added_at, notes, side,
+               snap_up_proba, snap_conviction, snap_price, alert_threshold
+        FROM watchlist
+        ORDER BY added_at DESC
+    """)
+    if not rows:
+        return []
+
+    tickers_sql = ",".join(f"'{r['ticker']}'" for r in rows)
+    targets = _q(f"""
+        SELECT ticker, current_price_eur, up_proba, vol_ann,
+               risk_reward_ratio, target_1sigma_eur, stop_1sigma_eur, kelly_half
+        FROM price_targets
+        WHERE date = (SELECT MAX(date) FROM price_targets)
+          AND ticker IN ({tickers_sql})
+    """)
+    targets_map = {t["ticker"]: t for t in targets}
+
+    ml = _load_json(ML_STATE_PATH)
+    ml_signals = ml.get("model_signals", {}) or {}
+
+    reg = _load_json(REGIME_STATE_PATH)
+    regime_risk = (reg.get("regime_risk") or "").lower()
+    regime_mult = 1.2 if "risk-on" in regime_risk else 0.8 if "risk-off" in regime_risk else 1.0
+
+    enriched = []
+    for row in rows:
+        ticker = row["ticker"]
+        pt     = targets_map.get(ticker, {})
+        ml_sig = ml_signals.get(ticker, {})
+
+        up_proba = float(pt.get("up_proba") or ml_sig.get("up_proba_21d") or 0.5)
+        auc      = float(ml_sig.get("auc") or 0)
+        rr       = float(pt.get("risk_reward_ratio") or 0)
+        vol_pct  = float(pt.get("vol_ann") or 0) * 100
+        cur      = float(pt.get("current_price_eur") or row.get("snap_price") or 0)
+        kelly    = float(pt.get("kelly_half") or 0)
+        tgt      = float(pt.get("target_1sigma_eur") or 0)
+        stp      = float(pt.get("stop_1sigma_eur") or 0)
+
+        # Current conviction
+        vol_score = 1.1 if 15 <= vol_pct <= 40 else 0.8 if vol_pct > 60 else 1.0
+        cur_conv = (up_proba * auc * (1 + rr) * regime_mult * vol_score) if auc >= 0.53 else None
+
+        # Trend vs snapshot
+        snap_conv = row.get("snap_conviction")
+        snap_up   = row.get("snap_up_proba")
+        snap_px   = row.get("snap_price")
+
+        if cur_conv is not None and snap_conv is not None:
+            conv_delta = cur_conv - snap_conv
+            trend = "IMPROVING" if conv_delta > 0.02 else "WEAKENING" if conv_delta < -0.02 else "STABLE"
+        else:
+            conv_delta = None
+            trend = "UNKNOWN"
+
+        up_delta = (up_proba - snap_up) if snap_up is not None else None
+        px_delta_pct = ((cur - snap_px) / snap_px * 100) if snap_px and snap_px > 0 else None
+
+        # Determine action signal
+        action = "BUY" if up_proba >= 0.60 else "LEAN_BUY" if up_proba >= 0.54 \
+            else "SELL" if up_proba <= 0.40 else "LEAN_SELL" if up_proba <= 0.46 else "NEUTRAL"
+
+        # Auto-promote flag
+        threshold = float(row.get("alert_threshold") or 0.70)
+        auto_promote = cur_conv is not None and cur_conv >= threshold
+
+        enriched.append({
+            "id":             row["id"],
+            "ticker":         ticker,
+            "added_at":       row.get("added_at", ""),
+            "notes":          row.get("notes", ""),
+            "side":           row.get("side", "LONG"),
+            "alert_threshold":threshold,
+            # Current signal
+            "up_proba":       round(up_proba, 4),
+            "auc":            round(auc, 4),
+            "rr_ratio":       round(rr, 2),
+            "vol_ann_pct":    round(vol_pct, 1),
+            "current_price":  round(cur, 2) if cur else None,
+            "target_price":   round(tgt, 2) if tgt else None,
+            "stop_price":     round(stp, 2)  if stp  else None,
+            "kelly_half":     round(kelly, 1),
+            "conviction":     round(cur_conv, 4) if cur_conv is not None else None,
+            "action":         action,
+            # Trend
+            "trend":          trend,
+            "conv_delta":     round(conv_delta, 4) if conv_delta is not None else None,
+            "up_delta":       round(up_delta, 4)   if up_delta   is not None else None,
+            "px_delta_pct":   round(px_delta_pct, 2) if px_delta_pct is not None else None,
+            # Snapshot
+            "snap_up_proba":  row.get("snap_up_proba"),
+            "snap_conviction":row.get("snap_conviction"),
+            "snap_price":     row.get("snap_price"),
+            # Flags
+            "auto_promote":   auto_promote,
+            "auc_gated":      auc < 0.53,
+        })
+    return enriched
+
+
+@app.route("/watchlist")
+def watchlist():
+    regime = _load_json(REGIME_STATE_PATH)
+    ages   = state_file_ages()
+    return render_template("watchlist.html",
+        regime=regime,
+        ages=ages,
+        page="watchlist",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route("/api/watchlist", methods=["GET"])
+def api_watchlist():
+    """Return all watchlist entries with enriched live signals."""
+    items = _get_watchlist_enriched()
+    promote_count = sum(1 for i in items if i["auto_promote"])
+    return jsonify({
+        "items":         items,
+        "total":         len(items),
+        "promote_count": promote_count,
+    })
+
+
+@app.route("/api/watchlist/add", methods=["POST"])
+def api_watchlist_add():
+    """
+    Add a ticker to the watchlist, snapshotting current signal data.
+    Body: {ticker, side, notes, snap_up_proba, snap_conviction, snap_price, alert_threshold}
+    """
+    _ensure_watchlist_table()
+    data   = request.get_json(force=True) or {}
+    ticker = (data.get("ticker") or "").strip().upper()
+    if not ticker:
+        return jsonify({"ok": False, "error": "ticker required"}), 400
+
+    # Upsert: if ticker already on watchlist, update the snapshot & notes
+    existing = _q("SELECT id FROM watchlist WHERE ticker = :t", {"t": ticker})
+    if existing:
+        ok = _exec("""
+            UPDATE watchlist
+            SET notes            = COALESCE(:notes, notes),
+                side             = :side,
+                snap_up_proba    = COALESCE(:sup, snap_up_proba),
+                snap_conviction  = COALESCE(:sc,  snap_conviction),
+                snap_price       = COALESCE(:sp,  snap_price),
+                alert_threshold  = COALESCE(:thr, alert_threshold)
+            WHERE ticker = :t
+        """, {
+            "t":    ticker,
+            "notes":data.get("notes"),
+            "side": data.get("side", "LONG"),
+            "sup":  data.get("snap_up_proba"),
+            "sc":   data.get("snap_conviction"),
+            "sp":   data.get("snap_price"),
+            "thr":  data.get("alert_threshold"),
+        })
+        return jsonify({"ok": ok, "updated": True})
+
+    ok = _exec("""
+        INSERT INTO watchlist (ticker, notes, side, snap_up_proba, snap_conviction, snap_price, alert_threshold)
+        VALUES (:ticker, :notes, :side, :sup, :sc, :sp, :thr)
+    """, {
+        "ticker": ticker,
+        "notes":  data.get("notes", ""),
+        "side":   data.get("side", "LONG"),
+        "sup":    data.get("snap_up_proba"),
+        "sc":     data.get("snap_conviction"),
+        "sp":     data.get("snap_price"),
+        "thr":    data.get("alert_threshold", 0.70),
+    })
+    return jsonify({"ok": ok, "updated": False})
+
+
+@app.route("/api/watchlist/remove/<ticker>", methods=["DELETE"])
+def api_watchlist_remove(ticker):
+    """Remove a ticker from the watchlist."""
+    _ensure_watchlist_table()
+    ok = _exec("DELETE FROM watchlist WHERE ticker = :t", {"t": ticker.upper()})
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/watchlist/count")
+def api_watchlist_count():
+    """Quick count of watchlist items + how many are ready to promote."""
+    _ensure_watchlist_table()
+    rows = _q("SELECT COUNT(*) AS n FROM watchlist")
+    total = rows[0]["n"] if rows else 0
+    # Count promote-ready (need enriched data for conviction, so use threshold heuristic)
+    return jsonify({"total": total})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     _ensure_signal_queue_table()
+    _ensure_watchlist_table()
     start_scheduler()
     log.info("Control Tower (Flask) starting — http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -157,8 +157,9 @@
         <th onclick="sortTable(8,'universe-table','num')" class="info-point" data-title="KELLY SIZING" data-info="Maximum suggested allocation based on the asset's risk and return profile.">KELLY½ %</th>
         <th onclick="sortTable(9,'universe-table','str')">SIGNAL</th>
         <th onclick="sortTable(10,'universe-table','num')" class="info-point" data-title="CONVICTION SCORE" data-info="Composite score = up_proba × AUC × (1+R:R) × regime_mult. Green=HIGH≥0.70, Yellow=MEDIUM 0.55-0.70, Grey=LOW or AUC-gated.">CONVICTION</th>
+        <th>ACTIONS</th>
       </tr></thead>
-      <tbody id="universe-tbody"><tr><td colspan="10" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="universe-tbody"><tr><td colspan="12" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -186,8 +187,9 @@
           <th onclick="sortTable(4,'short-table','num')" class="info-point" data-title="SHORT SCORE" data-info="bear_proba × AUC × rr_short × regime_bear_mult">BEAR SCORE</th>
           <th onclick="sortTable(5,'short-table','str')">REGIME</th>
           <th>INVERSE ETF ALTERNATIVE</th>
+          <th>ACTIONS</th>
         </tr></thead>
-        <tbody id="short-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+        <tbody id="short-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -272,11 +274,13 @@ function filterTable(q){
 }
 
 async function loadRisk(){
-  const [regRes, tgtRes, posRes] = await Promise.all([
+  const [regRes, tgtRes, posRes, stateRes] = await Promise.all([
     fetch('/api/regime').then(r=>r.json()).catch(()=>({})),
     fetch('/api/price_targets').then(r=>r.json()).catch(()=>[]),
     fetch('/api/holdings').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/user_state').then(r=>r.json()).catch(()=>({watched:[], queued:[]}))
   ]);
+  const watchedSet = new Set(stateRes.watched || []);
   const riskLabel=regRes.regime_risk||'—', growLabel=regRes.regime_growth||'—', rateLabel=regRes.regime_rates||'—';
   const rColor=riskLabel==='Risk-On'?'var(--accent)':riskLabel==='Risk-Off'?'var(--accent2)':'var(--accent3)';
   const banner = document.getElementById('regime-banner');
@@ -346,6 +350,7 @@ async function loadRisk(){
       const rrShort = Math.max(0.5, Math.min(rr * 0.8, 5.0));
       const score = bear * auc * rrShort * regimeMultShort;
       const etf = getEtfHint(r.ticker);
+      const isWatched = watchedSet.has(r.ticker);
       return `<tr>
         <td style="font-weight:600; color:var(--accent2)">
           ${r.ticker}
@@ -357,10 +362,16 @@ async function loadRisk(){
         <td style="color:${score>=0.55?'var(--accent2)':score>=0.40?'var(--accent3)':'var(--muted)'}">${score.toFixed(3)}</td>
         <td>${riskLabel}</td>
         <td style="font-size:9px; color:var(--accent3)">${etf}</td>
+        <td>
+          ${isWatched
+            ? `<button class="wl-btn" style="color:var(--accent);border-color:var(--accent)" disabled>✅ WATCHING</button>`
+            : `<button class="wl-btn" id="btn-watch-short-${r.ticker}" onclick="event.stopPropagation(); addToWatchlist('${r.ticker}', 'SHORT', ${JSON.stringify(r).replace(/\"/g, '&quot;')})">👁 WATCH</button>`
+          }
+        </td>
       </tr>`;
     }).join('');
   } else {
-    document.getElementById('short-tbody').innerHTML = `<tr><td colspan="7" style="color:var(--muted); padding:20px">
+    document.getElementById('short-tbody').innerHTML = `<tr><td colspan="8" style="color:var(--muted); padding:20px">
       No short candidates. Shorts are surfaced in Risk-Off regime or when up_proba ≤ 38%. Current: ${riskLabel}.
     </td></tr>`;
     if (!isRiskOff && !isTransition) {
@@ -377,6 +388,7 @@ async function loadRisk(){
       :null;
     const expPctStr=exp_pct!=null?fmtPct(exp_pct):'—';
     const expColor=exp_pct!=null&&exp_pct>=0?'var(--accent)':'var(--accent2)';
+    const isWatched = watchedSet.has(r.ticker);
     return `<tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="document.getElementById('ticker-sel').value='${r.ticker}';loadTicker('${r.ticker}')">
       <td style="font-weight:500;color:#fff">
         ${r.ticker}
@@ -392,6 +404,12 @@ async function loadRisk(){
       <td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td>
       <td class="${sigClass(action)}">${sigLabel(action)}</td>
       <td>${renderConv(r._conv)}</td>
+      <td style="white-space:nowrap">
+        ${isWatched
+          ? `<button class="wl-btn" style="color:var(--accent);border-color:var(--accent)" disabled>✅ WATCHING</button>`
+          : `<button class="wl-btn" id="btn-watch-long-${r.ticker}" onclick="event.stopPropagation(); addToWatchlist('${r.ticker}', '${action.includes('BUY')?'LONG':'SHORT'}', ${JSON.stringify(r).replace(/\"/g, '&quot;')})">👁 WATCH</button>`
+        }
+      </td>
     </tr>`;
   }).join('');
 
@@ -402,6 +420,31 @@ async function loadRisk(){
     const lbl = conv >= 0.70 ? '🟢' : conv >= 0.55 ? '🟡' : '🔴';
     return `<span class="tag ${cls}">${lbl} ${conv.toFixed(3)}</span>`;
   }
+
+  // ── Add to Watchlist ──
+  window.addToWatchlist = async function(ticker, side, data) {
+    const payload = {
+      ticker, side, notes: '', alert_threshold: 0.70,
+      snap_up_proba: data.up_proba, snap_conviction: data._conv, snap_price: data.current_price_eur
+    };
+    try {
+      const res = await fetch('/api/watchlist/add', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        const btnId = side === 'SHORT' ? `btn-watch-short-${ticker}` : `btn-watch-long-${ticker}`;
+        const btn = document.getElementById(btnId);
+        if (btn) { btn.textContent = '✅ WATCHING'; btn.style.color = 'var(--accent)'; btn.style.borderColor = 'var(--accent)'; btn.onclick = null; }
+        const navEl = document.getElementById('nav-watchlist');
+        if (navEl) {
+          const cur = parseInt(navEl.dataset.count || '0');
+          navEl.dataset.count = cur + 1;
+        }
+      }
+    } catch(e) { console.error('Watchlist add failed:', e); }
+  };
 
   const positions=posRes.positions||[], total=posRes.total_eur||positions.reduce((s,p)=>s+(+p.value_eur||0),0);
   if(!positions.length){ document.getElementById('port-no-pos').style.display='block'; document.getElementById('port-risk-content').style.display='none'; return; }
