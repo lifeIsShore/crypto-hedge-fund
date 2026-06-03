@@ -2244,6 +2244,77 @@ def api_pairs_spread(ta, tb):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# PORTFOLIO LAB
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route("/lab")
+def lab():
+    from portfolio.src.config import ASSET_UNIVERSE, TICKER_NAMES, TICKER_SECTORS
+    # Pre-populate with current live holdings so the user can optimise what they own
+    positions, _ = _live_positions()
+    live_tickers = [p["ticker"] for p in positions if p.get("value_eur")]
+
+    # Build sector-grouped universe for the picker
+    sector_groups = {}
+    for t in sorted(ASSET_UNIVERSE):
+        s = TICKER_SECTORS.get(t, "Other")
+        sector_groups.setdefault(s, []).append(t)
+
+    return render_template("lab.html",
+        sector_groups=sector_groups,
+        live_tickers=live_tickers,
+        page="lab",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route("/api/lab/optimize", methods=["POST"])
+def api_lab_optimize():
+    """
+    On-demand portfolio optimizer for the Portfolio Lab tab.
+
+    Body (JSON):
+      tickers            list[str]   required, 2–30 items
+      objective          str         max_sharpe | min_vol | risk_parity | equal_weight | max_return
+      lookback_days      int         default 504
+      portfolio_size_eur float       default 10000
+      min_weight         float       default 0.0
+      max_weight         float       default 0.40
+    """
+    data = request.get_json(force=True) or {}
+    tickers    = [t.strip().upper() for t in (data.get("tickers") or []) if t.strip()]
+    objective  = data.get("objective", "max_sharpe")
+    lookback   = int(data.get("lookback_days", 504))
+    port_size  = float(data.get("portfolio_size_eur", 10_000))
+    min_w      = float(data.get("min_weight", 0.0))
+    max_w      = float(data.get("max_weight", 0.40))
+
+    if len(tickers) < 2:
+        return jsonify({"error": "Select at least 2 tickers"}), 400
+    if len(tickers) > 30:
+        return jsonify({"error": "Maximum 30 tickers per run"}), 400
+    if objective not in ("max_sharpe", "min_vol", "risk_parity", "equal_weight", "max_return"):
+        return jsonify({"error": f"Unknown objective: {objective}"}), 400
+    if not (0.0 <= min_w < max_w <= 1.0):
+        return jsonify({"error": "Invalid weight bounds"}), 400
+
+    try:
+        from engine.portfolio.lab_optimizer import run_lab_optimization
+        result = run_lab_optimization(
+            tickers=tickers,
+            objective=objective,
+            lookback_days=lookback,
+            portfolio_size_eur=port_size,
+            min_weight=min_w,
+            max_weight=max_w,
+        )
+        return jsonify(result)
+    except Exception as e:
+        log.exception("Lab optimizer error")
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     start_scheduler()

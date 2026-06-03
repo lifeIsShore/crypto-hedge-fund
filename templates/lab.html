@@ -1,0 +1,914 @@
+{% extends "base.html" %}
+{% block title %}Portfolio Lab{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Lab layout ────────────────────────────────────────────────────────────── */
+#lab-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media(max-width:960px){ #lab-layout{ grid-template-columns:1fr; } }
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+#lab-sidebar {
+  position: sticky;
+  top: 52px;
+}
+.sidebar-section { margin-bottom: 14px; }
+.sidebar-label {
+  font-size: 9px; letter-spacing: .12em; color: var(--muted);
+  margin-bottom: 6px; display: block;
+}
+
+/* ── Ticker search + list ───────────────────────────────────────────────────── */
+#ticker-search {
+  width: 100%; margin-bottom: 8px;
+}
+#ticker-list {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+#ticker-list::-webkit-scrollbar { width: 4px; }
+#ticker-list::-webkit-scrollbar-thumb { background: var(--border); }
+.ticker-group-header {
+  font-size: 9px; letter-spacing: .1em; color: var(--accent3);
+  padding: 5px 10px 3px; background: rgba(245,166,35,.05);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+}
+.ticker-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; cursor: pointer; transition: background .1s;
+  border-bottom: 1px solid rgba(30,37,53,.4);
+}
+.ticker-item:hover { background: rgba(255,255,255,.03); }
+.ticker-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.ticker-item label { font-size: 10px; cursor: pointer; flex: 1; }
+.ticker-item label span { font-size: 9px; color: var(--muted); display: block; }
+.ticker-item.selected { background: rgba(0,229,160,.05); }
+
+/* ── Selected chips ─────────────────────────────────────────────────────────── */
+#selected-chips {
+  display: flex; flex-wrap: wrap; gap: 5px; min-height: 26px;
+  padding: 4px 0;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(0,229,160,.12); border: 1px solid rgba(0,229,160,.3);
+  color: var(--accent); font-size: 9px; letter-spacing: .06em;
+  padding: 2px 7px; cursor: default;
+}
+.chip .chip-x { cursor: pointer; opacity: .7; }
+.chip .chip-x:hover { opacity: 1; }
+
+/* ── Run button ─────────────────────────────────────────────────────────────── */
+#run-btn {
+  width: 100%; padding: 12px; font-size: 11px; letter-spacing: .1em;
+  background: rgba(0,229,160,.1); border: 1px solid var(--accent);
+  color: var(--accent); cursor: pointer; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+#run-btn:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
+#run-btn:disabled { opacity: .5; cursor: not-allowed; }
+#run-btn.loading::after {
+  content: ''; position: absolute; bottom: 0; left: 0;
+  height: 2px; background: var(--accent); animation: progress 1.2s infinite;
+}
+@keyframes progress { 0%{width:0;left:0} 50%{width:60%;left:20%} 100%{width:0;left:100%} }
+
+/* ── Output tabs ─────────────────────────────────────────────────────────────── */
+#results-area { display: none; }
+#results-area.visible { display: block; }
+.result-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px; overflow-x: auto;
+}
+.result-tab {
+  padding: 8px 16px; font-size: 10px; letter-spacing: .08em;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .15s; white-space: nowrap; user-select: none;
+}
+.result-tab:hover { color: var(--text); }
+.result-tab.active { color: var(--accent3); border-bottom-color: var(--accent3); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Weight bar chart ────────────────────────────────────────────────────────── */
+.weight-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.weight-ticker { font-size: 10px; width: 90px; flex-shrink: 0; }
+.weight-bar-bg { flex: 1; height: 14px; background: var(--surface2); overflow: hidden; position: relative; }
+.weight-bar-fill {
+  height: 100%; background: var(--accent);
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.weight-bar-fill::after {
+  content: attr(data-pct); position: absolute; right: 4px; top: 0;
+  font-size: 9px; line-height: 14px; color: var(--bg); font-weight: 600;
+}
+.weight-val { font-size: 10px; width: 52px; text-align: right; flex-shrink: 0; color: var(--muted); }
+
+/* ── Frontier scatter (CSS-only heatmap approach) ────────────────────────────── */
+#frontier-canvas-wrap { position: relative; width: 100%; height: 380px; }
+#frontier-canvas-wrap canvas { position: absolute; inset: 0; }
+
+/* ── Heatmap ─────────────────────────────────────────────────────────────────── */
+#corr-wrap { overflow-x: auto; }
+.heatmap-table { border-collapse: collapse; }
+.heatmap-table th {
+  font-size: 9px; color: var(--muted); padding: 4px 8px; text-align: center; letter-spacing: .05em;
+}
+.heatmap-table td {
+  width: 52px; height: 38px; text-align: center; font-size: 10px;
+  border: 1px solid rgba(30,37,53,.5); cursor: default;
+  transition: opacity .15s;
+}
+.heatmap-table td:hover { opacity: .8; }
+
+/* ── Compare table ───────────────────────────────────────────────────────────── */
+.compare-row { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+.compare-label { font-size: 10px; color: var(--muted); letter-spacing: .08em; }
+.compare-val { font-size: 14px; font-weight: 600; text-align: center; }
+.compare-bar-wrap { position: relative; height: 4px; background: var(--border); margin-top: 4px; }
+.compare-bar { height: 100%; transition: width .5s ease; }
+
+/* ── MC fan chart ─────────────────────────────────────────────────────────────── */
+#fan-canvas-wrap { position: relative; width: 100%; height: 280px; }
+
+/* ── Placeholder state ───────────────────────────────────────────────────────── */
+#placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 400px; color: var(--muted); gap: 12px; text-align: center;
+}
+#placeholder .ph-icon { font-size: 48px; opacity: .3; }
+#placeholder .ph-text { font-size: 11px; letter-spacing: .08em; }
+#placeholder .ph-sub  { font-size: 10px; color: #4a5568; }
+
+/* ── Excluded warning ────────────────────────────────────────────────────────── */
+#excluded-alert { display: none; }
+
+/* Quick-select buttons */
+.quick-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-family: var(--mono); font-size: 9px;
+  letter-spacing: .06em; padding: 4px 10px; cursor: pointer;
+  transition: all .15s;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<script id="sector-groups-data" type="application/json">{{ sector_groups | tojson | safe }}</script>
+<script id="live-tickers-data" type="application/json">{{ live_tickers | tojson | safe }}</script>
+
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+  <div>
+    <div style="font-size:14px; font-weight:600; letter-spacing:.06em">⚗ PORTFOLIO LAB</div>
+    <div style="font-size:10px; color:var(--muted); margin-top:2px">On-demand optimizer · Select any basket · Instant quant analysis</div>
+  </div>
+  <div style="font-size:9px; color:var(--muted)">{{ now }}</div>
+</div>
+
+<div id="lab-layout">
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <div id="lab-sidebar">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">TICKER SELECTION</span>
+        <span class="panel-badge" id="count-badge">0 selected</span>
+      </div>
+      <div class="panel-body" style="padding:12px">
+
+        <!-- Search -->
+        <input type="text" id="ticker-search" placeholder="Search tickers…" oninput="filterTickers(this.value)">
+
+        <!-- Quick-select -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0">
+          <button class="quick-btn" onclick="quickSelect('live')">📂 My Holdings</button>
+          <button class="quick-btn" onclick="quickSelect('all')">All</button>
+          <button class="quick-btn" onclick="quickSelect('none')">Clear</button>
+        </div>
+
+        <!-- Ticker list -->
+        <div id="ticker-list"></div>
+
+        <!-- Selected chips -->
+        <div class="sidebar-label" style="margin-top:12px">SELECTED</div>
+        <div id="selected-chips"><span style="font-size:10px;color:var(--muted)">None selected</span></div>
+      </div>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="panel" style="margin-top:10px">
+      <div class="panel-header"><span class="panel-title">SETTINGS</span></div>
+      <div class="panel-body" style="padding:12px; display:flex; flex-direction:column; gap:10px">
+
+        <div>
+          <label class="sidebar-label">OBJECTIVE</label>
+          <select id="sel-objective">
+            <option value="max_sharpe">Max Sharpe Ratio</option>
+            <option value="min_vol">Min Volatility</option>
+            <option value="risk_parity">Risk Parity (ERC)</option>
+            <option value="equal_weight">Equal Weight (1/N)</option>
+            <option value="max_return">Max Return (vol-capped)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="sidebar-label">LOOKBACK PERIOD</label>
+          <select id="sel-lookback">
+            <option value="252">1 Year</option>
+            <option value="504" selected>2 Years</option>
+            <option value="756">3 Years</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="sidebar-label">PORTFOLIO SIZE (€)</label>
+          <input type="number" id="inp-size" value="10000" min="100" max="10000000" step="500">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+          <div>
+            <label class="sidebar-label">MIN WEIGHT %</label>
+            <input type="number" id="inp-minw" value="0" min="0" max="40" step="1">
+          </div>
+          <div>
+            <label class="sidebar-label">MAX WEIGHT %</label>
+            <input type="number" id="inp-maxw" value="40" min="5" max="100" step="5">
+          </div>
+        </div>
+
+        <button id="run-btn" onclick="runOptimization()">▶ RUN OPTIMIZATION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ RESULTS ══════════════════ -->
+  <div id="results-column">
+
+    <!-- Excluded alert -->
+    <div class="alert alert-warn" id="excluded-alert"></div>
+
+    <!-- Placeholder (before first run) -->
+    <div id="placeholder">
+      <div class="ph-icon">⚗</div>
+      <div class="ph-text">PORTFOLIO LAB</div>
+      <div class="ph-sub">Select tickers from the sidebar and click RUN OPTIMIZATION<br>to compute optimal weights, efficient frontier, risk metrics, and more.</div>
+    </div>
+
+    <!-- Results (shown after run) -->
+    <div id="results-area">
+
+      <!-- KPI strip -->
+      <div class="kpi-strip" id="kpi-strip" style="margin-bottom:14px"></div>
+
+      <!-- Output tabs -->
+      <div class="result-tabs">
+        <div class="result-tab active" data-tab="weights"   onclick="switchTab('weights')">WEIGHTS</div>
+        <div class="result-tab"        data-tab="frontier"  onclick="switchTab('frontier')">EFFICIENT FRONTIER</div>
+        <div class="result-tab"        data-tab="risk"      onclick="switchTab('risk')">RISK METRICS</div>
+        <div class="result-tab"        data-tab="mc"        onclick="switchTab('mc')">MONTE CARLO</div>
+        <div class="result-tab"        data-tab="corr"      onclick="switchTab('corr')">CORRELATION</div>
+        <div class="result-tab"        data-tab="compare"   onclick="switchTab('compare')">COMPARE</div>
+      </div>
+
+      <!-- ── Tab: WEIGHTS ── -->
+      <div class="tab-panel active" id="tab-weights">
+        <div class="grid grid-2" style="gap:14px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">OPTIMAL WEIGHTS</span><span class="panel-badge" id="obj-badge">—</span></div>
+            <div class="panel-body">
+              <div id="weight-bars"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">ALLOCATION TABLE</span><span class="panel-badge">EUR VALUES</span></div>
+            <div class="panel-body">
+              <table class="tbl" id="alloc-table">
+                <thead><tr>
+                  <th onclick="sortTable(0,'alloc-table','str')">TICKER</th>
+                  <th onclick="sortTable(1,'alloc-table','num')">WEIGHT</th>
+                  <th onclick="sortTable(2,'alloc-table','num')">EUR VALUE</th>
+                  <th onclick="sortTable(3,'alloc-table','num')">EXP RET</th>
+                  <th onclick="sortTable(4,'alloc-table','num')">VOL</th>
+                </tr></thead>
+                <tbody id="alloc-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:14px">
+          <div class="panel-header"><span class="panel-title">WEIGHT DONUT</span></div>
+          <div class="panel-body">
+            <div class="chart-wrap" style="height:280px; max-width:400px; margin:0 auto">
+              <canvas id="donut-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: FRONTIER ── -->
+      <div class="tab-panel" id="tab-frontier">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">EFFICIENT FRONTIER — 3,000 RANDOM PORTFOLIOS</span>
+            <span class="panel-badge">COLOUR = SHARPE RATIO</span>
+          </div>
+          <div class="panel-body">
+            <div id="frontier-canvas-wrap">
+              <canvas id="frontier-chart"></canvas>
+            </div>
+            <div style="font-size:9px; color:var(--muted); margin-top:10px">
+              🟢 Optimal portfolio · ⚪ Random feasible portfolios · Colour intensity = Sharpe ratio
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: RISK ── -->
+      <div class="tab-panel" id="tab-risk">
+        <div class="kpi-strip" id="risk-kpi-strip" style="margin-bottom:14px"></div>
+        <div class="grid grid-2" style="gap:14px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">PER-TICKER RISK CONTRIBUTION</span></div>
+            <div class="panel-body">
+              <div id="risk-contrib-bars"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">EXPECTED RETURNS (ANNUALISED)</span></div>
+            <div class="panel-body">
+              <div class="chart-wrap" style="height:240px"><canvas id="ret-chart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: MONTE CARLO ── -->
+      <div class="tab-panel" id="tab-mc">
+        <div class="kpi-strip" id="mc-kpi-strip" style="margin-bottom:14px"></div>
+        <div class="grid grid-2" style="gap:14px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">21-DAY PATH SIMULATION (30 PATHS)</span><span class="panel-badge">PORTFOLIO VALUE €</span></div>
+            <div class="panel-body">
+              <div id="fan-canvas-wrap"><canvas id="fan-chart"></canvas></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">RETURN DISTRIBUTION — 5,000 PATHS</span><span class="panel-badge">CORRELATED MC</span></div>
+            <div class="panel-body">
+              <div class="chart-wrap" style="height:280px"><canvas id="mc-hist-chart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: CORRELATION ── -->
+      <div class="tab-panel" id="tab-corr">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">CORRELATION HEATMAP</span><span class="panel-badge">PEARSON · LOG RETURNS</span></div>
+          <div class="panel-body">
+            <div id="corr-wrap"></div>
+            <div style="font-size:9px;color:var(--muted);margin-top:12px">
+              Dark green = strong positive correlation · Dark red = strong negative correlation · Hover cell for exact value.
+              Highly correlated assets reduce diversification benefit.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: COMPARE ── -->
+      <div class="tab-panel" id="tab-compare">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">STRATEGY COMPARISON</span>
+            <span class="panel-badge" id="compare-badge">OPTIMAL vs EQUAL WEIGHT</span>
+          </div>
+          <div class="panel-body">
+            <div id="compare-content"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /results-area -->
+  </div><!-- /results-column -->
+</div><!-- /lab-layout -->
+
+{% endblock %}
+
+{% block scripts %}
+<script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
+<script>
+// ── Constants & state ────────────────────────────────────────────────────────
+const SECTOR_GROUPS  = JSON.parse(document.getElementById('sector-groups-data').textContent);
+const LIVE_TICKERS   = JSON.parse(document.getElementById('live-tickers-data').textContent);
+const TICKER_NAMES   = JSON.parse(document.getElementById('ticker-names-data').textContent);
+const PALETTE = ['#00e5a0','#6495ed','#f5a623','#ff4d6d','#a78bfa','#34d399','#fb923c','#60a5fa','#f472b6','#fbbf24','#4ade80','#c084fc','#22d3ee','#f87171','#e879f9','#86efac'];
+let selected = new Set();
+let lastResult = null;
+let charts = {};
+
+// ── Build ticker list ─────────────────────────────────────────────────────────
+function buildTickerList() {
+  const container = document.getElementById('ticker-list');
+  container.innerHTML = '';
+  Object.entries(SECTOR_GROUPS).sort().forEach(([sector, tickers]) => {
+    const header = document.createElement('div');
+    header.className = 'ticker-group-header';
+    header.textContent = sector.toUpperCase();
+    container.appendChild(header);
+    tickers.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'ticker-item' + (selected.has(t) ? ' selected' : '');
+      row.id = `row-${t}`;
+      const name = TICKER_NAMES[t] || '';
+      row.innerHTML = `
+        <input type="checkbox" id="chk-${t}" ${selected.has(t)?'checked':''}
+          onchange="toggleTicker('${t}', this.checked)">
+        <label for="chk-${t}">${t}<span>${name}</span></label>
+      `;
+      container.appendChild(row);
+    });
+  });
+}
+
+function filterTickers(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.ticker-item').forEach(row => {
+    const t = row.querySelector('label').textContent.toLowerCase();
+    row.style.display = (!q || t.includes(q)) ? '' : 'none';
+  });
+  document.querySelectorAll('.ticker-group-header').forEach(h => {
+    const sib = h.nextElementSibling;
+    let anyVisible = false;
+    let el = sib;
+    while (el && !el.classList.contains('ticker-group-header')) {
+      if (el.style.display !== 'none') anyVisible = true;
+      el = el.nextElementSibling;
+    }
+    h.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+function toggleTicker(t, checked) {
+  if (checked) selected.add(t); else selected.delete(t);
+  const row = document.getElementById(`row-${t}`);
+  if (row) row.classList.toggle('selected', checked);
+  renderChips();
+  updateCount();
+}
+
+function renderChips() {
+  const el = document.getElementById('selected-chips');
+  if (selected.size === 0) {
+    el.innerHTML = '<span style="font-size:10px;color:var(--muted)">None selected</span>';
+    return;
+  }
+  el.innerHTML = [...selected].map(t =>
+    `<div class="chip">${t}<span class="chip-x" onclick="toggleTicker('${t}',false);document.getElementById('chk-${t}').checked=false">✕</span></div>`
+  ).join('');
+}
+
+function updateCount() {
+  document.getElementById('count-badge').textContent = `${selected.size} selected`;
+}
+
+function quickSelect(mode) {
+  if (mode === 'none') {
+    [...selected].forEach(t => selected.delete(t));
+  } else if (mode === 'all') {
+    Object.values(SECTOR_GROUPS).flat().forEach(t => selected.add(t));
+  } else if (mode === 'live') {
+    selected.clear();
+    LIVE_TICKERS.forEach(t => selected.add(t));
+  }
+  buildTickerList();
+  renderChips();
+  updateCount();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.result-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+
+// ── Optimise ──────────────────────────────────────────────────────────────────
+async function runOptimization() {
+  if (selected.size < 2) {
+    alert('Select at least 2 tickers first.');
+    return;
+  }
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.textContent = '⏳ RUNNING…'; btn.classList.add('loading');
+  document.getElementById('excluded-alert').style.display = 'none';
+
+  const payload = {
+    tickers:            [...selected],
+    objective:          document.getElementById('sel-objective').value,
+    lookback_days:      +document.getElementById('sel-lookback').value,
+    portfolio_size_eur: +document.getElementById('inp-size').value,
+    min_weight:         +document.getElementById('inp-minw').value / 100,
+    max_weight:         +document.getElementById('inp-maxw').value / 100,
+  };
+
+  try {
+    const res  = await fetch('/api/lab/optimize', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.error) { alert('Error: ' + data.error); return; }
+    lastResult = data;
+    renderResults(data);
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '▶ RUN OPTIMIZATION'; btn.classList.remove('loading');
+  }
+}
+
+// ── Render all results ─────────────────────────────────────────────────────────
+function renderResults(d) {
+  // Show results, hide placeholder
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('results-area').classList.add('visible');
+
+  if (d.excluded && d.excluded.length) {
+    const el = document.getElementById('excluded-alert');
+    el.style.display = 'block';
+    el.textContent = `⚠ Excluded (insufficient price history): ${d.excluded.join(', ')}`;
+  }
+
+  const OBJ_LABELS = { max_sharpe:'MAX SHARPE', min_vol:'MIN VOL', risk_parity:'RISK PARITY', equal_weight:'EQUAL WEIGHT', max_return:'MAX RETURN' };
+  document.getElementById('obj-badge').textContent = OBJ_LABELS[d.objective] || d.objective;
+  document.getElementById('compare-badge').textContent = `${OBJ_LABELS[d.objective]||d.objective} vs EQUAL WEIGHT`;
+
+  renderKpiStrip(d.metrics);
+  renderWeights(d);
+  renderFrontier(d);
+  renderRisk(d);
+  renderMC(d);
+  renderCorrelation(d.correlation);
+  renderCompare(d);
+}
+
+// ── KPI strip (top) ───────────────────────────────────────────────────────────
+function renderKpiStrip(m) {
+  const sharpeClass = m.sharpe >= 1.5 ? 'good' : m.sharpe >= 0.8 ? 'warn' : 'danger';
+  document.getElementById('kpi-strip').innerHTML = `
+    <div class="kpi ${sharpeClass}"><div class="kpi-label">SHARPE RATIO</div><div class="kpi-value">${m.sharpe.toFixed(2)}</div><div class="kpi-sub">annualised</div></div>
+    <div class="kpi info"><div class="kpi-label">EXP RETURN</div><div class="kpi-value">${m.ret_ann > 0 ? '+' : ''}${m.ret_ann}%</div><div class="kpi-sub">per year</div></div>
+    <div class="kpi warn"><div class="kpi-label">VOLATILITY</div><div class="kpi-value">${m.vol_ann}%</div><div class="kpi-sub">annualised</div></div>
+    <div class="kpi danger"><div class="kpi-label">VaR 95% (21D)</div><div class="kpi-value">${m.var95_pct}%</div><div class="kpi-sub">max loss (95%)</div></div>
+    <div class="kpi danger"><div class="kpi-label">CVaR 95% (21D)</div><div class="kpi-value">${m.cvar95_pct}%</div><div class="kpi-sub">expected shortfall</div></div>
+    <div class="kpi neutral"><div class="kpi-label">DIVERSIF. RATIO</div><div class="kpi-value">${m.diversification_ratio.toFixed(2)}x</div><div class="kpi-sub">>1 = diversified</div></div>
+  `;
+}
+
+// ── Weights tab ───────────────────────────────────────────────────────────────
+function renderWeights(d) {
+  const weights = d.weights;
+  const tickers = Object.keys(weights).sort((a,b) => weights[b] - weights[a]);
+  const portSize = d.portfolio_size;
+  const rs = d.returns_summary;
+
+  // Bar chart
+  const barsEl = document.getElementById('weight-bars');
+  barsEl.innerHTML = tickers.map((t, i) => {
+    const pct = (weights[t] * 100).toFixed(1);
+    const color = PALETTE[i % PALETTE.length];
+    return `<div class="weight-row">
+      <div class="weight-ticker" style="color:${color}">${t}</div>
+      <div class="weight-bar-bg">
+        <div class="weight-bar-fill" style="width:${pct}%;background:${color}" data-pct="${pct}%"></div>
+      </div>
+      <div class="weight-val">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  // Allocation table
+  document.getElementById('alloc-tbody').innerHTML = tickers.map((t, i) => {
+    const w = weights[t];
+    const eur = (w * portSize).toFixed(0);
+    const ret = rs[t]?.ret_ann_pct ?? '—';
+    const vol = rs[t]?.vol_ann_pct ?? '—';
+    const retColor = ret >= 0 ? 'var(--accent)' : 'var(--accent2)';
+    return `<tr>
+      <td style="color:${PALETTE[i%PALETTE.length]};font-weight:500">${t}<br><span style="font-size:9px;color:var(--muted)">${TICKER_NAMES[t]||''}</span></td>
+      <td>${(w*100).toFixed(2)}%</td>
+      <td>€${(+eur).toLocaleString('de-DE')}</td>
+      <td style="color:${retColor}">${ret !== '—' ? (ret >= 0 ? '+' : '') + ret + '%' : '—'}</td>
+      <td>${vol !== '—' ? vol + '%' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Donut chart
+  destroyChart('donut');
+  charts['donut'] = new Chart(document.getElementById('donut-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: tickers,
+      datasets: [{ data: tickers.map(t => weights[t]*100), backgroundColor: PALETTE.slice(0, tickers.length), borderWidth: 2, borderColor: '#0d0f13' }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` } },
+      },
+    },
+  });
+}
+
+// ── Efficient frontier ────────────────────────────────────────────────────────
+function renderFrontier(d) {
+  const frontier = d.frontier;
+  const opt = d.metrics;
+  // Colour frontier points by Sharpe
+  const sharpes = frontier.map(p => p[2]);
+  const minS = Math.min(...sharpes), maxS = Math.max(...sharpes);
+  const norm = s => (maxS === minS) ? 0.5 : (s - minS) / (maxS - minS);
+
+  const ptColors = frontier.map(p => {
+    const n = norm(p[2]);
+    // Gradient: red (low) → yellow (mid) → green (high)
+    const r = Math.round(255 * (1-n)), g = Math.round(229 * n), b = Math.round(80 * (1-n));
+    return `rgba(${r},${g},${b},0.5)`;
+  });
+
+  destroyChart('frontier');
+  charts['frontier'] = new Chart(document.getElementById('frontier-chart'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Random portfolios',
+          data: frontier.map(p => ({ x: p[0], y: p[1] })),
+          backgroundColor: ptColors,
+          pointRadius: 2, pointHoverRadius: 4,
+        },
+        {
+          label: '★ Optimal',
+          data: [{ x: opt.vol_ann, y: opt.ret_ann }],
+          backgroundColor: '#00e5a0', pointRadius: 12,
+          pointStyle: 'star',
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex === 1) return ` Optimal: Vol ${ctx.parsed.x.toFixed(1)}% | Ret ${ctx.parsed.y.toFixed(1)}%`;
+              return ` Vol ${ctx.parsed.x.toFixed(1)}% | Ret ${ctx.parsed.y.toFixed(1)}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Annualised Volatility %', font: { size: 10 } } },
+        y: { title: { display: true, text: 'Annualised Return %', font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+// ── Risk tab ──────────────────────────────────────────────────────────────────
+function renderRisk(d) {
+  const m = d.metrics;
+  document.getElementById('risk-kpi-strip').innerHTML = `
+    <div class="kpi ${m.sharpe>=1.5?'good':m.sharpe>=0.8?'warn':'danger'}"><div class="kpi-label">SHARPE</div><div class="kpi-value">${m.sharpe.toFixed(3)}</div><div class="kpi-sub">vs 0.8 threshold</div></div>
+    <div class="kpi info"><div class="kpi-label">ANN. RETURN</div><div class="kpi-value">${m.ret_ann > 0 ?'+':''}${m.ret_ann}%</div></div>
+    <div class="kpi warn"><div class="kpi-label">ANN. VOL</div><div class="kpi-value">${m.vol_ann}%</div></div>
+    <div class="kpi danger"><div class="kpi-label">VaR 95%</div><div class="kpi-value">${m.var95_pct}%</div><div class="kpi-sub">21D</div></div>
+    <div class="kpi danger"><div class="kpi-label">VaR 99%</div><div class="kpi-value">${m.var99_pct}%</div><div class="kpi-sub">21D</div></div>
+    <div class="kpi danger"><div class="kpi-label">CVaR 95%</div><div class="kpi-value">${m.cvar95_pct}%</div><div class="kpi-sub">expected shortfall</div></div>
+    <div class="kpi neutral"><div class="kpi-label">MAX DD EST</div><div class="kpi-value">${m.max_drawdown_est}%</div></div>
+    <div class="kpi neutral"><div class="kpi-label">DIVERSIF.</div><div class="kpi-value">${m.diversification_ratio.toFixed(2)}x</div></div>
+  `;
+
+  // Risk contribution bars (weight × individual vol / port vol — approximation)
+  const rs = d.returns_summary;
+  const weights = d.weights;
+  const portVol = m.vol_ann;
+  const tickers = Object.keys(weights).sort((a,b) => weights[b] - weights[a]);
+  const rcBars = document.getElementById('risk-contrib-bars');
+  rcBars.innerHTML = tickers.map((t, i) => {
+    const indVol = rs[t]?.vol_ann_pct ?? 0;
+    const rc = ((weights[t] * indVol) / (portVol || 1) * 100).toFixed(1);
+    const color = PALETTE[i % PALETTE.length];
+    return `<div class="weight-row">
+      <div class="weight-ticker" style="color:${color}">${t}</div>
+      <div class="weight-bar-bg">
+        <div class="weight-bar-fill" style="width:${Math.min(rc,100)}%;background:${color}" data-pct="${rc}%"></div>
+      </div>
+      <div class="weight-val">${rc}%</div>
+    </div>`;
+  }).join('');
+
+  // Expected returns bar chart
+  destroyChart('ret');
+  charts['ret'] = new Chart(document.getElementById('ret-chart'), {
+    type: 'bar',
+    data: {
+      labels: tickers,
+      datasets: [{
+        label: 'Expected Return % p.a.',
+        data: tickers.map(t => rs[t]?.ret_ann_pct ?? 0),
+        backgroundColor: tickers.map((t,i) => PALETTE[i%PALETTE.length]),
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { title: { display: true, text: '% p.a.' } } },
+    },
+  });
+}
+
+// ── Monte Carlo tab ───────────────────────────────────────────────────────────
+function renderMC(d) {
+  const mc = d.monte_carlo;
+  const portSize = d.portfolio_size;
+  const mcM = d.metrics;
+
+  document.getElementById('mc-kpi-strip').innerHTML = `
+    <div class="kpi good"><div class="kpi-label">P(PROFIT > 0)</div><div class="kpi-value">${mc.p_profit}%</div><div class="kpi-sub">21 days</div></div>
+    <div class="kpi good"><div class="kpi-label">P(RETURN > 5%)</div><div class="kpi-value">${mc.p_up5}%</div></div>
+    <div class="kpi danger"><div class="kpi-label">P(LOSS > 10%)</div><div class="kpi-value">${mc.p_down10}%</div></div>
+    <div class="kpi danger"><div class="kpi-label">VaR 95% (MC)</div><div class="kpi-value">${mc.var95_pct}%</div></div>
+    <div class="kpi danger"><div class="kpi-label">CVaR 95% (MC)</div><div class="kpi-value">${mc.cvar95_pct}%</div></div>
+    <div class="kpi info"><div class="kpi-label">EXP RETURN</div><div class="kpi-value">${mc.exp_ret_pct > 0 ? '+' : ''}${mc.exp_ret_pct}%</div><div class="kpi-sub">21D MC mean</div></div>
+  `;
+
+  // Fan chart (portfolio value paths)
+  const horizon = Array.from({length: mc.fan_paths[0]?.length || 21}, (_,i) => `D${i+1}`);
+  const fanDatasets = mc.fan_paths.map((path, i) => ({
+    data: path,
+    borderColor: i === 0 ? 'rgba(0,229,160,0.9)' : 'rgba(0,229,160,0.12)',
+    borderWidth: i === 0 ? 2 : 1,
+    pointRadius: 0, fill: false, tension: 0.3,
+  }));
+  // Add start line
+  fanDatasets.unshift({
+    data: new Array(horizon.length).fill(portSize),
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1, borderDash: [4,4], pointRadius: 0, fill: false,
+  });
+
+  destroyChart('fan');
+  charts['fan'] = new Chart(document.getElementById('fan-chart'), {
+    type: 'line',
+    data: { labels: horizon, datasets: fanDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { title: { display: true, text: 'Portfolio Value (€)', font: { size: 10 } },
+             ticks: { callback: v => '€' + v.toLocaleString('de-DE') } },
+      },
+    },
+  });
+
+  // Histogram
+  const hist = mc.histogram;
+  destroyChart('mcHist');
+  charts['mcHist'] = new Chart(document.getElementById('mc-hist-chart'), {
+    type: 'bar',
+    data: {
+      labels: hist.labels.map(l => l.toFixed(1) + '%'),
+      datasets: [{
+        data: hist.counts,
+        backgroundColor: hist.labels.map(l => l >= 0 ? 'rgba(0,229,160,0.5)' : 'rgba(255,77,109,0.5)'),
+        borderWidth: 0, barPercentage: 1, categoryPercentage: 1,
+      }, {
+        type: 'line',
+        data: new Array(hist.labels.length).fill(null).map((_, i) =>
+          hist.labels[i] <= mc.var95_pct ? hist.counts.reduce((a,b)=>a+b,0)/hist.counts.length : null
+        ),
+        borderColor: 'rgba(245,166,35,0.8)', borderWidth: 1.5, borderDash:[4,3],
+        pointRadius: 0, fill: false,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxTicksLimit: 10 }, grid: { display: false } },
+        y: { display: false },
+      },
+    },
+  });
+}
+
+// ── Correlation heatmap ───────────────────────────────────────────────────────
+function renderCorrelation(corr) {
+  const tickers = corr.tickers;
+  const matrix  = corr.matrix;
+  const n = tickers.length;
+
+  function corrColor(v) {
+    // -1 → red, 0 → dark surface, +1 → green
+    if (v > 0) {
+      const a = Math.min(v, 1);
+      return `rgba(0,229,160,${(a*0.8).toFixed(2)})`;
+    } else {
+      const a = Math.min(-v, 1);
+      return `rgba(255,77,109,${(a*0.8).toFixed(2)})`;
+    }
+  }
+
+  const thead = `<thead><tr><th></th>${tickers.map(t=>`<th style="font-size:9px;writing-mode:vertical-rl;transform:rotate(180deg);padding:4px 6px;text-align:left">${t}</th>`).join('')}</tr></thead>`;
+  const tbody = matrix.map((row, i) =>
+    `<tr><th style="font-size:9px;text-align:right;padding:4px 8px;color:var(--muted)">${tickers[i]}</th>`
+    + row.map((v, j) => {
+        const bg = i === j ? 'rgba(100,149,237,0.3)' : corrColor(v);
+        const textColor = Math.abs(v) > 0.5 ? '#fff' : 'var(--muted)';
+        return `<td style="background:${bg};color:${textColor}" title="${tickers[i]}↔${tickers[j]}: ${v}">${v.toFixed(2)}</td>`;
+      }).join('')
+    + `</tr>`
+  ).join('');
+
+  document.getElementById('corr-wrap').innerHTML =
+    `<table class="heatmap-table">${thead}<tbody>${tbody}</tbody></table>`;
+}
+
+// ── Compare tab ───────────────────────────────────────────────────────────────
+function renderCompare(d) {
+  const opt = d.metrics;
+  const ew  = d.metrics_ew;
+
+  const rows = [
+    { label: 'EXPECTED RETURN (ANN.)', optVal: opt.ret_ann + '%', ewVal: ew.ret_ann + '%', optNum: opt.ret_ann, ewNum: ew.ret_ann, higher_better: true },
+    { label: 'VOLATILITY (ANN.)',      optVal: opt.vol_ann + '%', ewVal: ew.vol_ann + '%', optNum: opt.vol_ann, ewNum: ew.vol_ann, higher_better: false },
+    { label: 'SHARPE RATIO',           optVal: opt.sharpe.toFixed(3), ewVal: ew.sharpe.toFixed(3), optNum: opt.sharpe, ewNum: ew.sharpe, higher_better: true },
+    { label: 'VaR 95% (21D)',          optVal: opt.var95_pct + '%', ewVal: ew.var95_pct + '%', optNum: opt.var95_pct, ewNum: ew.var95_pct, higher_better: false },
+    { label: 'CVaR 95% (21D)',         optVal: opt.cvar95_pct + '%', ewVal: ew.cvar95_pct + '%', optNum: opt.cvar95_pct, ewNum: ew.cvar95_pct, higher_better: false },
+    { label: 'VaR 99% (21D)',          optVal: opt.var99_pct + '%', ewVal: ew.var99_pct + '%', optNum: opt.var99_pct, ewNum: ew.var99_pct, higher_better: false },
+    { label: 'MAX DD ESTIMATE',        optVal: opt.max_drawdown_est + '%', ewVal: ew.max_drawdown_est + '%', optNum: opt.max_drawdown_est, ewNum: ew.max_drawdown_est, higher_better: false },
+    { label: 'DIVERSIFICATION RATIO', optVal: opt.diversification_ratio.toFixed(3), ewVal: ew.diversification_ratio.toFixed(3), optNum: opt.diversification_ratio, ewNum: ew.diversification_ratio, higher_better: true },
+  ];
+
+  const OBJ_LABELS = { max_sharpe:'MAX SHARPE', min_vol:'MIN VOL', risk_parity:'RISK PARITY', equal_weight:'EQUAL WEIGHT', max_return:'MAX RETURN' };
+  const header = `<div class="compare-row" style="margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px">
+    <div class="compare-label" style="color:var(--text);font-size:11px">METRIC</div>
+    <div class="compare-val" style="font-size:10px;color:var(--accent3)">${OBJ_LABELS[d.objective]||d.objective}</div>
+    <div class="compare-val" style="font-size:10px;color:var(--muted)">EQUAL WEIGHT</div>
+  </div>`;
+
+  const body = rows.map(r => {
+    const optBetter = r.higher_better ? r.optNum > r.ewNum : r.optNum < r.ewNum;
+    const optColor  = optBetter ? 'var(--accent)' : 'var(--accent2)';
+    const ewColor   = optBetter ? 'var(--muted)'  : 'var(--accent)';
+    // Mini bar comparison
+    const maxAbs = Math.max(Math.abs(r.optNum), Math.abs(r.ewNum), 0.01);
+    const optW = Math.min(Math.abs(r.optNum) / maxAbs * 100, 100);
+    const ewW  = Math.min(Math.abs(r.ewNum)  / maxAbs * 100, 100);
+    return `<div class="compare-row">
+      <div class="compare-label">${r.label}</div>
+      <div>
+        <div class="compare-val" style="color:${optColor}">${r.optVal}</div>
+        <div class="compare-bar-wrap"><div class="compare-bar" style="width:${optW}%;background:${optColor}"></div></div>
+      </div>
+      <div>
+        <div class="compare-val" style="color:${ewColor}">${r.ewVal}</div>
+        <div class="compare-bar-wrap"><div class="compare-bar" style="width:${ewW}%;background:${ewColor}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('compare-content').innerHTML = header + body;
+}
+
+// ── Destroy chart helper ──────────────────────────────────────────────────────
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildTickerList();
+// Pre-check live holdings
+if (LIVE_TICKERS.length) {
+  LIVE_TICKERS.forEach(t => selected.add(t));
+  buildTickerList();
+  renderChips();
+  updateCount();
+}
+</script>
+{% endblock %}
