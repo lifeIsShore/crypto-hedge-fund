@@ -58,7 +58,13 @@ python -m engine.scheduler --pipeline-only
 
 :: 6. LAUNCH DASHBOARD
 echo [6/6] Launching Flask Control Tower...
-echo Dashboard will be available at http://localhost:5000
+
+for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /c:"IPv4 Address"') do set LOCAL_IP=%%i
+if defined LOCAL_IP set LOCAL_IP=%LOCAL_IP: =%
+if not defined LOCAL_IP set LOCAL_IP=your-local-ip
+
+echo Dashboard will be available locally at http://localhost:5000
+echo Dashboard will be available on LAN at http://%LOCAL_IP%:5000
 start http://localhost:5000
 python flask_app.py
 

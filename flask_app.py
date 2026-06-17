@@ -3015,5 +3015,5 @@ if __name__ == "__main__":
     _ensure_signal_queue_table()
     _ensure_watchlist_table()
     start_scheduler()
-    log.info("Control Tower (Flask) starting — http://localhost:5000")
+    log.info("Control Tower (Flask) starting — http://localhost:5000 and http://0.0.0.0:5000 (LAN)")
     app.run(host="0.0.0.0", port=5000, debug=True)

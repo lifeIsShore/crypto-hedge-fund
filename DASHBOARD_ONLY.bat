@@ -32,7 +32,12 @@ set DASHBOARD_ONLY=1
 set PYTHONIOENCODING=utf-8
 
 echo [INFO] Starting Flask dashboard in read-only mode...
+for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /c:"IPv4 Address"') do set LOCAL_IP=%%i
+if defined LOCAL_IP set LOCAL_IP=%LOCAL_IP: =%
+if not defined LOCAL_IP set LOCAL_IP=your-local-ip
+
 echo [INFO] Opening http://localhost:5000 in your browser.
+echo [INFO] LAN Access: http://%LOCAL_IP%:5000
 echo [INFO] Press Ctrl+C to stop.
 echo.
 
