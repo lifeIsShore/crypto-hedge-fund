@@ -1,3 +1,5 @@
+> **STATUS (2026-08-09): IMPLEMENTED.** Built directly into `engine/portfolio/optimizer.py` and wired into `engine/scheduler.py`. Tested against synthetic correlated data — correctly clusters correlated pairs and flags cluster-cap violations. As a bonus, also fixed a pre-existing bug in the same file: `sector_map` was never actually passed to `optimize_with_bl()` from its only caller, so `MAX_SECTOR_SHARE` had never been enforced in production either — fixed alongside this change. See `PROJECT-STATE.md` session-3 changelog entry for details. This doc is kept below as implementation reference / rationale, not as an open task.
+
 # J1 — Correlation Cluster Concentration Limit
 # Add to `engine/portfolio/optimizer.py`
 # Estimated time: 3 hours. No new dependencies (scipy already installed).

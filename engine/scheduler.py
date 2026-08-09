@@ -439,6 +439,7 @@ def step_portfolio_construction():
     from engine.alpha.vol_timing     import VolTimingAlpha
     from engine.alpha.pead_alpha     import PEADAlpha
     from engine.alpha.ml_alpha       import MLAlpha
+    from portfolio.src.config        import TICKER_SECTORS
     models_dict = {
         'momentum': MomentumAlpha(), 'mean_reversion': MeanReversionAlpha(),
         'vol_timing': VolTimingAlpha(), 'pead': PEADAlpha(), 'ml_model': MLAlpha(),
@@ -452,6 +453,7 @@ def step_portfolio_construction():
 
     suggested_weights = optimize_with_bl(
         mu_bl=mu_bl, cov_matrix=cov_matrix, current_weights=current_weights,
+        sector_map=TICKER_SECTORS, date=TODAY,
     )
     persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl, signal_breakdown)
 

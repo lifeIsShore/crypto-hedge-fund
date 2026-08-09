@@ -7,6 +7,8 @@ The original is still used for the simple backtester.
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.spatial.distance import squareform
 import logging
 from sqlalchemy import text
 from engine.db.db import get_session
@@ -20,6 +22,11 @@ MAX_POSITION     = 0.10   # 10% max per asset in the BL-optimised portfolio
 MAX_SECTOR_SHARE = 0.30   # 30% max in any one sector (mirrors pre_trade.py MAX_SECTOR)
 TURNOVER_PENALTY = 0.002  # penalty per unit of turnover
 SLIPPAGE_PCT     = 0.0005 # 0.05% per trade (from architecture doc)
+
+# J1 — Correlation cluster concentration limit (see before-go-live/J1-correlation-cluster-constraint.md)
+MAX_CLUSTER_SHARE = 0.25            # 25% max per correlation cluster
+CLUSTER_DISTANCE_THRESHOLD = 0.35   # dendrogram cut point (lower = more, smaller clusters)
+MIN_CLUSTER_SIZE_TO_CONSTRAIN = 2   # singleton clusters need no constraint
 
 
 def build_sector_constraints(tickers: list, sector_map: dict, max_sector: float = MAX_SECTOR_SHARE) -> list:
@@ -37,18 +44,97 @@ def build_sector_constraints(tickers: list, sector_map: dict, max_sector: float 
     return constraints
 
 
+def build_correlation_clusters(tickers: list, cov_matrix: pd.DataFrame) -> dict:
+    """
+    Groups tickers into correlation clusters using hierarchical clustering
+    on the correlation-distance matrix (distance = 1 - |correlation|).
+    Returns {ticker: cluster_id}. See J1 doc for full rationale.
+    """
+    if len(tickers) < 3:
+        return {t: 0 for t in tickers}
+
+    sub = cov_matrix.loc[tickers, tickers].values
+    std = np.sqrt(np.diag(sub))
+    # Guard against zero-variance tickers (e.g. a brand-new listing with 1 data point)
+    std_safe = np.where(std == 0, 1e-12, std)
+    corr = sub / np.outer(std_safe, std_safe)
+    corr = np.clip(corr, -1.0, 1.0)
+
+    distance = 1 - np.abs(corr)
+    np.fill_diagonal(distance, 0)
+    distance = (distance + distance.T) / 2  # enforce exact symmetry (float rounding safety)
+    condensed = squareform(distance, checks=False)
+
+    Z = linkage(condensed, method='average')
+    cluster_ids = fcluster(Z, t=CLUSTER_DISTANCE_THRESHOLD, criterion='distance')
+
+    return dict(zip(tickers, cluster_ids))
+
+
+def build_cluster_constraints(tickers: list, cluster_map: dict, max_cluster: float = MAX_CLUSTER_SHARE) -> list:
+    """Generates one inequality constraint per correlation cluster with >= 2 members."""
+    clusters = {}
+    for i, t in enumerate(tickers):
+        cid = cluster_map.get(t)
+        if cid is not None:
+            clusters.setdefault(cid, []).append(i)
+
+    constraints = []
+    for cid, indices in clusters.items():
+        if len(indices) < MIN_CLUSTER_SIZE_TO_CONSTRAIN:
+            continue
+        constraints.append({
+            "type": "ineq",
+            "fun": lambda w, idx=indices: max_cluster - np.sum(w[idx])
+        })
+    return constraints
+
+
+def persist_correlation_clusters(date: str, cluster_map: dict):
+    """Persists cluster membership so the dashboard can explain WHY a position was capped."""
+    session = get_session()
+    try:
+        session.execute(text("""
+            CREATE TABLE IF NOT EXISTS correlation_clusters (
+                date        TEXT NOT NULL,
+                ticker      TEXT NOT NULL,
+                cluster_id  INTEGER NOT NULL,
+                computed_at TEXT DEFAULT (datetime('now')),
+                PRIMARY KEY (date, ticker)
+            )
+        """))
+        for ticker, cid in cluster_map.items():
+            session.execute(text("""
+                INSERT INTO correlation_clusters (date, ticker, cluster_id)
+                VALUES (:date, :ticker, :cid)
+                ON CONFLICT (date, ticker) DO UPDATE SET
+                    cluster_id = :cid, computed_at = datetime('now')
+            """), {"date": date, "ticker": ticker, "cid": int(cid)})
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"persist_correlation_clusters failed (non-fatal): {e}")
+    finally:
+        session.close()
+
+
 def optimize_with_bl(
     mu_bl: pd.Series,
     cov_matrix: pd.DataFrame,
     current_weights: pd.Series,
     sector_map: dict = None,
     risk_aversion: float = 2.5,
+    date: str = None,
+    apply_cluster_constraint: bool = True,
 ) -> pd.Series:
     """
     Constrained optimizer using BL posterior returns.
 
     Objective:
         maximize  mu_BL · w  −  (δ/2) wᵀΣw  −  turnover_penalty · |Δw|  −  costs · |Δw|
+
+    date: if provided (and apply_cluster_constraint=True), cluster membership
+          is persisted to the correlation_clusters table for dashboard display.
     """
     tickers = mu_bl.index.tolist()
     n = len(tickers)
@@ -69,6 +155,16 @@ def optimize_with_bl(
     constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
     if sector_map:
         constraints += build_sector_constraints(tickers, sector_map)
+
+    # J1 — correlation cluster constraint
+    if apply_cluster_constraint:
+        try:
+            cluster_map = build_correlation_clusters(tickers, cov_matrix)
+            constraints += build_cluster_constraints(tickers, cluster_map)
+            if date:
+                persist_correlation_clusters(date, cluster_map)
+        except Exception as e:
+            logger.warning(f"[J1] Correlation cluster constraint failed, skipping (non-fatal): {e}")
 
     bounds = [(0, MAX_POSITION)] * n
 
