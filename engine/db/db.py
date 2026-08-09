@@ -45,8 +45,27 @@ else:
 Session = sessionmaker(bind=engine)
 
 
+def ensure_schema():
+    """Ensure database schema is initialized if tables are missing."""
+    try:
+        with engine.connect() as conn:
+            if DATABASE_URL.startswith('sqlite'):
+                res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='positions_history'"))
+                if not res.fetchone():
+                    logger.info("Database missing tables — applying schema automatically...")
+                    execute_schema()
+    except Exception as e:
+        logger.warning(f"Could not auto-check database schema: {e}")
+
+
+_schema_checked = False
+
 def get_session():
     """Return a new SQLAlchemy session. Caller is responsible for .close()."""
+    global _schema_checked
+    if not _schema_checked:
+        ensure_schema()
+        _schema_checked = True
     return Session()
 
 
