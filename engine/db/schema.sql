@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS model_outputs (
     delta_weight     REAL,
     expected_return  REAL,
     bl_return        REAL,
+    signal_breakdown TEXT,       -- I2: JSON, e.g. {"momentum": 58.0, "ml_model": 31.0}
     computed_at      TEXT        DEFAULT (datetime('now')),
     PRIMARY KEY (date, ticker)
 );

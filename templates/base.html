@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  // I1: Anti-flash — apply theme before first paint to avoid a dark flash when light mode is active
+  (function() {
+    var t = localStorage.getItem('ct-theme');
+    if (t === 'light') document.documentElement.classList.add('light-theme');
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Control Tower{% endblock %} · Risk Engine</title>
@@ -21,6 +28,20 @@
   --muted:    #cbd5e1;
   --mono:     'IBM Plex Mono', monospace;
   --sans:     'IBM Plex Sans', sans-serif;
+}
+
+/* I1: Light / Cream theme override — activated via html.light-theme class */
+html.light-theme {
+  --bg:       #fdfaf3;
+  --surface:  #ffffff;
+  --surface2: #f5f1e6;
+  --border:   #e6e2d6;
+  --accent:   #059669;
+  --accent2:  #dc2626;
+  --accent3:  #d97706;
+  --accent4:  #2563eb;
+  --text:     #33302b;
+  --muted:    #7a7266;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -75,7 +96,7 @@ header {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0;
   height: 40%; background: var(--accent); opacity: .15;
 }
-.logo-text { font-size: 13px; font-weight: 500; letter-spacing: .08em; color: #fff; }
+.logo-text { font-size: 13px; font-weight: 500; letter-spacing: .08em; color: var(--text); }
 .logo-sub  { font-size: 10px; color: var(--muted); letter-spacing: .12em; margin-top: 1px; }
 .header-right { display: flex; align-items: center; gap: 20px; }
 .live-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--accent); letter-spacing: .1em; }
@@ -109,13 +130,13 @@ main { padding: 20px 24px; }
 }
 .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--kpi-accent, var(--accent)); }
 .kpi-label { font-size: 9px; color: var(--muted); letter-spacing: .12em; margin-bottom: 6px; }
-.kpi-value { font-size: 22px; font-weight: 600; color: var(--kpi-color, #fff); line-height: 1; }
+.kpi-value { font-size: 22px; font-weight: 600; color: var(--kpi-color, var(--text)); line-height: 1; }
 .kpi-sub   { font-size: 9px; color: var(--muted); margin-top: 4px; }
 .kpi.danger  { --kpi-accent: var(--accent2); --kpi-color: var(--accent2); }
 .kpi.warn    { --kpi-accent: var(--accent3); --kpi-color: var(--accent3); }
 .kpi.good    { --kpi-accent: var(--accent);  --kpi-color: var(--accent);  }
 .kpi.info    { --kpi-accent: var(--accent4); --kpi-color: var(--accent4); }
-.kpi.neutral { --kpi-accent: #6c7a9c; --kpi-color: #fff; }
+.kpi.neutral { --kpi-accent: #6c7a9c; --kpi-color: var(--text); }
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 .panel { background: var(--surface); border: 1px solid var(--border); }
@@ -268,6 +289,23 @@ th.info-point, td.info-point {
   margin-bottom: 4px;
   display: block;
 }
+
+/* I1 Phase 5: special component overrides that CSS variables alone don't cover */
+html.light-theme #tooltip {
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 10px 25px rgba(51,48,43,0.15);
+}
+html.light-theme .sig-lean-buy { color: #0d9488; }
+html.light-theme body::before { opacity: 0.35; }
+html.light-theme ::-webkit-scrollbar-track { background: #f0ece2; }
+html.light-theme ::-webkit-scrollbar-thumb { background: #c0bbb0; }
+
+#theme-toggle {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px; transition: all .15s;
+}
+#theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 {% block extra_head %}{% endblock %}
 </head>
@@ -287,6 +325,9 @@ th.info-point, td.info-point {
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
     <div class="timestamp" id="clock"></div>
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+      <span id="theme-icon">☀️</span>
+    </button>
   </div>
 </header>
 
@@ -381,11 +422,54 @@ function sigLabel(action){
   return {BUY:'🟢 BUY',LEAN_BUY:'🟡 LEAN BUY',NEUTRAL:'⚪ NEUTRAL',LEAN_SELL:'🟠 LEAN SELL',SELL:'🔴 SELL'}[action]||action;
 }
 
-// Chart defaults
-Chart.defaults.color = '#94a3b8';
-Chart.defaults.borderColor = '#1e2535';
-Chart.defaults.font.family = "'IBM Plex Mono', monospace";
-Chart.defaults.font.size = 10;
+// I1: Chart defaults — theme-aware
+function _chartColors() {
+  var isLight = document.documentElement.classList.contains('light-theme');
+  return {
+    color:  isLight ? '#33302b' : '#94a3b8',
+    border: isLight ? '#e6e2d6' : '#1e2535',
+  };
+}
+(function() {
+  var c = _chartColors();
+  Chart.defaults.color = c.color;
+  Chart.defaults.borderColor = c.border;
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.size = 10;
+})();
+
+// I1 Phase 4: theme toggle
+function toggleTheme() {
+    var html = document.documentElement;
+    var isLight = html.classList.toggle('light-theme');
+    localStorage.setItem('ct-theme', isLight ? 'light' : 'dark');
+    document.getElementById('theme-icon').textContent = isLight ? '🌙' : '☀️';
+    // Re-render all Chart.js instances with new colors
+    if (window.Chart) {
+        var c = _chartColors();
+        Chart.defaults.color = c.color;
+        Chart.defaults.borderColor = c.border;
+        Object.values(Chart.instances).forEach(function(chart) {
+            if (chart.options.scales) {
+                Object.values(chart.options.scales).forEach(function(scale) {
+                    if (scale.ticks) scale.ticks.color = c.color;
+                    if (scale.grid)  scale.grid.color  = c.border;
+                });
+            }
+            if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                chart.options.plugins.legend.labels.color = c.color;
+            }
+            chart.update('none');  // 'none' = no animation for instant theme switch
+        });
+    }
+}
+
+// Set icon on load
+(function() {
+    var isLight = document.documentElement.classList.contains('light-theme');
+    var icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+})();
 
 // Global Table Sorter
 function sortTable(colIdx, tableId, type='str') {

@@ -596,17 +596,53 @@ def step_performance_log():
     if prev_val > 0:
         daily_ret = (total_val - flow - prev_val) / prev_val
     
+    # I5: Benchmark equity curve — track MSCI World (EUNL.DE) alongside portfolio
+    from portfolio.src.config import BENCHMARK_TICKER
+    bench_val = None
+    try:
+        bench_today = session.execute(text("""
+            SELECT adj_close FROM prices WHERE ticker = :b ORDER BY date DESC LIMIT 1
+        """), {'b': BENCHMARK_TICKER}).fetchone()
+
+        bench_prev = session.execute(text("""
+            SELECT adj_close FROM prices
+            WHERE ticker = :b AND date < (SELECT MAX(date) FROM prices WHERE ticker = :b)
+            ORDER BY date DESC LIMIT 1
+        """), {'b': BENCHMARK_TICKER}).fetchone()
+
+        bench_row = session.execute(text("""
+            SELECT benchmark_value_eur FROM performance_history
+            WHERE date < :d AND benchmark_value_eur IS NOT NULL
+            ORDER BY date DESC LIMIT 1
+        """), {'d': TODAY}).fetchone()
+
+        if bench_today and bench_prev and bench_prev[0] and float(bench_prev[0]) > 0:
+            bench_ret = (float(bench_today[0]) - float(bench_prev[0])) / float(bench_prev[0])
+            if bench_row and bench_row[0]:
+                bench_val = round(float(bench_row[0]) * (1 + bench_ret), 2)
+            else:
+                # Initialize benchmark to same starting value as portfolio (first deposit)
+                first_deposit = session.execute(text("""
+                    SELECT SUM(value_eur) FROM trades WHERE action = 'DEPOSIT'
+                """)).fetchone()
+                if first_deposit and first_deposit[0]:
+                    bench_val = round(float(first_deposit[0]), 2)
+    except Exception as e:
+        logger.warning(f"[performance] Benchmark tracking failed (non-fatal): {e}")
+    
     # 5. Persist to DB
     session.execute(text("""
-        INSERT INTO performance_history (date, portfolio_value_eur, daily_return_pct)
-        VALUES (:d, :v, :r)
+        INSERT INTO performance_history (date, portfolio_value_eur, daily_return_pct, benchmark_value_eur)
+        VALUES (:d, :v, :r, :b)
         ON CONFLICT(date) DO UPDATE SET
             portfolio_value_eur = excluded.portfolio_value_eur,
-            daily_return_pct = excluded.daily_return_pct
+            daily_return_pct = excluded.daily_return_pct,
+            benchmark_value_eur = excluded.benchmark_value_eur
     """), {
         'd': TODAY,
         'v': round(total_val, 2),
-        'r': round(daily_ret * 100, 4)
+        'r': round(daily_ret * 100, 4),
+        'b': bench_val,
     })
     
     session.commit()

@@ -1473,24 +1473,28 @@ def api_performance():
             flows_by_date[dt] = flows_by_date.get(dt, 0.0) - val
 
     perf_rows = _q("""
-        SELECT date, portfolio_value_eur, daily_return_pct
+        SELECT date, portfolio_value_eur, benchmark_value_eur, daily_return_pct
         FROM performance_history
         ORDER BY date ASC
     """)
 
     daily_returns = []   # list of {date, r}
     equity_series = []   # list of {date, value}
+    benchmark_series = []   # I5: list of {date, value}
 
     if perf_rows:
         for row in perf_rows:
             r = row.get("daily_return_pct")
             v = row.get("portfolio_value_eur")
+            b = row.get("benchmark_value_eur")
             if r is not None and v is not None:
                 # Use a sanity cap for production safety
                 r_val = float(r) / 100
                 r_val = max(-0.999, min(r_val, 1.0)) # Cap at -100% to +100%
                 daily_returns.append({"date": row["date"], "r": r_val})
                 equity_series.append({"date": row["date"], "value": float(v)})
+            if b is not None:
+                benchmark_series.append({"date": row["date"], "value": float(b)})
     else:
         # Reconstruct from cash_history with flow adjustment
         cash_hist = _q("SELECT date, cash_eur FROM cash_history ORDER BY date ASC")
@@ -1655,12 +1659,22 @@ def api_performance():
         "loss_days":            len(losses),
     }
 
+    # I5: Active Share — rough proxy using ETF weight in the current portfolio
+    try:
+        from portfolio.src.config import ETF_TICKERS, BENCHMARK_TICKER
+        etf_weight = sum(float(p.get("weight") or 0) for p in positions if p.get("ticker") in ETF_TICKERS)
+        kpis["active_share_pct"] = round((1 - etf_weight) * 100, 1)
+        kpis["benchmark_ticker"] = BENCHMARK_TICKER
+    except Exception as e:
+        logger.warning(f"Active share calc failed: {e}")
+
     resp = jsonify({
-        "kpis":          kpis,
-        "daily_returns": daily_returns,    # [{date, r}]
-        "equity_series": equity_series,    # [{date, value}]
-        "ledger":        trades_rows,       # raw trades for ledger table
-        "generated_at":  datetime.now().isoformat(),
+        "kpis":              kpis,
+        "daily_returns":     daily_returns,    # [{date, r}]
+        "equity_series":     equity_series,    # [{date, value}]
+        "benchmark_series":  benchmark_series, # I5: [{date, value}]
+        "ledger":            trades_rows,       # raw trades for ledger table
+        "generated_at":      datetime.now().isoformat(),
     })
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     resp.headers["Pragma"] = "no-cache"

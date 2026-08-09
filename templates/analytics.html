@@ -23,6 +23,11 @@
     <div class="kpi-value" id="a-vol">—</div>
     <div class="kpi-sub">daily × √252</div>
   </div>
+  <div class="kpi neutral">
+    <div class="kpi-label info-point" data-title="ACTIVE SHARE" data-info="What % of your portfolio differs from the benchmark. Below 60% = closet indexer. Above 80% = high-conviction active.">ACTIVE SHARE</div>
+    <div class="kpi-value" id="a-share">—</div>
+    <div class="kpi-sub" id="a-share-sub">vs benchmark</div>
+  </div>
 </div>
 
 <!-- Row 1: Equity curve + ratio scorecard -->
@@ -252,6 +257,7 @@ async function loadAnalytics() {
   const k = perf.kpis || {};
   const daily = perf.daily_returns || [];
   const equity = perf.equity_series || [];
+  const benchmark = perf.benchmark_series || [];   // I5
 
   // ── KPI strip ─────────────────────────────────────────────────────────
   const pnl = k.net_pnl || 0;
@@ -271,6 +277,16 @@ async function loadAnalytics() {
   document.getElementById('a-dd').textContent  = fmtPct((k.max_drawdown || 0) * -100, 1);
   document.getElementById('a-wr').textContent  = fmtPct((k.win_rate || 0) * 100, 1);
   document.getElementById('a-vol').textContent = fmtPct(k.ann_volatility_pct || 0, 1);
+
+  // I5: Active Share KPI
+  const shareEl = document.getElementById('a-share');
+  if (shareEl) {
+    const share = k.active_share_pct;
+    shareEl.textContent = (share !== undefined && share !== null) ? share.toFixed(1) + '%' : '—';
+    shareEl.closest('.kpi').className = 'kpi ' + (share >= 80 ? 'good' : share >= 60 ? 'neutral' : 'danger');
+    const subEl = document.getElementById('a-share-sub');
+    if (subEl) subEl.textContent = 'vs ' + (k.benchmark_ticker || 'benchmark');
+  }
 
   // ── Ratio scorecard ────────────────────────────────────────────────────
   function colorNum(id, v, goodThresh, dangerThresh, pct=false, dp=2) {
@@ -312,21 +328,40 @@ async function loadAnalytics() {
 
   // ── Equity curve ───────────────────────────────────────────────────────
   if (equity.length >= 2) {
+    // I5: build a benchmark lookup by date so it aligns with the portfolio's date axis
+    const benchByDate = {};
+    benchmark.forEach(x => { benchByDate[x.date] = x.value; });
+    const benchmarkData = equity.map(x => benchByDate[x.date] ?? null);
+    const hasBenchmark = benchmark.length >= 2;
+
+    const datasets = [{
+      label: 'Portfolio Value €',
+      data:  equity.map(x => x.value),
+      borderColor:     getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#ffffff',
+      backgroundColor: document.documentElement.classList.contains('light-theme') ? 'rgba(51,48,43,0.06)' : 'rgba(255,255,255,0.15)',
+      fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
+    }];
+
+    if (hasBenchmark) {
+      datasets.push({
+        label: `MSCI World (${perf.kpis?.benchmark_ticker || 'EUNL.DE'})`,
+        data: benchmarkData,
+        borderColor: 'rgba(245,166,35,0.8)',
+        backgroundColor: 'transparent',
+        borderDash: [5, 3],
+        fill: false, pointRadius: 0, borderWidth: 2, tension: 0.3, spanGaps: true,
+      });
+    }
+
     new Chart(document.getElementById('equityChart'), {
       type: 'line',
       data: {
         labels: equity.map(x => x.date),
-        datasets: [{
-          label: 'Portfolio Value €',
-          data:  equity.map(x => x.value),
-          borderColor:     '#ffffff',
-          backgroundColor: 'rgba(255,255,255,0.15)',
-          fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
-        }]
+        datasets: datasets,
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: hasBenchmark } },
         scales: {
           x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
           y: { ticks: { callback: v => fmtEur(v) } }

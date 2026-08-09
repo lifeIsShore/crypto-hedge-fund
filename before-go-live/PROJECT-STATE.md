@@ -1,6 +1,6 @@
 # Control Tower — Project State & Handoff Notes
 
-Last updated: 2026-08-03
+Last updated: 2026-08-09
 Purpose: read this first in any new session to pick up exactly where things left off. Project lives at `C:\Users\ahmty\Desktop\hedge-fund` (accessed via Filesystem MCP connector — must be enabled in-chat to read/write it).
 
 ---
@@ -50,9 +50,48 @@ Purpose: read this first in any new session to pick up exactly where things left
 - Wired into `step_portfolio_construction()` in `engine/scheduler.py` as a post-BL, pre-pre-trade hook: forced tickers get weight zeroed before the optimizer's suggestion hits the order queue. Non-fatal: if CB check fails (exception), pipeline continues with original weights.
 - Added `/api/circuit_breakers` Flask route in `flask_app.py` — queries `risk_events` filtered to `event_type='circuit_breaker'` within last 7 days.
 - Added red `🚨 CIRCUIT BREAKER ACTIVATED` alert banner to `overview.html` — hidden by default, appears automatically if any CB event exists in last 7 days, links to `/health` for full log.
+- **(Verified 2026-08-09 by Claude, separate session):** confirmed this exists on disk exactly as described — `circuit_breaker.py` present, scheduler wiring present, syntax-checked clean. This was built by a different tool (Gemini Antigravity IDE) between Claude sessions — checks out, but worth spot-verifying cross-tool work rather than assuming it's correct.
+
+**2026-08-09 — I5 Benchmark Equity Curve Overlay + Active Share — DONE (by Claude):**
+- **`engine/scheduler.py`, `step_performance_log()`:** now computes and persists `benchmark_value_eur` each pipeline run — tracks MSCI World (`EUNL.DE`, via `BENCHMARK_TICKER`) as a parallel equity curve, normalized to the portfolio's first-deposit starting value. Wrapped in try/except, non-fatal if `prices` lacks benchmark data yet.
+- **`flask_app.py`, `api_performance()`:** `perf_rows` query now selects `benchmark_value_eur`; response includes new `benchmark_series` array. Added `active_share_pct` + `benchmark_ticker` to `kpis` — Active Share computed as `(1 - ETF weight in current portfolio) * 100`, the rough proxy per spec (imports `ETF_TICKERS`, `BENCHMARK_TICKER` from `portfolio.src.config`).
+- **`templates/analytics.html`:** equity chart renders a second dashed "MSCI World (EUNL.DE)" dataset aligned to the portfolio's date axis via date-keyed lookup (`spanGaps: true`, since benchmark history may start later). Added "ACTIVE SHARE" KPI tile, color-coded (green ≥80%, neutral ≥60%, red below — matches the "closet indexer" framing).
+- **Note:** benchmark curve stays empty/flat until `EUNL.DE` has ≥2 days of price history post-ingestion — not a bug, just needs a couple of pipeline runs.
+- `scheduler.py`, `flask_app.py`, `ledger_importer.py` all AST-syntax-checked clean after this round.
+
+**Remaining I-series: I1 (light theme), I2 (signal explainability), I4 (paper trading sandbox) — not yet started.**
 
 
-## 1. What this project is
+**2026-08-09 — I1 Light/Cream Theme Toggle — DONE (by Claude):**
+- **Found first:** the I1 doc's spec used fictional CSS variable names (`--text-muted`, `--accent-red`, `--shadow`) that don't match the actual codebase (`--muted`, `--accent2`/`--accent3`, no `--shadow`). Adapted the whole implementation to the real variable set (`--bg`, `--surface`, `--surface2`, `--border`, `--accent`, `--accent2/3/4`, `--text`, `--muted`) rather than copy-pasting the doc's snippets verbatim.
+- **Also found:** `base.html`'s top-level CSS was already almost entirely variable-driven (Phase 1 was largely already done) — only ~11 genuinely hardcoded colors existed outside the `:root` block itself.
+- **`templates/base.html` changes:**
+  - Anti-flash inline script as the very first thing in `<head>` (reads `localStorage['ct-theme']`, adds `.light-theme` class before first paint).
+  - `html.light-theme { ... }` override block added right after `:root`, using the real variable names, cream/ivory palette per spec (`--bg:#fdfaf3`, `--surface:#ffffff`, `--text:#33302b`, `--accent:#059669` etc.).
+  - Fixed two real bugs found along the way: `.logo-text` and the `.kpi-value`/`.kpi.neutral` default color were hardcoded `#fff` — invisible on a light background. Now use `var(--text)`.
+  - Phase 5 special-component overrides added: `#tooltip` background, `.sig-lean-buy` color, scanline (`body::before`) opacity, `::-webkit-scrollbar` colors — all scoped under `html.light-theme`.
+  - Theme toggle button (☀️/🌙) added to header, next to the clock. `toggleTheme()` persists to `localStorage`, and — important since Chart.js doesn't inherit CSS variables — re-colors `Chart.defaults` and every live chart instance's ticks/grid/legend on toggle via a new `_chartColors()` helper, replacing the two previously-hardcoded `Chart.defaults.color`/`.borderColor` lines.
+- **`templates/analytics.html`:** fixed the equity-curve portfolio line, which I hardcoded to `#ffffff` earlier today building I5 — would've been invisible on a cream background. Now reads `var(--text)` via `getComputedStyle` and switches its fill color based on `.light-theme` presence.
+- **Known follow-up, not done this round:** the doc's testing checklist item "all chart labels readable in both themes" only covers `base.html`'s global `Chart.defaults` + the one chart just fixed in `analytics.html`. **Other templates likely have their own hardcoded per-chart colors** (dashboard pages with custom Chart.js configs — risk, research, regime, pairs, rebalance, holdings, trades, history, divergence, health, highlighted, watchlist, queue, lab) that were not audited this round. These will silently look wrong (e.g. dark-mode-only colors) in light mode until someone walks each page with the toggle on. Recommend a follow-up pass: load each page in light mode and visually check chart contrast before calling I1 fully done end-to-end.
+- Not syntax-checkable the way Python is, but did a structural sanity check (balanced `<script>`/`<style>`/`{}`/`<head>`/`<html>` tags) — clean.
+
+
+**2026-08-09 — I2 Signal Explainability — IN PROGRESS (partially done, session ended mid-implementation):**
+- **Key lesson (repeat of I1):** verified actual code before touching anything — the I2 doc's code snippets don't exactly match reality (same caveat as I1). Inspect each file individually; don't paste doc snippets verbatim.
+- **Verified before starting:**
+  - `model_outputs` table definition confirmed — no `signal_breakdown` column yet (was not pre-existing).
+  - `/api/rebalance` route found and read — uses `_q()` (returns plain mutable dicts, no ORM friction). Confirmed it does NOT yet return `signal_breakdown`.
+  - `rebalance.html` JS row-builder inspected — identified exact injection point for the new "Why" column tags.
+- **DONE — `engine/db/schema.sql`:** `signal_breakdown TEXT` column added to `model_outputs` table definition with comment `-- I2: JSON, e.g. {"momentum": 58.0, "ml_model": 31.0}`. Column confirmed present on disk (grep-verified 2026-08-09).
+- **NOT YET DONE:**
+  - `engine/portfolio/black_litterman.py` — breakdown computation and updated return signature (session ended here).
+  - `engine/portfolio/optimizer.py` — `persist_model_outputs()` to accept + store `signal_breakdown`.
+  - `flask_app.py` `/api/rebalance` — add `signal_breakdown` to the query + response.
+  - `templates/rebalance.html` — "Why" column with colored signal tags.
+  - Live DB migration — `ALTER TABLE model_outputs ADD COLUMN signal_breakdown TEXT` (needed for existing DB; `schema.sql` only covers fresh installs).
+- **Pickup instruction:** start from `engine/portfolio/black_litterman.py`. The session confirmed what `run_black_litterman()` returns and where to compute the proportional breakdown. Use the I2 doc's approach (normalized per-model signal weight), NOT SHAP (see §7a). After BL: four Python files to touch, then the template.
+
+
 
 **Control Tower** — a personal quant hedge fund engine (Flask + SQLite) built by Ahmet, now being turned into a **paid subscription product**. Core: Black-Litterman portfolio construction, regime detection, PEAD sub-engine, ML ensemble/LSTM signals, manual-approval execution (no live broker API), 12+ tab dashboard.
 
@@ -178,7 +217,10 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
    - `before-go-live/skills/hedge-fund-dashboard-frontend/SKILL.md`
    - `before-go-live/skills/hedge-fund-saas-packaging/SKILL.md`
 8. ~~I3 — Circuit Breakers~~ — ✅ **DONE 2026-08-09.** `engine/risk/circuit_breaker.py` created, wired into `step_portfolio_construction()`, `/api/circuit_breakers` Flask route added, red 🚨 banner in `overview.html`.
-9. **Next up — pick from remaining I-series:** I5 (benchmark overlay, ~1h) → I1 (light theme) → I2 (signal explainability) → I4 (sandbox gate).
+9. ~~I5 — Benchmark overlay~~ — ✅ **DONE 2026-08-09.** `benchmark_value_eur` now populated in `step_performance_log()`, `benchmark_series` + `active_share_pct`/`benchmark_ticker` KPIs added to `/api/performance`, second dashed line + ACTIVE SHARE tile added to `analytics.html`.
+10. ~~I1 — Light/cream theme toggle~~ — ✅ **DONE 2026-08-09** in `base.html` (+ one fix in `analytics.html`). **Follow-up still open:** per-page Chart.js color audit across the other 12+ templates not yet done — see §0 changelog entry for the list.
+11. **I2 — Signal Explainability — IN PROGRESS.** `schema.sql` column added. Still needed: `black_litterman.py` breakdown computation → `optimizer.py` persist → `/api/rebalance` query → `rebalance.html` "Why" column + CSS tags → live DB `ALTER TABLE`. See §0 I2 entry for exact pickup point.
+12. I4 (paper trading sandbox gate) → the light-theme per-page chart audit → the still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left).
 
 ## 8. How to resume a session efficiently
 
