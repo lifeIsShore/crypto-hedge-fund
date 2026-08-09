@@ -1,18 +1,18 @@
 {
   "region": "EU",
-  "generated_at": "2026-06-03T10:09:47.186754",
-  "as_of_date": "2026-06-03",
+  "generated_at": "2026-08-09T03:07:21.266391",
+  "as_of_date": "2026-08-07",
   "regime_risk": "Risk-On",
-  "regime_rates": "Neutral",
-  "regime_growth": "Expansion",
-  "regime_composite": "RiskOn_Neutral_Expansion",
+  "regime_rates": "Tightening",
+  "regime_growth": "Slowdown",
+  "regime_composite": "RiskOn_Tightening_Slowdown",
   "transition_warning": false,
   "ew_active_count": 0,
   "macro_snapshot": {
-    "vix": 16.09,
-    "yield_spread": 0.821,
-    "hy_spread": 0.0,
-    "fed_funds": 2.0
+    "vix": 14.9,
+    "yield_spread": 0.631,
+    "hy_spread": 2.63,
+    "fed_funds": 2.25
   },
   "regime_changed_today": false
 }
