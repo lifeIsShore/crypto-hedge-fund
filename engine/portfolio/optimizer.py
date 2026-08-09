@@ -122,19 +122,25 @@ def optimize_with_bl(
     mu_bl: pd.Series,
     cov_matrix: pd.DataFrame,
     current_weights: pd.Series,
+    current_prices: pd.Series = None,
     sector_map: dict = None,
     risk_aversion: float = 2.5,
     date: str = None,
     apply_cluster_constraint: bool = True,
+    apply_tax_penalty: bool = True,
 ) -> pd.Series:
     """
     Constrained optimizer using BL posterior returns.
 
     Objective:
-        maximize  mu_BL · w  −  (δ/2) wᵀΣw  −  turnover_penalty · |Δw|  −  costs · |Δw|
+        maximize  mu_BL · w  −  (δ/2) wᵀΣw  −  turnover_penalty · |Δw|  −  costs · |Δw|  −  tax_drag
 
     date: if provided (and apply_cluster_constraint=True), cluster membership
           is persisted to the correlation_clusters table for dashboard display.
+    current_prices: if provided (and apply_tax_penalty=True), a per-ticker
+          unrealized-gain tax drag penalty (J2) is applied to sell decisions,
+          using the currently active jurisdiction from tax_settings (see
+          engine/portfolio/tax_rates.py). Sells only, never buys/holds.
     """
     tickers = mu_bl.index.tolist()
     n = len(tickers)
@@ -144,13 +150,40 @@ def optimize_with_bl(
     mu = mu_bl.values
     Sigma = cov_matrix.loc[tickers, tickers].values
 
+    # J2 — tax-aware selling: unrealized gain % per ticker, only computed if
+    # we have prices to compute a gain from. tax_rate comes from whatever
+    # jurisdiction is active in Settings — see tax_rates.get_active_tax_rate().
+    unrealized_gain_pct = np.zeros(n)
+    tax_rate = 0.0
+    if apply_tax_penalty and current_prices is not None:
+        try:
+            from engine.portfolio.tax_rates import get_active_tax_rate
+            from engine.risk.circuit_breaker import get_average_entry_prices
+            tax_rate = get_active_tax_rate()
+            if tax_rate > 0:
+                entry_prices = get_average_entry_prices()
+                unrealized_gain_pct = np.array([
+                    max(0.0, (current_prices.get(t, 0) - entry_prices.get(t, current_prices.get(t, 0)))
+                        / entry_prices.get(t, current_prices.get(t, 1)))
+                    if entry_prices.get(t) else 0.0
+                    for t in tickers
+                ])
+        except Exception as e:
+            logger.warning(f"[J2] Tax penalty setup failed, proceeding without it (non-fatal): {e}")
+            tax_rate = 0.0
+            unrealized_gain_pct = np.zeros(n)
+
     def objective(w):
         ret       = np.dot(mu, w)
         risk      = 0.5 * risk_aversion * w @ Sigma @ w
-        delta_w   = np.abs(w - w0)
-        turnover  = TURNOVER_PENALTY * np.sum(delta_w)
-        costs     = SLIPPAGE_PCT * np.sum(delta_w)
-        return -(ret - risk - turnover - costs)
+        delta_w   = w - w0
+        abs_delta = np.abs(delta_w)
+        turnover  = TURNOVER_PENALTY * np.sum(abs_delta)
+        costs     = SLIPPAGE_PCT * np.sum(abs_delta)
+        # Tax drag: only SELLS (delta_w < 0) of positions with unrealized gains
+        sell_amounts = np.clip(-delta_w, 0, None)
+        tax_drag  = np.sum(sell_amounts * unrealized_gain_pct * tax_rate)
+        return -(ret - risk - turnover - costs - tax_drag)
 
     constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
     if sector_map:

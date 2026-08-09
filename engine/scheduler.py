@@ -451,25 +451,29 @@ def step_portfolio_construction():
         regime_info=regime_info, models_dict=models_dict,
     )
 
+    # Current prices — fetched once, reused for both the tax penalty (J2)
+    # and the circuit breaker check below (previously fetched twice).
+    session_px = get_session()
+    px_rows = session_px.execute(text("""
+        SELECT p.ticker, p.adj_close
+        FROM prices p
+        INNER JOIN (
+            SELECT ticker, MAX(date) AS max_date FROM prices GROUP BY ticker
+        ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
+    """)).fetchall()
+    session_px.close()
+    current_prices = pd.Series({r[0]: float(r[1]) for r in px_rows if r[1] is not None})
+
     suggested_weights = optimize_with_bl(
         mu_bl=mu_bl, cov_matrix=cov_matrix, current_weights=current_weights,
-        sector_map=TICKER_SECTORS, date=TODAY,
+        current_prices=current_prices, sector_map=TICKER_SECTORS, date=TODAY,
     )
     persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl, signal_breakdown)
 
     # ── I3: Circuit Breaker — force-exit positions down > threshold from entry ──
     try:
-        # Fetch current prices for all tickers from DB
-        session_cb = get_session()
-        cb_price_rows = session_cb.execute(text("""
-            SELECT p.ticker, p.adj_close
-            FROM prices p
-            INNER JOIN (
-                SELECT ticker, MAX(date) AS max_date FROM prices GROUP BY ticker
-            ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
-        """)).fetchall()
-        session_cb.close()
-        current_prices_cb = {r[0]: float(r[1]) for r in cb_price_rows if r[1] is not None}
+        # Reuse current_prices fetched above for the J2 tax penalty — no need to re-query
+        current_prices_cb = current_prices.to_dict()
 
         # Average cost basis per ticker from trades table
         entry_prices_cb = get_average_entry_prices()

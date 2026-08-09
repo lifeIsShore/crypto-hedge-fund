@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="panel" style="max-width:680px; margin:24px auto;">
+  <div class="panel-header">
+    <div class="panel-title">TAX SETTINGS — CAPITAL GAINS JURISDICTION</div>
+    <div class="panel-badge">J2</div>
+  </div>
+  <div class="panel-body">
+    <p style="color:var(--muted); margin-bottom:18px; line-height:1.5;">
+      Controls the tax-drag penalty the portfolio optimizer applies when trimming
+      a position with an unrealized gain. Different jurisdictions tax capital gains
+      differently — pick the one that matches your account, or use
+      <strong style="color:var(--text)">Custom</strong> to enter your own effective rate.
+      Changing this does not affect past trades — it only shapes future rebalance
+      suggestions.
+    </p>
+
+    <div class="alert alert-info" id="approx-warning" style="display:none; margin-bottom:16px;">
+      ⚠ This jurisdiction has a progressive/banded tax system in reality — the
+      flat rate shown is an approximation. For precision, select <strong>Custom</strong>
+      and enter your own effective rate.
+    </div>
+
+    <label style="display:block; font-size:10px; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">
+      JURISDICTION
+    </label>
+    <select id="jurisdiction-select" style="margin-bottom:16px;">
+      {% for key, j in jurisdictions.items() %}
+      <option value="{{ key }}" data-approx="{{ 'true' if j.approximate else 'false' }}"
+        {% if key == tax.jurisdiction %}selected{% endif %}>
+        {{ j.label }}{% if j.rate is not none and key != 'custom' %} — {{ '%.3f' % (j.rate * 100) }}%{% endif %}
+        {% if j.approximate %} (approximate){% endif %}
+      </option>
+      {% endfor %}
+    </select>
+
+    <div id="custom-rate-row" style="display:{{ 'block' if tax.jurisdiction == 'custom' else 'none' }}; margin-bottom:16px;">
+      <label style="display:block; font-size:10px; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">
+        CUSTOM RATE (%)
+      </label>
+      <input id="custom-rate-input" type="number" step="0.001" min="0" max="100"
+        value="{{ '%.3f' % (tax.custom_rate * 100) if tax.custom_rate else '' }}"
+        placeholder="e.g. 26.375">
+    </div>
+
+    <div class="alert alert-ok" id="active-rate-display" style="margin-bottom:18px;">
+      Active rate: <strong>{{ '%.3f' % (tax.tax_rate * 100) }}%</strong>
+    </div>
+
+    <button class="btn" onclick="saveTaxSettings()">SAVE</button>
+    <span id="save-status" style="margin-left:12px; font-size:10px; color:var(--muted);"></span>
+  </div>
+</div>
+
+<div class="panel" style="max-width:680px; margin:14px auto;">
+  <div class="panel-header">
+    <div class="panel-title">JURISDICTION REFERENCE</div>
+  </div>
+  <div class="panel-body">
+    <table class="tbl">
+      <thead>
+        <tr><th>Jurisdiction</th><th>Rate</th><th>System</th></tr>
+      </thead>
+      <tbody>
+        {% for key, j in jurisdictions.items() %}
+        {% if key != 'none' and key != 'custom' %}
+        <tr>
+          <td>{{ j.label }}</td>
+          <td>{{ '%.3f' % (j.rate * 100) }}%</td>
+          <td>{% if j.approximate %}<span class="tag tag-yellow">Approximate</span>{% else %}<span class="tag tag-green">Flat / exact</span>{% endif %}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const jurisdictionSelect = document.getElementById('jurisdiction-select');
+const customRow = document.getElementById('custom-rate-row');
+const approxWarning = document.getElementById('approx-warning');
+
+function updateVisibility() {
+  const opt = jurisdictionSelect.options[jurisdictionSelect.selectedIndex];
+  customRow.style.display = jurisdictionSelect.value === 'custom' ? 'block' : 'none';
+  approxWarning.style.display = opt.dataset.approx === 'true' ? 'block' : 'none';
+}
+jurisdictionSelect.addEventListener('change', updateVisibility);
+updateVisibility();
+
+async function saveTaxSettings() {
+  const jurisdiction = jurisdictionSelect.value;
+  const customRateInput = document.getElementById('custom-rate-input').value;
+  const statusEl = document.getElementById('save-status');
+  const body = { jurisdiction };
+  if (jurisdiction === 'custom') {
+    if (!customRateInput) { statusEl.textContent = 'Enter a custom rate first.'; statusEl.style.color = 'var(--accent2)'; return; }
+    body.custom_rate = parseFloat(customRateInput);
+  }
+  statusEl.textContent = 'Saving...';
+  statusEl.style.color = 'var(--muted)';
+  try {
+    const resp = await fetch('/api/tax_settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      document.getElementById('active-rate-display').innerHTML =
+        'Active rate: <strong>' + (result.tax_rate * 100).toFixed(3) + '%</strong>';
+      statusEl.textContent = 'Saved.';
+      statusEl.style.color = 'var(--accent)';
+    } else {
+      statusEl.textContent = 'Error: ' + result.error;
+      statusEl.style.color = 'var(--accent2)';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Request failed: ' + e;
+    statusEl.style.color = 'var(--accent2)';
+  }
+}
+</script>
+{% endblock %}

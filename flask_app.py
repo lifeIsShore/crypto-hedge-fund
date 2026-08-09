@@ -423,6 +423,42 @@ def atomic_write_json(path, data):
 def legal():
     return render_template("legal.html")
 
+
+@app.route("/settings")
+def settings():
+    from engine.portfolio.tax_rates import JURISDICTION_PRESETS, get_tax_settings
+    tax = get_tax_settings()
+    return render_template(
+        "settings.html", page="settings",
+        tax=tax, jurisdictions=JURISDICTION_PRESETS,
+    )
+
+
+@app.route("/api/tax_settings", methods=["GET"])
+def api_tax_settings_get():
+    from engine.portfolio.tax_rates import get_tax_settings
+    return jsonify(get_tax_settings())
+
+
+@app.route("/api/tax_settings", methods=["POST"])
+@require_auth
+def api_tax_settings_post():
+    from engine.portfolio.tax_rates import set_tax_jurisdiction
+    data = request.get_json() or {}
+    jurisdiction = data.get("jurisdiction")
+    custom_rate = data.get("custom_rate")
+    if custom_rate is not None:
+        try:
+            custom_rate = float(custom_rate) / 100.0   # UI sends a percent, e.g. 26.375
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "custom_rate must be a number"}), 400
+    try:
+        result = set_tax_jurisdiction(jurisdiction, custom_rate)
+        return jsonify({"ok": True, **result})
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+
+
 @app.route("/")
 def overview():
     # Live Reconstruction — reads trades ledger + latest prices, no snapshot needed
