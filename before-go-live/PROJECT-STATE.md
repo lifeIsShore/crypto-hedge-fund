@@ -44,6 +44,13 @@ Purpose: read this first in any new session to pick up exactly where things left
 - **Schema bump protocol:** increment `EXPORT_SCHEMA_VERSION` constant + add migration note in the constant block header when tables change.
 - **Tested:** export → import → idempotent re-import on live DB, confirmed.
 
+**2026-08-09 — I3 Circuit Breakers implemented:**
+- Created `engine/risk/circuit_breaker.py` — standalone module with `get_average_entry_prices()` (weighted avg cost basis from trades table) and `run_circuit_breaker_check()` (compares current DB prices vs entry prices, fires CRITICAL log + `risk_events` row if drawdown ≤ threshold).
+- Thresholds: individual stocks -15%, broad-market ETFs -12% (documented in docstring, record changes in TUNING-LOG.md).
+- Wired into `step_portfolio_construction()` in `engine/scheduler.py` as a post-BL, pre-pre-trade hook: forced tickers get weight zeroed before the optimizer's suggestion hits the order queue. Non-fatal: if CB check fails (exception), pipeline continues with original weights.
+- Added `/api/circuit_breakers` Flask route in `flask_app.py` — queries `risk_events` filtered to `event_type='circuit_breaker'` within last 7 days.
+- Added red `🚨 CIRCUIT BREAKER ACTIVATED` alert banner to `overview.html` — hidden by default, appears automatically if any CB event exists in last 7 days, links to `/health` for full log.
+
 
 ## 1. What this project is
 
@@ -170,6 +177,8 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
    - `before-go-live/skills/hedge-fund-quant-engine/SKILL.md`
    - `before-go-live/skills/hedge-fund-dashboard-frontend/SKILL.md`
    - `before-go-live/skills/hedge-fund-saas-packaging/SKILL.md`
+8. ~~I3 — Circuit Breakers~~ — ✅ **DONE 2026-08-09.** `engine/risk/circuit_breaker.py` created, wired into `step_portfolio_construction()`, `/api/circuit_breakers` Flask route added, red 🚨 banner in `overview.html`.
+9. **Next up — pick from remaining I-series:** I5 (benchmark overlay, ~1h) → I1 (light theme) → I2 (signal explainability) → I4 (sandbox gate).
 
 ## 8. How to resume a session efficiently
 

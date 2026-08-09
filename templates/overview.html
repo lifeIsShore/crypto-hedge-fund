@@ -24,6 +24,20 @@
   </div>
 </div>
 
+<!-- 🚨 Circuit Breaker Alert Banner (hidden until CB fires) -->
+<div id="cb-banner" style="display:none; background:rgba(255,77,106,.08); border:1px solid rgba(255,77,106,.4); padding:14px 18px; margin-top:10px; animation:fadeUp .3s ease">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px">
+    <div style="display:flex; align-items:flex-start; gap:14px">
+      <span style="font-size:24px; line-height:1">&#x1F6A8;</span>
+      <div>
+        <div style="font-size:11px; font-weight:700; color:var(--accent2); letter-spacing:.1em; margin-bottom:4px">CIRCUIT BREAKER ACTIVATED</div>
+        <div id="cb-banner-body" style="font-size:10px; color:var(--muted); line-height:1.6"></div>
+      </div>
+    </div>
+    <a href="/health" class="btn" style="font-size:9px; padding:6px 14px; border-color:var(--accent2); color:var(--accent2); white-space:nowrap; flex-shrink:0">VIEW FULL LOG &rarr;</a>
+  </div>
+</div>
+
 <div class="grid grid-2-1" style="margin-top:14px">
 
   <!-- Positions table -->
@@ -149,16 +163,17 @@ let weightsChart = null, portMcChart = null;
 async function loadOverview(){
   const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
   const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
-  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes, pmRes, instRes] = await Promise.all([
+  const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes, pmRes, instRes, cbRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),
     fetch('/api/cash').then(r=>r.json()).catch(()=>({})),
     fetch('/api/ml').then(r=>r.json()).catch(()=>({})),
     fetch('/api/regime').then(r=>r.json()).catch(()=>({})),
     fetch('/api/rebalance').then(r=>r.json()).catch(()=>({})),
-    fetch('/api/trades').then(r=>r.json()).catch(()=>([])),
+    fetch('/api/trades').then(r=>r.json()).catch(()=>[]),
     fetch('/api/price_targets').then(r=>r.json()).catch(()=>[]),
     fetch('/api/portfolio_mc').then(r=>r.json()).catch(()=>({})),
     fetch('/api/institutional_mc').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/circuit_breakers').then(r=>r.json()).catch(()=>({events:[], any_active:false})),
   ]);
 
   const positions = posRes.positions || [];
@@ -213,6 +228,18 @@ async function loadOverview(){
     document.getElementById('kpi-kelly-sub').textContent = `${topKellyTicker} · half-kelly`;
   } else {
     kellyEl.textContent = '—';
+  }
+
+  // 🚨 Circuit Breaker Banner
+  if (cbRes && cbRes.any_active) {
+    const banner = document.getElementById('cb-banner');
+    const body   = document.getElementById('cb-banner-body');
+    banner.style.display = 'block';
+    const lines = cbRes.events.slice(0, 5).map(ev => {
+      const d = ev.logged_at ? ev.logged_at.slice(0, 16) : ev.date;
+      return `<span style="color:var(--accent2); font-weight:700">${ev.ticker}</span> &mdash; ${ev.detail || ''} <span style="color:var(--muted); font-size:9px">${d}</span>`;
+    });
+    body.innerHTML = lines.join('<br>');
   }
 
   // Signals map from ML

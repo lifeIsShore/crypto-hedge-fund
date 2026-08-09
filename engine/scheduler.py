@@ -344,6 +344,7 @@ def step_portfolio_construction():
     from engine.portfolio.optimizer import optimize_with_bl, persist_model_outputs
     from engine.risk.pre_trade import run_pre_trade_checks
     from engine.risk.post_trade import run_post_trade_risk
+    from engine.risk.circuit_breaker import run_circuit_breaker_check, get_average_entry_prices
     from engine.execution.order_manager import generate_order_queue
     from engine.features.feature_store import load_returns_from_db
     from engine.db.db import get_session
@@ -453,6 +454,48 @@ def step_portfolio_construction():
         mu_bl=mu_bl, cov_matrix=cov_matrix, current_weights=current_weights,
     )
     persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl)
+
+    # ── I3: Circuit Breaker — force-exit positions down > threshold from entry ──
+    try:
+        # Fetch current prices for all tickers from DB
+        session_cb = get_session()
+        cb_price_rows = session_cb.execute(text("""
+            SELECT p.ticker, p.adj_close
+            FROM prices p
+            INNER JOIN (
+                SELECT ticker, MAX(date) AS max_date FROM prices GROUP BY ticker
+            ) latest ON p.ticker = latest.ticker AND p.date = latest.max_date
+        """)).fetchall()
+        session_cb.close()
+        current_prices_cb = {r[0]: float(r[1]) for r in cb_price_rows if r[1] is not None}
+
+        # Average cost basis per ticker from trades table
+        entry_prices_cb = get_average_entry_prices()
+
+        # Positions with positive weight in current allocation
+        positions_cb = {
+            t: float(current_weights.get(t, 0))
+            for t in available_tickers
+            if float(current_weights.get(t, 0)) > 0
+        }
+
+        cb_triggered = run_circuit_breaker_check(
+            positions=positions_cb,
+            current_prices=current_prices_cb,
+            entry_prices=entry_prices_cb,
+        )
+
+        if cb_triggered:
+            for ticker in cb_triggered:
+                if ticker in suggested_weights.index:
+                    suggested_weights[ticker] = 0.0   # force full exit
+            logger.critical(
+                f"[circuit_breaker] Forced weights to 0 for: {cb_triggered}"
+            )
+            send_alert(f"🚨 CIRCUIT BREAKER activated for: {', '.join(cb_triggered)}")
+
+    except Exception as e:
+        logger.warning(f"[circuit_breaker] Check failed (non-fatal, continuing): {e}")
 
     pre_trade = run_pre_trade_checks(suggested_weights)
     if not pre_trade['passed']:

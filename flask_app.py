@@ -1763,6 +1763,28 @@ def api_risk_events():
     return jsonify(rows)
 
 
+@app.route("/api/circuit_breakers")
+def api_circuit_breakers():
+    """
+    Recent circuit breaker events (last 7 days).
+    Used by overview.html to display a prominent red emergency banner.
+    Returns {events: [...], any_active: bool}.
+    """
+    rows = _q("""
+        SELECT date, ticker, detail, logged_at
+        FROM risk_events
+        WHERE event_type = 'circuit_breaker'
+          AND date >= date('now', '-7 days')
+        ORDER BY logged_at DESC
+        LIMIT 20
+    """)
+    return jsonify({
+        "events":     rows,
+        "any_active": len(rows) > 0,
+        "count":      len(rows),
+    })
+
+
 @app.route("/api/kill_switch_status")
 def api_kill_switch_status():
     """Live connectivity probe for external data providers.
