@@ -76,20 +76,19 @@ Purpose: read this first in any new session to pick up exactly where things left
 - Not syntax-checkable the way Python is, but did a structural sanity check (balanced `<script>`/`<style>`/`{}`/`<head>`/`<html>` tags) — clean.
 
 
-**2026-08-09 — I2 Signal Explainability — IN PROGRESS (partially done, session ended mid-implementation):**
+**2026-08-09 — I2 Signal Explainability — DONE:**
 - **Key lesson (repeat of I1):** verified actual code before touching anything — the I2 doc's code snippets don't exactly match reality (same caveat as I1). Inspect each file individually; don't paste doc snippets verbatim.
 - **Verified before starting:**
   - `model_outputs` table definition confirmed — no `signal_breakdown` column yet (was not pre-existing).
   - `/api/rebalance` route found and read — uses `_q()` (returns plain mutable dicts, no ORM friction). Confirmed it does NOT yet return `signal_breakdown`.
   - `rebalance.html` JS row-builder inspected — identified exact injection point for the new "Why" column tags.
 - **DONE — `engine/db/schema.sql`:** `signal_breakdown TEXT` column added to `model_outputs` table definition with comment `-- I2: JSON, e.g. {"momentum": 58.0, "ml_model": 31.0}`. Column confirmed present on disk (grep-verified 2026-08-09).
-- **NOT YET DONE:**
-  - `engine/portfolio/black_litterman.py` — breakdown computation and updated return signature (session ended here).
-  - `engine/portfolio/optimizer.py` — `persist_model_outputs()` to accept + store `signal_breakdown`.
-  - `flask_app.py` `/api/rebalance` — add `signal_breakdown` to the query + response.
-  - `templates/rebalance.html` — "Why" column with colored signal tags.
-  - Live DB migration — `ALTER TABLE model_outputs ADD COLUMN signal_breakdown TEXT` (needed for existing DB; `schema.sql` only covers fresh installs).
-- **Pickup instruction:** start from `engine/portfolio/black_litterman.py`. The session confirmed what `run_black_litterman()` returns and where to compute the proportional breakdown. Use the I2 doc's approach (normalized per-model signal weight), NOT SHAP (see §7a). After BL: four Python files to touch, then the template.
+- **DONE — `engine/portfolio/black_litterman.py`:** Added logic to `run_black_litterman` to compute `signal_breakdown` directly from `signals_df` (using raw signal weights instead of SHAP), and updated signature to return `mu_bl, signal_breakdown`.
+- **DONE — `engine/portfolio/optimizer.py`:** Updated `persist_model_outputs` to accept `signal_breakdown` and persist it as JSON.
+- **DONE — `engine/scheduler.py`:** Updated the Black-Litterman and `persist_model_outputs` calls to capture and pass `signal_breakdown`.
+- **DONE — `flask_app.py`:** Updated `/api/rebalance` to fetch and JSON-parse `signal_breakdown`.
+- **DONE — `templates/rebalance.html`:** Added "WHY (SIGNAL BREAKDOWN)" column and generated colored signal tags using the JSON output.
+- **DONE — Live DB migration:** Ran `ALTER TABLE model_outputs ADD COLUMN signal_breakdown TEXT` on `engine_data.db`. All Python files passed syntax checks.
 
 
 
@@ -219,8 +218,8 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
 8. ~~I3 — Circuit Breakers~~ — ✅ **DONE 2026-08-09.** `engine/risk/circuit_breaker.py` created, wired into `step_portfolio_construction()`, `/api/circuit_breakers` Flask route added, red 🚨 banner in `overview.html`.
 9. ~~I5 — Benchmark overlay~~ — ✅ **DONE 2026-08-09.** `benchmark_value_eur` now populated in `step_performance_log()`, `benchmark_series` + `active_share_pct`/`benchmark_ticker` KPIs added to `/api/performance`, second dashed line + ACTIVE SHARE tile added to `analytics.html`.
 10. ~~I1 — Light/cream theme toggle~~ — ✅ **DONE 2026-08-09** in `base.html` (+ one fix in `analytics.html`). **Follow-up still open:** per-page Chart.js color audit across the other 12+ templates not yet done — see §0 changelog entry for the list.
-11. **I2 — Signal Explainability — IN PROGRESS.** `schema.sql` column added. Still needed: `black_litterman.py` breakdown computation → `optimizer.py` persist → `/api/rebalance` query → `rebalance.html` "Why" column + CSS tags → live DB `ALTER TABLE`. See §0 I2 entry for exact pickup point.
-12. I4 (paper trading sandbox gate) → the light-theme per-page chart audit → the still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left).
+11. ~~I2 — Signal Explainability~~ — ✅ **DONE 2026-08-09.** Computed proportional breakdown in `black_litterman.py`, saved to DB via `optimizer.py`, surfaced in `flask_app.py` and `rebalance.html`.
+12. **Next up:** I4 (paper trading sandbox gate) → the light-theme per-page chart audit → the still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left).
 
 ## 8. How to resume a session efficiently
 

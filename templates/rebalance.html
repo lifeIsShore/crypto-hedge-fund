@@ -32,9 +32,10 @@
         <th class="info-point" data-title="TARGET %" data-info="The weight the model thinks you should have.">TARGET %</th>
         <th class="info-point" data-title="DELTA %" data-info="The difference between current and target. Positive means BUY.">DELTA %</th>
         <th class="info-point" data-title="BL RETURN" data-info="The expected return for this asset according to the Black-Litterman model.">BL RETURN</th>
+        <th class="info-point" data-title="WHY (SIGNAL BREAKDOWN)" data-info="Proportional contribution of each alpha model to the final conviction.">WHY</th>
         <th>ACTION</th>
       </tr></thead>
-      <tbody id="reb-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+      <tbody id="reb-tbody"><tr><td colspan="8" style="color:var(--muted)">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -103,6 +104,11 @@ async function loadRebalance(){
   tbody.innerHTML = suggestions.map(r=>{
     const dw = (+r.delta_weight||0)*100;
     const actionTag = r.action==='BUY'?'tag-green':r.action==='SELL'?'tag-red':'tag-muted';
+    const breakdown = r.signal_breakdown || {};
+    const tags = Object.entries(breakdown).map(([k, v]) => {
+      return `<span class="tag" style="font-size:8px; padding:2px 4px; margin-right:4px; margin-bottom:2px; display:inline-block; background:var(--surface2); color:var(--text); border:1px solid var(--border)">${k} ${v}%</span>`;
+    }).join('');
+
     return `<tr>
       <td style="font-weight:500;color:#fff;cursor:pointer" onclick="window.location='/ticker/${r.ticker}'">
         ${r.ticker}
@@ -113,6 +119,7 @@ async function loadRebalance(){
       <td>${r.suggested_weight!=null?((+r.suggested_weight)*100).toFixed(1)+'%':'—'}</td>
       <td style="color:${dw>0?'var(--accent)':dw<0?'var(--accent2)':'var(--muted)'}">${fmtPct(dw)}</td>
       <td style="color:var(--accent)">${r.bl_return!=null?fmtPct((+r.bl_return)*100):'—'}</td>
+      <td style="max-width:150px; white-space:normal; line-height:1.2">${tags || '—'}</td>
       <td><span class="tag ${actionTag}">${r.action}</span></td>
     </tr>`;
   }).join('');

@@ -93,7 +93,8 @@ def optimize_with_bl(
     return weights
 
 
-def persist_model_outputs(date: str, suggested: pd.Series, current: pd.Series, mu_bl: pd.Series):
+def persist_model_outputs(date: str, suggested: pd.Series, current: pd.Series, mu_bl: pd.Series, signal_breakdown: dict = None):
+    import json
     session = get_session()
     try:
         for ticker in suggested.index:
@@ -101,19 +102,22 @@ def persist_model_outputs(date: str, suggested: pd.Series, current: pd.Series, m
             curr = float(current.get(ticker, 0))
             delt = sugg - curr
             bl_r = float(mu_bl.get(ticker, 0))
+            breakdown_json = json.dumps(signal_breakdown.get(ticker, {}) if signal_breakdown else {})
             session.execute(text("""
                 INSERT INTO model_outputs
-                    (date, ticker, suggested_weight, current_weight, delta_weight, bl_return, computed_at)
-                VALUES (:date, :ticker, :suggested, :current, :delta, :bl_return, datetime('now'))
+                    (date, ticker, suggested_weight, current_weight, delta_weight, bl_return, signal_breakdown, computed_at)
+                VALUES (:date, :ticker, :suggested, :current, :delta, :bl_return, :breakdown, datetime('now'))
                 ON CONFLICT (date, ticker) DO UPDATE SET
                     suggested_weight = :suggested,
                     delta_weight     = :delta,
                     bl_return        = :bl_return,
+                    signal_breakdown = :breakdown,
                     computed_at      = datetime('now')
             """), {
                 "date": date, "ticker": ticker,
                 "suggested": sugg, "current": curr,
                 "delta": delt, "bl_return": bl_r,
+                "breakdown": breakdown_json,
             })
         session.commit()
         logger.info(f"Model outputs persisted: {date}, {len(suggested)} tickers")

@@ -1164,8 +1164,9 @@ def api_ml():
 @app.route("/api/rebalance")
 def api_rebalance():
     """Trade advisor suggestions from model_outputs."""
+    import json
     rows = _q("""
-        SELECT ticker, current_weight, suggested_weight, delta_weight, bl_return
+        SELECT ticker, current_weight, suggested_weight, delta_weight, bl_return, signal_breakdown
         FROM model_outputs
         WHERE date = (SELECT MAX(date) FROM model_outputs)
         ORDER BY ABS(delta_weight) DESC
@@ -1174,7 +1175,15 @@ def api_rebalance():
     for r in rows:
         delta = float(r.get("delta_weight") or 0)
         action = "BUY" if delta > 0.01 else "SELL" if delta < -0.01 else "HOLD"
-        suggestions.append({**r, "action": action})
+        
+        breakdown = {}
+        if r.get("signal_breakdown"):
+            try:
+                breakdown = json.loads(r["signal_breakdown"])
+            except Exception:
+                pass
+                
+        suggestions.append({**r, "action": action, "signal_breakdown": breakdown})
     return jsonify({"suggestions": suggestions})
 
 

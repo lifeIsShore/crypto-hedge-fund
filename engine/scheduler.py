@@ -444,7 +444,7 @@ def step_portfolio_construction():
         'vol_timing': VolTimingAlpha(), 'pead': PEADAlpha(), 'ml_model': MLAlpha(),
     }
 
-    mu_bl = run_black_litterman(
+    mu_bl, signal_breakdown = run_black_litterman(
         tickers=available_tickers, cov_matrix=cov_matrix,
         market_weights=market_weights, date=TODAY,
         regime_info=regime_info, models_dict=models_dict,
@@ -453,7 +453,7 @@ def step_portfolio_construction():
     suggested_weights = optimize_with_bl(
         mu_bl=mu_bl, cov_matrix=cov_matrix, current_weights=current_weights,
     )
-    persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl)
+    persist_model_outputs(TODAY, suggested_weights, current_weights, mu_bl, signal_breakdown)
 
     # ── I3: Circuit Breaker — force-exit positions down > threshold from entry ──
     try:

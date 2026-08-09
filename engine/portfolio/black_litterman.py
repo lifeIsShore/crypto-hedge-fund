@@ -150,7 +150,7 @@ def run_black_litterman(
     benchmark: str = None,
     tau: float = 0.05,
     risk_aversion: float = 2.5,
-) -> pd.Series:
+) -> tuple[pd.Series, dict]:
     """
     Full BL pipeline:
     1. Load alpha signals from DB
@@ -178,4 +178,26 @@ def run_black_litterman(
         tau=tau,
         risk_aversion=risk_aversion,
     )
-    return mu_bl
+
+    # I2: Signal Explainability breakdown
+    signal_breakdown = {}
+    for ticker in tickers:
+        ticker_sigs = signals_df[signals_df['ticker'] == ticker]
+        if ticker_sigs.empty:
+            continue
+            
+        contributions = {}
+        total_abs = 0
+        for _, row in ticker_sigs.iterrows():
+            model_name = row['model_name']
+            sig = float(row['expected_return'])
+            contributions[model_name] = sig
+            total_abs += abs(sig)
+            
+        if total_abs > 0:
+            signal_breakdown[ticker] = {
+                k: round(abs(v) / total_abs * 100, 1)
+                for k, v in sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)
+            }
+
+    return mu_bl, signal_breakdown
