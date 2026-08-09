@@ -458,6 +458,8 @@ CREATE TABLE IF NOT EXISTS pead_setups (
 
 ## Stream 6 — Frontend Consolidation (Bye-bye Streamlit)
 
+> **STATUS (2026-08-09, verified by Claude): DONE.** Checked all 3 `.bat` files (`RUN_FUND_TOTAL.bat`, `RUN_SANDBOX.bat`, `DASHBOARD_ONLY.bat`) and `.env.example` — zero Streamlit references anywhere in the live run path. Flask (`flask_app.py`) is the sole dashboard entry point, confirmed by the unified routing already in place (`/`, `/rebalance`, `/divergence`, etc. all live in `flask_app.py`). The old Streamlit code sits retired in `_archive/dashboard/`, `_archive/.streamlit/`, `_archive/portfolio_pages/` — correctly out of the live path. Nothing left to do here.
+
 ### 6.1 — Migrate ML Research & Quant Results to HTML
 Convert existing Streamlit components (charts, tables, parameter sliders) into pure HTML/CSS/JS components within the main Flask dashboard.
 
@@ -475,6 +477,11 @@ The Flask app becomes the single entry point:
 ---
 
 ## Stream 7 — ML Integrity & Validation (Scaling Safely)
+
+> **STATUS (2026-08-09, verified by Claude): DONE.** Both sub-items confirmed directly in code:
+> - **7.1 (purge buffer):** `evaluator.py`'s `walk_forward_splits()` implements a 7-day embargo between train/val folds (`PURGE_BUFFER_DAYS = 7`), explicitly citing Lopez de Prado's embargo method. There's also a `get_walk_forward_report()` diagnostic function showing exact train/purge/val date ranges per fold — built beyond what this doc asked for.
+> - **7.2 (correlation dedup):** `feature_builder.py` has a two-stage feature selection pipeline; Stage 2 drops one of any feature pair with |r| > 0.95, keeping the higher-variance one. Also confirmed.
+> - **Not done:** the "Stratification" sub-bullet (separate Regime Expert weights trained per macro regime) — this was a minor aside in the original doc, not a numbered sub-item, and is a much bigger feature (essentially N separate model variants) than the rest of this stream. Worth its own doc if you want it, not a quick add-on.
 
 ### 7.1 — Strict Walk-Forward Isolation
 As the universe expands, we must ensure the `evaluator.py` maintains absolute time-series separation.

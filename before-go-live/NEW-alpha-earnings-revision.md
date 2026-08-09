@@ -1,3 +1,5 @@
+> **STATUS (2026-08-09, verified by Claude): NOT IMPLEMENTED.** This file was found sitting in `archive-implemented/` but no corresponding code exists — `engine/alpha/` has no `earnings_revision.py`, and there is no `fundamental_data` table or `fundamental_ingestion.py`. It was archived in error at some point (possibly by a different tool session) without the work actually being done. Moved back here as genuinely open. Verify against the live repo again before starting, since some time has passed.
+
 # New Alpha Model: Earnings Revision Momentum
 # `engine/alpha/earnings_revision.py`
 # Estimated time: 1 day. Source: yfinance .info dict (free, no new API key)

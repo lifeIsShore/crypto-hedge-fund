@@ -1,10 +1,10 @@
 # ETF vs. Component Divergence Signal — Strategy Plan
 
-> **Status: TODO — Implement after laggard screen is live**
-
----
-
-## Core Concept
+> **STATUS (2026-08-09, verified by Claude): MOSTLY IMPLEMENTED AND RUNNING.** I was wrong in an earlier pass through this repo when I said "zero code exists" for this — I hadn't checked `engine/scheduler.py` yet. Correcting the record:
+> - `engine/screens/etf_divergence.py` implements detection (`detect_divergences`), persistence (`save_divergence_events`), the labeling API (`apply_scenario_label`, `get_unlabeled_divergences`), and automatic 30/90-day outcome fill (`fill_outcome_data`) — all matching this doc's spec closely, including the `divergence_labels` schema described below.
+> - `engine/scheduler.py` runs this **every single pipeline run** as step 9 (`step_divergence_scan`) and step 10 (`step_outcome_fill`) — confirmed in the daily step list.
+> - `flask_app.py` has a live `/divergence` route + `/api/divergence` endpoint serving `templates/divergence.html` — the human-in-the-loop labeling UI described at the bottom of this doc is built and wired.
+> - **What's still genuinely open:** the `ETF_COMPONENT_MAP` in `etf_divergence.py` only covers 3 ETFs (`EXXT.DE`, `EXS1.DE`, `EUNL.DE`) with a handful of components each — nowhere near the full universe this doc envisions. Also unverified: whether you've actually accumulated the ~150-200 labeled observations needed before the "becomes ML training data" section is actionable — check `SELECT COUNT(*) FROM divergence_labels WHERE scenario_label IS NOT NULL` to see where you stand.
 
 When a broad index or thematic ETF (S&P 500, Magnificent 7, XLK, etc.) is **rising** while one of its major components is **falling or significantly underperforming**, a divergence signal exists. The ETF masks the individual stock's weakness — or alternatively, the stock's weakness is temporary and the ETF is telling you the broader thesis is intact.
 

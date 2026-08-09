@@ -1,3 +1,7 @@
+> **STATUS (2026-08-09, verified by Claude): NOT IMPLEMENTED.** Checked `engine/features/feature_store.py` directly — it still computes exactly the original 8 features (mom_1m/3m/6m/12m, vol_21d/63d, vol_of_vol, rsi_14). None of the 16 new features below exist in the live code. This doc was archived without the work being done. Moved back here as genuinely open.
+>
+> Note: the trailing "institutional-grade" section that used to be pasted at the bottom of this file (covering scheduler conflicts, unverified execution modules, missing risk policy, liquidity gating) was stray AI-generated meta-content from an unrelated editing session — it's been removed from this file since it wasn't about feature expansion at all. For the record: the dual-scheduler issue it described is already fixed (see PROJECT-STATE.md, 2026-08-04 entry), the liquidity gating item is already fixed (PROJECT-STATE.md, 2026-08-09 entry), and the risk-policy/unverified-execution items are tracked separately in RISK-POLICY.md and PROJECT-STATE.md §7b — not duplicated here.
+
 # Feature Expansion: 8 → 24 Features
 # Add to `engine/features/feature_store.py`
 # Estimated time: 1 day. Immediate impact on all alpha models.
@@ -370,73 +374,3 @@ Expected LSTM AUC improvement: from ~0.54–0.56 to ~0.57–0.61 range,
 based on typical feature-expansion effects on similar architectures.
 No guarantees — but the signal quality improvement will be measurable
 within 4–6 weeks of the IC tracking catching up.
-
-
-
-
-Here is the professionally expanded, institutional-grade documentation for your existing architectural strengths and critical pre-live structural gaps. It is fully formatted in GitHub markdown, matching the exact style of your `improvements.md` document so you can copy and paste it directly.
-
-```markdown
-## 🏆 What's Already Institutional-Grade (Core Strengths)
-*The foundational pillars that separate the Control Tower from retail quant setups.*
-
-```mermaid
-flowchart LR
-    subgraph Institutional Foundations
-        LR[Live Reconstruction Model] --> DB[(Pristine Ledger)]
-        BL[Black-Litterman + IC Omega] --> OPT[Robust Optimizer]
-        AW[Atomic JSON Writes] --> UI[Race-Free Dashboard]
-        SE[Decoupled Sub-Engines] --> ISO[Isolated Failure Domains]
-    end
-```
-
-### 1. Live Reconstruction Model (Zero Snapshot Dependency)
-*   **The Architecture:** Instead of relying on fragile overnight balance tables or stale database snapshots, `flask_app.py` dynamically reconstructs current portfolio holdings on every single request. It parses the raw `trades` ledger and merges it with the latest available price feeds.
-*   **The Institutional Edge:** Guarantees absolute real-time accuracy. The moment a trade is logged, the entire dashboard, risk metrics, and Monte Carlo simulations update instantly, completely eliminating reconciliation lag and stale data artifacts.
-
-### 2. Black-Litterman with IC-Scaled Omega Matrix
-*   **The Architecture:** The portfolio optimizer goes far beyond standard Mean-Variance matching. It establishes market equilibrium baselines and modulates expected returns using regime-conditional views. Crucially, the uncertainty matrix ($\Omega$) is dynamically scaled by the machine learning model's rolling Information Coefficient (IC).
-*   **The Institutional Edge:** Prevents the optimizer from aggressively allocating to low-confidence predictions. If the ML model's recent predictive accuracy degrades, the optimizer automatically shrinks its active bets back toward the benchmark equilibrium.
-
-### 3. Atomic State Management (`atomic_write_json`)
-*   **The Architecture:** Asynchronous background pipelines write state updates to a temporary file (`.tmp.json`) before executing an atomic OS-level rename (`shutil.move`) to overwrite the active state file.
-*   **The Institutional Edge:** Completely eliminates race conditions. The Flask dashboard is mathematically guaranteed to never read a half-written or corrupted JSON file during active background model retraining or data ingestion.
-
-### 4. Scaffolded Pre/Post-Trade Risk Architecture
-*   **The Architecture:** The system possesses a dedicated, modular compliance layer designed to evaluate orders before execution (pre-trade checks) and analyze slippage/impact after execution (post-trade reconciliation).
-*   **The Institutional Edge:** Establishes the correct structural boundaries for institutional risk governance. Once the pending `UNKNOWN` ticker mapping bug is resolved, this layer will provide seamless, automated trade compliance.
-
-### 5. Decoupled Sub-Engines (Regime & PEAD)
-*   **The Architecture:** The Macro Regime Engine and Post-Earnings-Announcement-Drift (PEAD) Engine operate as fully autonomous services with isolated SQLite tables, independent data fetchers, and dedicated state JSONs.
-*   **The Institutional Edge:** Pristine separation of concerns. An API timeout in the FRED macro scraper or a missing earnings date in the PEAD module remains entirely isolated, ensuring failure never cascades into the core portfolio execution loop.
-
----
-
-## ⚠️ Structural Gaps & Critical Pre-Live Blockers
-*The mandatory operational hurdles that must be cleared before deploying live capital.*
-
-> [!CAUTION]  
-> **Dual Scheduler Conflict (Flask vs. Batch Engine):** `flask_app.py` initializes an internal `APScheduler` instance that periodically executes `recalculate_engine.py`. However, the primary production workflow is driven externally by `RUN_FUND_TOTAL.bat`. Running two competing schedulers against a single SQLite database creates severe race conditions, `database is locked` collisions, and redundant compute cycles.  
-> **The Fix:** Enforce strict operational dominance. Disable the Flask internal scheduler in production (`DASHBOARD_ONLY=1`) and establish `RUN_FUND_TOTAL.bat` (scheduled via Windows Task Scheduler or Cron) as the absolute single source of truth for pipeline execution.
-
-> [!WARNING]  
-> **Unverified Execution & Reconciliation Modules:** A forensic audit of the project directory reveals that key execution and reconciliation modules lack `__pycache__` directories. This proves they have never been imported or executed in the current environment. The complete end-to-end loop—from Black-Litterman target weights to optimizer delta generation to live broker order routing—remains unverified in production.  
-> **The Fix:** Conduct a mandatory, end-to-end sandbox simulation. Force the system to generate paper orders and execute a full reconciliation cycle to prove the wiring is flawless before connecting live brokerage accounts.
-
-> [!IMPORTANT]  
-> **Absence of Codified Risk Policy Documentation:** While the codebase contains advanced mathematical risk models, the fund lacks a formal, binding Risk Policy Document governing human operations.  
-> **The Fix:** Before launching, management must draft and sign off on a formal governance charter defining:
-> 1. **Maximum Fund Drawdown:** The exact portfolio loss percentage that triggers a mandatory, automated halt to all trading operations.
-> 2. **Override Protocols:** Strict qualitative and quantitative criteria required for a manager to override a model recommendation.
-> 3. **Position Sizing Limits:** The explicit rationale governing single-stock and sector concentration caps.
-> 4. **Benchmark & Time Horizon:** The official performance benchmark mandate and expected investment compounding horizon.
-
-> [!NOTE]  
-> **Missing Liquidity Gating in Order Queue:** The order generation queue currently lacks a volume-based liquidity check. When scaling portfolio capital, executing large market orders in illiquid equities causes severe order book impact and exorbitant slippage.  
-> **The Fix:** Implement a strict volume gating constraint in the order queue. Before routing, the system must verify that the order's total cash value represents less than 5% of the asset's Average Daily Volume ($$\frac{\text{Trade Value}}{\text{ADV}} < 0.05$$). Orders breaching this threshold must be automatically sliced into smaller child orders or flagged for manual execution.
-```
-
----
-### Summary of Work
-- Analyzed the user's architectural notes covering existing core strengths (Live Reconstruction, Black-Litterman + IC Omega, Atomic JSON writing, Pre/post-trade risk, Decoupled sub-engines) and critical structural gaps (Scheduler conflicts, Unverified execution modules, Missing risk policy, Missing liquidity gating).
-- Expanded these points into highly structured, institutional-grade documentation blocks utilizing GitHub markdown callouts and mermaid diagrams, tailored for immediate insertion into `improvements.md`.

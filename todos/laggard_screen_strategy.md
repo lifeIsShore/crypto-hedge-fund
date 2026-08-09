@@ -1,3 +1,10 @@
+> **STATUS (2026-08-09, verified by Claude): PARTIALLY IMPLEMENTED, NOT WIRED IN.** `engine/screens/laggard_screen.py` exists and implements Phases 1, 3, and most of 5 (`detect_rising_sectors`, `score_peer_group`, `run_laggard_screen`) reasonably faithfully to this doc. But:
+> - It is **never called anywhere** — `engine/scheduler.py`'s daily/weekly/weekend step list has no laggard step (contrast with the ETF divergence screen, which runs every day as steps 9-10). This code has never executed in production.
+> - **Phase 4 (the most critical phase per this doc's own words) is a stub.** `run_disqualifier_checks()` just returns `{ticker: [] for ticker in tickers}` — every candidate passes with zero disqualifiers, every time. None of the 8 checks in the table below (sanctions, governance, balance sheet, liquidity, earnings quality, structural decline, insider selling, short interest) are actually implemented. This is a real gap: the doc explicitly warns this is "the most critical phase" for avoiding value traps, and right now nothing stops one from reaching your dashboard.
+> - No dashboard route/template exists for laggard results (contrast with `/divergence` + `divergence.html`, which are fully built for the other screen).
+>
+> See `before-go-live/J7-laggard-screen-wiring.md` for the implementation-ready fix, including a realistic proposal for automating a *subset* of the Phase 4 disqualifiers instead of leaving that phase fully manual.
+
 # Laggard Stock Screen — Research Strategy Plan
 
 ## Core Concept

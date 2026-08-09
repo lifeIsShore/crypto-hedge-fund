@@ -1,3 +1,5 @@
+> **STATUS (2026-08-09, verified by Claude): NOT IMPLEMENTED.** Same situation as the earnings-revision doc — archived without being built. No `quality_factor.py` exists in `engine/alpha/`. This model depends on `fundamental_ingestion.py` / the `fundamental_data` table from `NEW-alpha-earnings-revision.md`, which is also not built — build that one first. Verify against the live repo again before starting.
+
 # New Alpha Model: Quality Factor
 # `engine/alpha/quality_factor.py`
 # Estimated time: 1 day. Requires fundamental_ingestion.py (see earnings-revision doc)
