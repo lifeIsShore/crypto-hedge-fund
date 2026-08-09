@@ -227,7 +227,10 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
 10. ~~I1 — Light/cream theme toggle~~ — ✅ **DONE 2026-08-09.** Implemented in `base.html`. Follow-up per-page Chart.js color audit across all templates completed (removed hardcoded ticks/grid colors, updated dynamic line colors).
 11. ~~I2 — Signal Explainability~~ — ✅ **DONE 2026-08-09.** Computed proportional breakdown in `black_litterman.py`, saved to DB via `optimizer.py`, surfaced in `flask_app.py` and `rebalance.html`.
 12. ~~I4 — Paper Trading Sandbox Gate~~ — ✅ **DONE 2026-08-09.** `SANDBOX_MODE` env flag added to `db.py`, `paper_trader.py` execution built and wired into `scheduler.py` (with alert suppression), `RUN_SANDBOX.bat` launcher and `promotion_checklist.md` created.
-13. **Next up:** The still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left), and Liquidity gating (ADV checks in `order_manager.py`).
+13. **Next up:** The still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left).
+
+### Recently Completed:
+- **Liquidity Gating (2026-08-09):** Added ADV (Average Daily Volume) checks to `engine/execution/order_manager.py`. The `generate_order_queue` now queries the `prices` table for the 21-day average daily volume in EUR. It caps order sizes at 5% of ADV (`adv_limit_pct=0.05`), logging a warning if an order is scaled down to prevent routing orders that are too large relative to the asset's normal trading volume.
 
 ## 8. How to resume a session efficiently
 

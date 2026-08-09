@@ -38,15 +38,40 @@ class Order:
 
 from portfolio.src.config import DRIFT_THRESHOLD_BUY, DRIFT_THRESHOLD_SELL
 
+def get_adv_eur(ticker: str, days: int = 21) -> float:
+    """Computes the average daily volume in EUR over the last `days`."""
+    session = get_session()
+    try:
+        row = session.execute(text("""
+            SELECT AVG(volume * close)
+            FROM (
+                SELECT volume, close 
+                FROM prices 
+                WHERE ticker = :ticker AND volume IS NOT NULL AND volume > 0
+                ORDER BY date DESC 
+                LIMIT :days
+            )
+        """), {"ticker": ticker, "days": days}).fetchone()
+        
+        if row and row[0] is not None:
+            return float(row[0])
+        return 1e9  # Fallback: effectively no limit if volume data is missing
+    except Exception as e:
+        logger.warning(f"Failed to fetch ADV for {ticker}: {e}")
+        return 1e9
+    finally:
+        session.close()
+
 def generate_order_queue(
     suggested_weights: pd.Series,
     current_weights: pd.Series,
     total_portfolio_eur: float,
     min_trade_eur: float = 25.0,
+    adv_limit_pct: float = 0.05,
 ) -> list:
     """
     Generates a list of Orders from the weight delta.
-    Applies your existing MIN_TRADE_EUR_FLOOR and drift thresholds.
+    Applies your existing MIN_TRADE_EUR_FLOOR, drift thresholds, and ADV liquidity limits.
     """
     orders = []
     for ticker in suggested_weights.index:
@@ -69,13 +94,22 @@ def generate_order_queue(
             if drift_pct < DRIFT_THRESHOLD_SELL:
                 continue
 
+        abs_delta_eur = abs(delta_eur)
+
+        # Liquidity Gating: limit order size to a % of Average Daily Volume (ADV)
+        adv_eur = get_adv_eur(ticker)
+        max_order_eur = adv_eur * adv_limit_pct
+        if abs_delta_eur > max_order_eur:
+            logger.warning(f"[Liquidity Gate] {ticker} order capped at {adv_limit_pct*100}% ADV (€{max_order_eur:,.0f} vs original €{abs_delta_eur:,.0f})")
+            abs_delta_eur = max_order_eur
+
         action = "BUY" if delta_eur > 0 else "SELL"
         orders.append(Order(
-            ticker=ticker, action=action, value_eur=abs(delta_eur)
+            ticker=ticker, action=action, value_eur=abs_delta_eur
         ))
 
     orders.sort(key=lambda o: abs(o.value_eur), reverse=True)
-    logger.info(f"Order queue: {len(orders)} orders generated (tolerance bands applied)")
+    logger.info(f"Order queue: {len(orders)} orders generated (tolerance bands & ADV gating applied)")
     return orders
 
 
