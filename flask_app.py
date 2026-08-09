@@ -63,7 +63,12 @@ def require_auth(f):
 @app.context_processor
 def inject_metadata():
     from portfolio.src.config import TICKER_NAMES, TICKER_SECTORS, ASSET_UNIVERSE
-    return dict(ticker_names=TICKER_NAMES, ticker_sectors=TICKER_SECTORS, asset_universe=ASSET_UNIVERSE)
+    return dict(
+        ticker_names=TICKER_NAMES, 
+        ticker_sectors=TICKER_SECTORS, 
+        asset_universe=ASSET_UNIVERSE,
+        sandbox_mode=(os.getenv("SANDBOX_MODE") == "1")
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS

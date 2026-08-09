@@ -314,6 +314,12 @@ html.light-theme ::-webkit-scrollbar-thumb { background: #c0bbb0; }
 <!-- Data freshness warning banner — shown automatically if data > 24h old -->
 <div id="stale-banner">⚠️ STALE DATA — one or more state files are older than 24 hours. Do not trade on these signals.</div>
 
+{% if sandbox_mode %}
+<div id="sandbox-banner" style="background: rgba(245,166,35,.12); border-bottom: 1px solid var(--accent3); color: var(--accent3); font-size: 10px; font-weight: bold; letter-spacing: .08em; padding: 6px 24px; text-align: center;">
+  🧪 SANDBOX MODE ACTIVE — DISPLAYING PAPER TRADES & SIMULATED DATA ONLY
+</div>
+{% endif %}
+
 <header>
   <a class="logo" href="/">
     <div class="logo-mark">Ψ</div>
@@ -323,7 +329,11 @@ html.light-theme ::-webkit-scrollbar-thumb { background: #c0bbb0; }
     </div>
   </a>
   <div class="header-right">
+    {% if sandbox_mode %}
+    <div class="live-badge" style="color: var(--accent3);"><div class="live-dot" style="background: var(--accent3);"></div> SANDBOX</div>
+    {% else %}
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    {% endif %}
     <div class="timestamp" id="clock"></div>
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
       <span id="theme-icon">☀️</span>
