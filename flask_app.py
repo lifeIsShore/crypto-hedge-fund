@@ -419,6 +419,10 @@ def atomic_write_json(path, data):
 # PAGES
 # ─────────────────────────────────────────────────────────────────────────────
 
+@app.route("/legal")
+def legal():
+    return render_template("legal.html")
+
 @app.route("/")
 def overview():
     # Live Reconstruction — reads trades ledger + latest prices, no snapshot needed

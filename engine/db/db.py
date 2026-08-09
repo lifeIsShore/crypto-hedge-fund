@@ -52,9 +52,23 @@ def get_session():
 
 def execute_schema(schema_path: str = None):
     """
-    Apply schema.sql to the database.
-    Safe to run multiple times — all statements use IF NOT EXISTS.
+    Apply database schema.
+    Tries to run Alembic migrations first. Falls back to applying schema.sql directly.
     """
+    alembic_cfg_path = os.path.join(_root, 'alembic.ini')
+    if os.path.exists(alembic_cfg_path):
+        try:
+            from alembic.config import Config
+            from alembic import command
+            logger.info("Applying Alembic migrations...")
+            alembic_cfg = Config(alembic_cfg_path)
+            alembic_cfg.set_main_option("script_location", os.path.join(_root, "alembic"))
+            command.upgrade(alembic_cfg, "head")
+            print("[OK] Alembic migrations applied successfully.")
+            return
+        except Exception as e:
+            logger.error(f"Alembic migration failed: {e}. Falling back to schema.sql...")
+
     if schema_path is None:
         schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
 
