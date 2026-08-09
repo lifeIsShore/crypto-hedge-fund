@@ -119,6 +119,59 @@ def compute_momentum_features(prices: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def compute_sector_relative_features(prices: pd.DataFrame, sector_map: dict) -> pd.DataFrame:
+    """
+    J5 — Sector-relative momentum. Computes intra-sector percentile ranks for
+    the 4 core momentum windows, so a ticker is ranked against its sector
+    peers rather than the whole universe. A rank of 1.0 means this ticker is
+    the top momentum stock in its sector.
+
+    Distinct from compute_momentum_features() above (universe-wide rank).
+    See before-go-live/J5-sector-relative-momentum.md for design rationale.
+
+    Sectors with fewer than 2 tickers get a neutral 0.5 rank — no peers to
+    rank against.
+    """
+    skip = 21
+    windows = {
+        'sector_mom_1m':  21,
+        'sector_mom_3m':  63,
+        'sector_mom_6m':  126,
+        'sector_mom_12m': 252,
+    }
+    features = {}
+
+    for feat_name, lookback in windows.items():
+        required_len = lookback + skip
+        if len(prices) < required_len:
+            continue
+
+        raw = prices.shift(skip) / prices.shift(lookback + skip) - 1
+        latest = raw.iloc[-1].dropna()
+
+        sector_ranks = {}
+        for ticker in latest.index:
+            sector = sector_map.get(ticker, 'other')
+            sector_ranks.setdefault(sector, {})[ticker] = latest[ticker]
+
+        result_ranks = {}
+        for sector, ticker_vals in sector_ranks.items():
+            if len(ticker_vals) < 2:
+                for t in ticker_vals:
+                    result_ranks[t] = 0.5   # only 1 ticker in sector — neutral rank
+                continue
+            vals_series = pd.Series(ticker_vals)
+            result_ranks.update(vals_series.rank(pct=True).to_dict())
+
+        features[feat_name] = pd.Series(result_ranks)
+
+    if not features:
+        return pd.DataFrame()
+    result = pd.DataFrame(features)
+    result.index.name = 'ticker'
+    return result
+
+
 def compute_volatility_features(log_returns: pd.DataFrame) -> pd.DataFrame:
     """
     Realised vol (21D, 63D annualised) and vol-of-vol.
@@ -398,6 +451,16 @@ def run_feature_pipeline(tickers: list, date: str = None) -> pd.DataFrame:
     if not mom_features.empty:
         frames.append(mom_features)
         logger.info(f"Momentum features: {mom_features.shape[1]} cols, {len(mom_features)} tickers")
+
+    # J5 — sector-relative momentum (intra-sector rank, not universe-wide)
+    try:
+        from portfolio.src.config import TICKER_SECTORS
+        sector_rel_features = compute_sector_relative_features(prices, TICKER_SECTORS)
+        if not sector_rel_features.empty:
+            frames.append(sector_rel_features)
+            logger.info(f"Sector-relative momentum features: {sector_rel_features.shape[1]} cols")
+    except Exception as e:
+        logger.warning(f"Sector-relative momentum computation failed (non-fatal): {e}")
 
     vol_features = compute_volatility_features(log_returns)
     if not vol_features.empty:

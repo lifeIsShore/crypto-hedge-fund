@@ -1,183 +1,183 @@
 {
-  "generated_at": "2026-06-03T10:10:38.711594",
+  "generated_at": "2026-08-10T01:40:40.537359",
   "active_setups": [],
   "recent_setups": [
     {
-      "ticker": "UNH",
+      "ticker": "MU",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 9.52,
-      "drift_21d": 33.719,
+      "surprise_pct": 21.39,
+      "drift_21d": -8.769,
       "drift_63d": null
     },
     {
-      "ticker": "BAC",
+      "ticker": "ORCL",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 8.78,
-      "drift_21d": 5.691,
+      "surprise_pct": 7.52,
+      "drift_21d": -37.585,
       "drift_63d": null
     },
     {
-      "ticker": "SHOP",
+      "ticker": "MRK",
       "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 8.56,
-      "drift_21d": 7.865,
+      "quality": "Medium",
+      "surprise_pct": 49.43,
+      "drift_21d": -1.382,
       "drift_63d": null
     },
     {
-      "ticker": "FSLR",
+      "ticker": "LMT",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 8.26,
-      "drift_21d": 8.228,
-      "drift_63d": null
-    },
-    {
-      "ticker": "AMGN",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 8.04,
-      "drift_21d": -6.924,
+      "surprise_pct": 10.29,
+      "drift_21d": 7.397,
       "drift_63d": null
     },
     {
       "ticker": "ASML.AS",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 7.99,
-      "drift_21d": 12.652,
+      "surprise_pct": 9.93,
+      "drift_21d": -9.918,
       "drift_63d": null
     },
     {
-      "ticker": "JPM",
+      "ticker": "GE",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 7.78,
-      "drift_21d": 4.964,
-      "drift_63d": null
-    },
-    {
-      "ticker": "AXP",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 7.18,
-      "drift_21d": 6.34,
-      "drift_63d": null
-    },
-    {
-      "ticker": "GS",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 7.06,
-      "drift_21d": 4.661,
-      "drift_63d": null
-    },
-    {
-      "ticker": "V",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 6.79,
-      "drift_21d": 8.66,
-      "drift_63d": null
-    },
-    {
-      "ticker": "GILD",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 6.24,
-      "drift_21d": -5.025,
-      "drift_63d": null
-    },
-    {
-      "ticker": "KO",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 5.88,
-      "drift_21d": 1.916,
-      "drift_63d": null
-    },
-    {
-      "ticker": "AMD",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 5.82,
-      "drift_21d": 57.03,
+      "surprise_pct": 8.62,
+      "drift_21d": -2.154,
       "drift_63d": null
     },
     {
       "ticker": "PYPL",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 5.59,
-      "drift_21d": 11.138,
+      "surprise_pct": 8.03,
+      "drift_21d": 27.271,
       "drift_63d": null
     },
     {
-      "ticker": "HON",
+      "ticker": "BAC",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 5.55,
-      "drift_21d": -8.655,
+      "surprise_pct": 7.74,
+      "drift_21d": 6.385,
       "drift_63d": null
     },
     {
-      "ticker": "MSF.DE",
+      "ticker": "GILD",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 5.22,
-      "drift_21d": 9.605,
+      "surprise_pct": 6.86,
+      "drift_21d": -0.091,
       "drift_63d": null
     },
     {
-      "ticker": "MSFT",
+      "ticker": "APC.DE",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 5.22,
-      "drift_21d": 10.753,
+      "surprise_pct": 6.74,
+      "drift_21d": -1.198,
       "drift_63d": null
     },
     {
-      "ticker": "ARGX.BR",
+      "ticker": "NDX1.DE",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 11.98,
-      "drift_21d": 6.366,
+      "surprise_pct": 6.44,
+      "drift_21d": -14.237,
       "drift_63d": null
     },
     {
-      "ticker": "UBER",
+      "ticker": "JPM",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.86,
+      "drift_21d": 5.907,
+      "drift_63d": null
+    },
+    {
+      "ticker": "MA",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.53,
+      "drift_21d": 6.032,
+      "drift_63d": null
+    },
+    {
+      "ticker": "NOW",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.05,
+      "drift_21d": 7.402,
+      "drift_63d": null
+    },
+    {
+      "ticker": "SHOP",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 5.05,
+      "drift_21d": -2.051,
+      "drift_63d": null
+    },
+    {
+      "ticker": "SPOT",
       "direction": "bearish",
       "quality": "Low",
-      "surprise_pct": -81.78,
-      "drift_21d": 2.909,
+      "surprise_pct": -6.65,
+      "drift_21d": 0.074,
       "drift_63d": null
     },
     {
-      "ticker": "MS",
+      "ticker": "BNTX",
+      "direction": "bearish",
+      "quality": "Low",
+      "surprise_pct": -6.8,
+      "drift_21d": -5.428,
+      "drift_63d": null
+    },
+    {
+      "ticker": "SAP.DE",
+      "direction": "bearish",
+      "quality": "Low",
+      "surprise_pct": -9.8,
+      "drift_21d": 16.173,
+      "drift_63d": null
+    },
+    {
+      "ticker": "TXN",
       "direction": "bullish",
       "quality": "Low",
-      "surprise_pct": 13.66,
-      "drift_21d": 13.998,
+      "surprise_pct": 10.48,
+      "drift_21d": -7.733,
+      "drift_63d": null
+    },
+    {
+      "ticker": "TSM",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 10.89,
+      "drift_21d": -6.461,
       "drift_63d": null
     }
   ],
   "performance": {
-    "total_setups": 178,
-    "high_quality_setups": 2,
-    "medium_quality_setups": 12,
-    "overall_avg_drift_21d": 4.661,
-    "overall_avg_drift_63d": 4.094,
-    "overall_hit_rate_21d": 0.653,
-    "high_avg_drift_21d": null,
-    "high_avg_drift_63d": null,
-    "high_hit_rate_21d": null,
-    "bullish_avg_drift_21d": 5.654,
-    "bearish_avg_drift_21d": -3.226,
-    "stats_computed_at": "2026-06-03T10:10:38.705596",
-    "hit_rate_21d_slowdown": 0.74,
-    "avg_drift_21d_slowdown": 8.551
+    "total_setups": 180,
+    "high_quality_setups": 1,
+    "medium_quality_setups": 20,
+    "overall_avg_drift_21d": 3.094,
+    "overall_avg_drift_63d": 11.486,
+    "overall_hit_rate_21d": 0.589,
+    "high_avg_drift_21d": 67.312,
+    "high_avg_drift_63d": 119.659,
+    "high_hit_rate_21d": 1.0,
+    "bullish_avg_drift_21d": 4.001,
+    "bearish_avg_drift_21d": -2.799,
+    "stats_computed_at": "2026-08-10T01:40:40.533758",
+    "hit_rate_21d_slowdown": 0.738,
+    "avg_drift_21d_slowdown": 9.522
   },
-  "total_in_db": 178
+  "total_in_db": 180
 }

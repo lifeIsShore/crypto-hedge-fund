@@ -292,19 +292,46 @@ def step_features():
     run_feature_pipeline(TICKERS, TODAY)
 
 
+def step_earnings_calendar():
+    """
+    J4 — fetches upcoming earnings dates via Finnhub and persists them,
+    remapped to this engine's primary tickers (see earnings_calendar.py's
+    module docstring for why the remap is necessary).
+    Non-fatal by design: a missing/rate-limited Finnhub call should never
+    break the pipeline, it just means the earnings throttle has no data
+    to act on until the next successful run.
+    """
+    from engine.data.earnings_calendar import run_earnings_ingestion
+    from portfolio.src.config import TICKER_MAPPING
+
+    # Finnhub returns US-style symbols. Build symbol -> primary_ticker so
+    # rows land under the same key order_manager/PEAD already use.
+    # 1) Primary .DE tickers that have a US fallback (TICKER_MAPPING values).
+    symbol_to_primary = {us_symbol: primary for primary, us_symbol in TICKER_MAPPING.items()}
+    # 2) Tickers already in US/native form in the universe (e.g. 'UNH', 'NVDA'
+    #    itself if ever added directly) map to themselves.
+    for t in TICKERS:
+        symbol_to_primary.setdefault(t, t)
+
+    count = run_earnings_ingestion(symbol_to_primary)
+    logger.info(f"[earnings_calendar] {count} rows persisted for {TODAY}")
+
+
 def step_alpha(model_name: str):
-    from engine.alpha.momentum       import MomentumAlpha
-    from engine.alpha.mean_reversion import MeanReversionAlpha
-    from engine.alpha.vol_timing     import VolTimingAlpha
-    from engine.alpha.pead_alpha     import PEADAlpha
-    from engine.alpha.ml_alpha       import MLAlpha
+    from engine.alpha.momentum         import MomentumAlpha
+    from engine.alpha.sector_momentum  import SectorMomentumAlpha
+    from engine.alpha.mean_reversion   import MeanReversionAlpha
+    from engine.alpha.vol_timing       import VolTimingAlpha
+    from engine.alpha.pead_alpha       import PEADAlpha
+    from engine.alpha.ml_alpha         import MLAlpha
 
     model_map = {
-        'momentum':       MomentumAlpha(),
-        'mean_reversion': MeanReversionAlpha(),
-        'vol_timing':     VolTimingAlpha(),
-        'pead':           PEADAlpha(),
-        'ml_model':       MLAlpha(),
+        'momentum':        MomentumAlpha(),
+        'sector_momentum': SectorMomentumAlpha(),   # J5
+        'mean_reversion':  MeanReversionAlpha(),
+        'vol_timing':      VolTimingAlpha(),
+        'pead':            PEADAlpha(),
+        'ml_model':        MLAlpha(),
     }
     model = model_map[model_name]
     signals = model.generate_signals(TODAY, TICKERS)
@@ -434,14 +461,16 @@ def step_portfolio_construction():
     except Exception as e:
         logger.warning(f"[portfolio] Regime load failed: {e}")
 
-    from engine.alpha.momentum       import MomentumAlpha
-    from engine.alpha.mean_reversion import MeanReversionAlpha
-    from engine.alpha.vol_timing     import VolTimingAlpha
-    from engine.alpha.pead_alpha     import PEADAlpha
-    from engine.alpha.ml_alpha       import MLAlpha
-    from portfolio.src.config        import TICKER_SECTORS
+    from engine.alpha.momentum        import MomentumAlpha
+    from engine.alpha.sector_momentum import SectorMomentumAlpha
+    from engine.alpha.mean_reversion  import MeanReversionAlpha
+    from engine.alpha.vol_timing      import VolTimingAlpha
+    from engine.alpha.pead_alpha      import PEADAlpha
+    from engine.alpha.ml_alpha        import MLAlpha
+    from portfolio.src.config         import TICKER_SECTORS
     models_dict = {
-        'momentum': MomentumAlpha(), 'mean_reversion': MeanReversionAlpha(),
+        'momentum': MomentumAlpha(), 'sector_momentum': SectorMomentumAlpha(),  # J5
+        'mean_reversion': MeanReversionAlpha(),
         'vol_timing': VolTimingAlpha(), 'pead': PEADAlpha(), 'ml_model': MLAlpha(),
     }
 
@@ -984,7 +1013,9 @@ def run_pipeline(dry_run: bool = False):
     _run_step('1.  Data ingestion',          step_ingest,                        dry_run)
     _run_step('2.  Macro regime refresh',    step_regime_refresh,                dry_run)
     _run_step('3.  Feature pipeline',        step_features,                      dry_run)
+    _run_step('3b. Earnings calendar',       step_earnings_calendar,             dry_run)  # J4
     _run_step('4.  Alpha: momentum',         lambda: step_alpha('momentum'),     dry_run)
+    _run_step('4b. Alpha: sector momentum',  lambda: step_alpha('sector_momentum'), dry_run)  # J5
     _run_step('5.  Alpha: mean reversion',   lambda: step_alpha('mean_reversion'),dry_run)
     _run_step('6.  Alpha: vol timing',       lambda: step_alpha('vol_timing'),   dry_run)
     _run_step('7.  Alpha: PEAD signals',     lambda: step_alpha('pead'),         dry_run)

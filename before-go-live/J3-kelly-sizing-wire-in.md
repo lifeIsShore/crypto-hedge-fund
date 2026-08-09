@@ -1,3 +1,9 @@
+> **STATUS (2026-08-10): IMPLEMENTED — see PROJECT-STATE.md session-5 changelog.**
+> `get_kelly_scalars()` and `get_regime_scalar()` added to `order_manager.py`,
+> wired into `generate_order_queue()` as a BUY-only sizing scalar with an
+> `apply_kelly_sizing` flag for sandbox A/B testing. This doc is kept as
+> design rationale.
+
 # J3 — Wire Kelly Sizing Into Order Generation
 # Edit `engine/execution/order_manager.py`
 # Estimated time: 2 hours. No new dependencies, no new tables — the data already exists.

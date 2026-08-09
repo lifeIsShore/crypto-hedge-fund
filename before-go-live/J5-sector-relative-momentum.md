@@ -1,3 +1,14 @@
+> **STATUS (2026-08-10): IMPLEMENTED — see PROJECT-STATE.md session-5 changelog.**
+> `compute_sector_relative_features()` added to `feature_store.py` and wired
+> into `run_feature_pipeline()`. New `engine/alpha/sector_momentum.py` —
+> `SectorMomentumAlpha` — wired into both `step_alpha()`'s model_map and
+> `step_portfolio_construction()`'s `models_dict` in `scheduler.py`, so it
+> gates through `is_live_approved()` and feeds Black-Litterman exactly like
+> the other alpha models. Step 4 (dashboard divergence display) NOT built —
+> the feature and signal exist and are usable, but no ticker-detail page UI
+> shows the universe-vs-sector divergence yet.
+> This doc is kept as design rationale.
+
 # J5 — Sector-Relative Momentum Ranking
 # Edit `engine/features/feature_store.py` + add a new alpha model variant
 # Estimated time: 3 hours (your own BRAINSTORM doc estimated 2 — I've added the

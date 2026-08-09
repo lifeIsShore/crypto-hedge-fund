@@ -141,6 +141,22 @@ CREATE TABLE IF NOT EXISTS price_targets (
 CREATE INDEX IF NOT EXISTS idx_price_targets_ticker ON price_targets (ticker, date);
 
 -- ─────────────────────────────────────────────────────────────
+-- EARNINGS CALENDAR  (J4 — pre-earnings position throttle + PEAD trigger)
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS earnings_calendar (
+    ticker           TEXT NOT NULL,
+    report_date      TEXT NOT NULL,
+    report_time      TEXT,     -- 'bmo' (before open) / 'amc' (after close) / 'dmh'
+    eps_estimate     REAL,
+    revenue_estimate REAL,
+    fetched_at       TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (ticker, report_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_earnings_date ON earnings_calendar (report_date);
+
+-- ─────────────────────────────────────────────────────────────
 -- PORTFOLIO STATE
 -- ─────────────────────────────────────────────────────────────
 

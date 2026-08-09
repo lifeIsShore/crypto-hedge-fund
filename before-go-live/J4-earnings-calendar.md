@@ -1,3 +1,12 @@
+> **STATUS (2026-08-10): IMPLEMENTED — see PROJECT-STATE.md session-5 changelog.**
+> `earnings_calendar` table added to schema, `engine/data/earnings_calendar.py`
+> created (fetch + persist + `get_reporting_soon()` + `get_recently_reported()`),
+> wired into `scheduler.py` as a daily step and into `order_manager.py`'s
+> pre-earnings BUY throttle. PEAD forward-trigger (original Step 4) NOT yet
+> wired into the PEAD engine itself — `get_recently_reported()` exists and is
+> ready to use, but `pead_alpha.py` still only reacts to price anomalies.
+> This doc is kept as design rationale.
+
 # J4 — Earnings Calendar Integration
 # New: `engine/data/earnings_calendar.py` + `earnings_calendar` table
 # Estimated time: 1 day. Uses your existing Finnhub key — no new provider needed.

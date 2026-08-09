@@ -18,6 +18,37 @@ The system enforces hard, per-position stop-loss floors. These overrides superse
   3. A permanent, auditable log is written to the `risk_events` ledger.
   4. The engine initiates a forced liquidation (sell-to-close) in the execution queue.
 
+## 2b. Portfolio-Level Drawdown Protocol
+
+Section 2 above covers **per-position** circuit breakers. This section covers
+**portfolio-level** drawdown — what happens as total fund value falls from
+its high-water mark, independent of any single position. This was flagged
+as an open gap in `BRAINSTORM-new-features-and-gaps.md` ("Operational Gap
+#2") and had no coded behavior anywhere in the engine as of this writing.
+
+**Decision needed from Ahmet before this becomes enforceable** — the tiers
+below are a starting proposal, not yet wired into `scheduler.py`. This
+section exists so the decision is made in writing, in advance, rather than
+during an actual drawdown (per the BRAINSTORM doc's own reasoning: "During a
+drawdown is the worst time to decide").
+
+| Drawdown from high-water mark | Proposed action | Status |
+|---|---|---|
+| **-10%** | Alert-only. CRITICAL digest entry, no automatic trading change. | Proposed — not built |
+| **-15%** | Reduce gross exposure: scale all new BUY orders by 0.5× (reuse the same scalar mechanism as J3's Kelly sizing / J4's earnings throttle in `order_manager.py`, so it composes with them rather than adding a fourth ad-hoc sizing path). | Proposed — not built |
+| **-20%** | Pause the pipeline: `step_portfolio_construction()` continues to run (so risk metrics and the dashboard stay current) but `generate_order_queue()` returns no new BUY orders — SELLs and circuit-breaker-forced exits still execute, since risk-reducing trades should never be paused. | Proposed — not built |
+
+**Open questions for Ahmet to resolve before implementation:**
+- High-water mark basis: since first deposit, or trailing 12 months? (Affects
+  how quickly the tiers reset after a recovery.)
+- Should the -20% pause require manual un-pause (a dashboard button), or
+  auto-resume once drawdown recovers above -15%?
+- Do the three tiers interact with the existing per-position circuit breakers
+  (Section 2) or run entirely independently? Recommendation: independently
+  — a portfolio-wide drawdown can occur with no single position breaching
+  -15%/-12%, and conflating the two triggers would make each harder to
+  reason about in isolation.
+
 ## 3. Position Sizing & Concentration
 Position sizing is dynamically determined by the Black-Litterman optimizer, which balances conviction (Alpha signal strength) against market equilibrium and volatility.
 * **Diversification Mandate:** The optimizer heavily penalizes excess concentration, ensuring capital is distributed across the asset universe rather than isolated into binary bets.
@@ -30,4 +61,4 @@ While the engine executes autonomously, human portfolio managers retain ultimate
 * **Emergency Halt (SOS Protocol):** Under extreme, unforeseen market dysfunction, the pipeline can be manually halted, blocking all API execution routes until the environment stabilizes.
 
 ---
-*Document Version: 1.0 | Status: Implemented & Active*
+*Document Version: 1.1 | Status: Sections 1, 2, 3, 4 Implemented & Active. Section 2b (Portfolio Drawdown Protocol) is a proposal pending Ahmet's sign-off — not yet coded.*
