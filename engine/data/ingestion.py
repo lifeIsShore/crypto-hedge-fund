@@ -621,11 +621,17 @@ def run_ingestion(
 
         session = get_session()
         try:
-            rows = session.execute(_text("""
-                SELECT ticker, MAX(date) as last_date
-                FROM prices
-                GROUP BY ticker
-            """)).fetchall()
+            # Only check staleness for the tickers in our active universe
+            if not tickers:
+                rows = []
+            else:
+                tickers_list = "', '".join(str(t) for t in tickers)
+                rows = session.execute(_text(f"""
+                    SELECT ticker, MAX(date) as last_date
+                    FROM prices
+                    WHERE ticker IN ('{tickers_list}')
+                    GROUP BY ticker
+                """)).fetchall()
         finally:
             session.close()
 

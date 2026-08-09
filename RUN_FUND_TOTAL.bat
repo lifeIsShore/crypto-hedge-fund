@@ -2,13 +2,16 @@
 SETLOCAL EnableDelayedExpansion
 set PYTHONIOENCODING=utf-8
 
+:: ── Venv Python — all project deps (sqlalchemy, aiohttp, etc.) live here ──
+set PYTHON=C:\Users\user\.venv\Scripts\python.exe
+
 echo ============================================================
 echo   HEDGE FUND CONTROL TOWER - UNIFIED SYSTEM RUNNER
 echo ============================================================
 
 :: 1. DATA INGESTION
 echo [1/6] Syncing Market Data (Prices, FX, Fundamentals)...
-python -m engine.data.ingestion
+%PYTHON% -m engine.data.ingestion
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Data sync failed.
     pause
@@ -18,7 +21,7 @@ if %ERRORLEVEL% NEQ 0 (
 :: 2. MACRO & REGIME
 echo [2/6] Updating Macro Regime Intelligence (Global)...
 cd /d "%~dp0ml_quant_finance_research\quant_research\regime_engine"
-python run_engine.py --region ALL
+%PYTHON% run_engine.py --region ALL
 if %ERRORLEVEL% NEQ 0 (
     echo [WARN] Regime engine failed - continuing with last state.
 )
@@ -27,7 +30,7 @@ cd /d "%~dp0"
 :: 3. RESEARCH SCREENING (PEAD)
 echo [3/6] Running Earnings (PEAD) Screener...
 cd /d "%~dp0ml_quant_finance_research\quant_research\pead_engine"
-python run_engine.py --lookback 90
+%PYTHON% run_engine.py --lookback 90
 cd /d "%~dp0"
 
 :: 4. OPTIONAL ML TRAINING
@@ -39,7 +42,7 @@ set /p train="Do you want to run FULL ML training? (Takes ~10-45 mins) (y/n): "
 if /i "!train!"=="y" (
     echo [ACTION] Training ML Models...
     cd /d "%~dp0ml_quant_finance_research\ml_research\stock_ml_lab"
-    python run_ml_pipeline.py
+    %PYTHON% run_ml_pipeline.py
     if %ERRORLEVEL% NEQ 0 (
         echo.
         echo [CRITICAL ERROR] The ML Pipeline crashed. 
@@ -53,8 +56,8 @@ if /i "!train!"=="y" (
 
 :: 5. MIRRORING & RECONCILIATION
 echo [5/6] Mirroring Research to Production & Rebalancing...
-python -m engine.alpha.pead_alpha --mirror-only
-python -m engine.scheduler --pipeline-only
+%PYTHON% -m engine.alpha.pead_alpha --mirror-only
+%PYTHON% -m engine.scheduler --pipeline-only
 
 :: 6. LAUNCH DASHBOARD
 echo [6/6] Launching Flask Control Tower...
@@ -66,7 +69,7 @@ if not defined LOCAL_IP set LOCAL_IP=your-local-ip
 echo Dashboard will be available locally at http://localhost:5000
 echo Dashboard will be available on LAN at http://%LOCAL_IP%:5000
 start http://localhost:5000
-python flask_app.py
+%PYTHON% flask_app.py
 
 echo ============================================================
 echo   SYSTEM SHUTDOWN

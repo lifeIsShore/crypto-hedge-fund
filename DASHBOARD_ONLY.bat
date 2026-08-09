@@ -8,6 +8,9 @@
 
 title Hedge Fund Dashboard (View-Only)
 
+:: ── Venv Python — all project deps live here ──
+set PYTHON=C:\Users\user\.venv\Scripts\python.exe
+
 echo.
 echo  =========================================
 echo   CONTROL TOWER -- DASHBOARD ONLY MODE
@@ -42,6 +45,6 @@ echo [INFO] Press Ctrl+C to stop.
 echo.
 
 start http://localhost:5000
-python flask_app.py
+%PYTHON% flask_app.py
 
 pause
