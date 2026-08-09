@@ -82,6 +82,14 @@ def optimize_with_bl(
         logger.warning(f"BL optimizer did not converge: {result.message}")
 
     weights = pd.Series(np.round(result.x, 4), index=tickers)
+
+    MIN_DELTA_WEIGHT = 0.005  # 0.5% minimum meaningful weight change
+    for ticker in tickers:
+        current = current_weights.get(ticker, 0.0)
+        suggested = weights[ticker]
+        if abs(suggested - current) < MIN_DELTA_WEIGHT:
+            weights[ticker] = current  # snap back to current — not worth trading
+
     return weights
 
 

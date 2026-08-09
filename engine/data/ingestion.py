@@ -612,6 +612,67 @@ def run_ingestion(
     persist_prices(df_eur)
 
     logger.info(f"Ingestion complete: {len(df_eur)} rows persisted.")
+
+    # Step 6: Post-ingestion staleness check (B5) — warn on tickers with data gaps
+    try:
+        from engine.data.validation import check_staleness
+        from engine.db.db import get_session
+        from sqlalchemy import text as _text
+
+        session = get_session()
+        try:
+            rows = session.execute(_text("""
+                SELECT ticker, MAX(date) as last_date
+                FROM prices
+                GROUP BY ticker
+            """)).fetchall()
+        finally:
+            session.close()
+
+        if rows:
+            stale_df = pd.DataFrame([
+                {"ticker": r[0], "date": r[1]}
+                for r in rows
+            ])
+            stale_list = check_staleness(stale_df, max_gap_days=3)
+
+            if stale_list:
+                stale_tickers = [s["ticker"] for s in stale_list]
+                logger.warning(
+                    f"\u26a0\ufe0f  STALE DATA DETECTED: {len(stale_list)} tickers \u2014 {stale_tickers}"
+                )
+                session2 = get_session()
+                try:
+                    for s in stale_list:
+                        session2.execute(_text("""
+                            INSERT INTO pipeline_logs (level, step_name, message, detail, run_date)
+                            VALUES ('CRITICAL', 'data_ingestion', :msg, :detail, date('now'))
+                        """), {
+                            "msg": f"STALE: {s['ticker']} last seen {s['last_date']} ({s['gap_days']} days ago)",
+                            "detail": str(s),
+                        })
+                    session2.commit()
+                finally:
+                    session2.close()
+
+                session3 = get_session()
+                try:
+                    for s in stale_list:
+                        session3.execute(_text("""
+                            INSERT INTO risk_events (date, event_type, ticker, detail)
+                            VALUES (CURRENT_DATE, 'stale_data', :ticker, :detail)
+                        """), {
+                            "ticker": s["ticker"],
+                            "detail": f"Data {s['gap_days']} days stale (last: {s['last_date']})",
+                        })
+                    session3.commit()
+                finally:
+                    session3.close()
+            else:
+                logger.info("\u2705 Staleness check: all tickers fresh.")
+    except Exception as e:
+        logger.warning(f"Staleness check failed (non-fatal): {e}")
+
     return df_eur
 
 

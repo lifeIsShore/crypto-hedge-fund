@@ -1,4 +1,16 @@
 # recalculate_engine.py
+# ⚠️  DEPRECATED — no longer called by any production path (2026-08-04)
+#
+# This was the legacy pipeline: ledger.csv → historical_prices.csv → engine_state.json
+# It was triggered by flask_app.py's APScheduler weekly job.
+#
+# Replaced by: engine/scheduler.py (run_pipeline) — the unified SQL-backed pipeline.
+# flask_app.py's weekly_refresh job now calls engine.scheduler.run_pipeline() directly.
+# The dashboard reads exclusively from engine_data.db and shared/state/*.json;
+# engine_state.json was never read by flask_app.py's routes.
+#
+# Kept here for reference. Safe to delete once the unified pipeline is confirmed stable.
+# ─────────────────────────────────────────────────────────────────────────────
 # Minimal engine recalculation (no Streamlit launch)
 
 import os

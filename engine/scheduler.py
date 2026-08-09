@@ -361,6 +361,24 @@ def step_portfolio_construction():
 
     cov_matrix = log_returns[available_tickers].cov() * 252
 
+    # H1 fix: Ledoit-Wolf shrinkage — reduces estimation noise in the covariance
+    # matrix (N~130 tickers vs T=252 obs is right at the noise boundary).
+    try:
+        from sklearn.covariance import LedoitWolf
+        returns_matrix = log_returns[available_tickers].dropna()
+        if len(returns_matrix) >= len(available_tickers):
+            lw = LedoitWolf().fit(returns_matrix.values)
+            cov_matrix = pd.DataFrame(
+                lw.covariance_ * 252,
+                index=available_tickers,
+                columns=available_tickers,
+            )
+            logger.info(f"[portfolio] Covariance: Ledoit-Wolf shrinkage applied (shrinkage={lw.shrinkage_:.3f})")
+        else:
+            logger.warning("[portfolio] Insufficient data for Ledoit-Wolf — using raw covariance")
+    except Exception as e:
+        logger.warning(f"[portfolio] Ledoit-Wolf shrinkage failed, using raw covariance: {e}")
+
     # Current weights — sourced from ledger import (positions_history)
     session = get_session()
     rows = session.execute(text("""
@@ -489,11 +507,6 @@ def step_ml_refresh():
     run_ml_pipeline_refresh()
 
 
-def step_lstm_train():
-    from engine.alpha.ml_alpha import train_all_lstms
-    train_all_lstms()
-
-
 def step_performance_log():
     """
     Final step: calculate total wealth (Cash + Stocks) and log to performance_history.
@@ -568,6 +581,244 @@ def step_lstm_train():
         logger.info(f"[lstm_train] {passed}/{len(summary)} tickers above AUC gate")
     except Exception as e:
         logger.error(f"[lstm_train] Training failed: {e}")
+
+
+def step_push_signals_to_queue(
+    long_conv_threshold: float = 0.65,
+    short_conv_threshold: float = 0.45,
+    auc_gate: float = 0.53,
+    expiry_days: int = 3,
+):
+    """
+    Auto-populate the HITL signal_queue table from today’s pipeline outputs.
+
+    Reads price_targets (conviction proxy) + ml_state (AUC) + regime + PEAD,
+    and inserts any signal that:
+      - Passes the AUC gate
+      - Exceeds the conviction threshold (long or short)
+      - Is NOT already pending for the same ticker/signal_type in the last 3 days
+
+    Also auto-inserts newly active PEAD setups regardless of conviction threshold.
+
+    This turns the Review Queue from a purely manual inbox into an active inbox
+    populated automatically after each pipeline run.
+    """
+    import json, os
+    from datetime import datetime as _dt, timedelta as _td
+    from engine.db.db import get_session
+    from sqlalchemy import text
+
+    # ── Ensure table exists (safe to call if already created) ────────────────
+    _create_signal_queue_sql = """
+        CREATE TABLE IF NOT EXISTS signal_queue (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            generated_at     TEXT DEFAULT (datetime('now')),
+            ticker           TEXT NOT NULL,
+            signal_type      TEXT,
+            conviction       REAL,
+            short_score      REAL,
+            up_proba         REAL,
+            auc              REAL,
+            rr_ratio         REAL,
+            current_price    REAL,
+            target_price     REAL,
+            stop_price       REAL,
+            vol_ann          REAL,
+            expires_at       TEXT,
+            status           TEXT DEFAULT 'pending',
+            reviewed_at      TEXT,
+            review_note      TEXT,
+            reason_category  TEXT,
+            source           TEXT DEFAULT 'ml'
+        )
+    """
+    session = get_session()
+    try:
+        session.execute(text(_create_signal_queue_sql))
+        session.commit()
+    finally:
+        session.close()
+
+    # ── Load price targets ───────────────────────────────────────────────────
+    session = get_session()
+    try:
+        rows = session.execute(text("""
+            SELECT ticker, current_price_eur, target_1sigma_eur, stop_1sigma_eur,
+                   support_bb_lower, resistance_ma50,
+                   risk_reward_ratio, up_proba, vol_ann
+            FROM price_targets
+            WHERE date = (SELECT MAX(date) FROM price_targets)
+        """)).fetchall()
+        cols = ['ticker','current_price_eur','target_1sigma_eur','stop_1sigma_eur',
+                'support_bb_lower','resistance_ma50','risk_reward_ratio','up_proba','vol_ann']
+        targets = [dict(zip(cols, r)) for r in rows]
+    finally:
+        session.close()
+
+    if not targets:
+        logger.info("[signal_push] No price targets found — skipping queue push")
+        return
+
+    # ── Load ML state (AUC per ticker) ───────────────────────────────────────
+    from shared.state_paths import ML_STATE_PATH, REGIME_STATE_PATH
+    def _load_json_safe(path):
+        try:
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    ml     = _load_json_safe(ML_STATE_PATH)
+    reg    = _load_json_safe(REGIME_STATE_PATH)
+    ml_signals = ml.get('model_signals', {}) or {}
+
+    regime_risk   = (reg.get('regime_risk') or '').lower()
+    regime_mult_l = 1.2 if 'risk-on' in regime_risk else 0.8 if 'risk-off' in regime_risk else 1.0
+    regime_mult_s = 1.2 if 'risk-off' in regime_risk else 0.7 if 'risk-on' in regime_risk else 1.0
+    transition    = bool(reg.get('transition_warning', False))
+
+    # ── Load PEAD active setups ──────────────────────────────────────────────
+    session = get_session()
+    try:
+        pead_rows = session.execute(text("""
+            SELECT ticker, direction, pead_setup_quality
+            FROM pead_setups
+            WHERE earnings_date >= date('now', '-60 days')
+            ORDER BY earnings_date DESC
+        """)).fetchall()
+        pead_map = {}
+        for r in pead_rows:
+            t = r[0]
+            if t not in pead_map:
+                pead_map[t] = {'direction': r[1], 'pead_setup_quality': r[2]}
+    finally:
+        session.close()
+
+    expires_at = (_dt.now() + _td(days=expiry_days)).strftime('%Y-%m-%d %H:%M:%S')
+    cutoff     = (_dt.now() - _td(days=expiry_days)).strftime('%Y-%m-%d %H:%M:%S')
+
+    pushed_long = pushed_short = pushed_pead = already_exists = 0
+
+    def _already_pending(ticker, signal_type, cutoff_ts):
+        """True if a pending entry for this ticker+signal_type exists within cutoff."""
+        session2 = get_session()
+        try:
+            row = session2.execute(text("""
+                SELECT id FROM signal_queue
+                WHERE ticker = :t AND signal_type = :st AND status = 'pending'
+                  AND generated_at > :cutoff
+            """), {'t': ticker, 'st': signal_type, 'cutoff': cutoff_ts}).fetchone()
+            return row is not None
+        finally:
+            session2.close()
+
+    def _insert_signal(ticker, signal_type, conviction, short_score,
+                       up_proba, auc, rr_ratio, cur, tgt, stop, vol_ann, source):
+        session3 = get_session()
+        try:
+            session3.execute(text("""
+                INSERT INTO signal_queue
+                    (ticker, signal_type, conviction, short_score, up_proba, auc,
+                     rr_ratio, current_price, target_price, stop_price,
+                     vol_ann, expires_at, source)
+                VALUES
+                    (:ticker, :st, :conv, :ss, :up, :auc, :rr,
+                     :cur, :tgt, :stop, :vol, :expires, :source)
+            """), {
+                'ticker': ticker, 'st': signal_type, 'conv': conviction,
+                'ss': short_score, 'up': up_proba, 'auc': auc, 'rr': rr_ratio,
+                'cur': cur, 'tgt': tgt, 'stop': stop, 'vol': vol_ann,
+                'expires': expires_at, 'source': source,
+            })
+            session3.commit()
+        finally:
+            session3.close()
+
+    for row in targets:
+        ticker   = row['ticker']
+        up_proba = float(row.get('up_proba') or 0.5)
+        auc      = float((ml_signals.get(ticker) or {}).get('auc') or 0)
+        rr_ratio = float(row.get('risk_reward_ratio') or 0)
+        vol_ann  = float(row.get('vol_ann') or 0)
+        cur      = float(row.get('current_price_eur') or 0)
+        tgt      = float(row.get('target_1sigma_eur') or 0)
+        stop     = float(row.get('stop_1sigma_eur') or 0)
+
+        if auc < auc_gate:
+            continue
+
+        # PEAD boost
+        pead_info = pead_map.get(ticker)
+        pead_boost = 1.0
+        if pead_info:
+            q = (pead_info.get('pead_setup_quality') or '').upper()
+            pead_boost = 1.15 if q == 'HIGH' else 1.08 if q == 'MEDIUM' else 1.03
+
+        vol_pct   = vol_ann * 100
+        vol_score = 1.1 if 15 <= vol_pct <= 40 else 0.8 if vol_pct > 60 else 1.0
+
+        # ── Long signal ──────────────────────────────────────────────────────
+        if up_proba >= 0.54:
+            conv = up_proba * auc * (1 + rr_ratio) * regime_mult_l * pead_boost * vol_score
+            if conv >= long_conv_threshold:
+                if _already_pending(ticker, 'BUY', cutoff):
+                    already_exists += 1
+                else:
+                    _insert_signal(ticker, 'BUY', round(conv, 4), None,
+                                   round(up_proba, 4), round(auc, 4), round(rr_ratio, 2),
+                                   round(cur, 2), round(tgt, 2), round(stop, 2),
+                                   round(vol_ann, 4), 'pipeline')
+                    pushed_long += 1
+
+        # ── Short signal (regime-gated) ──────────────────────────────────────
+        is_bearish_pead = pead_info and (pead_info.get('direction') or '').lower() in ('bearish', 'bear')
+        show_short = ('risk-off' in regime_risk or transition or up_proba <= 0.38 or is_bearish_pead)
+        if up_proba <= 0.40 and show_short:
+            bear_proba = 1.0 - up_proba
+            short_cover = float(row.get('support_bb_lower') or 0)
+            short_stop  = float(row.get('resistance_ma50') or 0) or (cur * 1.05 if cur > 0 else 0)
+            rr_short = max(0.5, min(
+                (cur - short_cover) / (short_stop - cur) if (short_stop > cur and short_cover > 0) else rr_ratio * 0.8,
+                5.0
+            ))
+            short_score = bear_proba * auc * rr_short * regime_mult_s * pead_boost
+            if short_score >= short_conv_threshold:
+                if _already_pending(ticker, 'SHORT', cutoff):
+                    already_exists += 1
+                else:
+                    _insert_signal(ticker, 'SHORT', round(short_score, 4), round(short_score, 4),
+                                   round(up_proba, 4), round(auc, 4), round(rr_short, 2),
+                                   round(cur, 2), round(short_cover, 2), round(short_stop, 2),
+                                   round(vol_ann, 4), 'pipeline')
+                    pushed_short += 1
+
+    # ── Auto-push PEAD setups (regardless of conviction) ────────────────────
+    for ticker, pead_info in pead_map.items():
+        direction = (pead_info.get('direction') or '').lower()
+        sig_type  = 'BUY' if direction in ('bullish', 'bull') else 'SHORT'
+        q         = (pead_info.get('pead_setup_quality') or '').upper()
+        pead_conv = 0.50 + (0.10 if q == 'HIGH' else 0.05 if q == 'MEDIUM' else 0.0)
+        source    = 'pead'
+
+        # Only push if we have some price data
+        pt_match = next((r for r in targets if r['ticker'] == ticker), None)
+        if pt_match:
+            cur  = float(pt_match.get('current_price_eur') or 0)
+            auc  = float((ml_signals.get(ticker) or {}).get('auc') or 0)
+            if _already_pending(ticker, sig_type, cutoff):
+                already_exists += 1
+                continue
+            _insert_signal(ticker, sig_type, pead_conv, None,
+                           None, round(auc, 4) if auc else None, None,
+                           round(cur, 2) if cur else None, None, None,
+                           None, source)
+            pushed_pead += 1
+
+    logger.info(
+        f"[signal_push] Pushed {pushed_long} long / {pushed_short} short / "
+        f"{pushed_pead} PEAD signals — {already_exists} already pending (skipped)"
+    )
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -645,6 +896,7 @@ def run_pipeline(dry_run: bool = False):
     _run_step('11. Portfolio construction',  step_portfolio_construction,        dry_run)
     _run_step('12. Price targets',           step_price_targets,                 dry_run)  # Stream 3
     _run_step('13. Performance logging',      step_performance_log,               dry_run)
+    _run_step('14. Signal queue push',         step_push_signals_to_queue,         dry_run)
 
     # ── Weekly steps (Monday) ─────────────────────────────────────────────────
     if WEEKDAY == 0:

@@ -12,14 +12,15 @@ All data is read from:
 No Streamlit dependency.  Streamlit pages still exist as a fallback.
 """
 
-import sys, os, json, logging, tempfile, shutil
+import sys, os, json, logging, tempfile, shutil, secrets
+from functools import wraps
 from pathlib import Path
 import yfinance as yf
 from datetime import datetime, date, timedelta
 import pandas as pd
 import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
-import subprocess
+
 
 # ── path setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.resolve()
@@ -39,6 +40,24 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates")
+
+_DASHBOARD_SECRET = os.getenv("DASHBOARD_SECRET", "")
+
+def require_auth(f):
+    """Simple token auth for write endpoints. Dev mode (no DASHBOARD_SECRET set) stays open."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not _DASHBOARD_SECRET:
+            return f(*args, **kwargs)
+        token = (
+            request.headers.get("X-Dashboard-Token") or
+            request.args.get("token") or
+            (request.get_json(silent=True) or {}).get("token")
+        )
+        if not secrets.compare_digest(token or "", _DASHBOARD_SECRET):
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
 
 # ── inject ticker names into all templates ────────────────────────────────────
 @app.context_processor
@@ -284,7 +303,7 @@ def _mc_portfolio(positions, targets_map, n_paths=8000):
         return 0, 0, 0, 0
     port_ret = np.zeros(n_paths)
     t = 21 / 252
-    rng = np.random.default_rng(seed=0)
+    rng = np.random.default_rng()  # H2 fix: no fixed seed — genuine MC variation for portfolio VaR/CVaR
     for p in positions:
         ticker = p["ticker"]
         w = float(p.get("weight", 0))
@@ -302,17 +321,20 @@ def _mc_portfolio(positions, targets_map, n_paths=8000):
 
 
 def _run_scheduled_rebalance():
-    """Background task to refresh the portfolio engine weekly."""
+    """Background task — runs the unified engine pipeline (engine/scheduler.py).
+
+    Replaces the old subprocess call to portfolio/recalculate_engine.py (legacy
+    CSV→JSON path that the dashboard never read). The modern scheduler writes
+    everything to engine_data.db and shared/state/*.json which the dashboard
+    reads exclusively.
+    """
     try:
-        log.info("⏰ [SCHEDULED REFRESH] Starting weekly portfolio rebalance...")
-        res = subprocess.run([sys.executable, str(ROOT / "portfolio" / "recalculate_engine.py")],
-                             capture_output=True, text=True, encoding="utf-8")
-        if res.returncode == 0:
-            log.info("✅ [SCHEDULED REFRESH] Weekly rebalance successful.")
-        else:
-            log.error(f"❌ [SCHEDULED REFRESH] Rebalance failed: {res.stderr}")
+        log.info("⏰ [SCHEDULED REFRESH] Starting unified pipeline via engine.scheduler...")
+        from engine.scheduler import run_pipeline
+        run_pipeline(dry_run=False)
+        log.info("✅ [SCHEDULED REFRESH] Unified pipeline complete.")
     except Exception as e:
-        log.error(f"❌ [SCHEDULED REFRESH] Error: {e}")
+        log.error(f"❌ [SCHEDULED REFRESH] Pipeline error: {e}")
 
 
 def start_scheduler():
@@ -701,8 +723,8 @@ def api_ticker_mc(ticker):
     drift = edge * vol * t_val
     sigma = vol * np.sqrt(t_val)
 
-    rng = np.random.default_rng(42)
-    n   = 10_000
+    rng = np.random.default_rng(42)   # kept for chart reproducibility (per-ticker histogram)
+    n   = 50_000                      # H2 fix: smoother histogram, was 10_000
     sim_ret = rng.normal(drift, sigma, n)
     sim_prices = cur * np.exp(sim_ret)
 
@@ -795,7 +817,7 @@ def api_portfolio_mc():
 
     n_paths = 8000
     port_ret = np.zeros(n_paths)
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng()  # H2 fix: no fixed seed — genuine MC variation
     t_val = 21 / 252
 
     for p in positions:
@@ -908,6 +930,7 @@ def api_pipeline_status():
 
 
 @app.route("/api/override", methods=["POST"])
+@require_auth
 def api_override():
     data = request.get_json()
     ok = _exec("""
@@ -923,6 +946,7 @@ def api_override():
 
 
 @app.route("/api/label", methods=["POST"])
+@require_auth
 def api_label():
     data = request.get_json()
     ok = _exec("""
@@ -1211,6 +1235,7 @@ def api_pead():
 
 
 @app.route("/api/log_trade", methods=["POST"])
+@require_auth
 def api_log_trade():
     """
     Log a manual transaction directly to the SQLite DB.
@@ -1332,6 +1357,7 @@ def api_log_trade():
 
 
 @app.route("/api/sync_ledger", methods=["POST"])
+@require_auth
 def api_sync_ledger():
     """Manual trigger to re-import the ledger.csv into the DB."""
     try:
@@ -1385,7 +1411,6 @@ def api_performance():
     # WORKFLOW-AWARE FIX: Sum both standalone FEE rows and fees integrated into trade rows
     # For FEE actions, total_eur is the fee. For other actions, use explicit fee_eur column.
     total_fees = 0
-    debug_ledger = []
     for t in trades_rows:
         act = (t.get("action") or "").upper()
         v_eur = float(t.get("total_eur") or 0)
@@ -1398,13 +1423,8 @@ def api_performance():
             
         if row_fee != 0:
             total_fees += row_fee
-            debug_ledger.append(f"{t['date']} | {act} | val={v_eur} | fee={f_eur} | ADDED={row_fee}")
     
-    with open("fee_debug.log", "w") as f:
-        f.write("\n".join(debug_ledger))
-        f.write(f"\nTOTAL: {total_fees}")
-    
-    log.info(f"DEBUG: Calculated total_fees={total_fees}. Details in fee_debug.log")
+    log.debug(f"Fee calculation: total_fees={total_fees:.2f} from {len(trades_rows)} rows")
 
     # ── 3. Current portfolio state ────────────────────────────────────────
     positions = _q("""
@@ -3015,5 +3035,6 @@ if __name__ == "__main__":
     _ensure_signal_queue_table()
     _ensure_watchlist_table()
     start_scheduler()
-    log.info("Control Tower (Flask) starting — http://localhost:5000 and http://0.0.0.0:5000 (LAN)")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    log.info(f"Control Tower (Flask) starting — http://localhost:5000 and http://0.0.0.0:5000 (LAN) (debug={debug_mode})")
+    app.run(host="0.0.0.0", port=5000, debug=debug_mode)

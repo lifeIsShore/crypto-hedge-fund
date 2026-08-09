@@ -33,30 +33,52 @@ GBP_SUFFIXES = ('.L',)
 FALLBACK_USDEUR = 0.92
 FALLBACK_GBPEUR = 1.17
 
+def _get_fx_rate(pair: str) -> float:
+    """
+    H3 fix: Get FX rate from DB (most recent), falling back to env var, then hardcoded constant.
+    pair: 'USDEUR' or 'GBPEUR'
+    """
+    HARDCODED = {"USDEUR": FALLBACK_USDEUR, "GBPEUR": FALLBACK_GBPEUR}
+
+    # 1. Try DB (fx_rates table, populated daily by ingestion)
+    try:
+        from engine.db.db import get_session
+        from sqlalchemy import text
+        session = get_session()
+        try:
+            row = session.execute(text(
+                "SELECT rate FROM fx_rates WHERE pair = :p ORDER BY date DESC LIMIT 1"
+            ), {"p": pair}).fetchone()
+            if row and row[0]:
+                return float(row[0])
+        finally:
+            session.close()
+    except Exception:
+        pass
+
+    # 2. Try env var
+    env_key = f"FALLBACK_{pair}"
+    env_val = os.getenv(env_key)
+    if env_val:
+        try:
+            return float(env_val)
+        except ValueError:
+            pass
+
+    # 3. Hardcoded last resort
+    logger.warning(f"Using hardcoded FX fallback for {pair}: {HARDCODED[pair]}")
+    return HARDCODED.get(pair, 1.0)
+
 def _apply_fx_if_needed(ticker: str, price: float) -> float:
-    """Converts price to EUR if ticker is non-EUR (US/UK)."""
+    """Converts price to EUR if ticker is non-EUR (US/UK). H3 fix: DB-first, no more live yfinance call per import."""
     if any(ticker.endswith(s) for s in EUR_SUFFIXES):
         return price
-        
-    rate = FALLBACK_USDEUR
+
     if any(ticker.endswith(s) for s in GBP_SUFFIXES):
-        rate = FALLBACK_GBPEUR
-    
-    # Try to get live rate if possible (minimal period for speed)
-    try:
-        import yfinance as yf
-        pair = "GBPEUR=X" if rate == FALLBACK_GBPEUR else "EURUSD=X"
-        data = yf.download(pair, period='1d', progress=False)
-        if not data.empty:
-            close_data = data['Close']
-            if isinstance(close_data, pd.DataFrame):
-                close_data = close_data.squeeze()
-            live_rate = float(close_data.iloc[-1])
-            if pair == "EURUSD=X": live_rate = 1.0 / live_rate
-            rate = live_rate
-    except:
-        pass # use fallback
-        
+        rate = _get_fx_rate("GBPEUR")
+    else:
+        rate = _get_fx_rate("USDEUR")
+
     return price * rate
 
 # Path to ledger.csv relative to project root

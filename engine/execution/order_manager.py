@@ -36,6 +36,8 @@ class Order:
     slippage_pct:float = 0.0005
 
 
+from portfolio.src.config import DRIFT_THRESHOLD_BUY, DRIFT_THRESHOLD_SELL
+
 def generate_order_queue(
     suggested_weights: pd.Series,
     current_weights: pd.Series,
@@ -53,8 +55,19 @@ def generate_order_queue(
         delta_w   = target_w - current_w
         delta_eur = delta_w * total_portfolio_eur
 
+        # Hard size floor
         if abs(delta_eur) < min_trade_eur:
             continue
+
+        # Tolerance band check — asymmetric (let winners run, cut losers faster)
+        if delta_w > 0:   # BUY signal
+            drift_pct = delta_w / target_w if target_w > 0 else 0
+            if drift_pct < abs(DRIFT_THRESHOLD_BUY):
+                continue
+        elif delta_w < 0:  # SELL signal
+            drift_pct = abs(delta_w) / current_w if current_w > 0 else 0
+            if drift_pct < DRIFT_THRESHOLD_SELL:
+                continue
 
         action = "BUY" if delta_eur > 0 else "SELL"
         orders.append(Order(
@@ -62,7 +75,7 @@ def generate_order_queue(
         ))
 
     orders.sort(key=lambda o: abs(o.value_eur), reverse=True)
-    logger.info(f"Order queue: {len(orders)} orders generated")
+    logger.info(f"Order queue: {len(orders)} orders generated (tolerance bands applied)")
     return orders
 
 

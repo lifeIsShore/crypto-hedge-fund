@@ -196,37 +196,37 @@ TICKER_SECTORS = {
     'MSF.DE': 'Technology', 'MSFT': 'Technology',
     'AMZ.DE': 'Ecommerce', 'AMZN': 'Ecommerce',
     'NVD.DE': 'Semiconductors', 'NVDA': 'Semiconductors',
-    'ABE.DE': 'Technology', 'GOOGL': 'Technology',
+    'ABEA.DE': 'Technology', 'GOOGL': 'Technology',
     'FB2A.DE': 'Technology', 'META': 'Technology',
     'TL0.DE': 'Automotive', 'TSLA': 'Automotive',
-    'CAS.DE': 'Software', 'CRM': 'Software',
+    'SFC.DE': 'Software', 'CRM': 'Software',
     'ADB.DE': 'Software', 'ADBE': 'Software',
     'NFC.DE': 'Entertainment', 'NFLX': 'Entertainment',
     'AMD.DE': 'Semiconductors', 'AMD': 'Semiconductors',
-    'INZ.DE': 'Semiconductors', 'INTC': 'Semiconductors',
+    '1IN.DE': 'Semiconductors', 'INTC': 'Semiconductors',
     'QCI.DE': 'Semiconductors', 'QCOM': 'Semiconductors',
-    'ASQ.DE': 'Semiconductors', 'AMAT': 'Semiconductors',
-    'MTH.DE': 'Semiconductors', 'MU': 'Semiconductors',
-    'TNA.DE': 'Semiconductors', 'TXN': 'Semiconductors',
+    'AP2.DE': 'Semiconductors', 'AMAT': 'Semiconductors',
+    'MTU.DE': 'Semiconductors', 'MU': 'Semiconductors',
+    'TII.DE': 'Semiconductors', 'TXN': 'Semiconductors',
     'ORC.DE': 'Software', 'ORCL': 'Software',
-    'TSFA.DE': 'Semiconductors', 'TSM': 'Semiconductors',
+    'TSM.DE': 'Semiconductors', 'TSM': 'Semiconductors',
     'KLA.DE': 'Semiconductors', 'KLAC': 'Semiconductors',
-    '6N0.DE': 'Software', 'NOW': 'Software',
-    '6SN.DE': 'Software', 'SNOW': 'Software',
-    '18U.DE': 'Transportation', 'UBER': 'Transportation',
-    '2PY.DE': 'Financials', 'PYPL': 'Financials',
-    '6SP.DE': 'Entertainment', 'SPOT': 'Entertainment',
-    '2H1.DE': 'Ecommerce', 'SHOP': 'Ecommerce',
+    'NOW.DE': 'Software', 'NOW': 'Software',
+    'SNW.DE': 'Software', 'SNOW': 'Software',
+    'UT8.DE': 'Transportation', 'UBER': 'Transportation',
+    'PYPL.DE': 'Financials', 'PYPL': 'Financials',
+    '639.DE': 'Entertainment', 'SPOT': 'Entertainment',
+    'SHOP.DE': 'Ecommerce', 'SHOP': 'Ecommerce',
     '1S2.DE': 'Software', 'FIG': 'Software',
     '3V64.DE': 'Financials', 'V': 'Financials',
     'M9Z.DE': 'Financials', 'MA': 'Financials',
     'CMC.DE': 'Financials', 'JPM': 'Financials',
     'NCB.DE': 'Financials', 'BAC': 'Financials',
     'GOS.DE': 'Financials', 'GS': 'Financials',
-    'M9N.DE': 'Financials', 'MS': 'Financials',
+    'DWD.DE': 'Financials', 'MS': 'Financials',
     'BRYN.DE': 'Financials', 'BRK-B': 'Financials',
-    'AEC.DE': 'Financials', 'AXP': 'Financials',
-    'BLA.DE': 'Financials', 'BLK': 'Financials',
+    'AXP.DE': 'Financials', 'AXP': 'Financials',
+    'BLQA.DE': 'Financials', 'BLK': 'Financials',
     'SAP.DE': 'Software', 'ALV.DE': 'Insurance', 'SIE.DE': 'Industrial',
     'BAYN.DE': 'Healthcare', 'BMW.DE': 'Automotive', 'DTE.DE': 'Telecom',
     'BAS.DE': 'Chemicals', 'MBG.DE': 'Automotive', 'ADS.DE': 'Consumer',
@@ -239,7 +239,7 @@ TICKER_SECTORS = {
     'SHL.DE': 'Healthcare', 'COK.DE': 'Technology', 'AIR.DE': 'Industrial',
     'AZN.L': 'Pharma', 'SHELL.AS': 'Energy', 'TTE.PA': 'Energy', 'BP.L': 'Energy',
     'ASML.AS': 'Semiconductors', 'ASML.NA': 'Semiconductors', 'NOV.DE': 'Pharma',
-    'NVS': 'Pharma', 'S92G.DE': 'Renewables', 'UNH': 'Healthcare', 'JNJ': 'Healthcare',
+    'NVS': 'Pharma', 'S92.DE': 'Renewables', 'UNH': 'Healthcare', 'JNJ': 'Healthcare',
     'PFE': 'Healthcare', 'LLY': 'Healthcare', 'ABBV': 'Healthcare', 'MRK': 'Healthcare',
     'AMGN': 'Healthcare', 'GILD': 'Biotech', 'TMO': 'Healthcare', 'BNTX': 'Biotech',
     'VRTX': 'Biotech', 'VRT.DE': 'Biotech',
@@ -279,8 +279,8 @@ ASSET_UNIVERSE = [
     # --- Tech & Semiconductors ---
     'APC.DE', 'MSF.DE', 'AMZ.DE', 'NVD.DE', 'ABEA.DE', 'FB2A.DE', 'TL0.DE', 
     'SFC.DE', 'ADB.DE', 'NFC.DE', 'AMD.DE', '1IN.DE', 'QCI.DE', 'AP2.DE', 
-    'MTU.DE', 'TII.DE', 'ORC.DE', 'TSM.DE', 'KLAC', 'NOW.DE', 'SNW.DE', 
-    'UT8.DE', 'PYPL.DE', '639.DE', 'SHOP.DE', 'FIG',
+    'MTU.DE', 'TII.DE', 'ORC.DE', 'TSM.DE', 'KLA.DE', 'NOW.DE', 'SNW.DE', 
+    'UT8.DE', 'PYPL.DE', '639.DE', 'SHOP.DE', '1S2.DE',
     
     # --- European Blue Chips ---
     'SAP.DE', 'ALV.DE', 'SIE.DE', 'BAYN.DE', 'BMW.DE', 'DTE.DE', 'BAS.DE', 
@@ -369,3 +369,9 @@ FEE_DRAG_TARGET = 0.005  # 0.5% of total portfolio value
 # Halt engine if yfinance reports a daily move greater than this threshold 
 # (protects against unadjusted stock splits).
 MAX_DAILY_MOVE_ANOMALY = 0.21  # +/- 21%
+
+# Sanity check: benchmark must be in the universe for beta computation
+assert BENCHMARK_TICKER in ASSET_UNIVERSE, (
+    f"BENCHMARK_TICKER '{BENCHMARK_TICKER}' is not in ASSET_UNIVERSE. "
+    f"Beta computation will fail. Add it to ETF_TICKERS."
+)

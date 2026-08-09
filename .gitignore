@@ -110,6 +110,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Database files — never commit production DB
+engine_data.db
+*.db
+
 # Environments
 .env
 .venv
