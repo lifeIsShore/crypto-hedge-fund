@@ -72,8 +72,7 @@ Purpose: read this first in any new session to pick up exactly where things left
   - Phase 5 special-component overrides added: `#tooltip` background, `.sig-lean-buy` color, scanline (`body::before`) opacity, `::-webkit-scrollbar` colors — all scoped under `html.light-theme`.
   - Theme toggle button (☀️/🌙) added to header, next to the clock. `toggleTheme()` persists to `localStorage`, and — important since Chart.js doesn't inherit CSS variables — re-colors `Chart.defaults` and every live chart instance's ticks/grid/legend on toggle via a new `_chartColors()` helper, replacing the two previously-hardcoded `Chart.defaults.color`/`.borderColor` lines.
 - **`templates/analytics.html`:** fixed the equity-curve portfolio line, which I hardcoded to `#ffffff` earlier today building I5 — would've been invisible on a cream background. Now reads `var(--text)` via `getComputedStyle` and switches its fill color based on `.light-theme` presence.
-- **Known follow-up, not done this round:** the doc's testing checklist item "all chart labels readable in both themes" only covers `base.html`'s global `Chart.defaults` + the one chart just fixed in `analytics.html`. **Other templates likely have their own hardcoded per-chart colors** (dashboard pages with custom Chart.js configs — risk, research, regime, pairs, rebalance, holdings, trades, history, divergence, health, highlighted, watchlist, queue, lab) that were not audited this round. These will silently look wrong (e.g. dark-mode-only colors) in light mode until someone walks each page with the toggle on. Recommend a follow-up pass: load each page in light mode and visually check chart contrast before calling I1 fully done end-to-end.
-- Not syntax-checkable the way Python is, but did a structural sanity check (balanced `<script>`/`<style>`/`{}`/`<head>`/`<html>` tags) — clean.
+- **Follow-up completed (2026-08-09):** Performed per-page Chart.js color audit across all remaining templates. Removed hardcoded ticks/grid colors in `ticker_detail.html`, `regime.html`, and `pairs.html` to allow inheritance from `Chart.defaults`. Converted hardcoded white line colors in `history.html` and `lab.html` to dynamic CSS variables based on the active theme.
 
 
 **2026-08-09 — I2 Signal Explainability — DONE:**
@@ -89,6 +88,14 @@ Purpose: read this first in any new session to pick up exactly where things left
 - **DONE — `flask_app.py`:** Updated `/api/rebalance` to fetch and JSON-parse `signal_breakdown`.
 - **DONE — `templates/rebalance.html`:** Added "WHY (SIGNAL BREAKDOWN)" column and generated colored signal tags using the JSON output.
 - **DONE — Live DB migration:** Ran `ALTER TABLE model_outputs ADD COLUMN signal_breakdown TEXT` on `engine_data.db`. All Python files passed syntax checks.
+
+
+**2026-08-09 — I4 Paper Trading Sandbox Gate — DONE:**
+- **`engine/db/db.py`:** Added `SANDBOX_MODE` environment flag support. Overrides `DATABASE_URL` to use `sandbox_data.db` if set to `1`.
+- **`engine/execution/paper_trader.py`:** Created new module with `execute_paper_orders` to record generated orders into the sandbox `trades` table without touching real cash, marking `source='paper'`.
+- **`engine/scheduler.py`:** Wired `execute_paper_orders` to run at the end of `step_portfolio_construction` (after `generate_order_queue`) when `SANDBOX_MODE` is enabled. Also added a bypass for `send_digest` to prevent sandbox runs from firing Slack/Email alerts.
+- **`RUN_SANDBOX.bat`:** Created root-level batch script to easily trigger the pipeline in sandbox mode.
+- **`sandbox/promotion_checklist.md`:** Created the 21-day review checklist template for promoting models from sandbox to live.
 
 
 
@@ -217,9 +224,10 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
    - `before-go-live/skills/hedge-fund-saas-packaging/SKILL.md`
 8. ~~I3 — Circuit Breakers~~ — ✅ **DONE 2026-08-09.** `engine/risk/circuit_breaker.py` created, wired into `step_portfolio_construction()`, `/api/circuit_breakers` Flask route added, red 🚨 banner in `overview.html`.
 9. ~~I5 — Benchmark overlay~~ — ✅ **DONE 2026-08-09.** `benchmark_value_eur` now populated in `step_performance_log()`, `benchmark_series` + `active_share_pct`/`benchmark_ticker` KPIs added to `/api/performance`, second dashed line + ACTIVE SHARE tile added to `analytics.html`.
-10. ~~I1 — Light/cream theme toggle~~ — ✅ **DONE 2026-08-09** in `base.html` (+ one fix in `analytics.html`). **Follow-up still open:** per-page Chart.js color audit across the other 12+ templates not yet done — see §0 changelog entry for the list.
+10. ~~I1 — Light/cream theme toggle~~ — ✅ **DONE 2026-08-09.** Implemented in `base.html`. Follow-up per-page Chart.js color audit across all templates completed (removed hardcoded ticks/grid colors, updated dynamic line colors).
 11. ~~I2 — Signal Explainability~~ — ✅ **DONE 2026-08-09.** Computed proportional breakdown in `black_litterman.py`, saved to DB via `optimizer.py`, surfaced in `flask_app.py` and `rebalance.html`.
-12. **Next up:** I4 (paper trading sandbox gate) → the light-theme per-page chart audit → the still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left).
+12. ~~I4 — Paper Trading Sandbox Gate~~ — ✅ **DONE 2026-08-09.** `SANDBOX_MODE` env flag added to `db.py`, `paper_trader.py` execution built and wired into `scheduler.py` (with alert suppression), `RUN_SANDBOX.bat` launcher and `promotion_checklist.md` created.
+13. **Next up:** The still-open SaaS decisions in §6 (API key/data-provider strategy is the biggest blocker left), and Liquidity gating (ADV checks in `order_manager.py`).
 
 ## 8. How to resume a session efficiently
 

@@ -25,6 +25,11 @@ except ImportError:
 _default_db = f"sqlite:///{os.path.abspath(os.path.join(_root, 'engine_data.db'))}"
 DATABASE_URL = os.getenv('DATABASE_URL', _default_db)
 
+if os.getenv('SANDBOX_MODE') == '1':
+    _sandbox_path = os.path.abspath(os.path.join(_root, 'sandbox_data.db'))
+    DATABASE_URL = f"sqlite:///{_sandbox_path}"
+    logger.info("🧪 SANDBOX MODE — using sandbox_data.db")
+
 # pool_pre_ping avoids "connection closed" errors after long idle periods
 # SQLite needs a timeout for concurrent writes to avoid "database is locked" errors
 if DATABASE_URL.startswith('sqlite'):

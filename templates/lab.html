@@ -736,7 +736,7 @@ function renderWeights(d) {
     type: 'doughnut',
     data: {
       labels: tickers,
-      datasets: [{ data: tickers.map(t => weights[t]*100), backgroundColor: PALETTE.slice(0, tickers.length), borderWidth: 2, borderColor: '#0d0f13' }],
+      datasets: [{ data: tickers.map(t => weights[t]*100), backgroundColor: PALETTE.slice(0, tickers.length), borderWidth: 2, borderColor: document.documentElement.classList.contains('light-theme') ? '#f3f0e6' : '#0d0f13' }],
     },
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '62%',
@@ -884,7 +884,7 @@ function renderMC(d) {
   // Add start line
   fanDatasets.unshift({
     data: new Array(horizon.length).fill(portSize),
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: document.documentElement.classList.contains('light-theme') ? 'rgba(30,37,53,0.2)' : 'rgba(255,255,255,0.2)',
     borderWidth: 1, borderDash: [4,4], pointRadius: 0, fill: false,
   });
 

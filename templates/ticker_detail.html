@@ -199,8 +199,8 @@ async function loadReturnsChart(){
       scales: {
         x: { display: false },
         y: {
-          ticks: { color: 'rgba(200,212,232,.6)', callback: v => v.toFixed(1)+'%' },
-          grid:  { color: 'rgba(30,37,53,.6)' }
+          ticks: { callback: v => v.toFixed(1)+'%' },
+          grid:  { }
         }
       }
     }
@@ -252,8 +252,8 @@ async function loadMCChart(){
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: 'rgba(200,212,232,.5)', maxTicksLimit: 6 }, grid: { display: false } },
-        y: { ticks: { color: 'rgba(200,212,232,.5)' }, grid: { color: 'rgba(30,37,53,.6)' } }
+        x: { ticks: { maxTicksLimit: 6 }, grid: { display: false } },
+        y: { ticks: { }, grid: { } }
       }
     }
   });

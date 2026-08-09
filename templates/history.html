@@ -176,7 +176,8 @@
           labels: equity.map(x => x.date),
           datasets: [{
             label: 'Portfolio Value EUR', data: equity.map(x => x.value),
-            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#ffffff',
+            backgroundColor: document.documentElement.classList.contains('light-theme') ? 'rgba(51,48,43,0.06)' : 'rgba(255,255,255,0.15)',
             fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3
           }]
         },
@@ -211,7 +212,8 @@
           labels: volDates,
           datasets: [{
             label: 'Rolling 21D Vol %', data: volVals,
-            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#ffffff',
+            backgroundColor: document.documentElement.classList.contains('light-theme') ? 'rgba(51,48,43,0.06)' : 'rgba(255,255,255,0.15)',
             fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3
           }]
         },
@@ -275,7 +277,8 @@
           labels: ddDates,
           datasets: [{
             label: 'Drawdown %', data: ddVals,
-            borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)',
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#ffffff',
+            backgroundColor: document.documentElement.classList.contains('light-theme') ? 'rgba(51,48,43,0.06)' : 'rgba(255,255,255,0.15)',
             fill: true, pointRadius: 0, borderWidth: 2, tension: 0.2
           }]
         },

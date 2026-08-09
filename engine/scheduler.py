@@ -530,6 +530,19 @@ def step_portfolio_construction():
     for o in orders:
         logger.info(f"  {o.action:4s} {o.ticker:12s} €{o.value_eur:>8.2f}")
 
+    if os.getenv("SANDBOX_MODE") == "1":
+        from engine.execution.paper_trader import execute_paper_orders
+        session_sandbox = get_session()
+        sb_price_rows = session_sandbox.execute(text("""
+            SELECT p.ticker, p.adj_close
+            FROM prices p
+            INNER JOIN (SELECT ticker, MAX(date) AS max_date FROM prices GROUP BY ticker)
+            latest ON p.ticker=latest.ticker AND p.date=latest.max_date
+        """)).fetchall()
+        session_sandbox.close()
+        current_prices_sb = {r[0]: float(r[1]) for r in sb_price_rows if r[1] is not None}
+        execute_paper_orders(orders, current_prices_sb, portfolio_value)
+
     run_post_trade_risk(weights=suggested_weights.to_dict(), tickers=available_tickers)
 
 
@@ -990,12 +1003,15 @@ def run_pipeline(dry_run: bool = False):
 
     # ── End-of-run digest (Stream 9) ─────────────────────────────────────────
     if not dry_run:
-        try:
-            from engine.alerting.digest import send_digest
-            send_digest(step_results=_step_results, date=TODAY,
-                        risk_summary=_build_risk_summary())
-        except Exception as e:
-            logger.warning(f"Digest send failed (non-fatal): {e}")
+        if os.getenv("SANDBOX_MODE") == "1":
+            logger.info("🧪 Sandbox mode: skipping email/slack digest.")
+        else:
+            try:
+                from engine.alerting.digest import send_digest
+                send_digest(step_results=_step_results, date=TODAY,
+                            risk_summary=_build_risk_summary())
+            except Exception as e:
+                logger.warning(f"Digest send failed (non-fatal): {e}")
 
 
 if __name__ == '__main__':
