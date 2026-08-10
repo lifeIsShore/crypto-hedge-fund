@@ -5,8 +5,6 @@
 
 import numpy as np
 import pandas as pd
-import pandas_datareader.data as web
-import statsmodels.api as sm
 import logging
 from datetime import datetime, timedelta
 
@@ -18,7 +16,17 @@ def fetch_fama_french_factors(start_date: str, end_date: str) -> pd.DataFrame:
     Downloads the Fama-French 3-factor daily data from Kenneth French's website
     via pandas-datareader. Returns a DataFrame with columns:
         Mkt-RF, SMB, HML, RF  (all in decimal form, i.e. /100)
+
+    NOTE (2026-08-10): pandas_datareader is imported HERE, lazily, not at module
+    level. This function is research-only (used by 03_factor_model.ipynb) and is
+    NOT part of the daily production path — engine/portfolio/black_litterman.py
+    only imports `black_litterman` and `compute_market_implied_returns` from this
+    file, never this function. A module-level `import pandas_datareader.data`
+    was previously crashing the entire daily portfolio-construction pipeline step
+    with ModuleNotFoundError whenever pandas_datareader wasn't installed in the
+    venv, even though the production path never used it. See PROJECT-STATE.md.
     """
+    import pandas_datareader.data as web
     logger.info("Fetching Fama-French 3-factor data from Kenneth French's website...")
     try:
         ff = web.DataReader('F-F_Research_Data_Factors_daily', 'famafrench',
@@ -45,7 +53,14 @@ def run_factor_regression(
         alpha, beta_mkt, beta_smb, beta_hml,
         alpha_tstat, alpha_pvalue, r_squared,
         annualised_alpha_pct
+
+    NOTE (2026-08-10): statsmodels is imported HERE, lazily, not at module
+    level, for the same reason as pandas_datareader above — this function is
+    research-only (03_factor_model.ipynb) and outside the daily production
+    path. See the note on fetch_fama_french_factors().
     """
+    import statsmodels.api as sm
+
     # Align on common dates
     aligned = pd.concat([asset_returns, ff_factors], axis=1).dropna()
     aligned.columns = ['R_asset', 'Mkt_RF', 'SMB', 'HML', 'RF']
