@@ -263,17 +263,21 @@ CREATE TABLE IF NOT EXISTS divergence_labels (
 CREATE INDEX IF NOT EXISTS idx_div_labels_unlabeled ON divergence_labels (detected_at);
 
 CREATE TABLE IF NOT EXISTS laggard_screen_results (
-    id            INTEGER     PRIMARY KEY AUTOINCREMENT,
-    screen_date   TEXT        NOT NULL,
-    ticker        TEXT        NOT NULL,
-    sector        TEXT,
-    period_return REAL,
-    relative_rank REAL,
-    catch_up_gap  REAL,
-    conviction    TEXT,
-    notes         TEXT,
-    logged_at     TEXT        DEFAULT (datetime('now'))
+    id                 INTEGER     PRIMARY KEY AUTOINCREMENT,
+    screen_date        TEXT        NOT NULL,
+    ticker             TEXT        NOT NULL,
+    sector             TEXT,
+    period_return      REAL,
+    relative_rank      REAL,
+    peer_median_return REAL,       -- J7: added, was missing from original schema
+    catch_up_gap       REAL,
+    conviction         TEXT,
+    disqualifiers      TEXT,       -- J7: added — JSON array of {type, message} objects
+    reviewed           INTEGER     DEFAULT 0,   -- J7: added — manual "seen it" flag for the dashboard
+    notes              TEXT,
+    logged_at          TEXT        DEFAULT (datetime('now'))
 );
+CREATE INDEX IF NOT EXISTS idx_laggard_date ON laggard_screen_results (screen_date);
 
 -- ─────────────────────────────────────────────────────────────
 -- REGIME HISTORY  (Stream 5 — SQLite migration)

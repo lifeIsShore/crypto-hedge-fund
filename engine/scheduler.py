@@ -698,6 +698,46 @@ def step_performance_log():
     logger.info(f"[performance] Logged: €{total_val:,.2f} | Return: {daily_ret*100:+.2f}%")
 
 
+def step_laggard_screen():
+    """
+    Weekly (Monday) — sector rotation laggard screen (J7).
+
+    Deviation from the J7 doc worth flagging: SECTOR_ETF_MAP only has 3 broad
+    regional/market proxies (Nasdaq-100, DAX, MSCI World), not true per-sector
+    ETFs (XLK/XLE/XLF/...), while TICKER_SECTORS classifies tickers into ~20
+    granular sectors (Semiconductors, Software, Ecommerce, ...). There's no
+    honest way to match those two vocabularies 1:1, so `detect_rising_sectors`
+    is used here as a coarse "is the broad market in an uptrend" gate rather
+    than a per-sector filter: if none of the 3 proxies show sustained 8%+
+    momentum, skip the screen for the week (no point hunting laggards in a
+    falling market). If at least one is rising, the screen runs across every
+    real TICKER_SECTORS group with >=4 members — true sector-level gating
+    would need real sector ETF data this system doesn't ingest.
+    """
+    from engine.screens.laggard_screen import (
+        detect_rising_sectors, run_laggard_screen, persist_laggard_results, SECTOR_ETF_MAP
+    )
+    from portfolio.src.config import TICKER_SECTORS
+
+    rising = detect_rising_sectors(SECTOR_ETF_MAP)
+    if not rising:
+        logger.info("[laggard_screen] No broad-market uptrend detected this week — skipping")
+        return
+    logger.info(f"[laggard_screen] Broad-market gate passed via: {[r['sector'] for r in rising]}")
+
+    # Build peer groups from the real, granular sector classification
+    peer_groups = {}
+    for ticker, sector in TICKER_SECTORS.items():
+        if ticker in TICKERS:   # only tickers actually in this engine's universe
+            peer_groups.setdefault(sector, []).append(ticker)
+
+    candidates = run_laggard_screen(peer_groups)
+    if candidates:
+        persist_laggard_results(TODAY, candidates)
+    else:
+        logger.info(f"[laggard_screen] 0 candidates for {TODAY}")
+
+
 def step_lstm_train():
     """Saturday — walk-forward train LSTM for all tickers and save models."""
     from engine.alpha.lstm_model import LSTMAlpha
@@ -1030,6 +1070,7 @@ def run_pipeline(dry_run: bool = False):
     # ── Weekly steps (Monday) ─────────────────────────────────────────────────
     if WEEKDAY == 0:
         _run_step('W1. PEAD weekly refresh', step_pead_refresh, dry_run)
+        _run_step('W2. Laggard screen',       step_laggard_screen, dry_run)  # J7
 
     # ── Weekend steps (Saturday) ──────────────────────────────────────────────
     if WEEKDAY == 5:
