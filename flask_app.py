@@ -631,6 +631,29 @@ def divergence():
     )
 
 
+@app.route("/laggards")
+def laggards():
+    """J7 — sector rotation laggard screen results (most recent weekly run)."""
+    rows = _q("""
+        SELECT ticker, sector, period_return, relative_rank, peer_median_return,
+               catch_up_gap, conviction, disqualifiers, screen_date
+        FROM laggard_screen_results
+        WHERE screen_date = (SELECT MAX(screen_date) FROM laggard_screen_results)
+        ORDER BY catch_up_gap DESC
+    """)
+    import json as _json
+    for r in rows:
+        try:
+            r['disqualifiers'] = _json.loads(r.get('disqualifiers') or '[]')
+        except Exception:
+            r['disqualifiers'] = []
+    return render_template("laggards.html",
+        rows=rows,
+        page="laggards",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # JSON APIS  (consumed by Chart.js / DataTables on the frontend)
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Laggard Screen{% endblock %}
+
+{% block content %}
+
+<div class="alert alert-info" style="margin-bottom:14px">
+  Sector-rotation laggard candidates from the most recent weekly run{% if rows %} ({{ rows[0].screen_date }}){% endif %}.
+  This screen generates candidates, not decisions — every candidate still needs a manual look before acting.
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi good"><div class="kpi-label">CANDIDATES</div><div class="kpi-value">{{ rows|length }}</div><div class="kpi-sub">bottom-quartile peer performers</div></div>
+  <div class="kpi warn"><div class="kpi-label">HIGH CONVICTION</div><div class="kpi-value">{{ rows|selectattr('conviction','equalto','high')|list|length }}</div><div class="kpi-sub">top decile, no auto-flags</div></div>
+  <div class="kpi danger"><div class="kpi-label">WATCH TIER</div><div class="kpi-value">{{ rows|selectattr('conviction','equalto','watch')|list|length }}</div><div class="kpi-sub">an automated check flagged something</div></div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">LAGGARD CANDIDATES</span>
+    <span class="panel-badge">{{ rows|length }} THIS WEEK</span>
+  </div>
+  <div class="panel-body">
+
+    {% if not rows %}
+    <div class="alert alert-ok">
+      No candidates from the most recent run — either no broad-market uptrend was detected (screen skipped that week), or no sector had bottom-quartile laggards. Runs weekly, Mondays.
+    </div>
+    {% else %}
+    <table class="tbl" id="lag-tbl">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0,'lag-tbl','str')">TICKER</th>
+          <th onclick="sortTable(1,'lag-tbl','str')">SECTOR</th>
+          <th onclick="sortTable(2,'lag-tbl','num')">PERIOD RET</th>
+          <th onclick="sortTable(3,'lag-tbl','num')">PEER MEDIAN</th>
+          <th onclick="sortTable(4,'lag-tbl','num')">CATCH-UP GAP</th>
+          <th onclick="sortTable(5,'lag-tbl','num')">REL RANK</th>
+          <th>CONVICTION</th>
+          <th>DISQUALIFIER CHECKS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td style="font-weight:500;color:#fff">
+            {{ r.ticker }}
+            <br><span style="font-size:9px;color:var(--muted);font-weight:400">({{ ticker_names.get(r.ticker, '') }})</span>
+          </td>
+          <td style="color:var(--muted);font-size:10px">{{ r.sector }}</td>
+          <td style="color:{{ 'var(--accent)' if r.period_return >= 0 else 'var(--accent2)' }}">
+            {{ '%+.1f'|format(r.period_return * 100) }}%
+          </td>
+          <td style="color:var(--muted)">{{ '%+.1f'|format(r.peer_median_return * 100) }}%</td>
+          <td style="color:var(--accent3)">{{ '%+.1f'|format(r.catch_up_gap * 100) }}%</td>
+          <td style="color:var(--muted)">{{ '%.2f'|format(r.relative_rank) }}</td>
+          <td>
+            {% if r.conviction == 'high' %}
+              <span class="tag tag-green">HIGH</span>
+            {% elif r.conviction == 'medium' %}
+              <span class="tag tag-blue">MEDIUM</span>
+            {% else %}
+              <span class="tag tag-red">WATCH</span>
+            {% endif %}
+          </td>
+          <td style="max-width:340px">
+            {% for d in r.disqualifiers %}
+              {% if d.type == 'flag' %}
+                <div style="font-size:10px;color:var(--accent2);margin-bottom:3px">🚫 {{ d.message }}</div>
+              {% else %}
+                <div style="font-size:10px;color:var(--accent3);margin-bottom:3px">⚠ {{ d.message }}</div>
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header"><span class="panel-title">WHAT'S AUTOMATED VS MANUAL</span></div>
+  <div class="panel-body" style="font-size:11px;line-height:1.8;color:var(--muted)">
+    <div>🚫 <strong style="color:var(--text)">Red flags</strong> — an automated check actually ran and found something (elevated debt/equity, elevated vol-of-vol). Downgrades conviction to WATCH but doesn't remove the candidate.</div>
+    <div>⚠ <strong style="color:var(--text)">Manual required</strong> — insider selling, sanctions/legal, and governance checks aren't automatable with the data this system has. Always shown as a reminder, never affects conviction on its own.</div>
+    <div style="margin-top:8px">Debt/equity check only runs once fundamental data is wired in (J6) — until then it's silently unavailable, not silently passed.</div>
+  </div>
+</div>
+
+{% endblock %}
