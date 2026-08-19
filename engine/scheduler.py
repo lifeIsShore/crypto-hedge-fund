@@ -128,8 +128,38 @@ def step_ledger_import():
 
 
 def step_ingest():
+    """
+    Bug fix (2026-08-20): this used to call run_ingestion(TICKERS, HISTORY_START, TODAY)
+    unconditionally — re-downloading ~4.5 years of history for all 135 tickers via
+    yfinance on EVERY daily run. That was the direct cause of the recurring
+    "Slow step: 1. Data ingestion took 422s (threshold 120s)" alert.
+    Now: fetch incrementally from the latest date already in the DB (with a small
+    overlap buffer to catch adjusted-close revisions), falling back to the full
+    HISTORY_START only when the DB has no rows yet (first run / new ticker).
+    """
     from engine.data.ingestion import run_ingestion
-    run_ingestion(TICKERS, HISTORY_START, TODAY)
+    from engine.db.db import get_session
+    from sqlalchemy import text
+
+    INCREMENTAL_OVERLAP_DAYS = 5
+
+    from_date = HISTORY_START
+    try:
+        session = get_session()
+        row = session.execute(text("SELECT MAX(date) FROM prices")).fetchone()
+        session.close()
+        if row and row[0]:
+            latest_dt = datetime.datetime.strptime(str(row[0])[:10], '%Y-%m-%d').date()
+            overlap_dt = latest_dt - datetime.timedelta(days=INCREMENTAL_OVERLAP_DAYS)
+            # Never go earlier than HISTORY_START, and never later than TODAY
+            history_start_dt = datetime.datetime.strptime(HISTORY_START, '%Y-%m-%d').date()
+            from_date = str(max(overlap_dt, history_start_dt))
+    except Exception as e:
+        logger.warning(f"[ingest] Could not determine latest DB date, falling back to full history: {e}")
+        from_date = HISTORY_START
+
+    logger.info(f"[ingest] Fetching from {from_date} (incremental, overlap={INCREMENTAL_OVERLAP_DAYS}d)")
+    run_ingestion(TICKERS, from_date, TODAY)
 
 
 def _mirror_all_state_files():
@@ -623,7 +653,7 @@ def step_performance_log():
     
     # 3. Get previous day's value for return calculation
     prev_row = session.execute(text("""
-        SELECT portfolio_value_eur FROM performance_history 
+        SELECT date, portfolio_value_eur FROM performance_history 
         WHERE date < :d ORDER BY date DESC LIMIT 1
     """), {'d': TODAY}).fetchone()
     
@@ -637,12 +667,42 @@ def step_performance_log():
     """), {'d': TODAY}).fetchone()
     
     flow = float(flow_row[0] or 0)
-    prev_val = float(prev_row[0]) if prev_row else total_val - flow
-    
-    # Adjusted Return = (Ending Value - Cash Flow - Starting Value) / Starting Value
+    prev_val = float(prev_row[1]) if prev_row else total_val - flow
+
+    # Bug fix (2026-08-20): daily_return_pct used to be computed against
+    # whatever row happened to be logged most recently, with no check on
+    # how long ago that was. If the pipeline skipped days (or a manual DB
+    # correction changed portfolio_value_eur without being routed through
+    # DEPOSIT/WITHDRAWAL), the resulting number is a multi-day or corrective
+    # jump mislabeled as a single day's return (this is what produced the
+    # "-39.62%" print). Now: (a) only treat it as a true daily return if the
+    # previous row is exactly one calendar day back, otherwise log it as a
+    # gap-adjusted return and flag it explicitly; (b) fire a CRITICAL alert
+    # instead of silently trusting any |return| > 15%, since that's either a
+    # real emergency or a data/accounting bug either way worth a human look.
+    is_gap = False
+    if prev_row:
+        prev_date = datetime.datetime.strptime(str(prev_row[0])[:10], '%Y-%m-%d').date()
+        today_date = datetime.datetime.strptime(TODAY, '%Y-%m-%d').date()
+        is_gap = (today_date - prev_date).days > 1
+
     daily_ret = 0.0
     if prev_val > 0:
         daily_ret = (total_val - flow - prev_val) / prev_val
+
+    if is_gap:
+        logger.warning(
+            f"[performance] Previous logged value is from {prev_row[0]}, not yesterday — "
+            f"'daily_return_pct' below actually covers that whole gap, not one day."
+        )
+    if abs(daily_ret) > 0.15:
+        send_alert(
+            f"🚨 Performance logging computed an unusually large "
+            f"{'gap-adjusted ' if is_gap else 'daily '}return of {daily_ret*100:+.2f}% "
+            f"(prev={prev_val:,.2f} EUR on {prev_row[0] if prev_row else 'n/a'}, "
+            f"today={total_val:,.2f} EUR). Verify this isn't a data/accounting error "
+            f"before trusting the dashboard."
+        )
     
     # I5: Benchmark equity curve — track MSCI World (EUNL.DE) alongside portfolio
     from portfolio.src.config import BENCHMARK_TICKER
@@ -1017,13 +1077,35 @@ def _build_risk_summary() -> dict:
             INNER JOIN (SELECT ticker, MAX(date) AS max_date FROM positions_history GROUP BY ticker)
             latest ON p.ticker=latest.ticker AND p.date=latest.max_date
         """)).fetchone()
+        # Bug fix (2026-08-20): 'regime' was never in risk_metrics (see
+        # post_trade.py fix note) so this always fell back to 'unknown'.
+        # The human-readable label is now logged to pipeline_logs by
+        # run_post_trade_risk(); read it back here instead of risk_metrics.
+        regime_row = session.execute(text("""
+            SELECT detail FROM pipeline_logs
+            WHERE step_name='post_trade_risk' AND message LIKE 'Regime label:%'
+              AND run_date=:d
+            ORDER BY id DESC LIMIT 1
+        """), {'d': TODAY}).fetchone()
+        # Bug fix (2026-08-20): this used to be stocks-only (SUM(value_eur)
+        # from positions_history), while step_performance_log() reports
+        # stocks+cash — the digest showed two contradictory "portfolio value"
+        # numbers for the same run. Add cash here so both figures agree.
+        cash_row = session.execute(text(
+            "SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1"
+        )).fetchone()
         session.close()
         m = {r[0]: r[1] for r in metrics_rows}
+        stock_value = float(val_row[0] or 0)
+        cash_value = float(cash_row[0] if cash_row else 0)
         return {
-            'var_95': m.get('var_95'), 'regime': m.get('regime', 'unknown'),
+            'var_95': m.get('var_95'),
+            'regime': regime_row[0] if regime_row else 'unknown',
             'pre_trade_violations': int(violations[0]) if violations else 0,
             'orders_blocked': int(violations[0] or 0) > 0,
-            'portfolio_value_eur': float(val_row[0] or 0),
+            'stock_value_eur': stock_value,
+            'cash_eur': cash_value,
+            'portfolio_value_eur': stock_value + cash_value,
         }
     except Exception as e:
         logger.warning(f"Risk summary failed: {e}")

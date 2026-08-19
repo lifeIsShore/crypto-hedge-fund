@@ -390,15 +390,22 @@ def check_api_connectivity() -> dict:
     results = {}
     probes = {
         "yahoo_finance": "https://query1.finance.yahoo.com/v8/finance/chart/SPY?interval=1d&range=1d",
-        "fred":          "https://fred.stlouisfed.org/",
+        # Use the public FRED REST API (no key needed for a simple ping).
+        # The browser homepage drops programmatic connections; the API endpoint
+        # returns a fast JSON 200 even without an API key (returns error JSON, still 200).
+        "fred": "https://api.stlouisfed.org/fred/series?series_id=DGS10&api_key=invalid_key&file_type=json",
     }
     for name, url in probes.items():
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 results[name] = {"ok": True,  "status": resp.status}
         except urllib.error.HTTPError as e:
-            results[name] = {"ok": False, "status": e.code,   "error": str(e.reason)}
+            # FRED returns HTTP 400 for a bad key — that still means the server is UP
+            if name == "fred" and e.code in (400, 401, 403):
+                results[name] = {"ok": True, "status": e.code, "note": "API reachable (auth error expected)"}
+            else:
+                results[name] = {"ok": False, "status": e.code, "error": str(e.reason)}
         except Exception as e:
             results[name] = {"ok": False, "status": None, "error": str(e)[:120]}
     return results

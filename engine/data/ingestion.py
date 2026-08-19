@@ -490,11 +490,6 @@ async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.Da
             else:
                 logger.warning(f"All sources failed for {ticker} — skipped")
 
-            if not df.empty:
-                frames.append(df)
-            else:
-                logger.warning(f"All sources failed for {ticker} — skipped")
-
     if not frames:
         return pd.DataFrame()
     return pd.concat(frames, ignore_index=True)
@@ -515,6 +510,19 @@ def persist_prices(df: pd.DataFrame):
 
     from engine.db.db import get_session
     from sqlalchemy import text
+
+    # Drop rows where close or adj_close is NaN — these violate the NOT NULL
+    # constraint and usually come from yfinance returning volume-only rows for
+    # tickers that had no trading activity on a given day (e.g. DBXD.DE).
+    before = len(df)
+    df = df[df['close'].notna() & df['adj_close'].notna()].copy()
+    dropped = before - len(df)
+    if dropped:
+        logger.warning(f"persist_prices: dropped {dropped} rows with NaN close/adj_close")
+
+    if df.empty:
+        logger.warning("persist_prices: no valid rows to write after NaN filter")
+        return
 
     session = get_session()
     count = 0

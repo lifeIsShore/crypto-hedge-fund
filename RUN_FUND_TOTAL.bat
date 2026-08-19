@@ -3,7 +3,7 @@ SETLOCAL EnableDelayedExpansion
 set PYTHONIOENCODING=utf-8
 
 :: ── Venv Python — all project deps (sqlalchemy, aiohttp, etc.) live here ──
-set PYTHON=C:\Users\user\.venv\Scripts\python.exe
+set PYTHON=python
 
 echo ============================================================
 echo   HEDGE FUND CONTROL TOWER - UNIFIED SYSTEM RUNNER
@@ -55,7 +55,7 @@ if /i "!train!"=="y" (
 )
 
 :: 5. MIRRORING & RECONCILIATION
-echo [5/6] Mirroring Research to Production & Rebalancing...
+echo [5/6] Mirroring Research to Production ^& Rebalancing...
 %PYTHON% -m engine.alpha.pead_alpha --mirror-only
 %PYTHON% -m engine.scheduler --pipeline-only
 

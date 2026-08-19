@@ -4,7 +4,7 @@ set SANDBOX_MODE=1
 set PYTHONIOENCODING=utf-8
 
 :: ── Venv Python — all project deps live here ──
-set PYTHON=C:\Users\user\.venv\Scripts\python.exe
+set PYTHON=python
 
 echo ============================================================
 echo   HEDGE FUND SANDBOX — Paper Trading Mode

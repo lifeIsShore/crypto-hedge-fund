@@ -45,14 +45,39 @@ else:
 Session = sessionmaker(bind=engine)
 
 
+# Bug fix (2026-08-20): ensure_schema() used to gate on a single table
+# ('positions_history') existing. Since that table has existed since the
+# original DB was created, execute_schema() never ran again after the first
+# setup — so any table added to schema.sql later (e.g. earnings_calendar,
+# added for the J4 feature) silently never got created on live DBs, and the
+# pipeline step using it failed every run with "no such table". Now every
+# table schema.sql defines is checked individually; if ANY are missing,
+# execute_schema() runs (it's idempotent / IF NOT EXISTS, so this is safe
+# to call even when most tables already exist).
+def _expected_tables() -> list:
+    schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+    try:
+        with open(schema_path, 'r') as f:
+            sql = f.read()
+        import re
+        return re.findall(r'CREATE TABLE IF NOT EXISTS\s+(\w+)', sql, re.IGNORECASE)
+    except Exception:
+        return ['positions_history']  # fallback to old behavior if schema.sql unreadable
+
+
 def ensure_schema():
-    """Ensure database schema is initialized if tables are missing."""
+    """Ensure database schema is initialized if any known table is missing."""
     try:
         with engine.connect() as conn:
             if DATABASE_URL.startswith('sqlite'):
-                res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='positions_history'"))
-                if not res.fetchone():
-                    logger.info("Database missing tables — applying schema automatically...")
+                existing = {
+                    row[0] for row in conn.execute(
+                        text("SELECT name FROM sqlite_master WHERE type='table'")
+                    ).fetchall()
+                }
+                missing = [t for t in _expected_tables() if t not in existing]
+                if missing:
+                    logger.info(f"Database missing tables {missing} — applying schema automatically...")
                     execute_schema()
     except Exception as e:
         logger.warning(f"Could not auto-check database schema: {e}")

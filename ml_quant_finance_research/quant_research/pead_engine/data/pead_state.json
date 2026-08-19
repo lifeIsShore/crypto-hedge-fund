@@ -1,15 +1,7 @@
 {
-  "generated_at": "2026-08-10T01:40:40.537359",
+  "generated_at": "2026-08-19T17:40:48.485108",
   "active_setups": [],
   "recent_setups": [
-    {
-      "ticker": "MU",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 21.39,
-      "drift_21d": -8.769,
-      "drift_63d": null
-    },
     {
       "ticker": "ORCL",
       "direction": "bullish",
@@ -19,19 +11,19 @@
       "drift_63d": null
     },
     {
-      "ticker": "MRK",
+      "ticker": "MU",
       "direction": "bullish",
-      "quality": "Medium",
-      "surprise_pct": 49.43,
-      "drift_21d": -1.382,
+      "quality": "Low",
+      "surprise_pct": 21.39,
+      "drift_21d": -8.769,
       "drift_63d": null
     },
     {
-      "ticker": "LMT",
+      "ticker": "LLY",
       "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 10.29,
-      "drift_21d": 7.397,
+      "quality": "Medium",
+      "surprise_pct": 27.27,
+      "drift_21d": -7.624,
       "drift_63d": null
     },
     {
@@ -64,6 +56,14 @@
       "quality": "Low",
       "surprise_pct": 7.74,
       "drift_21d": 6.385,
+      "drift_63d": null
+    },
+    {
+      "ticker": "HON",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 7.22,
+      "drift_21d": 7.357,
       "drift_63d": null
     },
     {
@@ -115,14 +115,6 @@
       "drift_63d": null
     },
     {
-      "ticker": "SHOP",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 5.05,
-      "drift_21d": -2.051,
-      "drift_63d": null
-    },
-    {
       "ticker": "SPOT",
       "direction": "bearish",
       "quality": "Low",
@@ -147,37 +139,47 @@
       "drift_63d": null
     },
     {
+      "ticker": "META",
+      "direction": "bearish",
+      "quality": "Low",
+      "surprise_pct": -14.42,
+      "drift_21d": 1.259,
+      "drift_63d": null
+    },
+    {
+      "ticker": "LMT",
+      "direction": "bullish",
+      "quality": "Low",
+      "surprise_pct": 10.29,
+      "drift_21d": 7.397,
+      "drift_63d": null
+    },
+    {
       "ticker": "TXN",
       "direction": "bullish",
       "quality": "Low",
       "surprise_pct": 10.48,
       "drift_21d": -7.733,
       "drift_63d": null
-    },
-    {
-      "ticker": "TSM",
-      "direction": "bullish",
-      "quality": "Low",
-      "surprise_pct": 10.89,
-      "drift_21d": -6.461,
-      "drift_63d": null
     }
   ],
   "performance": {
-    "total_setups": 180,
+    "total_setups": 221,
     "high_quality_setups": 1,
-    "medium_quality_setups": 20,
-    "overall_avg_drift_21d": 3.094,
+    "medium_quality_setups": 22,
+    "overall_avg_drift_21d": 2.47,
     "overall_avg_drift_63d": 11.486,
-    "overall_hit_rate_21d": 0.589,
+    "overall_hit_rate_21d": 0.561,
     "high_avg_drift_21d": 67.312,
     "high_avg_drift_63d": 119.659,
     "high_hit_rate_21d": 1.0,
-    "bullish_avg_drift_21d": 4.001,
-    "bearish_avg_drift_21d": -2.799,
-    "stats_computed_at": "2026-08-10T01:40:40.533758",
-    "hit_rate_21d_slowdown": 0.738,
-    "avg_drift_21d_slowdown": 9.522
+    "bullish_avg_drift_21d": 3.225,
+    "bearish_avg_drift_21d": -2.338,
+    "stats_computed_at": "2026-08-19T17:40:48.477113",
+    "hit_rate_21d_slowdown": 0.705,
+    "avg_drift_21d_slowdown": 8.036,
+    "hit_rate_21d_expansion": 0.462,
+    "avg_drift_21d_expansion": 0.904
   },
-  "total_in_db": 180
+  "total_in_db": 221
 }

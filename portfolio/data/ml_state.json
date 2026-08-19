@@ -1,12 +1,12 @@
 {
   "available": true,
-  "generated_at": "2026-06-03T10:26:19",
+  "generated_at": "2026-08-19T19:09:02",
   "ensemble": {
-    "weighted_score": 0.4899,
-    "median_score": 0.4769,
+    "weighted_score": 0.4901,
+    "median_score": 0.4807,
     "verdict": "MIXED",
-    "n_tickers": 78,
-    "spread_25_75": 0.6969
+    "n_tickers": 77,
+    "spread_25_75": 0.699
   },
   "model_signals": {
     "APC.DE": {
@@ -42,7 +42,7 @@
       "auc": 0.6993,
       "last_price": 341.45,
       "vol_ann": 0.2808,
-      "sector": "Unknown"
+      "sector": "Technology"
     },
     "FB2A.DE": {
       "up_proba_21d": 0.8486,
@@ -91,7 +91,7 @@
       "auc": 0.4825,
       "last_price": 380.2,
       "vol_ann": 1.0288,
-      "sector": "Unknown"
+      "sector": "Semiconductors"
     },
     "ORC.DE": {
       "up_proba_21d": 0.6427,
@@ -100,33 +100,26 @@
       "vol_ann": 0.321,
       "sector": "Software"
     },
-    "KLAC": {
-      "up_proba_21d": 0.467,
-      "auc": 0.63,
-      "last_price": 1892.94,
-      "vol_ann": 0.3879,
-      "sector": "Semiconductors"
-    },
     "SNW.DE": {
       "up_proba_21d": 0.974,
       "auc": 0.6451,
       "last_price": 73.22,
       "vol_ann": 0.2301,
-      "sector": "Unknown"
+      "sector": "Software"
     },
     "UT8.DE": {
       "up_proba_21d": 0.3658,
       "auc": 0.5396,
       "last_price": 63.48,
       "vol_ann": 0.4862,
-      "sector": "Unknown"
+      "sector": "Transportation"
     },
     "639.DE": {
       "up_proba_21d": 0.3049,
       "auc": 0.6336,
       "last_price": 376.5,
       "vol_ann": 0.4619,
-      "sector": "Unknown"
+      "sector": "Entertainment"
     },
     "SAP.DE": {
       "up_proba_21d": 0.2371,
@@ -559,7 +552,7 @@
   "experiment_summary": {
     "total_runs": 675,
     "best_model": "XGBoost",
-    "best_accuracy": 0.521,
+    "best_accuracy": 0.5207,
     "best_auc": 0.6129,
     "best_sharpe": 0.0,
     "beats_baseline_pct": 1.0,
@@ -574,15 +567,15 @@
   "model_comparison": [
     {
       "model": "Baseline_Random",
-      "acc": 0.5039,
-      "auc": 0.5006,
+      "acc": 0.5038,
+      "auc": 0.5004,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": false
     },
     {
       "model": "Baseline_Momentum",
-      "acc": 0.5708,
+      "acc": 0.5701,
       "auc": 0.5,
       "sharpe": 0.0,
       "dd": 0.0,
@@ -590,23 +583,23 @@
     },
     {
       "model": "LogisticRegression",
-      "acc": 0.5252,
-      "auc": 0.5954,
+      "acc": 0.5249,
+      "auc": 0.5949,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": true
     },
     {
       "model": "RandomForest",
-      "acc": 0.5227,
-      "auc": 0.6049,
+      "acc": 0.5219,
+      "auc": 0.6053,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": true
     },
     {
       "model": "XGBoost",
-      "acc": 0.521,
+      "acc": 0.5207,
       "auc": 0.6129,
       "sharpe": 0.0,
       "dd": 0.0,
@@ -917,69 +910,69 @@
   },
   "horizon_accuracy": {
     "5d": {
-      "LogisticRegression": 0.5172,
-      "RandomForest": 0.5147,
-      "XGBoost": 0.513
+      "LogisticRegression": 0.5169,
+      "RandomForest": 0.5139,
+      "XGBoost": 0.5127
     },
     "21d": {
-      "LogisticRegression": 0.5252,
-      "RandomForest": 0.5227,
-      "XGBoost": 0.521
+      "LogisticRegression": 0.5249,
+      "RandomForest": 0.5219,
+      "XGBoost": 0.5207
     },
     "63d": {
-      "LogisticRegression": 0.5212,
-      "RandomForest": 0.5187,
-      "XGBoost": 0.517
+      "LogisticRegression": 0.5209,
+      "RandomForest": 0.5179,
+      "XGBoost": 0.5167
     }
   },
   "feature_importance": [
     {
       "feature": "dist_52w_low",
-      "importance": 0.0741
+      "importance": 0.0737
     },
     {
       "feature": "macro_cpi_yoy",
-      "importance": 0.0725
+      "importance": 0.0726
     },
     {
       "feature": "macro_fed_funds",
-      "importance": 0.069
-    },
-    {
-      "feature": "price_vs_ma200",
-      "importance": 0.0618
+      "importance": 0.0687
     },
     {
       "feature": "vol_63d",
-      "importance": 0.0617
+      "importance": 0.0621
+    },
+    {
+      "feature": "price_vs_ma200",
+      "importance": 0.0619
     },
     {
       "feature": "macro_dxy",
-      "importance": 0.0611
+      "importance": 0.0603
     },
     {
       "feature": "macro_yield_curve",
-      "importance": 0.0608
+      "importance": 0.0601
     },
     {
       "feature": "macro_yield_10y",
-      "importance": 0.0548
+      "importance": 0.055
     },
     {
       "feature": "macro_yield_2y",
-      "importance": 0.0547
+      "importance": 0.0546
     },
     {
       "feature": "vol_21d",
-      "importance": 0.0484
+      "importance": 0.0486
     },
     {
       "feature": "ret_63d",
-      "importance": 0.0483
+      "importance": 0.0484
     },
     {
       "feature": "dist_52w_high",
-      "importance": 0.048
+      "importance": 0.0481
     },
     {
       "feature": "macd_signal",
@@ -991,7 +984,7 @@
     },
     {
       "feature": "obv_zscore",
-      "importance": 0.0352
+      "importance": 0.0351
     }
   ]
 }

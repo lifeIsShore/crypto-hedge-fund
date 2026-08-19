@@ -1,16 +1,16 @@
 {
   "ticker": "ABBV",
-  "fetched_at": "2026-06-03T10:11:30",
-  "iv_atm": 0.002,
-  "iv_call_atm": 0.0,
-  "iv_put_atm": 0.0039,
-  "iv_skew": 0.0,
-  "iv_rv_spread": -0.2516,
-  "iv_change_5d": -0.3114,
-  "pc_ratio": 0.179,
+  "fetched_at": "2026-08-19T18:19:20",
+  "iv_atm": 0.2722,
+  "iv_call_atm": 0.2771,
+  "iv_put_atm": 0.2672,
+  "iv_skew": 0.784,
+  "iv_rv_spread": 0.0186,
+  "iv_change_5d": 0.2702,
+  "pc_ratio": 0.5799,
   "short_pct_float": 0.014199999,
-  "short_ratio": 3.39,
-  "shares_short": 22590034.0,
-  "shares_short_prior": 21845453.0,
-  "short_change": 0.0341
+  "short_ratio": 3.69,
+  "shares_short": 22547839.0,
+  "shares_short_prior": 21899078.0,
+  "short_change": 0.0296
 }

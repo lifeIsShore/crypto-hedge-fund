@@ -5,10 +5,18 @@ Stream 2 / Stream 7: Universe expanded to ~90 tickers matching
 portfolio/src/config.py ASSET_UNIVERSE. European tickers (.DE/.AS/.PA/.L)
 are fetched via yfinance; missing Adj Close falls back to Close silently.
 """
-import os, json, logging
+import os, json, logging, time
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+
+# Bug fix (2026-08-20): price-cache parquet files used to be cached forever
+# once written (even a bad/short initial fetch, e.g. a delisted-ticker
+# fallback that only returned 21 rows). Since force_refresh defaulted to
+# False everywhere and was never flipped, ~43% of tickers were permanently
+# stuck skipping ML training run after run. A TTL forces periodic refetches
+# without requiring callers to remember force_refresh=True.
+PRICE_CACHE_TTL_DAYS = 7
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -73,9 +81,16 @@ def fetch_price_data(tickers=None, start="2014-01-01", end=None, force_refresh=F
         safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
         out_path = RAW_DIR / f"{safe_name}_prices.parquet"
 
-        if out_path.exists() and not force_refresh:
+        cache_fresh = False
+        if out_path.exists():
+            age_days = (time.time() - out_path.stat().st_mtime) / 86400
+            cache_fresh = age_days < PRICE_CACHE_TTL_DAYS
+
+        if cache_fresh and not force_refresh:
             result[ticker] = pd.read_parquet(out_path)
             continue
+        elif out_path.exists() and not force_refresh:
+            log.info(f"[{ticker}] Cache stale (>{PRICE_CACHE_TTL_DAYS}d old) — refetching")
 
         log.info(f"[{ticker}] Fetching {start} → {end}")
         try:

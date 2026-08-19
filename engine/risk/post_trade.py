@@ -88,6 +88,16 @@ def run_post_trade_risk(weights: dict, tickers: list) -> dict:
         metrics[f"stress_{scenario}"] = round(equity_weight * shock, 4)
 
     # Persist to DB
+    # Bug fix (2026-08-20): the `isinstance(val, (int, float))` filter silently
+    # dropped the 'regime' key, since compute_regime_stress() returns a STRING
+    # label (e.g. "medium"), not a number. That meant `regime` was NEVER written
+    # to risk_metrics, so the digest's `_build_risk_summary()` always fell back
+    # to "unknown" even though the regime was computed correctly (visible only
+    # in the log line below, never in the DB or dashboard digest).
+    # risk_metrics.metric_value is REAL-typed, so we can't store the string
+    # there directly — instead we map it to a small numeric code and also log
+    # it to pipeline_logs so the human-readable label survives for the digest.
+    REGIME_CODES = {"low": 0.0, "medium": 1.0, "high": 2.0}
     session = get_session()
     for metric_name, val in metrics.items():
         if isinstance(val, (int, float)):
@@ -96,6 +106,16 @@ def run_post_trade_risk(weights: dict, tickers: list) -> dict:
                 VALUES (CURRENT_DATE, :name, :val)
                 ON CONFLICT (date, metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value
             """), {"name": metric_name, "val": float(val)})
+        elif metric_name == "regime" and isinstance(val, str):
+            session.execute(text("""
+                INSERT INTO risk_metrics (date, metric_name, metric_value)
+                VALUES (CURRENT_DATE, 'regime_code', :val)
+                ON CONFLICT (date, metric_name) DO UPDATE SET metric_value = EXCLUDED.metric_value
+            """), {"val": REGIME_CODES.get(val, -1.0)})
+            session.execute(text("""
+                INSERT INTO pipeline_logs (level, step_name, message, detail, run_date)
+                VALUES ('INFO', 'post_trade_risk', :msg, :val, date('now'))
+            """), {"msg": f"Regime label: {val}", "val": val})
     session.commit()
     session.close()
     logger.info(f"Post-trade risk: VaR={var_cvar['var_95']:.2%}, CVaR={var_cvar['cvar_95']:.2%}, Regime={regime['regime']}")

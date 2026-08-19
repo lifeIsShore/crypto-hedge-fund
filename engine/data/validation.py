@@ -39,7 +39,7 @@ def validate_prices(df: pd.DataFrame, log_to_db: bool = True) -> pd.DataFrame:
 
     for ticker, group in df.groupby('ticker'):
         group = group.sort_values('date').reset_index(drop=True)
-        group['daily_return'] = group['adj_close'].pct_change()
+        group['daily_return'] = group['adj_close'].pct_change(fill_method=None)
 
         for _, row in group.iterrows():
             ret = row.get('daily_return', np.nan)
