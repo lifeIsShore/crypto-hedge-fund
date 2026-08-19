@@ -1,7 +1,7 @@
 {
   "region": "US",
-  "generated_at": "2026-08-19T19:16:13.902283",
-  "as_of_date": "2026-08-19",
+  "generated_at": "2026-08-20T01:07:48.371093",
+  "as_of_date": "2026-08-20",
   "regime_risk": "Risk-On",
   "regime_rates": "Neutral",
   "regime_growth": "Expansion",
@@ -9,8 +9,8 @@
   "transition_warning": false,
   "ew_active_count": 0,
   "macro_snapshot": {
-    "vix": 15.23,
-    "yield_spread": 0.52,
+    "vix": 14.89,
+    "yield_spread": 0.46,
     "hy_spread": 2.75,
     "fed_funds": 3.63
   },
