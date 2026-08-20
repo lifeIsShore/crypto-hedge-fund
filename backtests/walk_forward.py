@@ -31,7 +31,7 @@ import argparse
 import logging
 import numpy as np
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
