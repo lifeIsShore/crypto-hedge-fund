@@ -1816,21 +1816,67 @@ def api_mpt_weights():
 
 @app.route("/backtests")
 def backtests():
-    """List backtest report files in the backtests/ folder."""
-    import glob
-    bt_dir = ROOT / "backtests"
-    bt_dir.mkdir(exist_ok=True)
-    files = sorted(bt_dir.glob("*.html"), reverse=True) + \
-            sorted(bt_dir.glob("*.json"), reverse=True) + \
-            sorted(bt_dir.glob("*.csv"),  reverse=True)
-    reports = [{"name": f.name, "size_kb": round(f.stat().st_size / 1024, 1),
-                "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")}
-               for f in files]
-    return render_template("backtests.html",
-        reports=reports,
-        page="health",
+    """Backtest results dashboard. Reads CSV outputs from backtests/ folder."""
+    import csv
+
+    def _load_csv(filename):
+        path = ROOT / "backtests" / filename
+        if not path.exists():
+            return None
+        with open(path, newline='', encoding='utf-8') as f:
+            return list(csv.DictReader(f))
+
+    metrics_raw = _load_csv('backtest_metrics.csv')  # from metrics.py
+    ic_table    = _load_csv('alpha_ic_results.csv')  # from alpha_eval.py
+
+    # backtest_metrics.csv has rows like: index,value (pandas Series.to_csv format)
+    # Convert to a plain dict for the template
+    metrics = {}
+    if metrics_raw:
+        for row in metrics_raw:
+            # Handle both {''|'index': key, 'value': val} and {key: val} formats
+            k = row.get('') or row.get('index') or list(row.keys())[0]
+            v = row.get('value') or list(row.values())[-1]
+            if k:
+                metrics[k] = v
+
+    # Summary stats for the status bar (from backtest_results.csv)
+    equity_meta = {}
+    results_path = ROOT / "backtests" / "backtest_results.csv"
+    if results_path.exists():
+        with open(results_path, newline='', encoding='utf-8') as f:
+            rows = list(csv.DictReader(f))
+        if rows:
+            equity_meta['start'] = rows[0]['date'][:10]
+            equity_meta['end']   = rows[-1]['date'][:10]
+            equity_meta['days']  = len(rows)
+
+    return render_template('backtests.html',
+        page='health',
+        metrics=metrics,
+        ic_table=ic_table or [],
+        has_results=bool(metrics),
+        equity_meta=equity_meta,
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
+
+
+@app.route('/api/backtest/equity')
+def api_backtest_equity():
+    """Serves equity curve JSON for the Chart.js chart on /backtests."""
+    import csv
+    path = ROOT / "backtests" / "backtest_results.csv"
+    if not path.exists():
+        return jsonify({'dates': [], 'portfolio': [], 'benchmark': []})
+
+    dates, port, bench = [], [], []
+    with open(path, newline='', encoding='utf-8') as f:
+        for row in csv.DictReader(f):
+            dates.append(row['date'][:10])
+            port.append(float(row['portfolio_value']))
+            bench.append(float(row.get('benchmark_value') or 0))
+
+    return jsonify({'dates': dates, 'portfolio': port, 'benchmark': bench})
 
 
 @app.route("/backtests/<filename>")
@@ -1839,6 +1885,85 @@ def backtest_file(filename):
     from flask import send_from_directory
     bt_dir = ROOT / "backtests"
     return send_from_directory(bt_dir, filename)
+
+
+@app.route("/backtest/history")
+def backtest_history():
+    """Backtest run history browser — reads runs_index.csv via registry."""
+    from backtests.registry import list_runs
+    runs = list_runs()
+    return render_template('backtest_history.html',
+        page='backtest_history',
+        runs=runs,
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+@app.route('/api/backtest/runs')
+def api_backtest_runs():
+    """JSON list of all backtest runs from runs_index.csv."""
+    from backtests.registry import list_runs
+    runs = list_runs()
+    # Optional date filter: ?from=2026-01-01&to=2026-12-31
+    date_from = request.args.get('from')
+    date_to   = request.args.get('to')
+    if date_from or date_to:
+        filtered = []
+        for r in runs:
+            s = r.get('backtest_start', '')
+            e = r.get('backtest_end',   '')
+            if date_from and e and e < date_from:
+                continue
+            if date_to and s and s > date_to:
+                continue
+            filtered.append(r)
+        runs = filtered
+    return jsonify({'runs': runs, 'count': len(runs)})
+
+
+@app.route('/api/backtest/run/<run_id>')
+def api_backtest_run(run_id):
+    """Full detail for one run: metrics, config, equity curve, IC results."""
+    from backtests.registry import load_run
+    data = load_run(run_id)
+    if not data:
+        return jsonify({'error': f'Run {run_id} not found'}), 404
+
+    # Serialise equity curve
+    equity = {'dates': [], 'portfolio': [], 'benchmark': []}
+    results_df = data.get('results_df')
+    if results_df is not None and not results_df.empty:
+        equity['dates']     = [str(d)[:10] for d in results_df.index]
+        equity['portfolio'] = [round(float(v), 4) for v in results_df['portfolio_value']]
+        equity['benchmark'] = [round(float(v), 4) for v in results_df.get('benchmark_value', [])]
+
+    # Serialise IC results
+    ic_data = []
+    ic_df = data.get('ic_results_df')
+    if ic_df is not None and not ic_df.empty:
+        ic_data = ic_df.fillna('').to_dict(orient='records')
+
+    return jsonify({
+        'run_id':   run_id,
+        'metrics':  data.get('metrics', {}),
+        'config':   data.get('config',  {}),
+        'meta':     data.get('meta',    {}),
+        'equity':   equity,
+        'ic_data':  ic_data,
+    })
+
+
+@app.route('/api/backtest/run/<run_id>/note', methods=['PATCH'])
+@require_auth
+def api_backtest_run_note(run_id):
+    """Update the notes field for a run in runs_index.csv."""
+    from backtests.registry import update_note
+    body = request.get_json(silent=True) or {}
+    note = str(body.get('note', ''))[:500]  # cap at 500 chars
+    ok = update_note(run_id, note)
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Run not found'}), 404
+    return jsonify({'ok': True, 'run_id': run_id, 'note': note})
 
 
 @app.route("/history")

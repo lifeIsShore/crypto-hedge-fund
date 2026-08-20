@@ -1,4 +1,4 @@
-> **STATUS: NOT IMPLEMENTED.**
+> **STATUS: IMPLEMENTED ✅** — 2026-08-20 (session 11). `backtests/alpha_eval.py` built and import-verified.
 > Can be built in parallel with `01-engine.md` — no dependency on the walk-forward loop.
 > Only needs: prices table populated with 2+ years of data.
 

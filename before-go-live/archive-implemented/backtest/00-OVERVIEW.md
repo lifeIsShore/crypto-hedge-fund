@@ -1,6 +1,5 @@
-> **STATUS: NOT IMPLEMENTED.** Design docs only.
-> Build prerequisites: pipeline must be stable and data clean.
-> Do NOT start any of these until a clean full pipeline run completes.
+> **STATUS: IMPLEMENTED ✅** — 2026-08-20 (session 11). All four modules built, syntax-checked, imports verified.
+> `walk_forward.py` · `alpha_eval.py` · `metrics.py` · `templates/backtests.html` · Flask routes — all live.
 
 # Walk-Forward Backtest — Overview
 

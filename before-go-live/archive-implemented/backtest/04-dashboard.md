@@ -1,9 +1,8 @@
-> **STATUS: NOT IMPLEMENTED.**
+> **STATUS: IMPLEMENTED ✅** — 2026-08-20 (session 11). `templates/backtests.html` fully replaced (532 lines).
+> Flask routes `/backtests` and `/api/backtest/equity` live in `flask_app.py` (L1817+).
 > Depends on: `01-engine.md` (backtest_results.csv) and `02-alpha-ic-evaluation.md`
 > (alpha_ic_results.csv) must exist before this page shows real data.
-> The page already has a stub at `templates/backtests.html` — REPLACE it entirely.
-> A Flask route `/backtests` already exists pointing at that stub — keep the route,
-> only the template changes.
+> The page shows "NO RESULTS YET" gracefully when CSVs are absent.
 
 # Backtest Dashboard — UI Design & Implementation
 # `templates/backtests.html` — REPLACE existing stub

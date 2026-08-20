@@ -1,4 +1,4 @@
-> **STATUS: NOT IMPLEMENTED.**
+> **STATUS: IMPLEMENTED ✅** — 2026-08-20 (session 11). `backtests/walk_forward.py` built and import-verified.
 > Prerequisites: `00-OVERVIEW.md`, stable pipeline, clean DB.
 
 # Walk-Forward Engine

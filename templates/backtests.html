@@ -1,42 +1,531 @@
 {% extends "base.html" %}
-{% block title %}Backtest Reports{% endblock %}
+{% block title %}Backtest Results{% endblock %}
 
 {% block content %}
 
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
   <a href="/health" style="color:var(--muted);font-size:10px;text-decoration:none">← BACK TO HEALTH</a>
-  <h1 style="font-size:20px;font-weight:600;color:#fff">📈 Backtest Reports</h1>
+  <h1 style="font-size:20px;font-weight:600;color:var(--text)">📈 Backtest Results</h1>
 </div>
 
-<div class="panel">
+{# ── Section 0: Status bar ────────────────────────────────────────────────── #}
+{% if has_results and equity_meta %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;
+            padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;
+            font-size:11px;color:var(--muted)">
+  <span style="color:var(--accent);font-weight:700">● RESULTS LOADED</span>
+  <span style="color:var(--border)">·</span>
+  <span>{{ equity_meta.start }} → {{ equity_meta.end }}</span>
+  <span style="color:var(--border)">·</span>
+  <span>{{ equity_meta.days }} trading days</span>
+  <span style="color:var(--border)">·</span>
+  <span style="color:var(--muted)">vs MSCI World (EUNL.DE)</span>
+</div>
+{% else %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;
+            padding:10px 16px;margin-bottom:20px;font-size:11px;color:var(--muted)">
+  <span style="color:var(--accent2);font-weight:700">● NO RESULTS YET</span>
+  <span style="margin-left:8px">Run: <code style="color:var(--accent);background:var(--surface2);padding:2px 6px;border-radius:3px">python backtests/walk_forward.py</code></span>
+  <span style="margin-left:8px;color:var(--border)">·</span>
+  <span style="margin-left:8px">then: <code style="color:var(--accent);background:var(--surface2);padding:2px 6px;border-radius:3px">python backtests/alpha_eval.py</code></span>
+</div>
+{% endif %}
+
+{# ── Section 1: Verdict strip ─────────────────────────────────────────────── #}
+{% if has_results %}
+
+{# Compute verdict variables from metrics #}
+{% set sharpe = metrics.sharpe_port | float(0) %}
+{% set info_r = metrics.info_ratio | float(0) %}
+{% set calmar = metrics.calmar_port | float(0) %}
+{% set mdd    = metrics.mdd_port    | float(0) %}
+{% set beta   = metrics.beta        | float(1) %}
+{% set cagr_p = metrics.cagr_port   | float(0) %}
+{% set cagr_b = metrics.cagr_bench  | float(0) %}
+{% set nyears = metrics.n_years     | float(0) %}
+{% set excess_cagr = cagr_p - cagr_b %}
+
+{% if sharpe >= 0.4 and info_r >= 0.3 and calmar >= 0.3 %}
+  {% set verdict_label = "VALID" %}
+  {% set verdict_color = "var(--accent)" %}
+{% elif nyears < 1.5 %}
+  {% set verdict_label = "INCONCLUSIVE" %}
+  {% set verdict_color = "var(--accent3)" %}
+{% elif sharpe < 0.2 or mdd < -0.35 %}
+  {% set verdict_label = "NEEDS WORK" %}
+  {% set verdict_color = "var(--accent2)" %}
+{% else %}
+  {% set verdict_label = "MARGINAL" %}
+  {% set verdict_color = "var(--accent3)" %}
+{% endif %}
+
+{% if beta < 0.7 %}
+  {% set risk_label = "LOW RISK" %}
+  {% set risk_color = "var(--accent)" %}
+{% elif beta > 1.1 %}
+  {% set risk_label = "HIGH RISK" %}
+  {% set risk_color = "var(--accent2)" %}
+{% else %}
+  {% set risk_label = "MODERATE" %}
+  {% set risk_color = "var(--accent3)" %}
+{% endif %}
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
+    <div class="kpi-label info-point"
+         data-title="STRATEGY VERDICT"
+         data-info="Based on simulated historical data from {{ metrics.start_date }} – {{ metrics.end_date }}. Sharpe > 0.4, Info Ratio > 0.3, Calmar > 0.3 = VALID. Past performance does not guarantee future results. The 2022 bear market is not included — treat this as a bull-market stress test only.">
+      STRATEGY VERDICT
+    </div>
+    <div class="kpi-value" style="color:{{ verdict_color }};font-size:22px;margin:6px 0">
+      ● {{ verdict_label }}
+    </div>
+    <div class="kpi-sub">Sharpe {{ "%.2f"|format(sharpe) }} · IR {{ "%.2f"|format(info_r) }} · Calmar {{ "%.2f"|format(calmar) }}</div>
+  </div>
+
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
+    <div class="kpi-label info-point"
+         data-title="VS BENCHMARK"
+         data-info="Annual excess return vs iShares MSCI World (EUNL.DE). This tells you whether the strategy added value above simply buying the market.">
+      VS BENCHMARK
+    </div>
+    <div class="kpi-value" style="color:{% if excess_cagr >= 0 %}var(--accent){% else %}var(--accent2){% endif %};font-size:22px;margin:6px 0">
+      {% if excess_cagr >= 0 %}+{% endif %}{{ "%.1f"|format(excess_cagr * 100) }}%
+    </div>
+    <div class="kpi-sub">annual excess vs EUNL.DE · {{ "%.1f"|format(cagr_p * 100) }}% vs {{ "%.1f"|format(cagr_b * 100) }}% benchmark</div>
+  </div>
+
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
+    <div class="kpi-label info-point"
+         data-title="RISK LEVEL"
+         data-info="Beta measures how much this portfolio moves when the market moves. Beta = 1.0 means it tracks the market. Beta > 1.0 means it amplifies moves.">
+      RISK LEVEL
+    </div>
+    <div class="kpi-value" style="color:{{ risk_color }};font-size:22px;margin:6px 0">{{ risk_label }}</div>
+    <div class="kpi-sub">β {{ "%.2f"|format(beta) }} · {{ metrics.n_years }} years tested</div>
+  </div>
+
+</div>
+
+{# ── Section 2: Equity curve + annual return table ────────────────────────── #}
+<div style="display:grid;grid-template-columns:60% 40%;gap:16px;margin-bottom:20px">
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">EQUITY CURVE</span>
+      <span class="panel-badge">vs MSCI WORLD</span>
+    </div>
+    <div class="panel-body" style="padding:12px">
+      <canvas id="equityCurveChart" style="width:100%;height:260px"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">ANNUAL RETURN COMPARISON</span>
+    </div>
+    <div class="panel-body" style="padding:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+        ✓ = portfolio beat benchmark that year. Target: ≥ 3 of 4 years.
+      </div>
+      <table class="tbl" id="annualTable">
+        <thead>
+          <tr>
+            <th>YEAR</th>
+            <th>PORTFOLIO</th>
+            <th>MSCI WORLD</th>
+            <th>EXCESS</th>
+          </tr>
+        </thead>
+        <tbody id="annualBody">
+          <tr><td colspan="4" style="color:var(--muted);text-align:center">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{# ── Section 3: Risk metric cards ─────────────────────────────────────────── #}
+{% set vol_p  = metrics.vol_port  | float(0) %}
+{% set hit    = metrics.hit_rate  | float(0) %}
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+
+  {# Sharpe #}
+  {% if sharpe >= 0.6 %}{% set sc = "var(--accent)" %}
+  {% elif sharpe >= 0.3 %}{% set sc = "var(--accent3)" %}
+  {% else %}{% set sc = "var(--accent2)" %}{% endif %}
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+    <div class="kpi-label info-point"
+         data-title="SHARPE RATIO"
+         data-info="How much return you get for each unit of risk you take. 1.0 = excellent. 0.5–1.0 = good. Below 0.3 = the risk isn't worth it. Your number vs the benchmark: if yours is higher, your strategy manages risk better than just owning MSCI World.">
+      SHARPE RATIO
+    </div>
+    <div class="kpi-value" style="color:{{ sc }}">{{ "%.2f"|format(sharpe) }}</div>
+    <div class="kpi-sub">vs {{ "%.2f"|format(metrics.sharpe_bench | float(0)) }} benchmark</div>
+  </div>
+
+  {# Max Loss #}
+  {% if mdd > -0.20 %}{% set mc = "var(--accent)" %}
+  {% elif mdd > -0.35 %}{% set mc = "var(--accent3)" %}
+  {% else %}{% set mc = "var(--accent2)" %}{% endif %}
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+    <div class="kpi-label info-point"
+         data-title="MAX LOSS"
+         data-info="The worst peak-to-trough drop this strategy experienced in the test period. -18.3% means at its worst, €10,000 fell to €8,170 before recovering. Compare to benchmark: if yours is smaller, the strategy protects better in downturns.">
+      MAX LOSS
+    </div>
+    <div class="kpi-value" style="color:{{ mc }}">{{ "%.1f"|format(mdd * 100) }}%</div>
+    <div class="kpi-sub">vs {{ "%.1f"|format(metrics.mdd_bench | float(0) * 100) }}% benchmark</div>
+  </div>
+
+  {# Calmar #}
+  {% if calmar >= 0.5 %}{% set cc = "var(--accent)" %}
+  {% elif calmar >= 0.2 %}{% set cc = "var(--accent3)" %}
+  {% else %}{% set cc = "var(--accent2)" %}{% endif %}
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+    <div class="kpi-label info-point"
+         data-title="CALMAR RATIO"
+         data-info="Annual return divided by the worst loss. Tells you if the gains were worth the pain of the drawdowns. Above 0.5 = acceptable. Below 0.2 = the drawdowns are too large relative to what the strategy earns.">
+      CALMAR RATIO
+    </div>
+    <div class="kpi-value" style="color:{{ cc }}">{{ "%.2f"|format(calmar) }}</div>
+    <div class="kpi-sub">vs {{ "%.2f"|format(metrics.calmar_bench | float(0)) }} benchmark</div>
+  </div>
+
+  {# Hit Rate #}
+  {% if hit >= 0.55 %}{% set hc = "var(--accent)" %}
+  {% elif hit >= 0.50 %}{% set hc = "var(--muted)" %}
+  {% else %}{% set hc = "var(--accent2)" %}{% endif %}
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+    <div class="kpi-label info-point"
+         data-title="HIT RATE"
+         data-info="How often the portfolio outperformed the benchmark on a given day. You don't need 70%+ — even 52–54% compounds into meaningful outperformance over time.">
+      HIT RATE
+    </div>
+    <div class="kpi-value" style="color:{{ hc }}">{{ "%.0f"|format(hit * 100) }}%</div>
+    <div class="kpi-sub">of days beat benchmark · {{ metrics.n_days }} total</div>
+  </div>
+
+</div>
+
+{# ── Section 4: Alpha IC table ────────────────────────────────────────────── #}
+<div class="panel" style="margin-bottom:20px">
   <div class="panel-header">
-    <span class="panel-title">REPORTS IN backtests/</span>
-    <span class="panel-badge">{{ reports|length }} FILE{{ 's' if reports|length != 1 else '' }}</span>
+    <span class="panel-title">SIGNAL QUALITY — How well did each model predict actual returns?</span>
   </div>
   <div class="panel-body">
-    {% if reports %}
+    <div class="alert alert-info" style="margin-bottom:12px;font-size:11px">
+      These numbers show how well each model predicted which stocks would go up.
+      The strategy combines all models together — even a 'MARGINAL' model can still add value when blended with stronger ones.
+      A 'WEAK' model is not harmful — the system automatically reduces its influence when its accuracy is low.
+    </div>
+    {% if ic_table %}
     <table class="tbl">
-      <thead><tr><th>FILENAME</th><th>SIZE</th><th>LAST MODIFIED</th><th>OPEN</th></tr></thead>
-      <tbody>
-        {% for r in reports %}
+      <thead>
         <tr>
-          <td style="color:#fff">{{ r.name }}</td>
-          <td style="color:var(--muted)">{{ r.size_kb }} KB</td>
-          <td style="color:var(--muted)">{{ r.modified }}</td>
-          <td>
-            <a href="/backtests/{{ r.name }}" target="_blank" style="color:var(--accent);font-size:10px;text-decoration:none">🔗 Open &rarr;</a>
+          <th>MODEL</th>
+          <th>
+            <span class="info-point" data-title="ACCURACY (IC 21d)"
+              data-info="Information Coefficient: how well the model's ranking of stocks matched which stocks actually went up 21 days later. Ranges from -1 (perfectly wrong) to +1 (perfectly right). > 0.05 is strong. 0.02–0.05 is useful. Below 0.02 is noise.">
+              ACCURACY (IC 21d)
+            </span>
+          </th>
+          <th>
+            <span class="info-point" data-title="STABILITY (ICIR)"
+              data-info="Consistency of accuracy over time. A model that is sometimes great and sometimes terrible is less useful than one that is reliably decent. Above 0.5 = reliably consistent. Below 0.3 = hot/cold, unreliable.">
+              STABILITY (ICIR)
+            </span>
+          </th>
+          <th>HIT RATE</th>
+          <th>N OBS</th>
+          <th>VERDICT</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# Group ic_table by model, pick horizon=21 row #}
+        {% set models_seen = namespace(list=[]) %}
+        {% for row in ic_table %}
+          {% if row.horizon == '21' and row.model not in models_seen.list %}
+            {% set models_seen.list = models_seen.list + [row.model] %}
+            {% set ic   = row.mean_ic | float(0) %}
+            {% set icir = row.icir    | float(0) %}
+            {% set hit  = row.hit_rate| float(0) %}
+            {% set nobs = row.n_obs   | int(0) %}
+
+            {# Verdict logic #}
+            {% if ic >= 0.04 and icir >= 0.5 %}
+              {% set vtag = "✓ STRONG" %}
+              {% set vc   = "var(--accent)" %}
+            {% elif ic >= 0.02 and icir >= 0.35 %}
+              {% set vtag = "✓ USEFUL" %}
+              {% set vc   = "var(--accent)" %}
+            {% elif ic >= 0.015 and icir >= 0.25 %}
+              {% set vtag = "~ MARGINAL" %}
+              {% set vc   = "var(--accent3)" %}
+            {% else %}
+              {% set vtag = "✗ WEAK" %}
+              {% set vc   = "var(--accent2)" %}
+            {% endif %}
+
+            <tr>
+              <td style="color:var(--text);font-weight:500">{{ row.model | replace('_', ' ') | title }}</td>
+              <td style="color:{% if ic >= 0.04 %}var(--accent){% elif ic >= 0.02 %}var(--accent3){% else %}var(--accent2){% endif %}">
+                {% if row.mean_ic == 'None' or row.mean_ic == '' %}—{% else %}{{ "%.4f"|format(ic) }}{% endif %}
+              </td>
+              <td style="color:{% if icir >= 0.5 %}var(--accent){% elif icir >= 0.3 %}var(--accent3){% else %}var(--accent2){% endif %}">
+                {% if row.icir == 'None' or row.icir == '' %}—{% else %}{{ "%.3f"|format(icir) }}{% endif %}
+              </td>
+              <td style="color:var(--muted)">
+                {% if row.hit_rate == 'None' or row.hit_rate == '' %}—{% else %}{{ "%.0f"|format(hit * 100) }}%{% endif %}
+              </td>
+              <td style="color:var(--muted)">{{ nobs if nobs > 0 else '—' }}</td>
+              <td>
+                <span style="color:{{ vc }};font-weight:600;font-size:11px">{{ vtag }}</span>
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% if not ic_table %}
+        <tr>
+          <td colspan="6" style="color:var(--muted);text-align:center">
+            No IC data yet. Run: <code>python backtests/alpha_eval.py</code>
           </td>
         </tr>
-        {% endfor %}
+        {% endif %}
       </tbody>
     </table>
     {% else %}
-    <div class="alert alert-info">
-      No backtest reports found in <code>backtests/</code> yet.<br>
-      Run your backtesting scripts and save outputs to that folder — they will appear here automatically.
+    <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">
+      No IC data yet. Run: <code style="color:var(--accent)">python backtests/alpha_eval.py</code>
     </div>
     {% endif %}
   </div>
 </div>
 
+{# ── Supplementary: full metric table ─────────────────────────────────────── #}
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-header">
+    <span class="panel-title">FULL METRICS</span>
+    <span class="panel-badge">{{ metrics.start_date }} → {{ metrics.end_date }}</span>
+  </div>
+  <div class="panel-body">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
+      {% set metric_labels = {
+        'cagr_port': 'CAGR (Portfolio)',
+        'cagr_bench': 'CAGR (Benchmark)',
+        'total_return_port': 'Total Return (Portfolio)',
+        'total_return_bench': 'Total Return (Benchmark)',
+        'vol_port': 'Volatility ann. (Portfolio)',
+        'vol_bench': 'Volatility ann. (Benchmark)',
+        'sharpe_port': 'Sharpe (Portfolio)',
+        'sharpe_bench': 'Sharpe (Benchmark)',
+        'sortino_port': 'Sortino (Portfolio)',
+        'sortino_bench': 'Sortino (Benchmark)',
+        'calmar_port': 'Calmar (Portfolio)',
+        'calmar_bench': 'Calmar (Benchmark)',
+        'mdd_port': 'Max Drawdown (Portfolio)',
+        'mdd_bench': 'Max Drawdown (Benchmark)',
+        'info_ratio': 'Information Ratio',
+        'beta': 'Beta',
+        'alpha_annualised': 'Alpha (annualised)',
+        'hit_rate': 'Daily Hit Rate',
+        'n_days': 'Trading Days',
+        'n_years': 'Years Tested',
+      } %}
+      {% set pct_keys = ['cagr_port','cagr_bench','total_return_port','total_return_bench',
+                         'vol_port','vol_bench','mdd_port','mdd_bench','alpha_annualised'] %}
+      {% for key, label in metric_labels.items() %}
+        {% if key in metrics %}
+        <div style="display:flex;justify-content:space-between;padding:6px 12px;
+                    border-bottom:1px solid var(--border);font-size:11px">
+          <span style="color:var(--muted)">{{ label }}</span>
+          <span style="color:var(--text);font-weight:500">
+            {% set val = metrics[key] | float(0) %}
+            {% if key in pct_keys %}{{ "%.1f"|format(val * 100) }}%
+            {% else %}{{ metrics[key] }}{% endif %}
+          </span>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% else %}
+{# No results yet — show placeholder cards #}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;opacity:0.4">
+  {% for label in ['STRATEGY VERDICT', 'VS BENCHMARK', 'RISK LEVEL'] %}
+  <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
+    <div class="kpi-label">{{ label }}</div>
+    <div class="kpi-value" style="color:var(--muted)">—</div>
+    <div class="kpi-sub">No data yet</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Section 5: Disclaimer strip ─────────────────────────────────────────── #}
+<div class="alert alert-warn" style="margin-bottom:4px">
+  ⚠ <strong>SIMULATION ONLY</strong> — These results are based on historical simulation, not real trading.
+  The test period (2023–2026) was primarily a bull market. Results in a sustained bear market may differ
+  significantly. <strong>Not financial advice.</strong>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function() {
+  'use strict';
+
+  // ── Equity Curve Chart ────────────────────────────────────────────────────
+  const ctx = document.getElementById('equityCurveChart');
+  if (!ctx) return;
+
+  const textColor   = getComputedStyle(document.documentElement).getPropertyValue('--text').trim()   || '#e0e0e0';
+  const mutedColor  = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()  || '#888';
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#10b981';
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#2a2a2a';
+
+  fetch('/api/backtest/equity')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.dates || data.dates.length === 0) {
+        ctx.parentElement.innerHTML = '<div style="color:var(--muted);text-align:center;padding:40px;font-size:12px">Run walk_forward.py to generate chart data.</div>';
+        return;
+      }
+
+      // Compute annual returns from equity curve for the right-panel table
+      _buildAnnualTable(data.dates, data.portfolio, data.benchmark);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [
+            {
+              label: 'Portfolio',
+              data: data.portfolio,
+              borderColor: accentColor,
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.1,
+              fill: false,
+            },
+            {
+              label: 'MSCI World (EUNL.DE)',
+              data: data.benchmark,
+              borderColor: mutedColor,
+              borderWidth: 1,
+              borderDash: [4, 3],
+              pointRadius: 0,
+              tension: 0.1,
+              fill: false,
+            },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: textColor, font: { size: 10 }, boxWidth: 18, padding: 12 }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              titleColor: '#fff',
+              bodyColor: '#ccc',
+              callbacks: {
+                label: ctx => {
+                  const v = ctx.parsed.y;
+                  const idx = ctx.dataIndex;
+                  const label = ctx.dataset.label;
+                  // Show excess on portfolio tooltip
+                  if (label === 'Portfolio' && data.benchmark[idx]) {
+                    const excess = ((v - data.benchmark[idx]) / data.benchmark[idx] * 100).toFixed(1);
+                    return `${label}: €${v.toLocaleString('de-DE', {minimumFractionDigits:0})} (excess: ${excess > 0 ? '+' : ''}${excess}%)`;
+                  }
+                  return `${label}: €${v.toLocaleString('de-DE', {minimumFractionDigits:0})}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: mutedColor,
+                font: { size: 9 },
+                maxTicksLimit: 12,
+                callback: (val, idx, ticks) => {
+                  const lbl = data.dates[idx] || '';
+                  return lbl.slice(0, 7); // YYYY-MM
+                }
+              },
+              grid: { color: borderColor }
+            },
+            y: {
+              ticks: {
+                color: mutedColor,
+                font: { size: 9 },
+                callback: v => '€' + v.toLocaleString('de-DE', {maximumFractionDigits:0})
+              },
+              grid: { color: borderColor }
+            }
+          }
+        }
+      });
+    })
+    .catch(err => {
+      ctx.parentElement.innerHTML = `<div style="color:var(--accent2);text-align:center;padding:20px;font-size:11px">Chart error: ${err}</div>`;
+    });
+
+  // ── Annual Return Table (computed client-side from equity data) ───────────
+  function _buildAnnualTable(dates, portfolio, benchmark) {
+    const body = document.getElementById('annualBody');
+    if (!body) return;
+
+    // Group by year
+    const byYear = {};
+    for (let i = 0; i < dates.length; i++) {
+      const yr = dates[i].slice(0, 4);
+      if (!byYear[yr]) byYear[yr] = { portFirst: portfolio[i], benchFirst: benchmark[i], portLast: portfolio[i], benchLast: benchmark[i] };
+      byYear[yr].portLast  = portfolio[i];
+      byYear[yr].benchLast = benchmark[i];
+    }
+
+    const years = Object.keys(byYear).sort();
+    const currentYear = new Date().getFullYear().toString();
+    body.innerHTML = '';
+
+    years.forEach(yr => {
+      const d = byYear[yr];
+      const portRet  = d.portFirst  > 0 ? (d.portLast  / d.portFirst  - 1) * 100 : 0;
+      const benchRet = d.benchFirst > 0 ? (d.benchLast / d.benchFirst - 1) * 100 : 0;
+      const excess   = portRet - benchRet;
+      const isYTD    = (yr === currentYear);
+      const marker   = excess > 0 ? '✓' : '✗';
+      const eColor   = excess > 0 ? 'var(--accent)' : (Math.abs(excess) < 1 ? 'var(--accent3)' : 'var(--accent2)');
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--text)">${yr}${isYTD ? ' <span style="font-size:9px;color:var(--muted)">YTD</span>' : ''}</td>
+        <td style="color:${portRet >= 0 ? 'var(--accent)' : 'var(--accent2)'}">${portRet >= 0 ? '+' : ''}${portRet.toFixed(1)}%</td>
+        <td style="color:${benchRet >= 0 ? 'var(--muted)' : 'var(--accent2)'}">${benchRet >= 0 ? '+' : ''}${benchRet.toFixed(1)}%</td>
+        <td style="color:${eColor};font-weight:600">${excess >= 0 ? '+' : ''}${excess.toFixed(1)}% ${marker}</td>
+      `;
+      body.appendChild(tr);
+    });
+
+    if (years.length === 0) {
+      body.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center">No data</td></tr>';
+    }
+  }
+
+})();
+</script>
 {% endblock %}

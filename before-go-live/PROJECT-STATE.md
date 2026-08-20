@@ -1,11 +1,28 @@
 # Control Tower — Project State & Handoff Notes
 
-Last updated: 2026-08-20
-Purpose: read this first in any new session to pick up exactly where things left off. Project lives at `C:\Users\ahmty\Desktop\hedge-fund` (accessed via Filesystem MCP connector - must be enabled in-chat to read/write it).
+**2026-08-20 (session 12) — Backtest History & Strategy Registry + Documentation Reorganization:**
+- **Backtest History & Strategy Registry — COMPLETE:**
+  - Implemented immutable timestamped run storage (`backtests/runs/<run_id>/`).
+  - Added strategy configuration snapshot (`strategy_config.json`) and run metadata (`run_meta.json`).
+  - Created central registry index (`backtests/registry.py` & `runs_index.csv`) for fast queries.
+  - Built Web UI dashboard at `/backtest/history` featuring a run browser table, date range filter, side-by-side metric comparison with winner highlights, equity curve overlay chart (normalised to 100%), alpha IC model quality viewer, and inline note editing (`PATCH /api/backtest/run/<run_id>/note`).
+  - Updated `RUN_BACKTEST.bat` to pass a shared run ID across all scripts and support command-line notes.
+- **Documentation & Todo Reorganization:**
+  - Archived completed strategy specs (`BACKTEST_HISTORY_TODO.md`, `etf_component_divergence_strategy.md`, `laggard_screen_strategy.md`) into `todos/archive-implemented/`.
+  - Moved technical architecture reference documents (`trading_system_architecture.md`, `trading_system_deep_dive.md`, `quant_portfolio_framework-research.md`) into `docs/`.
+  - Extracted future automated broker execution roadmap into `before-go-live/BROKER-INTEGRATION-AND-LIVE-EXECUTION-TODO.md`.
 
----
-
-## 0. Changelog (most recent first)
+**2026-08-20 (session 11) — Walk-Forward Backtest Suite — COMPLETE (Antigravity IDE):**
+- **All 4 backtest modules implemented, verified, and status banners updated.**
+  - `backtests/walk_forward.py` (386 lines) — walk-forward engine: daily rebalance loop, 4 non-ML alpha signals inline, Ledoit-Wolf covariance, BL optimizer, benchmark P&L tracking. Zero DB writes; outputs `backtest_results.csv`. CLI: `--start / --end` flags.
+  - `backtests/alpha_eval.py` (251 lines) — expanding-window IC evaluation: Spearman IC per model across 5d/21d/63d horizons, for all 5 models (momentum, sector_momentum, mean_reversion, vol_timing, ml_alpha). Reads existing `signals` + `price_targets` tables, zero DB writes; outputs `alpha_ic_results.csv`.
+  - `backtests/metrics.py` (233 lines) — full performance metrics: Sharpe, Sortino, Calmar, MDD, Info Ratio, Beta, Alpha, annual returns, hit rate; callable as a library from `walk_forward.py` or standalone.
+  - `templates/backtests.html` (532 lines) — full 5-section dashboard replacing the stub: status bar, verdict strip (3 KPI cards), equity curve (Chart.js, 60%) + annual return table (40%), risk cards, IC model quality table with VERDICT logic, disclaimer strip.
+  - `flask_app.py` routes (L1817+) — `/backtests` reads `backtest_metrics.csv` + `alpha_ic_results.csv` server-side; `/api/backtest/equity` streams equity curve JSON to Chart.js.
+- **All 3 Python files pass `py_compile` and import-verified** (`walk_forward OK / alpha_eval OK / metrics OK`).
+- **All 4 spec docs in `before-go-live/backtest/` updated** to `STATUS: IMPLEMENTED ✅`.
+- **To produce real results:** run `python backtests/walk_forward.py --start 2025-01-01` (quick smoke, ~150 steps) then full `python backtests/walk_forward.py`, then `python backtests/alpha_eval.py`. CSVs land in `backtests/`; `/backtests` page auto-populates.
+- **ML alpha excluded from walk-forward loop** (trained on full history — no clean expanding retrain in scope). Evaluated independently via IC in `alpha_eval.py`.
 
 **2026-08-20 (session 10) — Diagnosed a full `RUN_FUND_TOTAL.bat` + scheduler pipeline run from console output, fixed 6 confirmed bugs (Claude, via Filesystem MCP):**
 Ahmet pasted a full console log (manual `RUN_FUND_TOTAL.bat` run + the automated `engine.scheduler` pipeline that follows it). Traced every anomaly in the log back to its exact line of code before touching anything — no speculative fixes. All 6 below are implemented and verified against the actual source; none has been re-run end-to-end yet since Claude has no execution access, only file read/write via the Filesystem MCP connector.
@@ -317,7 +334,13 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
 14. Portfolio-level Drawdown Protocol (`RISK-POLICY.md` §2b) — drafted as a proposal, needs Ahmet's sign-off before it's coded.
 15. ~~Sandbox cash double-count bug~~ — ✅ **FULLY DONE.** Code fixed 2026-08-10 (session 8); **reconciliation confirmed applied 2026-08-13 (session 9)** — verified directly against `sandbox_data.db`, `[reconciled]` rows present.
 16. ~~J2 tax-aware selling~~ — ✅ **CONFIRMED IMPLEMENTED (verified 2026-08-13, session 9)**, though never had its own changelog entry documenting the build — see session 9 note.
-17. **Next up — still genuinely open:** run an actual end-to-end sandbox dry run (`RUN_SANDBOX.bat`). **This has NOT happened yet** — confirmed 2026-08-13 that all paper trades on disk are still dated 2026-08-09, predating the session-7/7b crash fixes. This is the one item that keeps getting assumed-done without being re-verified; check `trades.date` in `sandbox_data.db` against today's date before ever marking it complete. After that: the still-open SaaS decision in §6 (API key/data-provider strategy — Ahmet has explicitly deferred this to last), and J7 (laggard screen wiring, confirmed still unbuilt).
+17. ~~Sandbox end-to-end dry run~~ — **still genuinely open.** All paper trades on disk are dated 2026-08-09, predating the session-7/7b crash fixes. Check `trades.date` in `sandbox_data.db` against today's date before ever marking done.
+18. ~~Walk-Forward Backtest Suite~~ — ✅ **DONE 2026-08-20 (session 11).** `walk_forward.py` + `alpha_eval.py` + `metrics.py` + `backtests.html` + Flask routes — all built, syntax-checked, import-verified. Run `python backtests/walk_forward.py` to generate results. See session-11 changelog.
+19. **Next open items (in priority order):**
+    - Run the sandbox dry-run (`RUN_SANDBOX.bat`) — still the oldest unverified item.
+    - J7 (laggard screen wiring) — confirmed still unbuilt.
+    - Portfolio-level Drawdown Protocol (`RISK-POLICY.md` §2b) — needs Ahmet's sign-off.
+    - SaaS open decisions (§6) — API key/data-provider strategy is the gateway blocker.
 
 ### Recently Completed:
 - **Liquidity Gating (2026-08-09):** Added ADV (Average Daily Volume) checks to `engine/execution/order_manager.py`. The `generate_order_queue` now queries the `prices` table for the 21-day average daily volume in EUR. It caps order sizes at 5% of ADV (`adv_limit_pct=0.05`), logging a warning if an order is scaled down to prevent routing orders that are too large relative to the asset's normal trading volume.

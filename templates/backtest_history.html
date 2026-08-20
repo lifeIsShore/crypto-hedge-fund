@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+{% block title %}Backtest History{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="/backtests" style="color:var(--muted);font-size:10px;text-decoration:none">← LATEST RUN</a>
+    <h1 style="font-size:20px;font-weight:600;color:var(--text)">📊 Backtest Run History</h1>
+    <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border:1px solid var(--border)" id="run-count-badge">{{ runs|length }} runs</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:10px;color:var(--muted)">FILTER BY MARKET PERIOD:</span>
+    <input type="date" id="date-from" style="width:130px;font-size:10px" placeholder="From">
+    <span style="color:var(--muted)">→</span>
+    <input type="date" id="date-to"   style="width:130px;font-size:10px" placeholder="To">
+    <button class="btn" id="btn-filter" style="padding:6px 14px;font-size:10px">FILTER</button>
+    <button class="btn" id="btn-clear"  style="padding:6px 14px;font-size:10px;border-color:var(--muted);color:var(--muted)">CLEAR</button>
+  </div>
+</div>
+
+{# ── Comparison mode controls ─────────────────────────────────────────────── #}
+<div id="compare-bar" style="display:none;background:var(--surface2);border:1px solid var(--accent4);
+     padding:10px 16px;margin-bottom:16px;border-radius:4px;
+     display:flex;align-items:center;gap:16px">
+  <span style="color:var(--accent4);font-size:10px;font-weight:700">COMPARE MODE</span>
+  <span id="compare-count" style="font-size:10px;color:var(--muted)">Select 2 runs from the table below</span>
+  <button class="btn" id="btn-compare" style="padding:5px 14px;font-size:10px" disabled>COMPARE SELECTED</button>
+  <button id="btn-cancel-compare" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;margin-left:auto">✕ Cancel</button>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:14px">
+  <button class="btn" id="btn-enter-compare" style="padding:6px 14px;font-size:10px;border-color:var(--accent4);color:var(--accent4)">⊕ COMPARE RUNS</button>
+  <button class="btn" id="btn-overlay-chart"  style="padding:6px 14px;font-size:10px;border-color:var(--accent3);color:var(--accent3)">📈 OVERLAY CHART</button>
+</div>
+
+{# ── Run browser table ────────────────────────────────────────────────────── #}
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-header">
+    <span class="panel-title">ALL RUNS</span>
+    <span class="panel-badge" id="filtered-badge">{{ runs|length }} total</span>
+  </div>
+  <div class="panel-body" style="padding:0">
+    <table class="tbl" id="runs-table">
+      <thead>
+        <tr style="position:sticky;top:0;background:var(--surface);z-index:10">
+          <th style="padding:10px 14px;width:24px"></th>
+          <th onclick="sortTable(1,'runs-table','str')" style="padding:10px 0">RUN ID / DATE</th>
+          <th onclick="sortTable(2,'runs-table','str')" style="padding:10px 0">PERIOD</th>
+          <th onclick="sortTable(3,'runs-table','num')" style="padding:10px 0">SHARPE</th>
+          <th onclick="sortTable(4,'runs-table','num')" style="padding:10px 0">CAGR</th>
+          <th onclick="sortTable(5,'runs-table','num')" style="padding:10px 0">MDD</th>
+          <th onclick="sortTable(6,'runs-table','num')" style="padding:10px 0">ALPHA</th>
+          <th style="padding:10px 0">ALPHAS USED</th>
+          <th style="padding:10px 0">NOTES</th>
+          <th style="padding:10px 0"></th>
+        </tr>
+      </thead>
+      <tbody id="runs-tbody">
+        {% if not runs %}
+        <tr>
+          <td colspan="10" style="text-align:center;color:var(--muted);padding:40px">
+            No runs found. Run <code style="color:var(--accent)">RUN_BACKTEST.bat</code> to create the first run.
+          </td>
+        </tr>
+        {% endif %}
+        {% for run in runs %}
+        {% set sharpe = run.sharpe_port | float(0) %}
+        {% set cagr   = run.cagr_port   | float(0) %}
+        {% set mdd    = run.mdd_port    | float(0) %}
+        {% set alpha  = run.alpha_annualised | float(0) %}
+        <tr class="run-row" data-run-id="{{ run.run_id }}"
+            data-start="{{ run.backtest_start }}" data-end="{{ run.backtest_end }}"
+            style="cursor:pointer;transition:background .12s"
+            onclick="openRun('{{ run.run_id }}')"
+            onmouseover="this.style.background='rgba(255,255,255,.03)'"
+            onmouseout="this.style.background=''">
+          <!-- compare checkbox -->
+          <td style="padding:8px 14px" onclick="event.stopPropagation()">
+            <input type="checkbox" class="cmp-chk" data-run="{{ run.run_id }}"
+                   style="cursor:pointer;accent-color:var(--accent4)"
+                   onchange="onCompareCheck(this)">
+          </td>
+          <td>
+            <div style="color:var(--accent4);font-size:11px;font-weight:500">{{ run.run_id }}</div>
+            <div style="color:var(--muted);font-size:9px;margin-top:2px">{{ run.timestamp[:16] if run.timestamp else '' }}</div>
+          </td>
+          <td>
+            <div style="font-size:11px">{{ run.backtest_start }} → {{ run.backtest_end }}</div>
+            <div style="color:var(--muted);font-size:9px">{{ run.n_years }}y · {{ run.n_days }}d</div>
+          </td>
+          <td style="color:{% if sharpe >= 0.6 %}var(--accent){% elif sharpe >= 0.3 %}var(--accent3){% else %}var(--accent2){% endif %};font-weight:600">
+            {{ "%.2f"|format(sharpe) if run.sharpe_port else '—' }}
+          </td>
+          <td style="color:{% if cagr >= 0.1 %}var(--accent){% elif cagr >= 0 %}var(--accent3){% else %}var(--accent2){% endif %}">
+            {% if run.cagr_port %}{{ "%+.1f"|format(cagr * 100) }}%{% else %}—{% endif %}
+          </td>
+          <td style="color:{% if mdd > -0.15 %}var(--accent){% elif mdd > -0.25 %}var(--accent3){% else %}var(--accent2){% endif %}">
+            {% if run.mdd_port %}{{ "%.1f"|format(mdd * 100) }}%{% else %}—{% endif %}
+          </td>
+          <td style="color:{% if alpha >= 0.02 %}var(--accent){% elif alpha >= 0 %}var(--accent3){% else %}var(--accent2){% endif %}">
+            {% if run.alpha_annualised %}{{ "%+.1f"|format(alpha * 100) }}%{% else %}—{% endif %}
+          </td>
+          <td>
+            <div style="font-size:10px;color:var(--muted)">
+              {% for a in run.alphas.split('+') if run.alphas %}
+              <span style="background:rgba(100,149,237,.12);color:var(--accent4);padding:1px 5px;margin-right:3px;font-size:9px">{{ a }}</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td onclick="event.stopPropagation()">
+            <div class="note-display" data-run="{{ run.run_id }}"
+                 style="font-size:10px;color:var(--muted);max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"
+                 title="{{ run.notes }}">
+              {% if run.notes %}<em>{{ run.notes }}</em>{% else %}<span style="opacity:0.3">click to add note</span>{% endif %}
+            </div>
+          </td>
+          <td onclick="event.stopPropagation()">
+            <button onclick="openRun('{{ run.run_id }}')" class="btn" style="padding:4px 10px;font-size:9px">VIEW</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Run detail drawer ────────────────────────────────────────────────────── #}
+<div id="run-drawer" style="display:none">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <span style="font-size:10px;color:var(--muted)">RUN</span>
+      <span style="font-size:16px;font-weight:600;color:var(--accent4);margin-left:8px" id="drawer-run-id">—</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="btn-add-to-overlay" style="padding:5px 12px;font-size:10px;border-color:var(--accent3);color:var(--accent3)">+ ADD TO OVERLAY</button>
+      <button id="drawer-close" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;font-size:10px;cursor:pointer">✕ CLOSE</button>
+    </div>
+  </div>
+
+  {# Config strip #}
+  <div id="drawer-config" style="background:var(--surface2);border:1px solid var(--border);
+       padding:10px 16px;margin-bottom:16px;font-size:10px;color:var(--muted);display:flex;flex-wrap:wrap;gap:16px"></div>
+
+  {# Metrics + IC side by side #}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">PERFORMANCE METRICS</span></div>
+      <div class="panel-body" style="padding:0">
+        <table class="tbl" id="drawer-metrics-table">
+          <tbody id="drawer-metrics-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">ALPHA IC — SIGNAL QUALITY</span>
+        <span class="panel-badge">21d horizon</span>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="padding:8px 0">MODEL</th>
+              <th>IC</th><th>ICIR</th><th>HIT</th><th>VERDICT</th>
+            </tr>
+          </thead>
+          <tbody id="drawer-ic-body">
+            <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  {# Equity curve #}
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-header">
+      <span class="panel-title">EQUITY CURVE</span>
+      <span class="panel-badge" id="drawer-period">—</span>
+    </div>
+    <div class="panel-body" style="padding:12px">
+      <canvas id="drawer-equity-chart" style="width:100%;height:220px"></canvas>
+    </div>
+  </div>
+
+  {# Notes editor #}
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-header"><span class="panel-title">NOTES / TAGS</span></div>
+    <div class="panel-body" style="display:flex;gap:10px;align-items:flex-start">
+      <textarea id="drawer-note-input" rows="2"
+                style="flex:1;resize:vertical;font-size:11px"
+                placeholder="Add notes about this run, e.g. 'disabled ml_alpha', 'v2 optimizer', 'pre-2024 regime'…"></textarea>
+      <button class="btn" id="btn-save-note" style="padding:8px 16px;white-space:nowrap">SAVE NOTE</button>
+    </div>
+  </div>
+
+</div>
+
+{# ── Overlay chart panel ──────────────────────────────────────────────────── #}
+<div id="overlay-panel" style="display:none">
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-header">
+      <span class="panel-title">EQUITY CURVE OVERLAY</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:9px;color:var(--muted)" id="overlay-legend-text"></span>
+        <button id="btn-close-overlay" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer">✕ CLOSE OVERLAY</button>
+      </div>
+    </div>
+    <div class="panel-body" style="padding:12px">
+      <canvas id="overlay-chart" style="width:100%;height:300px"></canvas>
+    </div>
+    <div style="padding:10px 16px;font-size:10px;color:var(--muted)">
+      All curves normalised to 100 at their start date. Benchmark shown once (dashed).
+    </div>
+  </div>
+</div>
+
+{# ── Side-by-side comparison panel ───────────────────────────────────────── #}
+<div id="compare-panel" style="display:none;margin-bottom:20px">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+    <span style="font-size:13px;font-weight:600;color:var(--accent4)">SIDE-BY-SIDE COMPARISON</span>
+    <button id="btn-close-compare-panel" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer">✕</button>
+  </div>
+  <div id="compare-content" style="display:grid;grid-template-columns:220px 1fr 1fr;gap:0;background:var(--surface);border:1px solid var(--border)"></div>
+</div>
+
+<div class="alert alert-warn" style="margin-bottom:4px">
+  ⚠ <strong>SIMULATION ONLY</strong> — Historical backtest results do not predict future performance.
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function() {
+'use strict';
+
+const ACCENT  = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+const ACCENT2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+const ACCENT3 = getComputedStyle(document.documentElement).getPropertyValue('--accent3').trim();
+const ACCENT4 = getComputedStyle(document.documentElement).getPropertyValue('--accent4').trim();
+const MUTED   = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+const BORDER  = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+const TEXT    = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+
+// ── Palette for overlay (up to 8 runs) ────────────────────────────────────
+const PALETTE = ['#10b981','#6495ed','#f5a623','#ff4d6d','#a78bfa','#34d399','#fb923c','#38bdf8'];
+
+// ── State ──────────────────────────────────────────────────────────────────
+let drawerChart   = null;
+let overlayChart  = null;
+let currentRunId  = null;
+let overlayRuns   = [];   // [{run_id, data}] loaded for overlay
+let compareMode   = false;
+let compareSelected = [];
+
+// ── Date filter ────────────────────────────────────────────────────────────
+function applyDateFilter() {
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  let visible = 0;
+  document.querySelectorAll('.run-row').forEach(row => {
+    const s = row.dataset.start || '';
+    const e = row.dataset.end   || '';
+    let show = true;
+    if (from && e && e < from) show = false;
+    if (to   && s && s > to)   show = false;
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('filtered-badge').textContent = `${visible} shown`;
+}
+
+document.getElementById('btn-filter').onclick = applyDateFilter;
+document.getElementById('btn-clear').onclick = () => {
+  document.getElementById('date-from').value = '';
+  document.getElementById('date-to').value   = '';
+  document.querySelectorAll('.run-row').forEach(r => r.style.display = '');
+  document.getElementById('filtered-badge').textContent = '{{ runs|length }} total';
+};
+
+// ── Note display inline editing ────────────────────────────────────────────
+document.querySelectorAll('.note-display').forEach(el => {
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    const runId = el.dataset.run;
+    const note  = el.title || '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = note;
+    input.style.cssText = 'width:160px;font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid var(--accent4);color:var(--text);font-family:var(--mono)';
+    el.replaceWith(input);
+    input.focus();
+    const save = () => {
+      const val = input.value.trim();
+      saveNote(runId, val, () => {
+        const newEl = document.createElement('div');
+        newEl.className = 'note-display';
+        newEl.dataset.run = runId;
+        newEl.title = val;
+        newEl.style.cssText = 'font-size:10px;color:var(--muted);max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis';
+        newEl.innerHTML = val ? `<em>${val}</em>` : `<span style="opacity:0.3">click to add note</span>`;
+        input.replaceWith(newEl);
+        // Re-attach listener
+        newEl.addEventListener('click', e => e.stopPropagation());
+      });
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', ev => { if (ev.key === 'Enter') save(); });
+  });
+});
+
+// ── Open run drawer ────────────────────────────────────────────────────────
+window.openRun = function(runId) {
+  if (compareMode) return;
+  currentRunId = runId;
+  const drawer = document.getElementById('run-drawer');
+  drawer.style.display = 'block';
+  drawer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Reset
+  document.getElementById('drawer-run-id').textContent = runId;
+  document.getElementById('drawer-metrics-body').innerHTML = '<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>';
+  document.getElementById('drawer-ic-body').innerHTML     = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>';
+  document.getElementById('drawer-note-input').value = '';
+  document.getElementById('drawer-config').innerHTML = '';
+
+  fetch(`/api/backtest/run/${runId}`)
+    .then(r => r.json())
+    .then(data => {
+      renderDrawer(data);
+    })
+    .catch(err => {
+      document.getElementById('drawer-metrics-body').innerHTML =
+        `<tr><td colspan="2" style="color:var(--accent2);padding:20px">Error: ${err}</td></tr>`;
+    });
+};
+
+function renderDrawer(data) {
+  const { metrics, config, meta, equity, ic_data } = data;
+
+  // Config strip
+  const cfg = config || {};
+  const alphas = (cfg.alphas_active || []).map(a => a.name).join(' + ');
+  document.getElementById('drawer-config').innerHTML = `
+    <span>GIT: <strong style="color:var(--text)">${cfg.git_commit || '—'}</strong></span>
+    <span>INITIAL CAPITAL: <strong style="color:var(--text)">€${(cfg.initial_capital||10000).toLocaleString()}</strong></span>
+    <span>BENCHMARK: <strong style="color:var(--text)">${cfg.benchmark || '—'}</strong></span>
+    <span>RISK AVERSION: <strong style="color:var(--text)">${cfg.optimizer_params?.risk_aversion || '—'}</strong></span>
+    <span>TAU: <strong style="color:var(--text)">${cfg.optimizer_params?.tau || '—'}</strong></span>
+    <span>ALPHAS: <strong style="color:var(--accent4)">${alphas || '—'}</strong></span>
+    <span>ELAPSED: <strong style="color:var(--text)">${meta?.elapsed_sec || '—'}s</strong></span>
+  `;
+
+  // Metrics table
+  const METRIC_LABELS = {
+    cagr_port: ['CAGR (Portfolio)', true],
+    cagr_bench: ['CAGR (Benchmark)', true],
+    total_return_port: ['Total Return', true],
+    sharpe_port: ['Sharpe', false],
+    sharpe_bench: ['Sharpe (Bench)', false],
+    sortino_port: ['Sortino', false],
+    calmar_port: ['Calmar', false],
+    mdd_port: ['Max Drawdown', true],
+    mdd_bench: ['MDD (Bench)', true],
+    info_ratio: ['Information Ratio', false],
+    alpha_annualised: ['Alpha (ann.)', true],
+    beta: ['Beta', false],
+    hit_rate: ['Hit Rate', true],
+    n_years: ['Years Tested', false],
+  };
+  let mHtml = '';
+  for (const [key, [label, isPct]] of Object.entries(METRIC_LABELS)) {
+    const val = metrics[key];
+    if (val == null) continue;
+    const num = parseFloat(val);
+    const disp = isPct ? (num*100).toFixed(1)+'%' : (+val).toFixed(3);
+    const color = key.includes('mdd') ? (num > -0.2 ? ACCENT : ACCENT2)
+                : key === 'beta'      ? 'inherit'
+                : key === 'hit_rate'  ? (num >= 0.53 ? ACCENT : MUTED)
+                : num >= 0 ? ACCENT : ACCENT2;
+    mHtml += `<tr>
+      <td style="color:var(--muted);font-size:10px">${label}</td>
+      <td style="color:${color};font-weight:600;text-align:right">${disp}</td>
+    </tr>`;
+  }
+  document.getElementById('drawer-metrics-body').innerHTML = mHtml || '<tr><td colspan="2" style="color:var(--muted);text-align:center">No metrics</td></tr>';
+
+  // IC table (horizon 21)
+  const ic21 = (ic_data || []).filter(r => String(r.horizon) === '21');
+  let icHtml = '';
+  if (ic21.length === 0) {
+    icHtml = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">No IC data for this run.<br><small>Run alpha_eval.py --run-id ' + data.run_id + '</small></td></tr>';
+  } else {
+    for (const r of ic21) {
+      const ic   = parseFloat(r.mean_ic || 0);
+      const icir = parseFloat(r.icir    || 0);
+      const hit  = parseFloat(r.hit_rate|| 0);
+      const icColor   = ic   >= 0.04 ? ACCENT : ic   >= 0.02 ? ACCENT3 : ACCENT2;
+      const icirColor = icir >= 0.5  ? ACCENT : icir >= 0.3  ? ACCENT3 : ACCENT2;
+      const verdict   = ic >= 0.04 && icir >= 0.5 ? `<span style="color:${ACCENT}">✓ STRONG</span>`
+                      : ic >= 0.02 && icir >= 0.3 ? `<span style="color:${ACCENT}">✓ USEFUL</span>`
+                      : ic >= 0.015              ? `<span style="color:${ACCENT3}">~ MARGINAL</span>`
+                      : `<span style="color:${ACCENT2}">✗ WEAK</span>`;
+      icHtml += `<tr>
+        <td style="color:var(--text)">${(r.model||'').replace(/_/g,' ')}</td>
+        <td style="color:${icColor}">${ic.toFixed(4)}</td>
+        <td style="color:${icirColor}">${icir.toFixed(3)}</td>
+        <td style="color:var(--muted)">${(hit*100).toFixed(0)}%</td>
+        <td>${verdict}</td>
+      </tr>`;
+    }
+  }
+  document.getElementById('drawer-ic-body').innerHTML = icHtml;
+
+  // Equity chart
+  if (equity && equity.dates && equity.dates.length > 0) {
+    document.getElementById('drawer-period').textContent = `${equity.dates[0]} → ${equity.dates[equity.dates.length-1]}`;
+    if (drawerChart) { drawerChart.destroy(); drawerChart = null; }
+    const ctx = document.getElementById('drawer-equity-chart').getContext('2d');
+    drawerChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: equity.dates,
+        datasets: [
+          { label: 'Portfolio',  data: equity.portfolio, borderColor: ACCENT,  borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false },
+          { label: 'Benchmark',  data: equity.benchmark, borderColor: MUTED,   borderWidth: 1,   pointRadius: 0, tension: 0.1, fill: false, borderDash: [4,3] },
+        ]
+      },
+      options: _chartOpts()
+    });
+  }
+
+  // Note
+  const note = meta?.note || '';
+  document.getElementById('drawer-note-input').value = note;
+}
+
+// ── Drawer save note ───────────────────────────────────────────────────────
+document.getElementById('btn-save-note').onclick = () => {
+  const note = document.getElementById('drawer-note-input').value.trim();
+  saveNote(currentRunId, note, () => {
+    document.getElementById('btn-save-note').textContent = '✓ SAVED';
+    setTimeout(() => document.getElementById('btn-save-note').textContent = 'SAVE NOTE', 2000);
+  });
+};
+
+document.getElementById('drawer-close').onclick = () => {
+  document.getElementById('run-drawer').style.display = 'none';
+};
+
+function saveNote(runId, note, cb) {
+  fetch(`/api/backtest/run/${runId}/note`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({note})
+  }).then(r => r.json()).then(d => { if (d.ok && cb) cb(); }).catch(() => {});
+}
+
+// ── Overlay chart ──────────────────────────────────────────────────────────
+document.getElementById('btn-overlay-chart').onclick = () => {
+  const panel = document.getElementById('overlay-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth' });
+  if (overlayRuns.length === 0) {
+    // Auto-load the last 5 runs
+    fetch('/api/backtest/runs')
+      .then(r => r.json())
+      .then(d => {
+        const top5 = (d.runs || []).slice(0, 5);
+        Promise.all(top5.map(r =>
+          fetch(`/api/backtest/run/${r.run_id}`).then(x => x.json())
+        )).then(runs => {
+          overlayRuns = runs.filter(r => r.equity && r.equity.dates && r.equity.dates.length > 0);
+          renderOverlayChart();
+        });
+      });
+  } else {
+    renderOverlayChart();
+  }
+};
+
+document.getElementById('btn-add-to-overlay').onclick = () => {
+  if (!currentRunId) return;
+  const alreadyIn = overlayRuns.find(r => r.run_id === currentRunId);
+  if (!alreadyIn) {
+    fetch(`/api/backtest/run/${currentRunId}`).then(r => r.json()).then(data => {
+      overlayRuns.push(data);
+      document.getElementById('overlay-panel').style.display = 'block';
+      renderOverlayChart();
+    });
+  } else {
+    document.getElementById('overlay-panel').style.display = 'block';
+    renderOverlayChart();
+  }
+};
+
+document.getElementById('btn-close-overlay').onclick = () => {
+  document.getElementById('overlay-panel').style.display = 'none';
+};
+
+function renderOverlayChart() {
+  if (overlayRuns.length === 0) return;
+  const datasets = [];
+  overlayRuns.forEach((run, i) => {
+    const eq = run.equity;
+    const base = eq.portfolio[0] || 1;
+    datasets.push({
+      label: run.run_id,
+      data: eq.portfolio.map(v => +((v / base * 100).toFixed(2))),
+      borderColor: PALETTE[i % PALETTE.length],
+      borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false,
+    });
+  });
+  // Benchmark once (from first run)
+  const first = overlayRuns[0].equity;
+  const bb = first.benchmark[0] || 1;
+  if (first.benchmark.length > 0) {
+    datasets.push({
+      label: 'Benchmark (EUNL.DE)',
+      data: first.benchmark.map(v => +((v / bb * 100).toFixed(2))),
+      borderColor: MUTED, borderWidth: 1, borderDash: [4,3],
+      pointRadius: 0, tension: 0.1, fill: false,
+    });
+  }
+  const labels = overlayRuns[0].equity.dates;
+  if (overlayChart) { overlayChart.destroy(); overlayChart = null; }
+  const ctx = document.getElementById('overlay-chart').getContext('2d');
+  overlayChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: { ..._chartOpts(), plugins: { ..._chartOpts().plugins,
+      tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}` } }
+    }}
+  });
+  document.getElementById('overlay-legend-text').textContent =
+    overlayRuns.map((r,i) => r.run_id).join(' · ');
+}
+
+// ── Compare mode ───────────────────────────────────────────────────────────
+document.getElementById('btn-enter-compare').onclick = () => {
+  compareMode = true;
+  compareSelected = [];
+  document.getElementById('compare-bar').style.display = 'flex';
+  document.getElementById('btn-enter-compare').style.display = 'none';
+  document.querySelectorAll('.cmp-chk').forEach(c => { c.checked = false; c.parentElement.parentElement.style.opacity = '0.7'; });
+};
+
+document.getElementById('btn-cancel-compare').onclick = exitCompare;
+document.getElementById('btn-close-compare-panel').onclick = exitCompare;
+
+function exitCompare() {
+  compareMode = false;
+  compareSelected = [];
+  document.getElementById('compare-bar').style.display = 'none';
+  document.getElementById('compare-panel').style.display = 'none';
+  document.getElementById('btn-enter-compare').style.display = '';
+  document.querySelectorAll('.cmp-chk').forEach(c => { c.checked = false; c.parentElement.parentElement.style.opacity = ''; });
+}
+
+window.onCompareCheck = function(el) {
+  const runId = el.dataset.run;
+  if (el.checked) {
+    if (compareSelected.length >= 2) { el.checked = false; return; }
+    compareSelected.push(runId);
+    el.parentElement.parentElement.style.opacity = '1';
+  } else {
+    compareSelected = compareSelected.filter(r => r !== runId);
+    el.parentElement.parentElement.style.opacity = '0.7';
+  }
+  const btn = document.getElementById('btn-compare');
+  document.getElementById('compare-count').textContent = `${compareSelected.length} of 2 selected`;
+  btn.disabled = compareSelected.length !== 2;
+};
+
+document.getElementById('btn-compare').onclick = () => {
+  if (compareSelected.length !== 2) return;
+  Promise.all(compareSelected.map(id =>
+    fetch(`/api/backtest/run/${id}`).then(r => r.json())
+  )).then(([runA, runB]) => renderCompare(runA, runB));
+};
+
+function renderCompare(runA, runB) {
+  const panel = document.getElementById('compare-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth' });
+
+  const METRIC_LABELS = {
+    cagr_port: ['CAGR', true],
+    total_return_port: ['Total Return', true],
+    sharpe_port: ['Sharpe', false],
+    sortino_port: ['Sortino', false],
+    calmar_port: ['Calmar', false],
+    mdd_port: ['Max Drawdown', true],
+    info_ratio: ['Info Ratio', false],
+    alpha_annualised: ['Alpha (ann.)', true],
+    beta: ['Beta', false],
+    hit_rate: ['Hit Rate', true],
+    n_years: ['Years', false],
+  };
+
+  let html = `
+    <div style="border-right:1px solid var(--border);padding:12px 16px">
+      <div style="font-size:9px;color:var(--muted);margin-bottom:12px">METRIC</div>
+    </div>
+    <div style="border-right:1px solid var(--border);padding:12px 16px">
+      <div style="font-size:9px;color:var(--accent4);margin-bottom:12px">${runA.run_id}</div>
+    </div>
+    <div style="padding:12px 16px">
+      <div style="font-size:9px;color:${PALETTE[1]};margin-bottom:12px">${runB.run_id}</div>
+    </div>
+  `;
+
+  for (const [key, [label, isPct]] of Object.entries(METRIC_LABELS)) {
+    const vA = parseFloat(runA.metrics[key] || 0);
+    const vB = parseFloat(runB.metrics[key] || 0);
+    const dispA = isPct ? (vA*100).toFixed(1)+'%' : vA.toFixed(3);
+    const dispB = isPct ? (vB*100).toFixed(1)+'%' : vB.toFixed(3);
+    // For MDD, lower is better (less negative); for others higher is better
+    const invertCompare = key === 'mdd_port';
+    const aWins = invertCompare ? vA > vB : vA > vB;
+    const tie   = Math.abs(vA - vB) < 1e-6;
+    const colorA = tie ? '' : (aWins ? `color:${ACCENT};font-weight:700` : `color:${MUTED}`);
+    const colorB = tie ? '' : (!aWins ? `color:${ACCENT};font-weight:700` : `color:${MUTED}`);
+    html += `
+      <div style="border-right:1px solid var(--border);padding:7px 16px;font-size:10px;color:var(--muted);border-top:1px solid var(--border)">${label}</div>
+      <div style="border-right:1px solid var(--border);padding:7px 16px;font-size:11px;border-top:1px solid var(--border);${colorA}">${dispA}</div>
+      <div style="padding:7px 16px;font-size:11px;border-top:1px solid var(--border);${colorB}">${dispB}</div>
+    `;
+  }
+  document.getElementById('compare-content').innerHTML = html;
+}
+
+// ── Chart options helper ───────────────────────────────────────────────────
+function _chartOpts() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: MUTED, font: { size: 9 }, boxWidth: 14, padding: 10 } },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,.88)',
+        titleColor: '#fff', bodyColor: '#ccc',
+      }
+    },
+    scales: {
+      x: { ticks: { color: MUTED, font: { size: 9 }, maxTicksLimit: 10,
+                    callback: (val, idx, t) => (t[idx]?.label || '').slice(0,7) },
+           grid: { color: BORDER } },
+      y: { ticks: { color: MUTED, font: { size: 9 } }, grid: { color: BORDER } }
+    }
+  };
+}
+
+})();
+</script>
+{% endblock %}

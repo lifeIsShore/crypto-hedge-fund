@@ -10,11 +10,11 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
 ## PHASE 1: Quant Validation (Proving the Edge)
 *You cannot trade real money or sell this as a SaaS without proving the historical walk-forward performance.*
 
-- [ ] **1.1 Build the Backtest Engine (`before-go-live/backtest/01-engine.md`)**
+- [x] **1.1 Build the Backtest Engine (`before-go-live/archive-implemented/backtest/01-engine.md`)**
   - Extract the Black-Litterman logic to run over historical price slices without touching the live SQL database.
-- [ ] **1.2 Build the Alpha Evaluator (`before-go-live/backtest/02-alpha-ic-evaluation.md`)**
+- [x] **1.2 Build the Alpha Evaluator (`before-go-live/archive-implemented/backtest/02-alpha-ic-evaluation.md`)**
   - Implement the Information Coefficient (IC) math to strictly measure if the ML model is predicting noise or signal.
-- [ ] **1.3 Build Portfolio Metrics & Dashboard (`backtest/03-portfolio-metrics.md` & `04-dashboard.md`)**
+- [x] **1.3 Build Portfolio Metrics & Dashboard (`before-go-live/archive-implemented/backtest/03-portfolio-metrics.md` & `04-dashboard.md`)**
   - Compute Sharpe, Calmar, and Drawdowns, and render them in the non-technical UI dashboard.
 - [ ] **1.4 Establish ML Baseline (`better-alpha/00-OVERVIEW.md` - Gate 0)**
   - Run the IC evaluation on the *current* ML model and record the baseline AUC and IC into `alpha_ic_results_baseline_v1.csv`.
