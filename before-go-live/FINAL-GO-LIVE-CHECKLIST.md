@@ -18,6 +18,7 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
   - Compute Sharpe, Calmar, and Drawdowns, and render them in the non-technical UI dashboard.
 - [ ] **1.4 Establish ML Baseline (`better-alpha/00-OVERVIEW.md` - Gate 0)**
   - Run the IC evaluation on the *current* ML model and record the baseline AUC and IC into `alpha_ic_results_baseline_v1.csv`.
+  - ⚠️ **Blocked until the 2026-08-20 (session 13) ML coverage fix is verified** — see the "PENDING VERIFICATION" block at the top of `PROJECT-STATE.md`. The model was training on only 78/135 tickers due to a bug that silently wiped tickers missing fundamentals/options data; recording a baseline against that crippled universe would be meaningless once the fix brings more tickers back in.
 - [ ] **1.5 Target Refinement (`better-alpha/02-target-refinement.md`)**
   - Change the ML target from predicting Absolute Return to predicting **Alpha** (Excess Return vs. Benchmark). 
   - Run Gate 2 evaluation: Ensure IC improves by `> 0.003`.

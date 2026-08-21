@@ -1,5 +1,34 @@
 # Control Tower — Project State & Handoff Notes
 
+---
+## 🔍 PENDING VERIFICATION — check this on the next ML pipeline run
+*(Added 2026-08-20, session 13. Delete this block once confirmed and fold the result into the session-13 changelog entry below.)*
+
+Three fixes went in for the ML coverage bug (fundamentals cache TTL + fallback trigger, column-level-not-row-level NaN handling) but haven't been run yet. On the next `RUN_FUND_TOTAL.bat` full ML run, check:
+
+1. **Coverage count** — look for `Step 2 done. N/135 tickers succeeded.` at the end of Step 2. Expect **meaningfully more than 78/135**. Not all 135 (some are genuinely thin: `1S2.DE`, `PPFD.SG`, `GEV`, `SMR`, `OKLO`, `TII.DE`, `KLA.DE`, `ENR.DE`, `CEG` should still legitimately skip) — but tickers that had 3,000+ price rows and still got skipped last time should now succeed: **`BAYN.DE`, `ADS.DE`, `DBK.DE`, `IFX.DE`, `CON.DE`, `MTX.DE`, `MUV2.DE`, `S92.DE`, `CMC.DE`, `NCB.DE`, `GOS.DE`, `DWD.DE`, `AXP.DE`, `BLQA.DE`, `MCD`, `SBUX`, `LOW`, `ABBV`, `AXSM`, `ARGX.BR`, `BEP`, `ALB`, `MIN`, `U6Z.DE`**. If most of these are still skipped, the fix didn't work as intended — flag it for another look.
+2. **New log line during Step 1c** — `fetch_fundamentals complete: N covered, N empty/unavailable, N ETFs skipped (of 135 tickers)`. This line didn't exist before; if it's missing, the fundamentals fetch didn't pick up the fix.
+3. **New per-ticker log lines** for tickers that previously vanished, like: `[BAYN.DE] Optional features unavailable, training without: fund_ (8 columns dropped, not rows)`. This confirms graceful degradation is working — the ticker trains, just without that feature family, instead of being skipped entirely.
+4. **Sanity check the model quality didn't degrade** — spot check a couple of the newly-recovered tickers' AUC values (e.g. `BAYN.DE`, `ADS.DE`) against similar-sector tickers that were already working (e.g. `SAP.DE`, `BAS.DE`). Should be in a similar ballpark (AUC ~0.5–0.7 range seen elsewhere in this universe) — wildly different numbers would suggest the column-dropping logic let through a genuinely bad ticker rather than a merely-uncovered one.
+5. **Don't record the Phase 1.4 ML baseline** (`FINAL-GO-LIVE-CHECKLIST.md`) until this is confirmed — recording it against the old 78/135-ticker, bug-crippled universe would produce a misleading baseline number that the real fix would then look like an improvement over, when really it's just measuring more of the universe correctly for the first time.
+
+---
+
+**2026-08-20 (session 13) — Verified session-10 fixes against a real pipeline run + found and fixed the actual ML coverage bottleneck (Claude, via Filesystem MCP):**
+Ahmet re-ran the full pipeline after deleting the stale ML parquet cache. Verified all 6 session-10 fixes directly against this run's log, then found that ML ticker coverage barely moved (77→78/135) even with a fully fresh cache — meaning the cache-TTL fix, while correct, was not the real bottleneck. Traced it to the actual root cause and fixed it.
+- **Verified working (session-10 fixes), with log evidence:**
+  - Incremental ingestion: `[ingest] Fetching from 2026-08-14 (incremental, overlap=5d)` — 101.1s vs previous 421.6s, no more slow-step alert.
+  - `earnings_calendar` table: `✅ 3b. Earnings calendar (0.7s)`, `7 earnings dates persisted` — no more "no such table".
+  - Regime persistence: digest now shows `Regime: low_stress` instead of `unknown`.
+  - Portfolio value reconciliation: digest `€1,312` now matches performance log `€1,311.80` (previously a €906 vs €1,310 mismatch).
+  - Return sanity check: `Return: +0.11%`, no false CRITICAL alert (correctly quiet, well under the 15% threshold).
+  - `RUN_FUND_TOTAL.bat` `&` escaping: no more `'Rebalancing...' is not recognized` error.
+- **New bug found — the real ML coverage bottleneck was a zero-tolerance `dropna()` in `run_ml_pipeline.py::run_ticker()`, not the cache.** `fund_*` (fundamentals) and `opt_*` (options/short-interest) are ticker-level constants: one fetch, broadcast identically to every row for that ticker. If the fetch fails or returns empty for a ticker, ALL rows share the same NaN in those columns. The old code ran `feat_df[feat_cols + [target_col]].dropna()` across every feature column together (zero tolerance), so one missing optional family wiped the ticker's ENTIRE training history — confirmed directly in the fresh-cache run: `BAYN.DE`, `ADS.DE`, `DBK.DE`, `IFX.DE`, `CON.DE`, `MTX.DE` and ~20 others all had 3,200+ fresh price rows fetched, yet still hit "Too few clean rows; skipping" every time. **Fixed** in three places:
+  1. `run_ml_pipeline.py`: added `drop_uncovered_optional_columns()` — columns entirely NaN for a ticker (from optional families only) are dropped from that ticker's feature set instead of wiping rows; core features (price/volume/technical) still legitimately gate row survival.
+  2. `feature_builder.py::build_features()`: the upstream 20%-NaN row-completeness filter was also counting optional columns, so a ticker missing *two* optional families at once could still get wiped before reaching fix #1. Narrowed that filter to core features only.
+  3. `data_loader.py::fetch_fundamentals()`: found and fixed a second, identical instance of the session-10 "cache never refreshes" bug — fundamentals JSON cache had no TTL. Added the same 7-day TTL pattern as the price cache. Also strengthened the fallback trigger: it used to only retry the mapped US ticker if `'symbol'` was entirely missing from the Yahoo response; many `.DE` cross-listings return a valid `'symbol'` but `None` for every fundamentals field, which silently cached as a permanently-empty record. Now falls back whenever all wanted fields are empty. Also skips the fetch entirely for `ETF_TICKERS` (structurally no PE/PB/EV-EBITDA — not a failure, just not applicable) and added coverage logging (`fetch_fundamentals complete: N covered, N empty, N ETFs skipped`) matching the pattern the options-fetch step already had, so this is diagnosable from now on instead of inferred from column math.
+- **Not yet verified against a live run:** these three changes haven't been re-run yet. Next full ML pipeline run should show materially more than 78/135 tickers succeeding, and per-ticker log lines like `[BAYN.DE] Optional features unavailable, training without: fund_ (8 columns dropped, not rows)` for tickers that previously vanished entirely.
+
 **2026-08-20 (session 12) — Backtest History & Strategy Registry + Documentation Reorganization:**
 - **Backtest History & Strategy Registry — COMPLETE:**
   - Implemented immutable timestamped run storage (`backtests/runs/<run_id>/`).

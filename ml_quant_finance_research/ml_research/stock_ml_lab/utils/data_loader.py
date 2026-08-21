@@ -180,6 +180,18 @@ def fetch_macro_data(start="2014-01-01", end=None, force_refresh=False):
 # FUNDAMENTALS
 # ─────────────────────────────────────────────────────────────────────────────
 
+FUNDAMENTALS_CACHE_TTL_DAYS = 7  # same rationale as PRICE_CACHE_TTL_DAYS
+
+# Bug fix (2026-08-20): known ETFs structurally have no PE/PB/EV-EBITDA —
+# attempting the fetch for them isn't a failure, it's a non-applicable
+# feature family. Skipping it avoids wasted API calls and, more importantly,
+# keeps the coverage log below meaningful (real gaps vs. expected N/A).
+try:
+    from portfolio.src.config import ETF_TICKERS
+except ImportError:
+    ETF_TICKERS = []
+
+
 def fetch_fundamentals(tickers=None, force_refresh=False):
     import yfinance as yf
 
@@ -192,33 +204,74 @@ def fetch_fundamentals(tickers=None, force_refresh=False):
     ]
 
     result = {}
+    n_covered, n_empty, n_etf_skipped = 0, 0, 0
+
     for ticker in tickers:
+        if ticker in ETF_TICKERS:
+            result[ticker] = {}
+            n_etf_skipped += 1
+            continue
+
         safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
         out_path = RAW_DIR / f"{safe_name}_fundamentals.json"
 
-        if out_path.exists() and not force_refresh:
+        # Bug fix (2026-08-20): this cache had no TTL — identical to the price-cache
+        # bug fixed the same day. A ticker whose fetch once returned a sparse/empty
+        # record (info had a 'symbol' but no real fundamentals fields — see the
+        # fallback-trigger fix below) got that empty result cached FOREVER, which
+        # then silently wiped 100% of that ticker's ML training rows every run
+        # (see run_ml_pipeline.py::run_ticker's zero-tolerance dropna).
+        cache_fresh = False
+        if out_path.exists():
+            age_days = (time.time() - out_path.stat().st_mtime) / 86400
+            cache_fresh = age_days < FUNDAMENTALS_CACHE_TTL_DAYS
+
+        if cache_fresh and not force_refresh:
             with open(out_path) as f:
-                result[ticker] = json.load(f)
+                data = json.load(f)
+            result[ticker] = data
+            if any(data.get(k) is not None for k in FIELDS):
+                n_covered += 1
+            else:
+                n_empty += 1
             continue
 
         try:
             info = yf.Ticker(ticker).info
-            if not info or "symbol" not in info:
-                # Try fallback for fundamentals
+            data = {k: info.get(k) for k in FIELDS} if info else {}
+
+            # Bug fix (2026-08-20): the old fallback trigger only fired if
+            # 'symbol' was entirely missing from the response. Many .DE
+            # cross-listings return a valid 'symbol' but None for every
+            # fundamentals field we actually want — that case never
+            # triggered the fallback before, and got cached as a
+            # permanently-empty record. Now: fall back whenever every
+            # wanted field is empty, not just when the whole response is.
+            if not any(v is not None for v in data.values()):
                 fallback = TICKER_MAPPING.get(ticker)
                 if fallback and fallback != ticker:
-                    log.info(f"[{ticker}] Fundamental primary failed — trying fallback: {fallback}")
+                    log.info(f"[{ticker}] Fundamentals empty — trying fallback: {fallback}")
                     info = yf.Ticker(fallback).info
-            
-            data = {k: info.get(k) for k in FIELDS}
+                    data = {k: info.get(k) for k in FIELDS} if info else {}
+
             data["fetched_at"] = datetime.today().isoformat()
             with open(out_path, "w") as f:
                 json.dump(data, f, indent=2)
             result[ticker] = data
+
+            if any(data.get(k) is not None for k in FIELDS):
+                n_covered += 1
+            else:
+                n_empty += 1
+                log.info(f"[{ticker}] Fundamentals unavailable even after fallback — "
+                         f"will train without fund_* features for this ticker")
         except Exception as e:
             log.warning(f"[{ticker}] fundamentals: {e}")
             result[ticker] = {}
+            n_empty += 1
 
+    log.info(f"fetch_fundamentals complete: {n_covered} covered, {n_empty} empty/unavailable, "
+             f"{n_etf_skipped} ETFs skipped (of {len(tickers)} tickers)")
     return result
 
 

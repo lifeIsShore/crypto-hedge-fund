@@ -71,6 +71,54 @@ def get_feature_cols(df):
             and df[c].dtype in [np.float64, np.float32, np.int64, np.int32, float, int]]
 
 
+# Bug fix (2026-08-20): 'fund_*' (fundamentals) and 'opt_*' (options/short-interest)
+# are ticker-level constants — one fetch, broadcast identically to every row for
+# that ticker. If the fetch is unavailable for a ticker (Yahoo has no fundamentals
+# for that listing, or it's an ETF), EVERY row shares the same NaN in those columns.
+# The old code ran a single zero-tolerance `.dropna()` across ALL feature columns
+# together, so one missing optional family silently wiped the ticker's entire
+# training history — even tickers with 3,000+ rows of perfectly good price data
+# (confirmed directly: BAYN.DE, ADS.DE, DBK.DE, IFX.DE, CON.DE, MTX.DE and ~20
+# others all had 3,200+ price rows fetched fresh, yet still hit "Too few clean
+# rows; skipping" every single run).
+#
+# Fix: only the CORE families (price/volume/technical) gate row-level survival —
+# missing values there are a genuine per-row data quality signal (e.g. too early
+# in the series for a rolling window to have filled in). OPTIONAL families
+# (fundamentals, options/short-interest, macro) are handled at the COLUMN level
+# instead: if a column is entirely NaN for this ticker, drop that column from this
+# ticker's feature set and keep training on everything else, the same graceful-
+# degradation approach select_features() already applies elsewhere in this file.
+CORE_FEATURE_PREFIXES = (
+    "ret_", "log_ret_", "vol_", "price_vs_ma", "dist_52w_", "gap_pct",
+    "rel_volume", "volume_trend", "obv_zscore", "vol_price_div_",
+    "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
+)
+OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_")
+
+
+def is_core_feature(col: str) -> bool:
+    return col.startswith(CORE_FEATURE_PREFIXES)
+
+
+def drop_uncovered_optional_columns(feat_df: pd.DataFrame, feat_cols: list, ticker: str) -> list:
+    """For OPTIONAL feature families, drop columns that are entirely NaN for this
+    ticker (coverage gap) rather than letting them wipe every row. Returns the
+    surviving feat_cols list and logs which families were dropped, if any."""
+    dropped = []
+    kept = []
+    for col in feat_cols:
+        if col.startswith(OPTIONAL_FEATURE_PREFIXES) and feat_df[col].isna().all():
+            dropped.append(col)
+        else:
+            kept.append(col)
+    if dropped:
+        families = sorted(set(c.split('_')[0] + '_' for c in dropped))
+        log.info(f"  [{ticker}] Optional features unavailable, training without: "
+                 f"{', '.join(families)} ({len(dropped)} columns dropped, not rows)")
+    return kept
+
+
 FEATURE_SELECTION_ENABLED  = True    # set False to disable for speed
 FEATURE_IMPORTANCE_GATE    = 0.40    # fraction of 1/n_features threshold
 FEATURE_CORR_THRESHOLD     = 0.95   # drop one of any pair above this
@@ -170,6 +218,15 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
         return None
 
     feat_cols = get_feature_cols(feat_df)
+
+    # Bug fix (2026-08-20): drop optional-family columns that are entirely NaN
+    # for this ticker BEFORE the dropna below, so a missing fundamentals/options
+    # fetch degrades gracefully (train without those columns) instead of wiping
+    # every row via the zero-tolerance dropna that follows. Core features
+    # (price/volume/technical) are untouched — missing values there still
+    # legitimately gate row survival.
+    feat_cols = drop_uncovered_optional_columns(feat_df, feat_cols, ticker)
+
     feat_df_clean = feat_df[feat_cols + [target_col]].dropna()
     if len(feat_df_clean) < 300:
         log.warning(f"  [{ticker}] Too few clean rows; skipping")

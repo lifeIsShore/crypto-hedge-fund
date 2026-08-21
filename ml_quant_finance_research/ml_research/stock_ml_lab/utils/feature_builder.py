@@ -279,7 +279,24 @@ def build_features(price_df, fundamentals=None, macro_df=None,
         df = add_options_features(df, options_dict)
     df = add_target(df, horizons=horizons)
 
-    # Drop rows where >20% of features are NaN
-    feat_cols = [c for c in df.columns if not c.startswith(("target_", "future_"))]
-    df = df[df[feat_cols].isnull().mean(axis=1) <= 0.20].copy()
+    # Bug fix (2026-08-20): this row-completeness check used to count ALL feature
+    # columns together, including 'fund_*'/'opt_*'/'macro_*' — ticker-level
+    # constants broadcast identically to every row. A ticker missing two optional
+    # families at once (e.g. no fundamentals AND no options coverage) could
+    # exceed the 20% threshold on EVERY row purely from that broadcast pattern,
+    # wiping its entire history before run_ml_pipeline.py's per-column handling
+    # ever got a chance to run. Now this check only looks at CORE (price/volume/
+    # technical) columns, where a NaN genuinely reflects a bad observation (e.g.
+    # too early in the series for a rolling window). Optional-family coverage
+    # gaps are handled downstream in run_ml_pipeline.py::drop_uncovered_optional_columns
+    # by dropping the column for that ticker, not the row.
+    core_prefixes = (
+        "ret_", "log_ret_", "vol_", "price_vs_ma", "dist_52w_", "gap_pct",
+        "rel_volume", "volume_trend", "obv_zscore", "vol_price_div_",
+        "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
+    )
+    core_cols = [c for c in df.columns
+                 if not c.startswith(("target_", "future_")) and c.startswith(core_prefixes)]
+    if core_cols:
+        df = df[df[core_cols].isnull().mean(axis=1) <= 0.20].copy()
     return df
