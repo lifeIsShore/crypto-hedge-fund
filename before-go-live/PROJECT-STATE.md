@@ -1,18 +1,115 @@
 # Control Tower — Project State & Handoff Notes
 
 ---
-## 🔍 PENDING VERIFICATION — check this on the next ML pipeline run
-*(Added 2026-08-20, session 13. Delete this block once confirmed and fold the result into the session-13 changelog entry below.)*
 
-Three fixes went in for the ML coverage bug (fundamentals cache TTL + fallback trigger, column-level-not-row-level NaN handling) but haven't been run yet. On the next `RUN_FUND_TOTAL.bat` full ML run, check:
+## 🚀 NEXT SESSION — START HERE
 
-1. **Coverage count** — look for `Step 2 done. N/135 tickers succeeded.` at the end of Step 2. Expect **meaningfully more than 78/135**. Not all 135 (some are genuinely thin: `1S2.DE`, `PPFD.SG`, `GEV`, `SMR`, `OKLO`, `TII.DE`, `KLA.DE`, `ENR.DE`, `CEG` should still legitimately skip) — but tickers that had 3,000+ price rows and still got skipped last time should now succeed: **`BAYN.DE`, `ADS.DE`, `DBK.DE`, `IFX.DE`, `CON.DE`, `MTX.DE`, `MUV2.DE`, `S92.DE`, `CMC.DE`, `NCB.DE`, `GOS.DE`, `DWD.DE`, `AXP.DE`, `BLQA.DE`, `MCD`, `SBUX`, `LOW`, `ABBV`, `AXSM`, `ARGX.BR`, `BEP`, `ALB`, `MIN`, `U6Z.DE`**. If most of these are still skipped, the fix didn't work as intended — flag it for another look.
-2. **New log line during Step 1c** — `fetch_fundamentals complete: N covered, N empty/unavailable, N ETFs skipped (of 135 tickers)`. This line didn't exist before; if it's missing, the fundamentals fetch didn't pick up the fix.
-3. **New per-ticker log lines** for tickers that previously vanished, like: `[BAYN.DE] Optional features unavailable, training without: fund_ (8 columns dropped, not rows)`. This confirms graceful degradation is working — the ticker trains, just without that feature family, instead of being skipped entirely.
-4. **Sanity check the model quality didn't degrade** — spot check a couple of the newly-recovered tickers' AUC values (e.g. `BAYN.DE`, `ADS.DE`) against similar-sector tickers that were already working (e.g. `SAP.DE`, `BAS.DE`). Should be in a similar ballpark (AUC ~0.5–0.7 range seen elsewhere in this universe) — wildly different numbers would suggest the column-dropping logic let through a genuinely bad ticker rather than a merely-uncovered one.
-5. **Don't record the Phase 1.4 ML baseline** (`FINAL-GO-LIVE-CHECKLIST.md`) until this is confirmed — recording it against the old 78/135-ticker, bug-crippled universe would produce a misleading baseline number that the real fix would then look like an improvement over, when really it's just measuring more of the universe correctly for the first time.
+> **Last updated: 2026-08-21 (session 16).**
+> ⚠️ **Gate 2 `db_regime` pipeline (task-76) was interrupted mid-run — session ended before it could finish. `gate2_results.csv` will NOT have a row for `db_regime`. Re-run it first thing next session.**
+
+### Where we are in the plan
+
+We are in **Phase 1A** of the "better-alpha" feature-addition process (`before-go-live/better-alpha/00-OVERVIEW.md`). The pipeline is solid (126/135 tickers), Gate 0 baseline is recorded, Gate 1 holdout is locked at 2026-02-23.
+
+### Exact next steps — in order, do not skip
+
+**Step 1 — Re-run Gate 2 for `db_regime`** ← START HERE
+- Task-76 from session 16 was interrupted. `gate2_results.csv` has no row for `db_regime` yet.
+- Run from repo root (takes ~45–60 min):
+  ```bash
+  python before-go-live/better-alpha/gate2_run.py --family db_regime
+  ```
+- When finished, check result:
+  - **PASS** → go to Step 2.
+  - **FAIL** → read the `notes` column, understand why, then try `pead` next.
+  - **Row missing** (pipeline still running or crashed) → re-run: `python before-go-live/better-alpha/gate2_run.py --family db_regime` from repo root.
+
+**Step 2 — If db_regime PASSED: enable the flag**
+- In `ml_quant_finance_research/ml_research/stock_ml_lab/run_ml_pipeline.py` line ~69:
+  ```python
+  ENABLE_DB_REGIME_FEATURES = True   # ← flip this (Gate 2 passed)
+  ```
+- Commit the change. The next scheduled Saturday pipeline run will train with this family.
+
+**Step 3 — Run Gate 2 for `pead`**
+```bash
+python before-go-live/better-alpha/gate2_run.py --family pead
+```
+Wait ~45–60 min. Check result in `gate2_results.csv`. If PASS → set `ENABLE_PEAD_FEATURES = True`.
+
+**Step 4 — Run Gate 2 for `earnings`**
+```bash
+python before-go-live/better-alpha/gate2_run.py --family earnings
+```
+Same process. If PASS → set `ENABLE_EARNINGS_CALENDAR_FEATURES = True`.
+
+**Step 5 — After all Phase 1A families are done: implement Phase 1B**
+
+Phase 1B is **not yet coded** — this is the next real implementation task.
+Add to `utils/feature_builder.py`:
+- `add_crosssectional_features()` — percentile ranks and sector-excess returns across the universe (6 features). Requires precomputation in `run_ml_pipeline.py` before the per-ticker loop.
+- `add_acceleration_features()` — momentum acceleration ratios, vol regime, BB width, RSI momentum (5 features). Pure math on existing columns.
+
+Add to `run_ml_pipeline.py`:
+```python
+ENABLE_CROSSSECTIONAL_FEATURES = False   # Phase 1B
+ENABLE_ACCELERATION_FEATURES   = False   # Phase 1B
+```
+Then run Gate 2 for each: `gate2_run.py --family crosssectional` / `--family acceleration`.
+(Update the `FAMILY_FLAG_MAP` and `CLI_FLAG_MAP` dicts in `gate2_run.py` to include these two new families.)
+
+**Step 6 — Phase 1C (optional, skip if 1A+1B passed Gate 4)**
+
+VWAP deviation, CMF_21d, ADX_14, near-52w-high/low. Low priority — likely correlated with existing technicals. See `01-feature-additions.md §Phase 1C`.
+
+**Step 7 — Phase 1D: Target Refinement** (checklist item 1.5)
+
+Change ML target from predicting absolute return to predicting alpha (excess return vs DAX/SPX benchmark). See `before-go-live/better-alpha/02-target-refinement.md`.
+
+**Step 8 — Gate 4: Holdout validation**
+
+The one-shot evaluation on the locked 2026-02-23 → today window. Only done once, after all feature phases have passed Gate 2/3. See `00-OVERVIEW.md §Gate 4`.
 
 ---
+
+### Quick reference — key files
+
+| File | Purpose |
+|---|---|
+| `before-go-live/better-alpha/gate2_results.csv` | Gate 2 results log — check this first |
+| `before-go-live/better-alpha/baseline_v1_auc.txt` | AUC=0.6331, n=126, holdout=2026-02-23 |
+| `before-go-live/better-alpha/gate2_run.py` | Gate 2 automation — run this per family |
+| `ml_.../stock_ml_lab/run_ml_pipeline.py` lines 65–105 | Feature flags + holdout filter config |
+| `ml_.../stock_ml_lab/utils/feature_builder.py` | Phase 1A code already in here |
+| `before-go-live/better-alpha/01-feature-additions.md` | Full Phase 1B/1C spec and code templates |
+| `before-go-live/better-alpha/02-target-refinement.md` | Phase 1D spec |
+| `before-go-live/FINAL-GO-LIVE-CHECKLIST.md` | Master sequence — 1.4 ✅, 1.5–1.6 pending |
+
+---
+
+
+**2026-08-21 (session 16) — Coverage fix confirmed, Gate 0 baseline re-recorded, Gate 1 holdout filter added to pipeline, gate2_run.py written, Gate 2 running for db_regime (Antigravity IDE):**
+- **PENDING VERIFICATION block — CLOSED.** Ran the full ML pipeline after the session-13 coverage fix. Result: `Step 2 done. 126/135 tickers succeeded` — up from 78/135 (48 newly recovered tickers). Per-ticker graceful degradation logging confirmed. PPFD.SG correctly skipped (only 253 rows, legitimately thin). Session-13 fixes verified working as intended.
+- **Gate 0 baseline re-recorded on valid universe.** The earlier baseline (n_tickers=78, mean_auc=0.6346) was superseded (renamed `baseline_v1_auc_SUPERSEDED_20260821.txt`). New `baseline_v1_auc.txt`: `n_tickers=126, mean_auc_best_of_3=0.6331, std=0.0451, mean_ic_ml_alpha_21d=-0.0603, icir=-1.079, n_obs=6`. AUC barely moved (0.6346→0.6331) — recovered tickers are similar quality to existing ones. Warning still stands: n_obs=6 is too thin for reliable IC, Gate 2 IC criterion is deferred pending live signal accumulation.
+- **Gate 1 holdout filter added to `run_ml_pipeline.py`.** Pipeline now reads `HOLDOUT_START=2026-02-23` from `holdout_config.txt` at module load and filters both prices and macro to `date < HOLDOUT_START` before any training. Removes ~11% of price rows (6 months of 4.5-year history). Also added `--enable-db-regime`, `--enable-pead`, `--enable-earnings` CLI overrides so `gate2_run.py` can invoke the pipeline for a specific family without modifying the source file.
+- **`gate2_run.py` written.** Automates Gate 2 per-family testing: reads baseline_v1_auc.txt → runs pipeline with family flag → reads new ml_state.json AUC → evaluates 00-OVERVIEW.md criteria (delta_auc>+0.003, delta_std≤+0.010, no ticker below 0.50; IC deferred at n_obs<10) → appends row to gate2_results.csv → prints PASS/FAIL. Usage: `python before-go-live/better-alpha/gate2_run.py --family db_regime`.
+- **Gate 2 for `db_regime` currently running** (background task, ~45–60 min). Will produce the first row in `gate2_results.csv`. If PASS: set `ENABLE_DB_REGIME_FEATURES = True` in `run_ml_pipeline.py` and proceed to Gate 3 (2 Saturday live runs). If FAIL: investigate, keep flag False, move to next family or investigate.
+- **Not changed:** `feature_builder.py` (Phase 1A functions already implemented in session 14, flags still False by default), `gate2_results.csv` (row will be appended when the background run finishes), `holdout_config.txt` (still `HOLDOUT_START=2026-02-23`, unchanged).
+
+Ahmet asked to proceed on session 14's recommended next step (flip `ENABLE_PEAD_FEATURES`/`ENABLE_EARNINGS_CALENDAR_FEATURES` and run training). Before doing that, checked `run_ml_pipeline.py` and `before-go-live/better-alpha/00-OVERVIEW.md` for the actual process governing these flags — found session 14's suggestion was wrong and did not act on it.
+- **The flags are gated, not free to flip.** `run_ml_pipeline.py` carries an explicit comment: *"Do NOT set any to True until the corresponding Gate 2 results are recorded in `gate2_results.csv`."* `00-OVERVIEW.md` defines a 5-gate process (baseline → holdout lock → per-family IC test → 2-week live IC observation → holdout validation) specifically to prevent shipping a feature whose AUC improvement is chance/data-mining noise rather than real signal. Checked `gate2_results.csv` directly: still just the header row, zero families tested. Enabling either flag now would skip Gate 2 entirely. **Left both flags at their default `False`** — did not touch `run_ml_pipeline.py`.
+- **Found Gates 0 and 1 were already run today, dated 2026-08-21** (`better-alpha/baseline_v1_auc.txt`, `better-alpha/holdout_config.txt` both exist) — not something this session did, but relevant: `HOLDOUT_START=2026-02-23` is locked, and the recorded baseline is `n_tickers=78, mean_auc_best_of_3=0.6346, mean_ic_ml_alpha_21d=-0.0603 (icir=-1.079, n_obs=6)`.
+- **Problem: the baseline was recorded at `n_tickers=78`, which is the crippled-universe number the still-open "PENDING VERIFICATION" block at the top of this doc explicitly warned against** (session 13's ML coverage fix — fundamentals cache TTL + fallback trigger + column-level NaN handling — hasn't been confirmed against a live run yet; expected result is "meaningfully more than 78/135"). This doc's own item 5 under that pending-verification checklist says not to record the baseline until the coverage fix is confirmed, precisely to avoid this: **`baseline_v1_auc.txt` was written against the old bug-crippled universe, so it is very likely not a valid Gate-0 baseline** — re-running the coverage-fixed pipeline would legitimately change tickers-covered and mean AUC, and the current baseline would then look like a false "improvement" opportunity or false regression depending on which way ticker mix shifts.
+- **The `mean_ic_ml_alpha_21d=-0.0603` figure is also worth flagging on its own** — strongly negative IC with only `n_obs=6` is likely just noise from a tiny sample, not a real signal reversal, but it's now baked into the baseline file that any future Gate 2 comparison will be measured against.
+- **Not done this session:** no code changes, no flags flipped, no training run (no execution access on Ahmet's machine — Filesystem MCP is read/write only). This was a verification-before-acting pass, per the project's own repeated lesson (sessions 2, 6, 9) about not trusting a status/plan at face value.
+
+**2026-08-21 (session 14) — Audited PEAD + earnings-calendar DB/CSV wiring for the Phase 1A ML features, found and fixed a near-miss label leak (Claude, via Filesystem MCP):**
+Ahmet asked for a pre-flight check on the new `add_pead_features()` / `add_earnings_calendar_features()` functions in `ml_quant_finance_research/ml_research/stock_ml_lab/utils/feature_builder.py` before they get flipped on (`enable_pead` / `enable_earnings` flags in `build_features()`, both currently default `False`).
+- **PEAD data source confirmed.** Production (`engine/alpha/pead_alpha.py`) reads only `shared/state/pead_setups.csv` (verified on disk: 37KB, last modified 2026-08-20). The `pead_setups` table in `schema.sql` has no writer anywhere in the codebase — dead table, correctly bypassed rather than queried.
+- **Real bug caught before it shipped: `pead_engine/screener.py` computes `drift_21d`, `drift_63d`, and `outcome_label_correct` as actual forward returns** (`_price_return()`, looking forward from `entry_date`) and writes them into the same `pead_setups.csv` row as the same-day reaction features. These three columns are the ground-truth outcome the PEAD screen is trying to predict — if `add_pead_features()` had read them into the ML feature set, it would be training directly on the label, not a subtle leak. Confirmed the current code never touches them; `keep_cols` in `add_pead_features()` only pulls `entry_date, surprise_pct, quality_score, underreaction_num` (all same-day-computed and clean), and the leak columns are called out explicitly in the function's docstring as a tripwire for the next person who touches this file.
+- **`earnings_calendar` re-verified as genuinely DB-backed** (unlike PEAD's CSV path) — real `INSERT ... ON CONFLICT` into `engine_data.db`, confirmed columns are exactly `ticker, report_date, report_time, eps_estimate, revenue_estimate`. No `confirmed` column exists on this table (an earlier draft of `add_earnings_calendar_features()` assumed one) — fixed to work off `report_date` only, with an explicit docstring caveat that historical rows get silently overwritten as Finnhub's estimate firms up, so this is not valid for precise pre-earnings backtest timing before `HOLDOUT_START`, only for live/forward use.
+- **Both functions rewritten cleanly** between `add_db_regime_features()` and `add_target()` in `feature_builder.py` (old broken block deleted and replaced, not patched in place) and re-read end-to-end afterward to confirm consistency with the rest of the file — both already follow the established Phase 1A pattern (NaN-safe on missing file/table, 1-day-lag / `merge_asof(direction='backward', allow_exact_matches=False)` lookahead protection, `db_`-prefixed columns so `run_ml_pipeline.py::drop_uncovered_optional_columns` can drop the column for a ticker instead of wiping its row history).
+- **Not yet done:** `enable_pead` / `enable_earnings` are still `False` by default in `build_features()` — this session only audited and fixed the two functions, it didn't flip them on or run a training pass with them enabled. That's the natural next step.
 
 **2026-08-20 (session 13) — Verified session-10 fixes against a real pipeline run + found and fixed the actual ML coverage bottleneck (Claude, via Filesystem MCP):**
 Ahmet re-ran the full pipeline after deleting the stale ML parquet cache. Verified all 6 session-10 fixes directly against this run's log, then found that ML ticker coverage barely moved (77→78/135) even with a fully fresh cache — meaning the cache-TTL fix, while correct, was not the real bottleneck. Traced it to the actual root cause and fixed it.
@@ -366,7 +463,9 @@ Buried in `NEW-feature-expansion-8-to-24.md`'s trailing (misplaced) content — 
 17. ~~Sandbox end-to-end dry run~~ — **still genuinely open.** All paper trades on disk are dated 2026-08-09, predating the session-7/7b crash fixes. Check `trades.date` in `sandbox_data.db` against today's date before ever marking done.
 18. ~~Walk-Forward Backtest Suite~~ — ✅ **DONE 2026-08-20 (session 11).** `walk_forward.py` + `alpha_eval.py` + `metrics.py` + `backtests.html` + Flask routes — all built, syntax-checked, import-verified. Run `python backtests/walk_forward.py` to generate results. See session-11 changelog.
 19. **Next open items (in priority order):**
-    - Run the sandbox dry-run (`RUN_SANDBOX.bat`) — still the oldest unverified item.
+    - **Re-run the full pipeline first, to confirm session 13's ML coverage fix** (still the oldest open item in the §PENDING VERIFICATION block at the top of this doc). This has to happen *before* Gate 0/1 mean anything — the current `baseline_v1_auc.txt` was recorded at the old crippled `n_tickers=78`, so it needs to be **re-recorded** once coverage is confirmed fixed (session 15).
+    - **Then run Gate 2 (IC test) for PEAD and earnings, one family at a time, per `before-go-live/better-alpha/00-OVERVIEW.md`** — do not set `ENABLE_PEAD_FEATURES` / `ENABLE_EARNINGS_CALENDAR_FEATURES` to `True` in `run_ml_pipeline.py` until `gate2_results.csv` has a passing row for that family. The two feature functions themselves are already audited and leak-checked (session 14) and ready for this test.
+    - Run the sandbox dry-run (`RUN_SANDBOX.bat`) — still the oldest unverified item outside the ML track.
     - J7 (laggard screen wiring) — confirmed still unbuilt.
     - Portfolio-level Drawdown Protocol (`RISK-POLICY.md` §2b) — needs Ahmet's sign-off.
     - SaaS open decisions (§6) — API key/data-provider strategy is the gateway blocker.

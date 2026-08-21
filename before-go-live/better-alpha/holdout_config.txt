@@ -1,0 +1,6 @@
+# Gate 1 holdout lock — recorded 2026-08-21
+HOLDOUT_START=2026-02-23
+
+# Rule: feature_builder.py, run_ml_pipeline.py, and all IC evaluation
+# code must filter training data to date < HOLDOUT_START.
+# This window is evaluated exactly once, at Gate 4. Never before.

@@ -1,0 +1,11 @@
+# Baseline v1 — recorded 2026-08-21 before any feature additions
+# Source: C:\Users\ahmty\Desktop\hedge-fund\shared\state\ml_state.json
+#         C:\Users\ahmty\Desktop\hedge-fund\backtests\alpha_ic_results.csv
+n_tickers=78
+mean_auc_best_of_3=0.6346
+std_auc_best_of_3=0.0478
+n_tickers_below_min_auc_0.53=2
+mean_ic_momentum_21d=0.0089
+mean_ic_ml_alpha_21d=-0.0603
+icir_ml_alpha_21d=-1.0790
+n_obs_ml_alpha_21d=6

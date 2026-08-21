@@ -62,6 +62,43 @@ FEAT_COLS_EXCLUDE = [
     "Open","High","Low","Close","Adj Close","Volume",
 ]
 
+# ── Phase 1 Feature Addition Flags (before-go-live/better-alpha) ────────────
+# Do NOT set any to True until the corresponding Gate 2 results are recorded
+# in before-go-live/better-alpha/gate2_results.csv. See 00-OVERVIEW.md.
+# All default False = exact baseline_v1 behaviour, byte-for-byte.
+ENABLE_DB_REGIME_FEATURES         = False   # Phase 1A
+ENABLE_PEAD_FEATURES              = False   # Phase 1A
+ENABLE_EARNINGS_CALENDAR_FEATURES = False   # Phase 1A
+
+# ── Gate 1: holdout start (from holdout_config.txt, locked by gate1_holdout.py) ─
+# All training data is filtered to dates strictly before HOLDOUT_START until Gate 4
+# consumes the holdout exactly once. Set to None only if Gate 1 hasn't run yet.
+_HOLDOUT_CFG = ROOT_DIR / "before-go-live" / "better-alpha" / "holdout_config.txt"
+HOLDOUT_START = None
+if _HOLDOUT_CFG.exists():
+    for _hl in _HOLDOUT_CFG.read_text(encoding='utf-8').splitlines():
+        if _hl.startswith('HOLDOUT_START='):
+            HOLDOUT_START = pd.Timestamp(_hl.split('=', 1)[1].strip())
+            break
+
+# ── Gate 2: CLI flag overrides (used by gate2_run.py — do not set by hand) ──
+# Example: python run_ml_pipeline.py --enable-db-regime
+# Overrides the file-level defaults above for that one invocation only.
+import argparse as _argparse
+_g2_parser = _argparse.ArgumentParser(add_help=False)
+_g2_parser.add_argument('--enable-db-regime', action='store_true')
+_g2_parser.add_argument('--enable-pead',      action='store_true')
+_g2_parser.add_argument('--enable-earnings',  action='store_true')
+_g2_args, _ = _g2_parser.parse_known_args()
+if _g2_args.enable_db_regime:   ENABLE_DB_REGIME_FEATURES         = True
+if _g2_args.enable_pead:        ENABLE_PEAD_FEATURES              = True
+if _g2_args.enable_earnings:    ENABLE_EARNINGS_CALENDAR_FEATURES = True
+if any(vars(_g2_args).values()):
+    log.info(
+        f"Gate 2 CLI overrides active: db_regime={ENABLE_DB_REGIME_FEATURES}, "
+        f"pead={ENABLE_PEAD_FEATURES}, earnings={ENABLE_EARNINGS_CALENDAR_FEATURES}"
+    )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 def get_feature_cols(df):
@@ -94,7 +131,7 @@ CORE_FEATURE_PREFIXES = (
     "rel_volume", "volume_trend", "obv_zscore", "vol_price_div_",
     "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
 )
-OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_")
+OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_", "db_")   # db_ added Phase 1A
 
 
 def is_core_feature(col: str) -> bool:
@@ -202,6 +239,10 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
             macro_df=macro,
             options_dict=options_dict,
             horizons=HORIZONS,
+            ticker=ticker,                                       # NEW — Phase 1A
+            enable_db_regime=ENABLE_DB_REGIME_FEATURES,           # NEW — Phase 1A
+            enable_pead=ENABLE_PEAD_FEATURES,                     # NEW — Phase 1A
+            enable_earnings=ENABLE_EARNINGS_CALENDAR_FEATURES,    # NEW — Phase 1A
         )
     except Exception as e:
         log.warning(f"  [{ticker}] Feature build failed: {e}")
@@ -353,6 +394,7 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
         "vol_ann":            realized_vol,
         "feature_importance": feature_importance,
         "n_rows":             len(feat_df_clean),
+        "features_used":      list(feat_cols),   # NEW — Gate-2/3/4 debuggability
     }
 
 
@@ -370,6 +412,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
             "last_price":   round(res["last_price"], 2),
             "vol_ann":      round(res["vol_ann"], 4),
             "sector":       UNIVERSE.get(ticker, "Unknown"),
+            "features_used": res.get("features_used", []),   # NEW — Gate 2/3/4 debuggability
         }
 
     ensemble = ensemble_sentiment(model_signals)
@@ -479,6 +522,11 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
         "scenarios":          scenarios,
         "horizon_accuracy":   horizon_accuracy,
         "feature_importance": feat_importance_list,
+        "feature_flags": {   # NEW — self-documents which Phase 1 families produced this run
+            "ENABLE_DB_REGIME_FEATURES":         ENABLE_DB_REGIME_FEATURES,
+            "ENABLE_PEAD_FEATURES":              ENABLE_PEAD_FEATURES,
+            "ENABLE_EARNINGS_CALENDAR_FEATURES": ENABLE_EARNINGS_CALENDAR_FEATURES,
+        },
     }
 
 
@@ -496,10 +544,31 @@ def main():
         sys.exit(1)
     log.info(f"  Loaded {len(prices)} tickers: {list(prices.keys())}")
 
+    # ── Gate 1 holdout filter: strip training data to pre-holdout dates ──────
+    # All training must use dates < HOLDOUT_START (see holdout_config.txt).
+    # This applies every run until Gate 4 consumes the holdout exactly once.
+    if HOLDOUT_START is not None:
+        _rows_before = sum(len(df) for df in prices.values())
+        prices = {t: df[df.index < HOLDOUT_START] for t, df in prices.items()}
+        _rows_after = sum(len(df) for df in prices.values())
+        log.info(
+            f"Gate 1 holdout filter: cutoff={HOLDOUT_START.date()}, "
+            f"price rows {_rows_before:,} → {_rows_after:,} "
+            f"({100 * (_rows_before - _rows_after) / max(_rows_before, 1):.1f}% removed)"
+        )
+    else:
+        log.warning(
+            "HOLDOUT_START not set — training on full history. "
+            "Run gate1_holdout.py to lock the holdout window."
+        )
+
     log.info("Step 1b — Loading macro data…")
     try:
         macro = fetch_macro_data(force_refresh=False)
         log.info(f"  Macro shape: {macro.shape}")
+        if HOLDOUT_START is not None and macro is not None:
+            macro = macro[macro.index < HOLDOUT_START]
+            log.info(f"  Macro filtered to {len(macro)} rows (pre-holdout)")
     except Exception as e:
         log.warning(f"  Macro load failed ({e}); continuing without macro features")
         macro = None

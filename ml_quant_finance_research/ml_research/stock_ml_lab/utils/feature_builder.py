@@ -128,6 +128,233 @@ def add_options_features(df, options_dict: dict):
     return df
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 1A — DB-bridged signals (better-alpha/01-feature-additions.md §A)
+# All three functions below are additive: they return df unchanged (or with
+# NaN-filled columns) on any failure path, never raise, and never drop rows
+# themselves. Row-level survival for these OPTIONAL families is handled by
+# run_ml_pipeline.py::drop_uncovered_optional_columns, same as fund_/opt_.
+# ─────────────────────────────────────────────────────────────────────────────
+
+DB_REGIME_FEATURE_NAMES = [
+    'stress_score', 'macro_vix', 'macro_risk_on', 'macro_risk_off',
+    'macro_yield_spread', 'macro_hy_spread', 'macro_easing',
+    'macro_tightening', 'macro_expansion', 'macro_slowdown',
+    'macro_contraction', 'macro_ew_transition', 'macro_ew_count',
+    'macro_streak_days',
+]
+
+
+def add_db_regime_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds production engine regime features (engine_data.db, feature_store,
+    ticker='_PORTFOLIO') to the ML feature DataFrame.
+
+    LOOKAHEAD PROTECTION: features are aligned with a 1-day lag (feature
+    date t-1 used for training row at date t) — matches production timing.
+
+    HOLDOUT PROTECTION: this function does NOT filter df.index to
+    pre-holdout dates. The caller (run_ml_pipeline.py) is responsible for
+    filtering to date < HOLDOUT_START before this function is invoked,
+    per better-alpha/holdout_config.txt. This function only reindexes onto
+    whatever dates it's given.
+
+    Column prefix: 'db_' — see OPTIONAL_FEATURE_PREFIXES in
+    run_ml_pipeline.py for why: a ticker with no DB access should lose
+    these columns, not its entire row history.
+    """
+    import sqlite3
+    import os
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.normpath(os.path.join(here, '..', '..', '..', '..', 'engine_data.db'))
+
+    if not os.path.exists(db_path):
+        log.warning(f"[DB regime] engine_data.db not found at {db_path} — skipping")
+        return df
+
+    placeholders = ','.join([f'"{f}"' for f in DB_REGIME_FEATURE_NAMES])
+
+    try:
+        conn = sqlite3.connect(db_path)
+        query = f"""
+            SELECT date, feature_name, feature_value
+            FROM feature_store
+            WHERE ticker = '_PORTFOLIO'
+              AND feature_name IN ({placeholders})
+            ORDER BY date ASC
+        """
+        raw = pd.read_sql(query, conn, parse_dates=['date'])
+        conn.close()
+    except Exception as e:
+        log.warning(f"[DB regime] DB read failed: {e} — skipping")
+        return df
+
+    if raw.empty:
+        log.warning("[DB regime] No portfolio features found in feature_store")
+        return df
+
+    regime_wide = raw.pivot(index='date', columns='feature_name', values='feature_value')
+    regime_wide.columns = [f'db_{c}' for c in regime_wide.columns]
+    regime_wide = regime_wide.sort_index().ffill(limit=5)
+
+    # ── CRITICAL: 1-day lag to prevent lookahead ────────────────────────────
+    regime_wide = regime_wide.shift(1)
+
+    aligned = regime_wide.reindex(df.index, method='ffill', limit=5)
+
+    n_before = len(df.columns)
+    df = df.join(aligned, how='left')
+    n_added = len(df.columns) - n_before
+    log.info(f"[DB regime] Added {n_added} regime features from production DB")
+    return df
+
+
+def add_pead_features(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    """
+    Adds PEAD-based features from shared/state/pead_setups.csv — the actual
+    production source (engine/alpha/pead_alpha.py reads this same file; the
+    `pead_setups` DB table in schema.sql is dead, nothing writes to it).
+
+      db_pead_surprise_pct  — EPS surprise % from the most recent setup
+      db_pead_days_since    — calendar days since that setup's entry_date
+      db_pead_in_window     — 1 if 0 < days_since < 63 (drift window), else 0
+      db_pead_underreaction — 1 if the PEAD engine flagged underreaction
+      db_pead_quality_score — pead_setup_quality mapped to an ordinal
+                              (High=3, Medium=2, Low=1, Disqualified=0)
+
+    LEAKAGE NOTE: pead_setups.csv also has drift_21d, drift_63d, and
+    outcome_label_correct — these are the ACTUAL FORWARD RETURN OUTCOMES
+    (pead_engine/screener.py::_price_return, computed looking forward from
+    entry_date). They are deliberately never read here. Using them would
+    not be a subtle leak, it would be training on the label.
+
+    LOOKAHEAD PROTECTION: a row at date t uses the most recent setup with
+    entry_date < t only (merge_asof, backward direction).
+    """
+    import os
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.normpath(os.path.join(
+        here, '..', '..', '..', '..', 'shared', 'state', 'pead_setups.csv'
+    ))
+
+    for col in ('db_pead_surprise_pct', 'db_pead_days_since', 'db_pead_in_window',
+                'db_pead_underreaction', 'db_pead_quality_score'):
+        df[col] = np.nan
+
+    if not os.path.exists(csv_path):
+        log.warning(f"[PEAD] pead_setups.csv not found at {csv_path} — skipping")
+        return df
+
+    try:
+        raw = pd.read_csv(csv_path, parse_dates=['entry_date'])
+    except Exception as e:
+        log.warning(f"[PEAD] CSV read failed: {e} — skipping")
+        return df
+
+    raw = raw[raw['ticker'] == ticker].copy()
+    raw = raw.dropna(subset=['entry_date']).sort_values('entry_date')
+    if raw.empty:
+        return df
+
+    quality_map = {'High': 3, 'Medium': 2, 'Low': 1, 'Disqualified': 0}
+    raw['quality_score'] = raw['pead_setup_quality'].map(quality_map)
+    raw['underreaction_num'] = raw['underreaction_flag'].astype(bool).astype(float)
+
+    keep_cols = ['entry_date', 'surprise_pct', 'quality_score', 'underreaction_num']
+    raw = raw[keep_cols].drop_duplicates(subset=['entry_date'], keep='last')
+
+    dates = df.index.to_series().rename('row_date').reset_index(drop=True)
+    merged = pd.merge_asof(
+        dates.sort_values().to_frame(), raw,
+        left_on='row_date', right_on='entry_date',
+        direction='backward', allow_exact_matches=False,
+    ).set_index('row_date').reindex(dates.values)
+    merged.index = df.index
+
+    days_since = (df.index.to_series() - merged['entry_date']).dt.days
+    in_window = ((days_since > 0) & (days_since < 63)).astype(float)
+    in_window[days_since.isna()] = np.nan
+
+    df['db_pead_surprise_pct']  = merged['surprise_pct'].values
+    df['db_pead_days_since']    = days_since.values
+    df['db_pead_in_window']     = in_window.values
+    df['db_pead_underreaction'] = merged['underreaction_num'].values
+    df['db_pead_quality_score'] = merged['quality_score'].values
+
+    return df
+
+
+def add_earnings_calendar_features(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    """
+    Adds forward-looking earnings-calendar features from the earnings_calendar
+    DB table (real columns: ticker, report_date, report_time, eps_estimate,
+    revenue_estimate — there is no 'confirmed' column; Finnhub's calendar
+    endpoint returns a rolling ~30-day-forward estimate that gets overwritten
+    in place via ON CONFLICT as dates firm up. See engine/data/earnings_calendar.py).
+
+      db_days_to_earnings    — trading days until next scheduled report
+                                (NaN if none found in next 90 days)
+      db_pre_earnings_window — 1 if within 5 trading days of next report
+
+    LOOKAHEAD CAVEAT: rows are overwritten as Finnhub's estimate changes
+    (dates sometimes move), and there is no way to reconstruct what was
+    known as of a historical row's date — this always uses whatever is in
+    the table right now. For dates before HOLDOUT_START this is a mild,
+    accepted approximation (same category as Risk C in 00-OVERVIEW.md); it
+    is NOT valid for precise backtesting of pre-earnings timing strategies.
+    """
+    import sqlite3
+    import os
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.normpath(os.path.join(here, '..', '..', '..', '..', 'engine_data.db'))
+
+    df['db_days_to_earnings'] = np.nan
+    df['db_pre_earnings_window'] = np.nan
+
+    if not os.path.exists(db_path):
+        log.warning(f"[Earnings] engine_data.db not found at {db_path} — skipping")
+        return df
+
+    try:
+        conn = sqlite3.connect(db_path)
+        raw = pd.read_sql(
+            "SELECT report_date FROM earnings_calendar WHERE ticker = ? ORDER BY report_date ASC",
+            conn, params=(ticker,), parse_dates=['report_date'],
+        )
+        conn.close()
+    except Exception as e:
+        log.warning(f"[Earnings] DB read failed for {ticker}: {e} — skipping")
+        return df
+
+    if raw.empty:
+        return df
+
+    expected_dates = raw['report_date'].sort_values().values
+    row_dates = df.index.to_series()
+
+    def next_report_calendar_days(t):
+        future = expected_dates[expected_dates > np.datetime64(t)]
+        if len(future) == 0:
+            return np.nan
+        return (pd.Timestamp(future[0]) - t).days
+
+    calendar_days_to = row_dates.apply(next_report_calendar_days)
+    # Approximate trading days from calendar days (5/7 ratio); good enough
+    # for a "within N days" style feature, not used for precise scheduling.
+    trading_days_to = (calendar_days_to * (5.0 / 7.0)).round()
+    trading_days_to = trading_days_to.where(trading_days_to <= 90, np.nan)
+
+    df['db_days_to_earnings'] = trading_days_to.values
+    df['db_pre_earnings_window'] = (trading_days_to <= 5).astype(float).where(
+        trading_days_to.notna(), np.nan
+    ).values
+
+    return df
+
+
 def add_target(df, horizons=None):
     if horizons is None:
         horizons = [5, 21, 63]
@@ -251,7 +478,11 @@ def get_feature_selection_report(X: pd.DataFrame, importance_dict: dict = None) 
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_features(price_df, fundamentals=None, macro_df=None,
-                   options_dict=None, horizons=None):
+                   options_dict=None, horizons=None,
+                   ticker=None,                          # NEW — Phase 1A
+                   enable_db_regime=False,                # NEW — Phase 1A
+                   enable_pead=False,                      # NEW — Phase 1A
+                   enable_earnings=False):                 # NEW — Phase 1A
     """
     Builds all feature families for one ticker.
 
@@ -261,9 +492,20 @@ def build_features(price_df, fundamentals=None, macro_df=None,
         macro_df:     macro DataFrame from fetch_macro_data()
         options_dict: dict from options_scraper.fetch_options_features()  ← NEW
         horizons:     list of prediction horizons in days
+        ticker:              current ticker symbol; required if enable_pead
+                             or enable_earnings is True.                    ← Phase 1A
+        enable_db_regime:    if True, calls add_db_regime_features().       ← Phase 1A
+        enable_pead:         if True, calls add_pead_features(). Requires
+                             ticker to be set.                              ← Phase 1A
+        enable_earnings:     if True, calls add_earnings_calendar_features().
+                             Requires ticker to be set.                     ← Phase 1A
 
     Returns:
         DataFrame with all features + target columns.
+
+    All Phase 1A flags default to False, preserving exact prior behaviour
+    (baseline_v1) when the caller passes none of them. See
+    before-go-live/better-alpha/01-feature-additions.md.
     """
     if horizons is None:
         horizons = [5, 21, 63]
@@ -277,6 +519,18 @@ def build_features(price_df, fundamentals=None, macro_df=None,
         df = add_macro_features(df, macro_df)
     if options_dict:
         df = add_options_features(df, options_dict)
+    if enable_db_regime:
+        df = add_db_regime_features(df)
+    if enable_pead:
+        if not ticker:
+            log.warning("[PEAD] enable_pead=True but no ticker passed — skipping")
+        else:
+            df = add_pead_features(df, ticker)
+    if enable_earnings:
+        if not ticker:
+            log.warning("[Earnings] enable_earnings=True but no ticker passed — skipping")
+        else:
+            df = add_earnings_calendar_features(df, ticker)
     df = add_target(df, horizons=horizons)
 
     # Bug fix (2026-08-20): this row-completeness check used to count ALL feature

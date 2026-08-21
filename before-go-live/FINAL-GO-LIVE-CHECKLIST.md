@@ -16,9 +16,8 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
   - Implement the Information Coefficient (IC) math to strictly measure if the ML model is predicting noise or signal.
 - [x] **1.3 Build Portfolio Metrics & Dashboard (`before-go-live/archive-implemented/backtest/03-portfolio-metrics.md` & `04-dashboard.md`)**
   - Compute Sharpe, Calmar, and Drawdowns, and render them in the non-technical UI dashboard.
-- [ ] **1.4 Establish ML Baseline (`better-alpha/00-OVERVIEW.md` - Gate 0)**
-  - Run the IC evaluation on the *current* ML model and record the baseline AUC and IC into `alpha_ic_results_baseline_v1.csv`.
-  - ⚠️ **Blocked until the 2026-08-20 (session 13) ML coverage fix is verified** — see the "PENDING VERIFICATION" block at the top of `PROJECT-STATE.md`. The model was training on only 78/135 tickers due to a bug that silently wiped tickers missing fundamentals/options data; recording a baseline against that crippled universe would be meaningless once the fix brings more tickers back in.
+- [x] **1.4 Establish ML Baseline (`better-alpha/00-OVERVIEW.md` - Gate 0)**
+  - ✅ Done 2026-08-21. Coverage bug fixed (126/135 tickers, up from 78). Baseline recorded in `better-alpha/baseline_v1_auc.txt`: mean_auc=0.6331, n_tickers=126. Gate 1 locked: `HOLDOUT_START=2026-02-23`.
 - [ ] **1.5 Target Refinement (`better-alpha/02-target-refinement.md`)**
   - Change the ML target from predicting Absolute Return to predicting **Alpha** (Excess Return vs. Benchmark). 
   - Run Gate 2 evaluation: Ensure IC improves by `> 0.003`.
