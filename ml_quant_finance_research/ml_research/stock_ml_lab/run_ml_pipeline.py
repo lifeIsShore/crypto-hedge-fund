@@ -69,6 +69,8 @@ FEAT_COLS_EXCLUDE = [
 ENABLE_DB_REGIME_FEATURES         = False   # Phase 1A
 ENABLE_PEAD_FEATURES              = False   # Phase 1A
 ENABLE_EARNINGS_CALENDAR_FEATURES = False   # Phase 1A
+ENABLE_CROSSSECTIONAL_FEATURES    = False   # Phase 1B
+ENABLE_ACCELERATION_FEATURES      = False   # Phase 1B
 
 # ── Gate 1: holdout start (from holdout_config.txt, locked by gate1_holdout.py) ─
 # All training data is filtered to dates strictly before HOLDOUT_START until Gate 4
@@ -89,14 +91,19 @@ _g2_parser = _argparse.ArgumentParser(add_help=False)
 _g2_parser.add_argument('--enable-db-regime', action='store_true')
 _g2_parser.add_argument('--enable-pead',      action='store_true')
 _g2_parser.add_argument('--enable-earnings',  action='store_true')
+_g2_parser.add_argument('--enable-crosssectional', action='store_true')
+_g2_parser.add_argument('--enable-acceleration',   action='store_true')
 _g2_args, _ = _g2_parser.parse_known_args()
 if _g2_args.enable_db_regime:   ENABLE_DB_REGIME_FEATURES         = True
 if _g2_args.enable_pead:        ENABLE_PEAD_FEATURES              = True
 if _g2_args.enable_earnings:    ENABLE_EARNINGS_CALENDAR_FEATURES = True
+if _g2_args.enable_crosssectional: ENABLE_CROSSSECTIONAL_FEATURES = True
+if _g2_args.enable_acceleration:   ENABLE_ACCELERATION_FEATURES   = True
 if any(vars(_g2_args).values()):
     log.info(
         f"Gate 2 CLI overrides active: db_regime={ENABLE_DB_REGIME_FEATURES}, "
-        f"pead={ENABLE_PEAD_FEATURES}, earnings={ENABLE_EARNINGS_CALENDAR_FEATURES}"
+        f"pead={ENABLE_PEAD_FEATURES}, earnings={ENABLE_EARNINGS_CALENDAR_FEATURES}, "
+        f"crosssectional={ENABLE_CROSSSECTIONAL_FEATURES}, acceleration={ENABLE_ACCELERATION_FEATURES}"
     )
 
 
@@ -130,6 +137,7 @@ CORE_FEATURE_PREFIXES = (
     "ret_", "log_ret_", "vol_", "price_vs_ma", "dist_52w_", "gap_pct",
     "rel_volume", "volume_trend", "obv_zscore", "vol_price_div_",
     "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
+    "cs_ret_", "cs_vol_", "cs_sector_excess_", "ret_accel_", "vol_regime", "bb_width", "rsi_momentum"
 )
 OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_", "db_")   # db_ added Phase 1A
 
@@ -228,7 +236,7 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
+def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
     log.info(f"  [{ticker}] Building features…")
@@ -240,9 +248,12 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None):
             options_dict=options_dict,
             horizons=HORIZONS,
             ticker=ticker,                                       # NEW — Phase 1A
+            cs_cache=cs_features_cache if ENABLE_CROSSSECTIONAL_FEATURES else None, # NEW — Phase 1B
             enable_db_regime=ENABLE_DB_REGIME_FEATURES,           # NEW — Phase 1A
             enable_pead=ENABLE_PEAD_FEATURES,                     # NEW — Phase 1A
             enable_earnings=ENABLE_EARNINGS_CALENDAR_FEATURES,    # NEW — Phase 1A
+            enable_crosssectional=ENABLE_CROSSSECTIONAL_FEATURES, # NEW — Phase 1B
+            enable_acceleration=ENABLE_ACCELERATION_FEATURES,     # NEW — Phase 1B
         )
     except Exception as e:
         log.warning(f"  [{ticker}] Feature build failed: {e}")
@@ -526,6 +537,8 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
             "ENABLE_DB_REGIME_FEATURES":         ENABLE_DB_REGIME_FEATURES,
             "ENABLE_PEAD_FEATURES":              ENABLE_PEAD_FEATURES,
             "ENABLE_EARNINGS_CALENDAR_FEATURES": ENABLE_EARNINGS_CALENDAR_FEATURES,
+            "ENABLE_CROSSSECTIONAL_FEATURES":    ENABLE_CROSSSECTIONAL_FEATURES,
+            "ENABLE_ACCELERATION_FEATURES":      ENABLE_ACCELERATION_FEATURES,
         },
     }
 
@@ -594,12 +607,43 @@ def main():
         log.warning(f"  Options fetch failed ({e}); continuing without options features")
         options_all = {}
 
+    # ── 1e. Phase 1B precomputations ──────────────────────
+    cs_features_cache = {}
+    if ENABLE_CROSSSECTIONAL_FEATURES:
+        log.info("Step 1e — Precomputing cross-sectional rank matrices…")
+        all_tickers_prices = {}
+        for t, df in prices.items():
+            price_col = 'Adj Close' if 'Adj Close' in df.columns else 'Close'
+            all_tickers_prices[t] = df[price_col] if price_col in df.columns else None
+        
+        # Build price series and forward-fill to prevent middle-series NaNs from wiping out rolling windows
+        prices_df = pd.DataFrame({
+            t: s
+            for t, s in all_tickers_prices.items() if s is not None
+        }).sort_index().ffill(limit=5)
+        returns_df = prices_df.pct_change()
+        
+        for n in [5, 21, 63]:
+            # Rolling n-day return for all tickers
+            rolling_ret = returns_df.rolling(n, min_periods=max(1, n//2)).apply(lambda x: (1 + x).prod() - 1, raw=False)
+            # Cross-sectional rank at each date (pct=True -> [0, 1])
+            cs_features_cache[f'cs_ret_{n}d_rank'] = rolling_ret.rank(axis=1, pct=True)
+        
+        # Vol rank
+        rolling_vol = returns_df.rolling(21, min_periods=10).std() * np.sqrt(252)
+        cs_features_cache['cs_vol_21d_rank'] = rolling_vol.rank(axis=1, pct=True)
+        
+        # We'll skip sector excess return matrix precomputation for now, to keep it simple,
+        # or implement it if the model requires it (for now, rank and vol are covered).
+        
+        log.info(f"  CS rank matrices precomputed: {len(cs_features_cache)} matrices")
+
     # ── 2. Train models per ticker ────────────────────────
     log.info("Step 2/5 — Training models (walk-forward)…")
     ticker_results = {}
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all)
+        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 

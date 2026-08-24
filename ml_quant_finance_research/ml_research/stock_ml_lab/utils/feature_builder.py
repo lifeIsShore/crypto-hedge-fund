@@ -354,6 +354,95 @@ def add_earnings_calendar_features(df: pd.DataFrame, ticker: str) -> pd.DataFram
 
     return df
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASE 1B — Cross-sectional features + price acceleration
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_universe_snapshot(prices_dict: dict, date: pd.Timestamp,
+                          max_stale_days: int = 5) -> list:
+    """
+    Returns list of tickers that had valid (non-stale) prices on the given date.
+    A ticker is valid if it has at least one non-NaN price in the 5 trading days
+    up to and including date.
+    """
+    valid = []
+    for ticker, df in prices_dict.items():
+        if date not in df.index:
+            continue
+        # Last 5 rows up to date
+        subset = df.loc[:date].tail(max_stale_days)
+        price_col = 'Adj Close' if 'Adj Close' in df.columns else 'Close'
+        if price_col in df.columns and subset[price_col].notna().any():
+            valid.append(ticker)
+    return valid
+
+
+CROSSSECTIONAL_WINDOWS = [5, 21, 63]
+
+def add_crosssectional_features(df: pd.DataFrame, ticker: str,
+                                cs_cache: dict) -> pd.DataFrame:
+    """
+    Adds precomputed cross-sectional ranks across the universe.
+    
+    Features:
+      cs_ret_{n}d_rank    — percentile rank of this ticker's n-day return
+      cs_vol_21d_rank     — percentile rank of this ticker's 21d realised vol
+    """
+    if cs_cache is None:
+        log.warning("[Cross-sectional] cs_cache is None, skipping.")
+        return df
+
+    for k, matrix in cs_cache.items():
+        if ticker in matrix.columns:
+            # Align the ticker's column from the matrix to the current df.index
+            df[k] = matrix[ticker].reindex(df.index).values
+        else:
+            df[k] = np.nan
+    return df
+
+
+def add_acceleration_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Momentum acceleration: is the momentum speeding up or slowing down?
+    
+    Features:
+      ret_accel_1m    = ret_5d / ret_21d
+      ret_accel_3m    = ret_21d / ret_63d
+      vol_regime      = vol_21d / vol_63d
+      bb_width        = (bb_upper - bb_lower) / bb_mid
+      rsi_momentum    = rsi_14 - rsi_14.shift(5)
+    """
+    c = df['Adj Close']
+    
+    # Price-based acceleration
+    ret_5d  = c.pct_change(5)
+    ret_21d = c.pct_change(21)
+    ret_63d = c.pct_change(63)
+    
+    df['ret_accel_1m'] = ret_5d / ret_21d.replace(0, np.nan)
+    df['ret_accel_3m'] = ret_21d / ret_63d.replace(0, np.nan)
+    
+    # Clip extremes: acceleration > 5x or < -5x is likely noise/data error
+    df['ret_accel_1m'] = df['ret_accel_1m'].clip(-5, 5)
+    df['ret_accel_3m'] = df['ret_accel_3m'].clip(-5, 5)
+    
+    # Vol regime
+    lr = np.log(c / c.shift(1))
+    vol_21 = lr.rolling(21).std() * np.sqrt(252)
+    vol_63 = lr.rolling(63).std() * np.sqrt(252)
+    df['vol_regime'] = vol_21 / vol_63.replace(0, np.nan)
+    
+    # Bollinger Band width (requires bb_position already computed)
+    ma20  = c.rolling(20).mean()
+    std20 = c.rolling(20).std()
+    df['bb_width'] = (4 * std20) / ma20.replace(0, np.nan)   # (upper - lower) / mid = 4σ / mid
+    
+    # RSI momentum
+    if 'rsi_14' in df.columns:
+        df['rsi_momentum'] = df['rsi_14'] - df['rsi_14'].shift(5)
+    
+    return df
+
 
 def add_target(df, horizons=None):
     if horizons is None:
@@ -480,9 +569,12 @@ def get_feature_selection_report(X: pd.DataFrame, importance_dict: dict = None) 
 def build_features(price_df, fundamentals=None, macro_df=None,
                    options_dict=None, horizons=None,
                    ticker=None,                          # NEW — Phase 1A
+                   cs_cache=None,                        # NEW — Phase 1B
                    enable_db_regime=False,                # NEW — Phase 1A
                    enable_pead=False,                      # NEW — Phase 1A
-                   enable_earnings=False):                 # NEW — Phase 1A
+                   enable_earnings=False,                  # NEW — Phase 1A
+                   enable_crosssectional=False,            # NEW — Phase 1B
+                   enable_acceleration=False):             # NEW — Phase 1B
     """
     Builds all feature families for one ticker.
 
@@ -494,16 +586,19 @@ def build_features(price_df, fundamentals=None, macro_df=None,
         horizons:     list of prediction horizons in days
         ticker:              current ticker symbol; required if enable_pead
                              or enable_earnings is True.                    ← Phase 1A
+        cs_cache:            precomputed cross-sectional matrices           ← Phase 1B
         enable_db_regime:    if True, calls add_db_regime_features().       ← Phase 1A
         enable_pead:         if True, calls add_pead_features(). Requires
                              ticker to be set.                              ← Phase 1A
         enable_earnings:     if True, calls add_earnings_calendar_features().
                              Requires ticker to be set.                     ← Phase 1A
+        enable_crosssectional: if True, calls add_crosssectional_features() ← Phase 1B
+        enable_acceleration:   if True, calls add_acceleration_features()   ← Phase 1B
 
     Returns:
         DataFrame with all features + target columns.
 
-    All Phase 1A flags default to False, preserving exact prior behaviour
+    All Phase 1A/B flags default to False, preserving exact prior behaviour
     (baseline_v1) when the caller passes none of them. See
     before-go-live/better-alpha/01-feature-additions.md.
     """
@@ -531,6 +626,14 @@ def build_features(price_df, fundamentals=None, macro_df=None,
             log.warning("[Earnings] enable_earnings=True but no ticker passed — skipping")
         else:
             df = add_earnings_calendar_features(df, ticker)
+    if enable_crosssectional:
+        if not ticker:
+            log.warning("[Cross-sectional] enable_crosssectional=True but no ticker passed — skipping")
+        else:
+            df = add_crosssectional_features(df, ticker, cs_cache)
+    if enable_acceleration:
+        df = add_acceleration_features(df)
+        
     df = add_target(df, horizons=horizons)
 
     # Bug fix (2026-08-20): this row-completeness check used to count ALL feature

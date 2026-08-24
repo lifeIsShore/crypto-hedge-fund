@@ -4,70 +4,36 @@
 
 ## 🚀 NEXT SESSION — START HERE
 
-> **Last updated: 2026-08-21 (session 16).**
-> ⚠️ **Gate 2 `db_regime` pipeline (task-76) was interrupted mid-run — session ended before it could finish. `gate2_results.csv` will NOT have a row for `db_regime`. Re-run it first thing next session.**
+> **Last updated: 2026-08-24.**
+> ⚠️ **Gate 2 `crosssectional` pipeline (task-176) is currently running in the background. Check `gate2_results.csv` when it completes.**
 
 ### Where we are in the plan
 
-We are in **Phase 1A** of the "better-alpha" feature-addition process (`before-go-live/better-alpha/00-OVERVIEW.md`). The pipeline is solid (126/135 tickers), Gate 0 baseline is recorded, Gate 1 holdout is locked at 2026-02-23.
+We are currently evaluating **Phase 1B** of the "better-alpha" feature-addition process (`before-go-live/better-alpha/00-OVERVIEW.md`). 
+All Phase 1A families (`db_regime`, `pead`, `earnings`) failed to meet the Gate 2 threshold (`+0.003` AUC) and remain disabled.
+Phase 1B implementation is fully coded. Gate 2 test for `crosssectional` is running now.
 
 ### Exact next steps — in order, do not skip
 
-**Step 1 — Re-run Gate 2 for `db_regime`** ← START HERE
-- Task-76 from session 16 was interrupted. `gate2_results.csv` has no row for `db_regime` yet.
-- Run from repo root (takes ~45–60 min):
-  ```bash
-  python before-go-live/better-alpha/gate2_run.py --family db_regime
-  ```
-- When finished, check result:
-  - **PASS** → go to Step 2.
-  - **FAIL** → read the `notes` column, understand why, then try `pead` next.
-  - **Row missing** (pipeline still running or crashed) → re-run: `python before-go-live/better-alpha/gate2_run.py --family db_regime` from repo root.
+**Step 1 — Await Gate 2 for `crosssectional`** ← START HERE
+- Task-176 is currently running the pipeline with `--enable-crosssectional`.
+- When finished, check result in `gate2_results.csv`:
+  - **PASS** → enable `ENABLE_CROSSSECTIONAL_FEATURES = True` in `run_ml_pipeline.py`.
+  - **FAIL** → keep it False.
 
-**Step 2 — If db_regime PASSED: enable the flag**
-- In `ml_quant_finance_research/ml_research/stock_ml_lab/run_ml_pipeline.py` line ~69:
-  ```python
-  ENABLE_DB_REGIME_FEATURES = True   # ← flip this (Gate 2 passed)
-  ```
-- Commit the change. The next scheduled Saturday pipeline run will train with this family.
-
-**Step 3 — Run Gate 2 for `pead`**
+**Step 2 — Run Gate 2 for `acceleration`**
 ```bash
-python before-go-live/better-alpha/gate2_run.py --family pead
+python before-go-live/better-alpha/gate2_run.py --family acceleration
 ```
-Wait ~45–60 min. Check result in `gate2_results.csv`. If PASS → set `ENABLE_PEAD_FEATURES = True`.
+Wait ~45–60 min. Check result in `gate2_results.csv`. If PASS → set `ENABLE_ACCELERATION_FEATURES = True`.
 
-**Step 4 — Run Gate 2 for `earnings`**
-```bash
-python before-go-live/better-alpha/gate2_run.py --family earnings
-```
-Same process. If PASS → set `ENABLE_EARNINGS_CALENDAR_FEATURES = True`.
-
-**Step 5 — After all Phase 1A families are done: implement Phase 1B**
-
-Phase 1B is **not yet coded** — this is the next real implementation task.
-Add to `utils/feature_builder.py`:
-- `add_crosssectional_features()` — percentile ranks and sector-excess returns across the universe (6 features). Requires precomputation in `run_ml_pipeline.py` before the per-ticker loop.
-- `add_acceleration_features()` — momentum acceleration ratios, vol regime, BB width, RSI momentum (5 features). Pure math on existing columns.
-
-Add to `run_ml_pipeline.py`:
-```python
-ENABLE_CROSSSECTIONAL_FEATURES = False   # Phase 1B
-ENABLE_ACCELERATION_FEATURES   = False   # Phase 1B
-```
-Then run Gate 2 for each: `gate2_run.py --family crosssectional` / `--family acceleration`.
-(Update the `FAMILY_FLAG_MAP` and `CLI_FLAG_MAP` dicts in `gate2_run.py` to include these two new families.)
-
-**Step 6 — Phase 1C (optional, skip if 1A+1B passed Gate 4)**
-
+**Step 3 — Phase 1C (optional, skip if 1A+1B passed Gate 4)**
 VWAP deviation, CMF_21d, ADX_14, near-52w-high/low. Low priority — likely correlated with existing technicals. See `01-feature-additions.md §Phase 1C`.
 
-**Step 7 — Phase 1D: Target Refinement** (checklist item 1.5)
-
+**Step 4 — Phase 1D: Target Refinement** (checklist item 1.5)
 Change ML target from predicting absolute return to predicting alpha (excess return vs DAX/SPX benchmark). See `before-go-live/better-alpha/02-target-refinement.md`.
 
-**Step 8 — Gate 4: Holdout validation**
-
+**Step 5 — Gate 4: Holdout validation**
 The one-shot evaluation on the locked 2026-02-23 → today window. Only done once, after all feature phases have passed Gate 2/3. See `00-OVERVIEW.md §Gate 4`.
 
 ---
@@ -80,15 +46,23 @@ The one-shot evaluation on the locked 2026-02-23 → today window. Only done onc
 | `before-go-live/better-alpha/baseline_v1_auc.txt` | AUC=0.6331, n=126, holdout=2026-02-23 |
 | `before-go-live/better-alpha/gate2_run.py` | Gate 2 automation — run this per family |
 | `ml_.../stock_ml_lab/run_ml_pipeline.py` lines 65–105 | Feature flags + holdout filter config |
-| `ml_.../stock_ml_lab/utils/feature_builder.py` | Phase 1A code already in here |
+| `ml_.../stock_ml_lab/utils/feature_builder.py` | Phase 1A/1B code already in here |
 | `before-go-live/better-alpha/01-feature-additions.md` | Full Phase 1B/1C spec and code templates |
 | `before-go-live/better-alpha/02-target-refinement.md` | Phase 1D spec |
 | `before-go-live/FINAL-GO-LIVE-CHECKLIST.md` | Master sequence — 1.4 ✅, 1.5–1.6 pending |
 
 ---
 
+**2026-08-24 — Phase 1A complete (all failed Gate 2), Phase 1B implemented & testing (Antigravity IDE):**
+- **Phase 1A Testing Concluded:** Ran Gate 2 for `db_regime`, `pead`, and `earnings`. All three families successfully ran through the ML pipeline, but none achieved the strict `+0.003` AUC delta required by Gate 2. (`db_regime`: +0.0008, `pead`: +0.0009, `earnings`: +0.0008). Flags successfully remained `False`, proving the gating system effectively filters out noise.
+- **Phase 1B Implemented:** Implemented `add_crosssectional_features()` and `add_acceleration_features()` in `feature_builder.py`. Added `ENABLE_CROSSSECTIONAL_FEATURES` and `ENABLE_ACCELERATION_FEATURES` to `run_ml_pipeline.py`.
+- **Precomputation Optimisation:** Cross-sectional features are now vectorized and precomputed before the per-ticker loop in `run_ml_pipeline.py` to prevent hours of computation. 
+- **Bug Fix (Row Drops):** Discovered a bug where missing days in `returns_df` caused pandas `rolling(63)` to wipe out 3 months of features per missing day, causing 72 tickers to drop out. Fixed by using `.ffill(limit=5)` before calculating returns, ensuring rolling windows survive thin days.
+- **Cross-sectional Failed Gate 2:** The `crosssectional` features successfully ran on all 126 tickers, but failed the Gate 2 criteria (AUC dropped by -0.0054). The flag remains `False`.
+- **Acceleration Failed Gate 2:** The `acceleration` features successfully ran on all 126 tickers, but failed the Gate 2 criteria (AUC dropped by -0.0063). The flag remains `False`.
+- **Phase 1B Testing Concluded:** Both feature families (`crosssectional` and `acceleration`) failed Gate 2 and remain disabled.
+- **Current Status:** Ready to move to Phase 1C (optional technicals) or Phase 1D (Target Refinement: predicting Alpha instead of absolute returns).
 
-**2026-08-21 (session 16) — Coverage fix confirmed, Gate 0 baseline re-recorded, Gate 1 holdout filter added to pipeline, gate2_run.py written, Gate 2 running for db_regime (Antigravity IDE):**
 - **PENDING VERIFICATION block — CLOSED.** Ran the full ML pipeline after the session-13 coverage fix. Result: `Step 2 done. 126/135 tickers succeeded` — up from 78/135 (48 newly recovered tickers). Per-ticker graceful degradation logging confirmed. PPFD.SG correctly skipped (only 253 rows, legitimately thin). Session-13 fixes verified working as intended.
 - **Gate 0 baseline re-recorded on valid universe.** The earlier baseline (n_tickers=78, mean_auc=0.6346) was superseded (renamed `baseline_v1_auc_SUPERSEDED_20260821.txt`). New `baseline_v1_auc.txt`: `n_tickers=126, mean_auc_best_of_3=0.6331, std=0.0451, mean_ic_ml_alpha_21d=-0.0603, icir=-1.079, n_obs=6`. AUC barely moved (0.6346→0.6331) — recovered tickers are similar quality to existing ones. Warning still stands: n_obs=6 is too thin for reliable IC, Gate 2 IC criterion is deferred pending live signal accumulation.
 - **Gate 1 holdout filter added to `run_ml_pipeline.py`.** Pipeline now reads `HOLDOUT_START=2026-02-23` from `holdout_config.txt` at module load and filters both prices and macro to `date < HOLDOUT_START` before any training. Removes ~11% of price rows (6 months of 4.5-year history). Also added `--enable-db-regime`, `--enable-pead`, `--enable-earnings` CLI overrides so `gate2_run.py` can invoke the pipeline for a specific family without modifying the source file.

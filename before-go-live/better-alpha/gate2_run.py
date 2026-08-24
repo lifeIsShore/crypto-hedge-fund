@@ -63,11 +63,15 @@ FAMILY_FLAG_MAP = {
     'db_regime': 'ENABLE_DB_REGIME_FEATURES',
     'pead':      'ENABLE_PEAD_FEATURES',
     'earnings':  'ENABLE_EARNINGS_CALENDAR_FEATURES',
+    'crosssectional': 'ENABLE_CROSSSECTIONAL_FEATURES',
+    'acceleration':   'ENABLE_ACCELERATION_FEATURES',
 }
 CLI_FLAG_MAP = {
     'db_regime': '--enable-db-regime',
     'pead':      '--enable-pead',
     'earnings':  '--enable-earnings',
+    'crosssectional': '--enable-crosssectional',
+    'acceleration':   '--enable-acceleration',
 }
 
 # Gate 2 thresholds (from 00-OVERVIEW.md)
@@ -157,7 +161,7 @@ def append_result(row: dict):
     df_new = pd.DataFrame([row])
     write_header = (not os.path.exists(GATE2_CSV)) or os.path.getsize(GATE2_CSV) < 10
     df_new.to_csv(GATE2_CSV, mode='a', header=write_header, index=False)
-    print(f"Result appended → {GATE2_CSV}")
+    print(f"Result appended -> {GATE2_CSV}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -167,8 +171,8 @@ def main():
     )
     parser.add_argument(
         '--family', required=True,
-        choices=['db_regime', 'pead', 'earnings'],
-        help='Feature family to test.',
+        choices=['db_regime', 'pead', 'earnings', 'crosssectional', 'acceleration'],
+        help="Feature family to test (e.g., db_regime, pead, earnings, crosssectional, acceleration)"
     )
     parser.add_argument(
         '--force', action='store_true',
@@ -198,12 +202,12 @@ def main():
     n_obs_base  = int(float(baseline.get('n_obs_ml_alpha_21d', 0)))
     n_tix_base  = int(float(baseline.get('n_tickers', 126)))
 
-    print(f"\nBaseline (v1): AUC={auc_before:.4f} ± {std_before:.4f}  "
+    print(f"\nBaseline (v1): AUC={auc_before:.4f} +/- {std_before:.4f}  "
           f"IC={ic_before:.4f}  ICIR={icir_before:.4f}  n_obs={n_obs_base}  "
           f"n_tickers={n_tix_base}")
     print(f"\nAUC note: baseline was recorded on FULL history (no holdout filter).")
     print(f"          Gate 2 test run uses the holdout filter (~11% fewer rows).")
-    print(f"          Comparison is slightly conservative (harder to pass) — "
+    print(f"          Comparison is slightly conservative (harder to pass) - "
           f"correct direction.\n")
 
     # ── 2. Run pipeline with family enabled ───────────────────────────────────
@@ -217,7 +221,7 @@ def main():
     delta_auc  = auc_after - auc_before
     delta_std  = std_after - std_before
 
-    print(f"New AUC:  {auc_after:.4f} ± {std_after:.4f}  "
+    print(f"New AUC:  {auc_after:.4f} +/- {std_after:.4f}  "
           f"n_tickers={n_tickers}  n_below_0.50={below_050}")
     print(f"Delta:    AUC {delta_auc:+.4f}  std {delta_std:+.4f}")
 
@@ -232,7 +236,7 @@ def main():
 
     print(f"\nIC (ml_alpha 21d): IC={ic_after}  ICIR={icir_after}  n_obs={n_obs_ic}")
     if not ic_sufficient:
-        print(f"  ⚠  IC gate DEFERRED (n_obs={n_obs_ic} < {MIN_OBS_FOR_IC_GATE}).")
+        print(f"  (!) IC gate DEFERRED (n_obs={n_obs_ic} < {MIN_OBS_FOR_IC_GATE}).")
         print(f"     Re-check after 2+ Saturday live pipeline runs accumulate signal dates.")
 
     # ── 5. Evaluate criteria ──────────────────────────────────────────────────
@@ -240,38 +244,38 @@ def main():
 
     # C1: AUC improvement (primary — always active)
     c1 = delta_auc > THRESHOLD_DELTA_AUC
-    print(f"  {'✓' if c1 else '✗'} delta_auc > +{THRESHOLD_DELTA_AUC:.3f}:  "
+    print(f"  {'[PASS]' if c1 else '[FAIL]'} delta_auc > +{THRESHOLD_DELTA_AUC:.3f}:  "
           f"{delta_auc:+.4f}  ({'PASS' if c1 else 'FAIL'})")
 
     # C2: AUC variance stability
     c2 = delta_std <= THRESHOLD_DELTA_STD
-    print(f"  {'✓' if c2 else '✗'} delta_std ≤ +{THRESHOLD_DELTA_STD:.3f}:   "
+    print(f"  {'[PASS]' if c2 else '[FAIL]'} delta_std <= +{THRESHOLD_DELTA_STD:.3f}:   "
           f"{delta_std:+.4f}  ({'PASS' if c2 else 'FAIL'})")
 
     # C3: No ticker regressions below 0.50
     c3 = (below_050 == 0)
-    print(f"  {'✓' if c3 else '✗'} no ticker AUC < 0.50:  "
-          f"n_below={below_050}  ({'PASS' if c3 else 'FAIL — investigate these tickers'})")
+    print(f"  {'[PASS]' if c3 else '[FAIL]'} no ticker AUC < 0.50:  "
+          f"n_below={below_050}  ({'PASS' if c3 else 'FAIL - investigate these tickers'})")
 
     # C4+C5: IC criteria (deferred if n_obs too low)
     if ic_sufficient:
         c4 = delta_ic > THRESHOLD_DELTA_IC
         c5 = delta_icir >= THRESHOLD_DELTA_ICIR
-        print(f"  {'✓' if c4 else '✗'} delta_ic > +{THRESHOLD_DELTA_IC:.3f}:   "
+        print(f"  {'[PASS]' if c4 else '[FAIL]'} delta_ic > +{THRESHOLD_DELTA_IC:.3f}:   "
               f"{delta_ic:+.4f}  ({'PASS' if c4 else 'FAIL'})")
-        print(f"  {'✓' if c5 else '✗'} delta_icir ≥ {THRESHOLD_DELTA_ICIR:.2f}:  "
+        print(f"  {'[PASS]' if c5 else '[FAIL]'} delta_icir >= {THRESHOLD_DELTA_ICIR:.2f}:  "
               f"{delta_icir:+.4f}  ({'PASS' if c5 else 'FAIL'})")
         hard = [c1, c2, c3, c4, c5]
     else:
         c4 = c5 = None
-        print(f"  ⊙  IC criteria (C4+C5): DEFERRED (n_obs={n_obs_ic} < {MIN_OBS_FOR_IC_GATE})")
+        print(f"  [-] IC criteria (C4+C5): DEFERRED (n_obs={n_obs_ic} < {MIN_OBS_FOR_IC_GATE})")
         hard = [c1, c2, c3]
 
     passed = all(hard)
 
     # ── 6. Verdict ────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"  GATE 2 VERDICT: {'✅  PASS' if passed else '❌  FAIL'}")
+    print(f"  GATE 2 VERDICT: {'[PASS]' if passed else '[FAIL]'}")
     print(f"{'=' * 60}")
 
     if passed:
@@ -279,19 +283,19 @@ def main():
         print(f"  1. Set {flag_name} = True in run_ml_pipeline.py (line ~69).")
         print(f"  2. Run the next two Saturday live pipeline runs with this flag enabled.")
         print(f"  3. After each Saturday run, check alpha_eval.py IC for ml_alpha.")
-        print(f"     → Gate 3 requires live IC within ±0.008 of walk-forward IC.")
+        print(f"     -> Gate 3 requires live IC within +/-0.008 of walk-forward IC.")
         print(f"  4. Once Gate 3 passes, proceed to the next feature family.")
         if c4 is None:
-            print(f"\n  ⚠  IC gate was deferred. Revisit delta_ic after accumulating")
-            print(f"     ≥{MIN_OBS_FOR_IC_GATE} ml_alpha signal observations in the live DB.")
+            print(f"\n  (!) IC gate was deferred. Revisit delta_ic after accumulating")
+            print(f"     >={MIN_OBS_FOR_IC_GATE} ml_alpha signal observations in the live DB.")
             print(f"     If IC then fails (+0.003 threshold), revert the flag.")
     else:
         print(f"\nNext steps:")
-        print(f"  • Keep {flag_name} = False (it was not changed by this script).")
-        print(f"  • Investigate the failing criterion (see above).")
-        print(f"  • Do NOT proceed to the next feature family until this is understood.")
-        print(f"  • Optional: re-run baseline pipeline (no flags) to confirm")
-        print(f"    AUC ≈ {auc_before:.4f} — this verifies the family is cleanly reversible.")
+        print(f"  * Keep {flag_name} = False (it was not changed by this script).")
+        print(f"  * Investigate the failing criterion (see above).")
+        print(f"  * Do NOT proceed to the next feature family until this is understood.")
+        print(f"  * Optional: re-run baseline pipeline (no flags) to confirm")
+        print(f"    AUC ~= {auc_before:.4f} - this verifies the family is cleanly reversible.")
 
     # ── 7. Record ─────────────────────────────────────────────────────────────
     notes_parts = [
