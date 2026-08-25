@@ -54,7 +54,7 @@ def _load_prompt() -> str:
         return "Summarize the following hedge fund system data plainly and concisely."
 
 
-def _call_ollama(model: str, system_prompt: str, data_block: dict, timeout: int = 300) -> str:
+def _call_ollama(model: str, system_prompt: str, data_block: dict, timeout: int = 6000) -> str:
     payload = {
         "model": model,
         "system": system_prompt,

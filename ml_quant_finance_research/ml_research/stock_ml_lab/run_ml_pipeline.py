@@ -98,6 +98,8 @@ _g2_parser.add_argument('--enable-alpha-target',   action='store_true')
 _g2_parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for all models (default: 42). '
                              'Used by gate2_run.py --n-seeds for variance estimation.')
+_g2_parser.add_argument('--ticker', type=str, default=None,
+                        help='Run only for this specific ticker (useful for recovery)')
 _g2_args, _ = _g2_parser.parse_known_args()
 if _g2_args.enable_db_regime:   ENABLE_DB_REGIME_FEATURES         = True
 if _g2_args.enable_pead:        ENABLE_PEAD_FEATURES              = True
@@ -249,12 +251,16 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None, benchmark_df=None):
+def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None, benchmark_df=None, prebuilt_features=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
-    log.info(f"  [{ticker}] Building features…")
-    try:
-        feat_df = build_features(
+    
+    if prebuilt_features is not None and ticker in prebuilt_features:
+        feat_df = prebuilt_features[ticker]
+    else:
+        log.info(f"  [{ticker}] Building features…")
+        try:
+            feat_df = build_features(
             prices[ticker],
             fundamentals=fundamentals.get(ticker),
             macro_df=macro,
@@ -270,9 +276,12 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_feature
             benchmark_df=benchmark_df,                            # NEW — Phase 1D
             enable_alpha_target=ENABLE_ALPHA_TARGET               # NEW — Phase 1D
         )
-    except Exception as e:
-        log.warning(f"  [{ticker}] Feature build failed: {e}")
-        return None
+        except Exception as e:
+            log.warning(f"  [{ticker}] Feature build failed: {e}")
+            return None
+        
+        if prebuilt_features is not None:
+            prebuilt_features[ticker] = feat_df
 
     target_col = f"target_dir_{PRIMARY_HOR}d"
     if target_col not in feat_df.columns:
@@ -571,7 +580,17 @@ def main():
     if not prices:
         log.error("No price data found. Run 00_data_pipeline.ipynb first.")
         sys.exit(1)
-    log.info(f"  Loaded {len(prices)} tickers: {list(prices.keys())}")
+        
+    if _g2_args.ticker:
+        target_ticker = _g2_args.ticker.upper()
+        if target_ticker in prices:
+            prices = {target_ticker: prices[target_ticker]}
+            log.info(f"  [SINGLE TICKER MODE] Filtered universe to: {target_ticker}")
+        else:
+            log.error(f"  [SINGLE TICKER MODE] Ticker {target_ticker} not found in database.")
+            sys.exit(1)
+    else:
+        log.info(f"  Loaded {len(prices)} tickers: {list(prices.keys())}")
 
     # ── Gate 1 holdout filter: strip training data to pre-holdout dates ──────
     # All training must use dates < HOLDOUT_START (see holdout_config.txt).
@@ -656,17 +675,51 @@ def main():
 
     # ── 2. Train models per ticker ────────────────────────
     log.info("Step 2/5 — Training models (walk-forward)…")
+    
+    # NEW: Disk-based feature caching to dramatically speed up multi-seed testing
+    import hashlib
+    import pickle
+    from pathlib import Path
+    
+    flags_tuple = (
+        ENABLE_DB_REGIME_FEATURES, ENABLE_PEAD_FEATURES, ENABLE_EARNINGS_CALENDAR_FEATURES,
+        ENABLE_CROSSSECTIONAL_FEATURES, ENABLE_ACCELERATION_FEATURES, ENABLE_ALPHA_TARGET,
+        str(HOLDOUT_START)
+    )
+    cache_key = hashlib.md5(str(flags_tuple).encode()).hexdigest()
+    cache_dir = Path("C:/Users/ahmty/Desktop/hedge-fund/shared/state/feature_cache")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_dir / f"features_{cache_key}.pkl"
+    
+    prebuilt_features = {}
+    if cache_path.exists():
+        log.info(f"  Loaded pre-computed feature matrix from cache: {cache_path.name}")
+        try:
+            with open(cache_path, "rb") as f:
+                prebuilt_features = pickle.load(f)
+        except Exception as e:
+            log.warning(f"  Failed to load cache: {e}. Rebuilding...")
+            prebuilt_features = {}
+    
     ticker_results = {}
     benchmark_df = prices.get('EUNL.DE')
     
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache, benchmark_df=benchmark_df)
+        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache, benchmark_df=benchmark_df, prebuilt_features=prebuilt_features)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 
     successful = sum(1 for r in ticker_results.values() if r)
     log.info(f"Step 2 done. {successful}/{len(ticker_results)} tickers succeeded.")
+
+    if not cache_path.exists() and prebuilt_features:
+        try:
+            with open(cache_path, "wb") as f:
+                pickle.dump(prebuilt_features, f)
+            log.info(f"  Saved computed features to cache: {cache_path.name}")
+        except Exception as e:
+            log.warning(f"  Failed to save cache: {e}")
 
     if successful == 0:
         log.error("All tickers failed. Check data quality.")

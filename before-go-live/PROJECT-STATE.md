@@ -21,13 +21,17 @@ This runs the pipeline 3x (seeds 42, 123, 7) with holdout filter but NO feature 
 - An apples-to-apples AUC baseline for fair Gate 2 comparisons
 - A seed-to-seed noise floor estimate (any delta within this range is noise, not signal)
 
-**Step 2 — Re-test Phase 1 families with fixed methodology**
-```bash
-python before-go-live/better-alpha/gate2_run.py --family db_regime --n-seeds 3 --force
-python before-go-live/better-alpha/gate2_run.py --family pead --n-seeds 3 --force
-python before-go-live/better-alpha/gate2_run.py --family earnings --n-seeds 3 --force
+**Step 2 — Re-test ALL Phase 1 families with fixed methodology**
+Because feature building + training across 6 families will take ~9 hours sequentially, you should use the Antigravity `/goal` command to run this overnight.
+
+In the chat interface, run:
+```text
+/goal Run the full Gate 2 tests for all 6 alpha families sequentially using gate2_run.py, wait for them to finish, and generate a final report of the AUC improvements.
 ```
-Each takes ~2–3 hours (3 pipeline runs per family). The `--force` flag overwrites the invalid previous results. The new results will use the holdout-adjusted baseline and report a noise floor annotation so you can tell signal from noise.
+This will autonomously run:
+`python before-go-live/better-alpha/gate2_run.py --family db_regime --n-seeds 3 --force`
+`python before-go-live/better-alpha/gate2_run.py --family pead --n-seeds 3 --force`
+... and so on for `earnings`, `crosssectional`, `acceleration`, and `target_refinement`.
 
 **Step 3 — Decide on Phase 1B/1D based on valid data**
 Only after Step 2 results are in. If any family passes, proceed to Gate 3 (2 Saturday live runs). `crosssectional` (-0.005), `acceleration` (-0.006), and especially `target_refinement` (-0.023) likely genuinely failed, but worth re-verifying with the fair baseline.

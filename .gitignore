@@ -152,3 +152,8 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+# Large files
+*.pkl
+*.bak_*
+*.parquet

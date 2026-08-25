@@ -1,6 +1,6 @@
 {
   "available": true,
-  "generated_at": "2026-08-24T22:17:31",
+  "generated_at": "2026-08-25T10:27:03",
   "ensemble": {
     "weighted_score": 0.4007,
     "median_score": 0.3267,
@@ -3684,7 +3684,7 @@
     }
   ],
   "feature_flags": {
-    "ENABLE_DB_REGIME_FEATURES": false,
+    "ENABLE_DB_REGIME_FEATURES": true,
     "ENABLE_PEAD_FEATURES": false,
     "ENABLE_EARNINGS_CALENDAR_FEATURES": false,
     "ENABLE_CROSSSECTIONAL_FEATURES": false,

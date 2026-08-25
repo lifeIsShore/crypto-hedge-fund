@@ -1,0 +1,13 @@
+# Holdout-adjusted baseline — recorded 2026-08-25
+# Source: 3-seed average (seeds=[42, 123, 7])
+# Pipeline run with holdout filter, no Phase 1 feature flags.
+# Compare: full-history baseline AUC = 0.6331
+# Holdout penalty (holdout - full) = +0.0012
+n_tickers=126
+mean_auc_holdout=0.6343
+std_auc_holdout=0.0427
+seed_std=0.0004
+per_seed_aucs=0.6339,0.6341,0.6348
+seeds_used=42,123,7
+n_obs_ic=6
+holdout_penalty=+0.0012

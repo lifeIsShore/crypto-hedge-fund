@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import simpledialog
 import subprocess
 import os
 
@@ -29,9 +30,10 @@ class ControlTowerLauncher(tk.Tk):
         super().__init__()
         
         self.title("Hedge Fund Control Tower")
-        self.geometry("450x600")
+        self.geometry("950x500")
         self.configure(bg=BG_COLOR)
-        self.resizable(False, False)
+        self.resizable(True, True)
+        self.minsize(800, 450)
         
         # Center the window on the screen
         self.eval('tk::PlaceWindow . center')
@@ -59,25 +61,50 @@ class ControlTowerLauncher(tk.Tk):
             font=("Segoe UI", 10)
         ).pack()
 
-        # Groups
-        self.create_group("LIVE OPERATIONS", ACCENT_GREEN, [
+        content_frame = tk.Frame(self, bg=BG_COLOR)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        content_frame.grid_columnconfigure(0, weight=1)
+        content_frame.grid_columnconfigure(1, weight=1)
+        
+        left_col = tk.Frame(content_frame, bg=BG_COLOR)
+        left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        
+        right_col = tk.Frame(content_frame, bg=BG_COLOR)
+        right_col.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+
+        # Groups - Left Column
+        self.create_group(left_col, "LIVE OPERATIONS", ACCENT_GREEN, [
             ("Launch Dashboard", "DASHBOARD_ONLY.bat", "Live Web UI"),
             ("Run Daily Pipeline", "RUN_FUND_TOTAL.bat", "Ingest & Rebalance")
         ])
         
-        self.create_group("BACKTEST & RESEARCH", ACCENT_BLUE, [
+        self.create_group(left_col, "BACKTEST & RESEARCH", ACCENT_BLUE, [
             ("Run Walk-Forward Backtest", "RUN_BACKTEST.bat", "Full simulation")
         ])
         
-        self.create_group("PAPER TRADING SANDBOX", ACCENT_ORANGE, [
+        # Groups - Right Column
+        self.create_group(right_col, "PAPER TRADING SANDBOX", ACCENT_ORANGE, [
             ("Launch Sandbox Dashboard", "DASHBOARD_SANDBOX.bat", "View paper trades"),
             ("Run Sandbox Pipeline", "RUN_SANDBOX.bat", "Dry-run execution"),
             ("Fix Sandbox Cash", "FIX_SANDBOX_CASH.bat", "Reconcile double-count")
         ])
+        
+        self.create_group(right_col, "DATA PIPELINES & RECOVERY", ACCENT_RED, [
+            ("Run PEAD & Earnings Scraper", "python fill_earnings_data.py", "Backfill missing earnings dates"),
+            ("Single Ticker ML Recovery", self.run_single_ticker, "Run ML pipeline for one failed ticker")
+        ])
 
-    def create_group(self, title, accent_color, buttons_data):
-        frame = tk.Frame(self, bg=SURFACE_COLOR, padx=15, pady=15)
-        frame.pack(fill=tk.X, padx=20, pady=10)
+    def run_single_ticker(self):
+        ticker = simpledialog.askstring("Single Ticker Recovery", "Enter ticker symbol to run (e.g., AAPL, SIE.DE):", parent=self)
+        if ticker and ticker.strip():
+            ticker = ticker.strip().upper()
+            cmd = f"python ml_quant_finance_research/ml_research/stock_ml_lab/run_ml_pipeline.py --ticker {ticker}"
+            run_bat(cmd)
+
+    def create_group(self, parent, title, accent_color, buttons_data):
+        frame = tk.Frame(parent, bg=SURFACE_COLOR, padx=15, pady=15)
+        frame.pack(fill=tk.X, pady=10)
         
         # Group Header
         header_frame = tk.Frame(frame, bg=SURFACE_COLOR)
@@ -96,7 +123,7 @@ class ControlTowerLauncher(tk.Tk):
             btn = tk.Button(
                 btn_frame, 
                 text=text, 
-                command=lambda c=command: run_bat(c),
+                command=command if callable(command) else lambda c=command: run_bat(c),
                 bg="#334155", 
                 fg=TEXT_COLOR, 
                 activebackground="#475569", 
@@ -104,7 +131,7 @@ class ControlTowerLauncher(tk.Tk):
                 font=("Segoe UI", 10),
                 relief=tk.FLAT,
                 cursor="hand2",
-                width=24,
+                width=26,
                 anchor="w",
                 padx=10
             )
@@ -114,8 +141,8 @@ class ControlTowerLauncher(tk.Tk):
             btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#475569"))
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#334155"))
             
-            # Description
-            tk.Label(btn_frame, text=desc, fg=MUTED_COLOR, bg=SURFACE_COLOR, font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=10)
+            # Description (Wraplength added for dynamic resizing)
+            tk.Label(btn_frame, text=desc, fg=MUTED_COLOR, bg=SURFACE_COLOR, font=("Segoe UI", 9), wraplength=200, justify="left").pack(side=tk.LEFT, padx=10)
 
 if __name__ == "__main__":
     app = ControlTowerLauncher()

@@ -1,7 +1,7 @@
 {
   "region": "US",
-  "generated_at": "2026-08-20T02:49:38.830399",
-  "as_of_date": "2026-08-20",
+  "generated_at": "2026-08-25T09:52:39.677762",
+  "as_of_date": "2026-08-25",
   "regime_risk": "Risk-On",
   "regime_rates": "Neutral",
   "regime_growth": "Expansion",
@@ -9,10 +9,10 @@
   "transition_warning": false,
   "ew_active_count": 0,
   "macro_snapshot": {
-    "vix": 14.89,
+    "vix": 15.74,
     "yield_spread": 0.46,
-    "hy_spread": 2.75,
+    "hy_spread": 2.7,
     "fed_funds": 3.63
   },
-  "regime_changed_today": false
+  "regime_changed_today": true
 }
