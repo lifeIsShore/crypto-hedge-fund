@@ -1,7 +1,7 @@
 {
-  "ok": false,
-  "narrative": "",
+  "ok": true,
+  "narrative": "## Operational\n\n- **Data Issues:** Multiple tickers (3V64.DE, ADBE, AEC.DE, AMAT) are marked as stale and have not been updated in over a month.\n- **Validation Issues:** There were 6 price spikes detected during the validation process.\n\n## Picks\n\n- **Must-check Tickers:**\n  - **DTE.DE** with an up-probability of 98.63% and a risk/reward ratio of 1.991, showing strong potential.\n  - **ORC.DE** with an up-probability of 99.48%, indicating high conviction in its performance.\n  - **FRE.DE** has a moderate up-probability of 98.44% and a risk/reward ratio of 1.892, suggesting a balanced approach.\n\n- **Best Risk/Reward Tickers:**\n  - **DTE.DE** with a risk/reward ratio of 1.991 and an annualized volatility of 0.3854.\n  - **AIR.DE** has a risk/reward ratio of 1.958, showing good potential.\n\n- **Gamble Tier:**\n  - **ORC.DE** with the highest up-probability (99.48%) and moderate annualized volatility (0.5053), representing high conviction in its performance.\n  - **ASML.AS** has a strong up-probability of 85.67% and relatively low annualized volatility (0.4907), suggesting it's a solid choice for those willing to take on more risk.",
   "model": "qwen2.5:3b",
-  "generated_at": "2026-08-25T02:02:48",
-  "error": "timed out"
+  "generated_at": "2026-08-25T02:48:16",
+  "error": null
 }

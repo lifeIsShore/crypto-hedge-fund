@@ -198,9 +198,9 @@ def run_pipeline_multi_seed(cli_flags: list, seeds: list):
     all_below     = []
 
     for i, seed in enumerate(seeds):
-        print(f"\n{'─' * 60}")
+        print(f"\n{'-' * 60}")
         print(f" Seed run {i+1}/{len(seeds)} — seed={seed}")
-        print(f"{'─' * 60}")
+        print(f"{'-' * 60}")
         seed_flags = cli_flags + ['--seed', str(seed)]
         run_pipeline(seed_flags)
         aucs, below = read_aucs_from_state()
