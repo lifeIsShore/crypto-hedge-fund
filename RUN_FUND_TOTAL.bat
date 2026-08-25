@@ -9,6 +9,21 @@ echo ============================================================
 echo   HEDGE FUND CONTROL TOWER - UNIFIED SYSTEM RUNNER
 echo ============================================================
 
+:: ── Auto-start Ollama (on-prem LLM used by the Briefing tab) ──
+where ollama >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I "ollama.exe" >nul
+    if errorlevel 1 (
+        echo [INFO] Starting Ollama server for the Briefing tab...
+        start "Ollama" /min ollama serve
+        timeout /t 2 /nobreak >nul
+    ) else (
+        echo [INFO] Ollama server already running.
+    )
+) else (
+    echo [WARN] Ollama not found on PATH — Briefing narrative generation will be unavailable.
+)
+
 :: 1. DATA INGESTION
 echo [1/6] Syncing Market Data (Prices, FX, Fundamentals)...
 %PYTHON% -m engine.data.ingestion
@@ -58,6 +73,14 @@ if /i "!train!"=="y" (
 echo [5/6] Mirroring Research to Production ^& Rebalancing...
 %PYTHON% -m engine.alpha.pead_alpha --mirror-only
 %PYTHON% -m engine.scheduler --pipeline-only
+
+:: 5b. BRIEFING NARRATIVE
+:: Regenerates the on-prem LLM summary from the data this run just produced.
+:: Fails soft (non-zero exit is swallowed) — a stuck/offline Ollama should
+:: never block the dashboard from launching. The Regenerate button on the
+:: Briefing tab still works standalone if this step is skipped.
+echo [5b/6] Regenerating Briefing narrative (on-prem LLM)...
+%PYTHON% -m engine.briefing.generate_cli
 
 :: 6. LAUNCH DASHBOARD
 echo [6/6] Launching Flask Control Tower...

@@ -24,6 +24,21 @@ echo.
 
 cd /d "%~dp0"
 
+:: ── Auto-start Ollama (on-prem LLM used by the Briefing tab) ──
+where ollama >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I "ollama.exe" >nul
+    if errorlevel 1 (
+        echo [INFO] Starting Ollama server for the Briefing tab...
+        start "Ollama" /min ollama serve
+        timeout /t 2 /nobreak >nul
+    ) else (
+        echo [INFO] Ollama server already running.
+    )
+) else (
+    echo [WARN] Ollama not found on PATH — Briefing narrative generation will be unavailable.
+)
+
 :: Check Python
 where python >nul 2>&1
 if %ERRORLEVEL% neq 0 (

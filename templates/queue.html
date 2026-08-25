@@ -220,7 +220,7 @@
 {% block scripts %}
 <script id="ticker-names-data" type="application/json">{{ ticker_names | tojson | safe }}</script>
 <script>
-const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
 let _modalSigId   = null;
 let _modalAction  = null;
 let _currentRegime = {};

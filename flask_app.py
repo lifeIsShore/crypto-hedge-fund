@@ -3275,6 +3275,93 @@ def api_watchlist_count():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# BRIEFING  — rollup/digest tab (operational health + decision-support)
+# See todos/NEW-briefing-tab-TODO.md for the design brainstorm this implements.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _briefing_gate_results():
+    from engine.briefing.data import briefing_gate_results
+    return briefing_gate_results()
+
+
+def _briefing_pipeline_health():
+    from engine.briefing.data import briefing_pipeline_health
+    return briefing_pipeline_health()
+
+
+def _briefing_ticker_picks():
+    from engine.briefing.data import briefing_ticker_picks
+    return briefing_ticker_picks()
+
+
+@app.route("/briefing")
+def briefing():
+    """Mission-control style rollup tab. Two halves, kept visually distinct:
+    operational digest (health §) and decision-support (picks §).
+    """
+    health = _briefing_pipeline_health()
+    gate_results = _briefing_gate_results()
+    must_check, best_risk_reward, gamble_tier = _briefing_ticker_picks()
+    regime = _load_json(REGIME_STATE_PATH)
+    ages = state_file_ages()
+
+    risk_events = _q("""
+        SELECT date, event_type, ticker, detail
+        FROM risk_events
+        ORDER BY logged_at DESC LIMIT 5
+    """)
+
+    from engine.briefing.narrator import load_cached_narrative, AVAILABLE_MODELS, DEFAULT_MODEL
+    narrative = load_cached_narrative()
+
+    return render_template("briefing.html",
+        health=health,
+        gate_results=gate_results,
+        must_check=must_check,
+        best_risk_reward=best_risk_reward,
+        gamble_tier=gamble_tier,
+        regime=regime,
+        ages=ages,
+        risk_events=risk_events,
+        narrative=narrative,
+        available_models=AVAILABLE_MODELS,
+        default_model=DEFAULT_MODEL,
+        page="briefing",
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    )
+
+
+def _briefing_data_for_narrator(health, gate_results, must_check, best_risk_reward, gamble_tier, regime):
+    from engine.briefing.data import narrator_payload
+    return narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime)
+
+
+@app.route("/api/briefing/generate", methods=["POST"])
+@require_auth
+def api_briefing_generate():
+    """Regenerate the on-prem LLM narrative for the Briefing tab.
+    Body (optional): {model: 'qwen3:8b'}
+    """
+    from engine.briefing.narrator import generate_narrative, AVAILABLE_MODELS, DEFAULT_MODEL
+
+    data = request.get_json(silent=True) or {}
+    model = data.get("model") or DEFAULT_MODEL
+    if model not in AVAILABLE_MODELS:
+        return jsonify({"ok": False, "error": f"Unknown model '{model}'"}), 400
+
+    health = _briefing_pipeline_health()
+    gate_results = _briefing_gate_results()
+    must_check, best_risk_reward, gamble_tier = _briefing_ticker_picks()
+    regime = _load_json(REGIME_STATE_PATH)
+
+    briefing_data = _briefing_data_for_narrator(
+        health, gate_results, must_check, best_risk_reward, gamble_tier, regime
+    )
+    result = generate_narrative(briefing_data, model=model)
+    return jsonify(result)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     _ensure_signal_queue_table()

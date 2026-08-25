@@ -202,7 +202,7 @@
 <script>
 let mcDistChart = null, portMcChart = null;
 let allTargets = [];
-const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
 
 function loadTicker(ticker){
   const row = allTargets.find(r=>r.ticker===ticker);

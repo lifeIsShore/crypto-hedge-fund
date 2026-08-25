@@ -83,7 +83,7 @@
 {% block scripts %}
 <script>
 async function loadPead(){
-  const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+window.tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
   const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
   const data = await fetch('/api/pead').then(r=>r.json()).catch(()=>({}));
 

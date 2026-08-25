@@ -444,16 +444,29 @@ def add_acceleration_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_target(df, horizons=None):
+def add_target(df, horizons=None, benchmark_df=None, enable_alpha_target=False):
     if horizons is None:
         horizons = [5, 21, 63]
     c = df["Adj Close"]
+    
+    if enable_alpha_target and benchmark_df is not None:
+        bench_c = benchmark_df["Adj Close"].reindex(df.index, method='ffill')
+        
     for n in horizons:
         fut = c.shift(-n) / c - 1
-        df[f"target_dir_{n}d"]  = (fut > 0).astype(int)
         df[f"future_ret_{n}d"]  = fut
-        bins = [-np.inf, -0.05, -0.01, 0.01, 0.05, np.inf]
-        df[f"target_mag_{n}d"]  = pd.cut(fut, bins=bins, labels=[0, 1, 2, 3, 4]).astype("Int64")
+        
+        if enable_alpha_target and benchmark_df is not None:
+            bench_fut = bench_c.shift(-n) / bench_c - 1
+            excess_fut = fut - bench_fut
+            df[f"target_dir_{n}d"]  = (excess_fut > 0).astype(int)
+            bins = [-np.inf, -0.05, -0.01, 0.01, 0.05, np.inf]
+            df[f"target_mag_{n}d"]  = pd.cut(excess_fut, bins=bins, labels=[0, 1, 2, 3, 4]).astype("Int64")
+        else:
+            df[f"target_dir_{n}d"]  = (fut > 0).astype(int)
+            bins = [-np.inf, -0.05, -0.01, 0.01, 0.05, np.inf]
+            df[f"target_mag_{n}d"]  = pd.cut(fut, bins=bins, labels=[0, 1, 2, 3, 4]).astype("Int64")
+            
     return df
 
 
@@ -574,7 +587,9 @@ def build_features(price_df, fundamentals=None, macro_df=None,
                    enable_pead=False,                      # NEW — Phase 1A
                    enable_earnings=False,                  # NEW — Phase 1A
                    enable_crosssectional=False,            # NEW — Phase 1B
-                   enable_acceleration=False):             # NEW — Phase 1B
+                   enable_acceleration=False,              # NEW — Phase 1B
+                   benchmark_df=None,                      # NEW — Phase 1D
+                   enable_alpha_target=False):             # NEW — Phase 1D
     """
     Builds all feature families for one ticker.
 
@@ -634,7 +649,7 @@ def build_features(price_df, fundamentals=None, macro_df=None,
     if enable_acceleration:
         df = add_acceleration_features(df)
         
-    df = add_target(df, horizons=horizons)
+    df = add_target(df, horizons=horizons, benchmark_df=benchmark_df, enable_alpha_target=enable_alpha_target)
 
     # Bug fix (2026-08-20): this row-completeness check used to count ALL feature
     # columns together, including 'fund_*'/'opt_*'/'macro_*' — ticker-level

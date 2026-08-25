@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block title %}Briefing{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Briefing Layout */
+.briefing-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (max-width: 1000px) {
+  .briefing-split {
+    grid-template-columns: 1fr;
+  }
+}
+.briefing-half {
+  background: transparent;
+}
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+}
+/* LLM Narrative Panel */
+.narrative-panel {
+  background: rgba(30, 35, 45, 0.4);
+  border: 1px solid rgba(100,149,237, 0.3);
+  position: relative;
+}
+.narrative-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--accent4);
+}
+.narrative-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.narrative-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.narrative-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.narrative-controls select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.narrative-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #ccc;
+  white-space: pre-wrap;
+  font-family: var(--sans);
+}
+.narrative-meta {
+  margin-top: 16px;
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+/* Tables */
+.briefing-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.briefing-tbl th {
+  text-align: left;
+  padding: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.briefing-tbl td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.briefing-tbl tr:last-child td {
+  border-bottom: none;
+}
+.ticker-link {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ticker-link:hover {
+  text-decoration: underline;
+}
+.val-green { color: var(--accent); }
+.val-red { color: var(--accent2); }
+.val-orange { color: var(--accent3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi neutral">
+    <div class="kpi-label">LAST RUN</div>
+    <div class="kpi-value">{{ health.last_run_date or '—' }}</div>
+    <div class="kpi-sub">pipeline_runs</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">FAILED STEPS</div>
+    <div class="kpi-value {% if health.failed_steps|length > 0 %}val-red{% endif %}">{{ health.failed_steps|length }}</div>
+    <div class="kpi-sub">current run</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">COVERAGE</div>
+    <div class="kpi-value">{{ health.covered }}</div>
+    <div class="kpi-sub">/ {{ health.universe_size }} universe</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">REGIME</div>
+    <div class="kpi-value" style="font-size:14px; color:var(--accent4)">{{ regime.get('regime_risk', '—') }}</div>
+    <div class="kpi-sub">{{ regime.get('regime_composite', '—') }}</div>
+  </div>
+</div>
+
+<div class="briefing-split">
+  
+  <!-- LEFT: Operational Digest -->
+  <div class="briefing-half">
+    <div class="section-title">Operational Digest</div>
+    
+    <div class="panel narrative-panel">
+      <div class="narrative-header">
+        <div class="narrative-title">🤖 AI SUMMARY</div>
+        <div class="narrative-controls">
+          <select id="model-select">
+            {% for m in available_models %}
+            <option value="{{ m }}" {% if m == (narrative.get('model') or default_model) %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn" onclick="generateNarrative()" id="btn-generate">↻ Regenerate</button>
+        </div>
+      </div>
+      
+      <div class="narrative-body" id="narrative-content">{% if narrative and narrative.get('ok') %}
+{{ narrative.get('narrative') }}
+{% else %}
+No narrative generated yet. Click Regenerate to fetch a summary.
+{% endif %}</div>
+      
+      <div class="narrative-meta">
+        <span id="narrative-model">Model: {{ narrative.get('model', 'None') }}</span>
+        <span id="narrative-time">As of: {{ narrative.get('generated_at', 'Never') }}</span>
+      </div>
+      
+      {% if narrative and narrative.get('error') %}
+      <div class="alert alert-warn" style="margin-top:12px; font-size:10px">{{ narrative.get('error') }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Pipeline Health -->
+    <div class="panel">
+      <div class="section-title" style="border:none; margin-bottom:0">Pipeline Health</div>
+      {% if health.recent_issues %}
+      <table class="briefing-tbl" style="margin-top:12px">
+        <tr><th>LEVEL</th><th>STEP</th><th>MESSAGE</th></tr>
+        {% for log in health.recent_issues %}
+        <tr>
+          <td><span class="{% if log.level == 'ERROR' or log.level == 'CRITICAL' %}val-red{% elif log.level == 'WARNING' %}val-orange{% endif %}">{{ log.level }}</span></td>
+          <td>{{ log.step_name }}</td>
+          <td>{{ log.message }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <div style="color:var(--muted); font-size:11px; padding:12px 0">All systems nominal. No recent warnings/errors.</div>
+      {% endif %}
+    </div>
+
+    <!-- Gate Results -->
+    <div class="panel">
+      <div class="section-title" style="border:none; margin-bottom:0">Alpha Gate 2 (Holdout)</div>
+      <table class="briefing-tbl" style="margin-top:12px">
+        <tr><th>FEATURE FAMILY</th><th>Δ IC</th><th>Δ AUC</th><th>PASS</th></tr>
+        {% for r in gate_results %}
+        <tr>
+          <td>{{ r.flag_name }}</td>
+          <td class="{% if r.delta_ic > 0 %}val-green{% elif r.delta_ic < 0 %}val-red{% endif %}">{{ "%.4f"|format(r.delta_ic) }}</td>
+          <td class="{% if r.delta_auc > 0 %}val-green{% elif r.delta_auc < 0 %}val-red{% endif %}">{{ "%.4f"|format(r.delta_auc) }}</td>
+          <td>
+            {% if r.pass %}
+            <span class="val-green">PASS</span>
+            {% else %}
+            <span class="val-red">FAIL</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT: Decision Support -->
+  <div class="briefing-half">
+    <div class="section-title">Decision Support <a href="/highlighted" style="font-size:9px; text-transform:none; float:right; color:var(--accent4); text-decoration:none">View Full →</a></div>
+    
+    <!-- Must Check -->
+    <div class="panel">
+      <div class="section-title" style="border:none; margin-bottom:0; color:#fff">⭐ Must-Check Tickers</div>
+      <div style="font-size:10px; color:var(--muted); margin-bottom:12px">Ranked by up probability</div>
+      <table class="briefing-tbl">
+        <tr><th>TICKER</th><th>UP PROBA</th><th>R:R RATIO</th><th>KELLY½</th></tr>
+        {% for t in must_check %}
+        <tr>
+          <td><a class="ticker-link" href="/ticker/{{ t.ticker }}">{{ t.ticker }}</a></td>
+          <td class="val-green">{{ "%.1f"|format((t.up_proba or 0)*100) }}%</td>
+          <td>{{ "%.2f"|format(t.risk_reward_ratio or 0) }}x</td>
+          <td class="val-orange">{{ "%.1f"|format(t.kelly_half or 0) }}%</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <!-- Best Risk/Reward -->
+    <div class="panel">
+      <div class="section-title" style="border:none; margin-bottom:0; color:#fff">🛡️ Best Risk/Reward (Low Vol)</div>
+      <div style="font-size:10px; color:var(--muted); margin-bottom:12px">Vol &lt; 40%, Ranked by R:R</div>
+      <table class="briefing-tbl">
+        <tr><th>TICKER</th><th>R:R RATIO</th><th>VOL (ANN)</th></tr>
+        {% for t in best_risk_reward %}
+        <tr>
+          <td><a class="ticker-link" href="/ticker/{{ t.ticker }}">{{ t.ticker }}</a></td>
+          <td class="val-green">{{ "%.2f"|format(t.risk_reward_ratio or 0) }}x</td>
+          <td>{{ "%.1f"|format((t.vol_ann or 0)*100) }}%</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <!-- Gamble Tier -->
+    <div class="panel">
+      <div class="section-title" style="border:none; margin-bottom:0; color:#fff">🎲 Gamble Tier (High Vol)</div>
+      <div style="font-size:10px; color:var(--muted); margin-bottom:12px">Vol &ge; 40%, Up Proba &gt; 50%</div>
+      <table class="briefing-tbl">
+        <tr><th>TICKER</th><th>VOL (ANN)</th><th>UP PROBA</th></tr>
+        {% for t in gamble_tier %}
+        <tr>
+          <td><a class="ticker-link" href="/ticker/{{ t.ticker }}">{{ t.ticker }}</a></td>
+          <td class="val-red">{{ "%.1f"|format((t.vol_ann or 0)*100) }}%</td>
+          <td class="val-green">{{ "%.1f"|format((t.up_proba or 0)*100) }}%</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function generateNarrative() {
+  const btn = document.getElementById('btn-generate');
+  const sel = document.getElementById('model-select');
+  const model = sel.value;
+  
+  btn.textContent = 'Generating...';
+  btn.disabled = true;
+  sel.disabled = true;
+  
+  document.getElementById('narrative-content').textContent = 'Loading...';
+  
+  try {
+    const res = await fetch('/api/briefing/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: model})
+    });
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText);
+    }
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      document.getElementById('narrative-content').textContent = data.narrative;
+      document.getElementById('narrative-model').textContent = 'Model: ' + data.model;
+      document.getElementById('narrative-time').textContent = 'As of: ' + data.generated_at;
+    } else {
+      throw new Error(data.error || "Unknown error generating narrative");
+    }
+    
+  } catch(e) {
+    console.error(e);
+    document.getElementById('narrative-content').innerHTML = `<span style="color:var(--accent2)">Generation failed: ${e.message}</span>`;
+  } finally {
+    btn.textContent = '↻ Regenerate';
+    btn.disabled = false;
+    sel.disabled = false;
+  }
+}
+</script>
+{% endblock %}

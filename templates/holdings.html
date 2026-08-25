@@ -80,7 +80,7 @@
 
 <script>
 // Global metadata fetched from JSON script tags to avoid IDE syntax errors
-const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
 const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
 
 async function loadHoldings(){

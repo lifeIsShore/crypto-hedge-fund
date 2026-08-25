@@ -161,7 +161,7 @@
 let weightsChart = null, portMcChart = null;
 
 async function loadOverview(){
-  const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
   const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
   const [posRes, cashRes, mlRes, regRes, rebRes, tradeRes, targetsRes, pmRes, instRes, cbRes] = await Promise.all([
     fetch('/api/positions').then(r=>r.json()).catch(()=>({})),

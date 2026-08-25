@@ -130,7 +130,7 @@
 
 {% block scripts %}
 <script>
-const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+window.tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 // ── Kill Switch: polls /api/kill_switch_status every 60s ──────────────────
 let _ksTimer = null;

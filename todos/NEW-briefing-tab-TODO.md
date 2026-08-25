@@ -1,7 +1,12 @@
 # NEW — "Briefing" Tab (dashboard summary/report page)
 
-**Status:** BRAINSTORM — not yet spec'd in detail, not implemented.
+**Status:** IMPLEMENTED (v1) — operational digest, decision-support picks, and
+on-prem LLM narrative are all live. Combo-trades and leverage sections
+remain intentionally unbuilt (see §4/§5). Auto-regeneration is now wired
+into RUN_FUND_TOTAL.bat (step 5b) and Ollama auto-starts with all three
+dashboard .bat launchers.
 **Created:** 2026-08-24 (Claude, via Filesystem MCP, brainstorm session with Ahmet)
+**Last updated:** 2026-08-25
 
 ---
 

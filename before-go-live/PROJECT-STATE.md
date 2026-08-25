@@ -4,37 +4,36 @@
 
 ## 🚀 NEXT SESSION — START HERE
 
-> **Last updated: 2026-08-24.**
-> ⚠️ **Gate 2 `crosssectional` pipeline (task-176) is currently running in the background. Check `gate2_results.csv` when it completes.**
+> **Last updated: 2026-08-25.**
+> ⚠️ **Gate 2 methodology audit complete. Previous gate2_results.csv is INVALIDATED — see session 17b entry below. All Phase 1 families need re-testing with the fixed methodology.**
 
 ### Where we are in the plan
 
-We are currently evaluating **Phase 1B** of the "better-alpha" feature-addition process (`before-go-live/better-alpha/00-OVERVIEW.md`). 
-All Phase 1A families (`db_regime`, `pead`, `earnings`) failed to meet the Gate 2 threshold (`+0.003` AUC) and remain disabled.
-Phase 1B implementation is fully coded. Gate 2 test for `crosssectional` is running now.
+Gate 2 methodology audit (2026-08-25) found two confirmed bugs in `gate2_run.py` that invalidate the previous gate2_results.csv: (1) IC column was reading a stale file that never changed — all six "identical IC" values were meaningless, (2) AUC baseline was recorded on full history while Gate 2 runs used holdout-filtered data, creating a systematic ~0.002–0.005 penalty. Three fixes have been applied.
 
 ### Exact next steps — in order, do not skip
 
-**Step 1 — Await Gate 2 for `crosssectional`** ← START HERE
-- Task-176 is currently running the pipeline with `--enable-crosssectional`.
-- When finished, check result in `gate2_results.csv`:
-  - **PASS** → enable `ENABLE_CROSSSECTIONAL_FEATURES = True` in `run_ml_pipeline.py`.
-  - **FAIL** → keep it False.
-
-**Step 2 — Run Gate 2 for `acceleration`**
+**Step 1 — Record holdout-adjusted baseline** ← START HERE
 ```bash
-python before-go-live/better-alpha/gate2_run.py --family acceleration
+python before-go-live/better-alpha/gate2_run.py --holdout-baseline
 ```
-Wait ~45–60 min. Check result in `gate2_results.csv`. If PASS → set `ENABLE_ACCELERATION_FEATURES = True`.
+This runs the pipeline 3x (seeds 42, 123, 7) with holdout filter but NO feature flags, and writes `baseline_v1_auc_holdout.txt`. Takes ~2–3 hours. This gives you:
+- An apples-to-apples AUC baseline for fair Gate 2 comparisons
+- A seed-to-seed noise floor estimate (any delta within this range is noise, not signal)
 
-**Step 3 — Phase 1C (optional, skip if 1A+1B passed Gate 4)**
-VWAP deviation, CMF_21d, ADX_14, near-52w-high/low. Low priority — likely correlated with existing technicals. See `01-feature-additions.md §Phase 1C`.
+**Step 2 — Re-test Phase 1 families with fixed methodology**
+```bash
+python before-go-live/better-alpha/gate2_run.py --family db_regime --n-seeds 3 --force
+python before-go-live/better-alpha/gate2_run.py --family pead --n-seeds 3 --force
+python before-go-live/better-alpha/gate2_run.py --family earnings --n-seeds 3 --force
+```
+Each takes ~2–3 hours (3 pipeline runs per family). The `--force` flag overwrites the invalid previous results. The new results will use the holdout-adjusted baseline and report a noise floor annotation so you can tell signal from noise.
 
-**Step 4 — Phase 1D: Target Refinement** (checklist item 1.5)
-Change ML target from predicting absolute return to predicting alpha (excess return vs DAX/SPX benchmark). See `before-go-live/better-alpha/02-target-refinement.md`.
+**Step 3 — Decide on Phase 1B/1D based on valid data**
+Only after Step 2 results are in. If any family passes, proceed to Gate 3 (2 Saturday live runs). `crosssectional` (-0.005), `acceleration` (-0.006), and especially `target_refinement` (-0.023) likely genuinely failed, but worth re-verifying with the fair baseline.
 
-**Step 5 — Gate 4: Holdout validation**
-The one-shot evaluation on the locked 2026-02-23 → today window. Only done once, after all feature phases have passed Gate 2/3. See `00-OVERVIEW.md §Gate 4`.
+**Step 4 — Gate 4: Holdout validation** (unchanged)
+The one-shot evaluation on the locked 2026-02-23 → today window. Only done once, after all feature phases have passed Gate 2/3.
 
 ---
 
@@ -42,16 +41,36 @@ The one-shot evaluation on the locked 2026-02-23 → today window. Only done onc
 
 | File | Purpose |
 |---|---|
-| `before-go-live/better-alpha/gate2_results.csv` | Gate 2 results log — check this first |
-| `before-go-live/better-alpha/baseline_v1_auc.txt` | AUC=0.6331, n=126, holdout=2026-02-23 |
-| `before-go-live/better-alpha/gate2_run.py` | Gate 2 automation — run this per family |
-| `ml_.../stock_ml_lab/run_ml_pipeline.py` lines 65–105 | Feature flags + holdout filter config |
+| `before-go-live/better-alpha/gate2_results.csv` | Gate 2 results log — **old rows invalidated, re-test with --force** |
+| `before-go-live/better-alpha/baseline_v1_auc.txt` | Original AUC baseline (full history, no holdout filter) |
+| `before-go-live/better-alpha/baseline_v1_auc_holdout.txt` | **NEW** — holdout-adjusted baseline (run --holdout-baseline to create) |
+| `before-go-live/better-alpha/gate2_run.py` | Gate 2 automation — now supports `--holdout-baseline`, `--n-seeds N` |
+| `ml_.../stock_ml_lab/run_ml_pipeline.py` lines 65–105 | Feature flags + holdout filter + `--seed N` support |
 | `ml_.../stock_ml_lab/utils/feature_builder.py` | Phase 1A/1B code already in here |
 | `before-go-live/better-alpha/01-feature-additions.md` | Full Phase 1B/1C spec and code templates |
 | `before-go-live/better-alpha/02-target-refinement.md` | Phase 1D spec |
 | `before-go-live/FINAL-GO-LIVE-CHECKLIST.md` | Master sequence — 1.4 ✅, 1.5–1.6 pending |
 
 ---
+
+**2026-08-25 (session 17b) — Gate 2 methodology audit: two confirmed bugs invalidating gate2_results.csv, three fixes applied (Antigravity IDE):**
+Ahmet noticed all six Gate 2 rows had byte-identical IC values (-0.0603 → -0.0603) and asked whether the IC column was actually being recomputed. Audited the full data flow through `gate2_run.py`, `run_ml_pipeline.py`, `alpha_eval.py`, and `alpha_ic_results.csv`.
+- **Bug 1 confirmed: IC column was dead weight.** `gate2_run.py` reads IC from `backtests/alpha_ic_results.csv`, but this file is only regenerated by `alpha_eval.py` (called by the Saturday live pipeline, not by `run_ml_pipeline.py`). The ML pipeline retraining writes to `ml_state.json`, not to the signals DB that `alpha_eval.py` reads. So every Gate 2 run read the exact same stale IC file — the identical `-0.0603` across all rows was the baseline value echoed back, not evidence of anything. **Mitigating factor:** the IC gate was correctly deferred (`n_obs=6 < 10`), so no gating *decision* was corrupted — but the CSV was misleading.
+- **Bug 2 confirmed: AUC baseline was apples-to-oranges.** The baseline (`mean_auc_best_of_3=0.6331`) was recorded on full history (no holdout filter), but every Gate 2 run applied the holdout filter (~11% fewer training rows). This creates a systematic AUC penalty on the Gate 2 side estimated at ~0.002–0.005 — enough to explain the +0.0008 deltas on `db_regime`/`pead`/`earnings` as neutral features offset by the holdout penalty. Fixed seeds (`random_state=42`) meant zero run-to-run variance, making it impossible to distinguish feature signal from noise.
+- **Fix 1 applied: Honest IC reporting.** `gate2_run.py` now writes `DEFERRED` for all IC columns when `n_obs < MIN_OBS_FOR_IC_GATE`, instead of reading and echoing stale values. New `read_ic_obs_count()` replaces `read_ic_stats()`.
+- **Fix 2 applied: Holdout-adjusted baseline mode.** New `--holdout-baseline` flag runs the pipeline with holdout filter but no feature flags, recording `baseline_v1_auc_holdout.txt`. Gate 2 now auto-prefers this file when available (`parse_baseline(prefer_holdout=True)`). This gives an apples-to-apples comparison.
+- **Fix 3 applied: Multi-seed variance estimation.** `run_ml_pipeline.py` now accepts `--seed N` to override the hardcoded `random_state=42` (new module-level `RANDOM_SEED`). `gate2_run.py` now accepts `--n-seeds N` (default=1, use 3+ recommended) which runs the pipeline N times with seeds [42, 123, 7, ...] and reports mean ± std AUC across seeds. The verdict now includes a noise-floor annotation comparing delta_auc to the seed-to-seed std. CSV output includes new columns: `n_seeds`, `seed_std`, `noise_floor`.
+- **Assessment of previous results:** `target_refinement` (-0.023) is large enough to be genuinely harmful. The other five families (+0.001 to -0.006) are statistically inconclusive — their deltas are within the holdout penalty and have no variance estimate. Phase 1 cannot be called "failed" for `db_regime`/`pead`/`earnings` based on this data.
+- **Previous gate2_results.csv rows are INVALIDATED.** Must re-run with `--holdout-baseline` first, then re-test families with `--force --n-seeds 3`.
+
+**2026-08-25 (session 17) — New "Briefing" dashboard tab: rollup digest + on-prem LLM narrative, fully wired into the pipeline (Claude, via Filesystem MCP):**
+Separate track from the ML gate-testing thread above — does not touch `run_ml_pipeline.py`, feature flags, or Gate 2 results. Full design brainstorm lives in `todos/NEW-briefing-tab-TODO.md`.
+- **New `/briefing` route + `templates/briefing.html`.** A rollup/report tab, two visually separate halves: operational digest (pipeline health from `pipeline_runs`/`pipeline_logs`/`data_validation_log`, ticker coverage, Gate 2 status read from `gate2_results.csv`) and decision-support (must-check tickers, best risk/reward tier, high-vol "gamble" tier — all sourced from existing `price_targets`/`model_outputs`, same tables `highlighted.html` already reads). No new DB tables. Nav updated in `base.html` (`📋 BRIEFING`, after Highlighted).
+- **New `engine/briefing/` package** — `data.py` (shared query layer, single source of truth used by both the Flask route and the CLI below, so they can't drift apart), `narrator_prompt.md` (strict grounding rules for the LLM: only cite numbers actually in the data, no filler adjectives, no invented tickers, plain language on Gate FAILs, two headed sections), `narrator.py` (calls local Ollama via `urllib`, strips `<think>` blocks, caches result + model + timestamp to `shared/state/briefing_narrative.json`), `generate_cli.py` (`python -m engine.briefing.generate_cli [model]` — fails soft, always exits 0).
+- **On-prem LLM wired two ways:** (1) manual “↻ Regenerate” button on the Briefing tab → `POST /api/briefing/generate`, model picker across Ahmet's installed Ollama models (default `qwen3:8b` — chosen over the deepseek-r1 family specifically because reasoning-model "thinking" tokens are both slower and more prone to the generic-filler problem this was built to avoid); (2) automatic — new step **5b** in `RUN_FUND_TOTAL.bat`, right after mirroring/rebalancing and before the dashboard launches, so the narrative reflects each run's fresh data without Ahmet needing to remember to click anything.
+- **Ollama auto-start added to all three dashboard launchers** (`RUN_FUND_TOTAL.bat`, `DASHBOARD_ONLY.bat`, `DASHBOARD_SANDBOX.bat`) — checks `tasklist` for `ollama.exe`, starts it minimized if not running, warns (non-fatal) if `ollama` isn't on PATH at all.
+- **Deliberately not built yet** (flagged inline in the UI itself, not silently missing): combo/paired long-short trade construction (needs a correlation/beta-neutrality check first), leverage suggestions (Trade Republic margin mechanics aren't modeled), an explicit "stay away" ticker rule (currently inferred, not a real rule set). See `todos/NEW-briefing-tab-TODO.md` §4/§7 for the open questions gating these.
+- **Not yet verified:** the `/ticker/<ticker>` route pattern in the picks tables was confirmed correct by Ahmet via grep (matches `@app.route("/ticker/<ticker>")`), but the narrative + Regenerate flow itself hasn't been run live yet — next session should confirm Ollama actually responds at `localhost:11434` and that a real `RUN_FUND_TOTAL.bat` pass produces a non-generic narrative worth trusting.
 
 **2026-08-24 — Phase 1A complete (all failed Gate 2), Phase 1B implemented & testing (Antigravity IDE):**
 - **Phase 1A Testing Concluded:** Ran Gate 2 for `db_regime`, `pead`, and `earnings`. All three families successfully ran through the ML pipeline, but none achieved the strict `+0.003` AUC delta required by Gate 2. (`db_regime`: +0.0008, `pead`: +0.0009, `earnings`: +0.0008). Flags successfully remained `False`, proving the gating system effectively filters out noise.
@@ -61,7 +80,9 @@ The one-shot evaluation on the locked 2026-02-23 → today window. Only done onc
 - **Cross-sectional Failed Gate 2:** The `crosssectional` features successfully ran on all 126 tickers, but failed the Gate 2 criteria (AUC dropped by -0.0054). The flag remains `False`.
 - **Acceleration Failed Gate 2:** The `acceleration` features successfully ran on all 126 tickers, but failed the Gate 2 criteria (AUC dropped by -0.0063). The flag remains `False`.
 - **Phase 1B Testing Concluded:** Both feature families (`crosssectional` and `acceleration`) failed Gate 2 and remain disabled.
-- **Current Status:** Ready to move to Phase 1C (optional technicals) or Phase 1D (Target Refinement: predicting Alpha instead of absolute returns).
+- **Phase 1D (Target Refinement) Failed Gate 2:** Implemented alpha-prediction logic. The `target_refinement` run completed on all 126 tickers, but failed the Gate 2 criteria (AUC dropped significantly by -0.0230, and 2 tickers dropped below 0.50). The flag `ENABLE_ALPHA_TARGET` remains `False`.
+- **Phase 1 Testing Concluded:** All feature families and the target refinement experiment have successfully run through the Gate 2 historical testing phase, but none passed the rigour thresholds. The codebase remains exactly at the baseline model state.
+- **Current Status:** All Phase 1 experiments are complete. Ready for final review or to proceed to Phase 2 (Panel Model).
 
 - **PENDING VERIFICATION block — CLOSED.** Ran the full ML pipeline after the session-13 coverage fix. Result: `Step 2 done. 126/135 tickers succeeded` — up from 78/135 (48 newly recovered tickers). Per-ticker graceful degradation logging confirmed. PPFD.SG correctly skipped (only 253 rows, legitimately thin). Session-13 fixes verified working as intended.
 - **Gate 0 baseline re-recorded on valid universe.** The earlier baseline (n_tickers=78, mean_auc=0.6346) was superseded (renamed `baseline_v1_auc_SUPERSEDED_20260821.txt`). New `baseline_v1_auc.txt`: `n_tickers=126, mean_auc_best_of_3=0.6331, std=0.0451, mean_ic_ml_alpha_21d=-0.0603, icir=-1.079, n_obs=6`. AUC barely moved (0.6346→0.6331) — recovered tickers are similar quality to existing ones. Warning still stands: n_obs=6 is too thin for reliable IC, Gate 2 IC criterion is deferred pending live signal accumulation.

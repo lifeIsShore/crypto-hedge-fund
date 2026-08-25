@@ -411,7 +411,7 @@
   // ─────────────────────────────────────────────────────────────────
   // CORRELATION HEATMAP
   // ─────────────────────────────────────────────────────────────────
-  const tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent);
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent);
 
   function corrColor(v) {
     if (isNaN(v)) return '#131720';

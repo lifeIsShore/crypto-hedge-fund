@@ -71,6 +71,7 @@ ENABLE_PEAD_FEATURES              = False   # Phase 1A
 ENABLE_EARNINGS_CALENDAR_FEATURES = False   # Phase 1A
 ENABLE_CROSSSECTIONAL_FEATURES    = False   # Phase 1B
 ENABLE_ACCELERATION_FEATURES      = False   # Phase 1B
+ENABLE_ALPHA_TARGET               = False   # Phase 1D
 
 # ── Gate 1: holdout start (from holdout_config.txt, locked by gate1_holdout.py) ─
 # All training data is filtered to dates strictly before HOLDOUT_START until Gate 4
@@ -93,18 +94,30 @@ _g2_parser.add_argument('--enable-pead',      action='store_true')
 _g2_parser.add_argument('--enable-earnings',  action='store_true')
 _g2_parser.add_argument('--enable-crosssectional', action='store_true')
 _g2_parser.add_argument('--enable-acceleration',   action='store_true')
+_g2_parser.add_argument('--enable-alpha-target',   action='store_true')
+_g2_parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for all models (default: 42). '
+                             'Used by gate2_run.py --n-seeds for variance estimation.')
 _g2_args, _ = _g2_parser.parse_known_args()
 if _g2_args.enable_db_regime:   ENABLE_DB_REGIME_FEATURES         = True
 if _g2_args.enable_pead:        ENABLE_PEAD_FEATURES              = True
 if _g2_args.enable_earnings:    ENABLE_EARNINGS_CALENDAR_FEATURES = True
 if _g2_args.enable_crosssectional: ENABLE_CROSSSECTIONAL_FEATURES = True
 if _g2_args.enable_acceleration:   ENABLE_ACCELERATION_FEATURES   = True
-if any(vars(_g2_args).values()):
+if _g2_args.enable_alpha_target:   ENABLE_ALPHA_TARGET            = True
+if any(v for k, v in vars(_g2_args).items() if k != 'seed'):
     log.info(
         f"Gate 2 CLI overrides active: db_regime={ENABLE_DB_REGIME_FEATURES}, "
         f"pead={ENABLE_PEAD_FEATURES}, earnings={ENABLE_EARNINGS_CALENDAR_FEATURES}, "
-        f"crosssectional={ENABLE_CROSSSECTIONAL_FEATURES}, acceleration={ENABLE_ACCELERATION_FEATURES}"
+        f"crosssectional={ENABLE_CROSSSECTIONAL_FEATURES}, acceleration={ENABLE_ACCELERATION_FEATURES}, "
+        f"alpha_target={ENABLE_ALPHA_TARGET}"
     )
+
+# Module-level seed — used by make_model() and run_baseline_random().
+# Defaults to 42 for backward compatibility; overridden by --seed N.
+RANDOM_SEED = _g2_args.seed
+if RANDOM_SEED != 42:
+    log.info(f"Random seed overridden: {RANDOM_SEED}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -175,28 +188,28 @@ def make_model(key):
         from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import StandardScaler
         return Pipeline([("sc", StandardScaler()),
-                         ("clf", LogisticRegression(max_iter=500, C=0.1, random_state=42))])
+                         ("clf", LogisticRegression(max_iter=500, C=0.1, random_state=RANDOM_SEED))])
     if key == "rf":
         from sklearn.ensemble import RandomForestClassifier
         return RandomForestClassifier(n_estimators=200, max_depth=6,
-                                      min_samples_leaf=20, random_state=42, n_jobs=-1)
+                                      min_samples_leaf=20, random_state=RANDOM_SEED, n_jobs=-1)
     if key == "xgb":
         try:
             from xgboost import XGBClassifier
             return XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.05,
                                  subsample=0.8, colsample_bytree=0.8,
-                                 eval_metric="logloss", random_state=42,
+                                 eval_metric="logloss", random_state=RANDOM_SEED,
                                  verbosity=0, use_label_encoder=False)
         except ImportError:
             log.warning("XGBoost not installed; using RandomForest instead")
             from sklearn.ensemble import RandomForestClassifier
-            return RandomForestClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1)
+            return RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_SEED, n_jobs=-1)
     raise ValueError(f"Unknown model key: {key}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 def run_baseline_random(X_val, y_val, prices_val=None):
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng(seed=RANDOM_SEED)
     y_pred  = rng.integers(0, 2, size=len(y_val))
     y_proba = rng.uniform(0.3, 0.7, size=len(y_val))
     from sklearn.metrics import accuracy_score, roc_auc_score, brier_score_loss
@@ -236,7 +249,7 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None):
+def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None, benchmark_df=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
     log.info(f"  [{ticker}] Building features…")
@@ -254,6 +267,8 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_feature
             enable_earnings=ENABLE_EARNINGS_CALENDAR_FEATURES,    # NEW — Phase 1A
             enable_crosssectional=ENABLE_CROSSSECTIONAL_FEATURES, # NEW — Phase 1B
             enable_acceleration=ENABLE_ACCELERATION_FEATURES,     # NEW — Phase 1B
+            benchmark_df=benchmark_df,                            # NEW — Phase 1D
+            enable_alpha_target=ENABLE_ALPHA_TARGET               # NEW — Phase 1D
         )
     except Exception as e:
         log.warning(f"  [{ticker}] Feature build failed: {e}")
@@ -539,6 +554,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
             "ENABLE_EARNINGS_CALENDAR_FEATURES": ENABLE_EARNINGS_CALENDAR_FEATURES,
             "ENABLE_CROSSSECTIONAL_FEATURES":    ENABLE_CROSSSECTIONAL_FEATURES,
             "ENABLE_ACCELERATION_FEATURES":      ENABLE_ACCELERATION_FEATURES,
+            "ENABLE_ALPHA_TARGET":               ENABLE_ALPHA_TARGET,
         },
     }
 
@@ -641,9 +657,11 @@ def main():
     # ── 2. Train models per ticker ────────────────────────
     log.info("Step 2/5 — Training models (walk-forward)…")
     ticker_results = {}
+    benchmark_df = prices.get('EUNL.DE')
+    
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache)
+        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache, benchmark_df=benchmark_df)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 

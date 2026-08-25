@@ -526,16 +526,39 @@ tooltip.id = 'tooltip';
 tooltip.innerHTML = '<span id="tooltip-title"></span><div id="tooltip-text"></div>';
 document.body.appendChild(tooltip);
 
+const tickerNames = {{ ticker_names | tojson | safe }};
+window.tickerNames = tickerNames;
+
 document.addEventListener('mouseover', e => {
   const target = e.target.closest('.info-point');
+  
+  let title = '';
+  let text = '';
+  let anchor = null;
+
   if (target) {
-    const title = target.getAttribute('data-title') || 'Definition';
-    const text = target.getAttribute('data-info');
+    title = target.getAttribute('data-title') || 'Definition';
+    text = target.getAttribute('data-info');
+    anchor = target;
+  } else {
+    // Check if hovered element contains a ticker name
+    const el = e.target;
+    if (el && (el.tagName === 'TD' || el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'DIV')) {
+      const content = el.textContent ? el.textContent.trim() : '';
+      if (content && tickerNames[content]) {
+        title = 'Company';
+        text = tickerNames[content];
+        anchor = el;
+      }
+    }
+  }
+
+  if (anchor && text) {
     document.getElementById('tooltip-title').textContent = title;
     document.getElementById('tooltip-text').textContent = text;
     tooltip.classList.add('visible');
     
-    const rect = target.getBoundingClientRect();
+    const rect = anchor.getBoundingClientRect();
     let x = rect.left + (rect.width / 2);
     let y = rect.top - 10;
     
@@ -560,6 +583,14 @@ document.addEventListener('mouseover', e => {
 document.addEventListener('mouseout', e => {
   if (e.target.closest('.info-point')) {
     tooltip.classList.remove('visible');
+  } else {
+    const el = e.target;
+    if (el && (el.tagName === 'TD' || el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'DIV')) {
+      const content = el.textContent ? el.textContent.trim() : '';
+      if (content && tickerNames[content]) {
+        tooltip.classList.remove('visible');
+      }
+    }
   }
 });
 </script>

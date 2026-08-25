@@ -126,7 +126,7 @@
 
 <script>
 let featChart = null;
-const tickerNames   = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
+window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').textContent) || {};
 const tickerSectors = JSON.parse(document.getElementById('ticker-sectors-data').textContent) || {};
 
 function filterSigs(q){

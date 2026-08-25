@@ -89,7 +89,7 @@
 <script>
 let selectedId = null;
 let queueData  = [];
-const tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
+window.tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
 const tickerSectors = JSON.parse('{{ ticker_sectors | tojson | safe }}');
 
 async function loadDivergence(){
