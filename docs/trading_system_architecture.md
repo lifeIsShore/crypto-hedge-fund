@@ -155,6 +155,11 @@ The web UI is a high-performance Flask application running on `http://localhost:
 
 ### Main Navigation Structure
 - **Overview (`/`):** Real-time portfolio NAV, holdings, cash, trade advisor, and pipeline health.
+- **Briefing (`/briefing`):** Executive LLM-generated narrative summarizing pipeline health, macro context, and trade priorities.
+- **Watchlist & Queue (`/watchlist`, `/queue`):** High-conviction monitoring and trade signal staging.
+- **Highlighted (`/highlighted`):** Priority stocks flagged by the models for immediate attention.
+- **Optimization Lab (`/lab`):** Custom portfolio construction lab to experiment with weights and constraints.
+- **Pairs Trading (`/pairs`):** Statistical arbitrage pairs scanning, correlation matrices, and spread analysis.
 - **BT History (`/backtest/history`):** Complete backtest run browser, date-range filter, side-by-side metric comparison with green/red winner highlights, equity curve overlay chart (normalised to 100%), alpha IC viewer, and inline note editor.
 - **Risk & Strategy (`/risk`):** Monte Carlo portfolio VaR/CVaR, price targets, 1-sigma stop losses, and regime indicators.
 - **Rebalance (`/rebalance`):** Target weight deltas, trade sizing in EUR, override logger, and trade execution controls.
@@ -163,6 +168,7 @@ The web UI is a high-performance Flask application running on `http://localhost:
 - **ETF Divergence (`/divergence`):** Human-in-the-loop scenario labeling for ETF-stock divergence signals.
 - **Laggard Screen (`/laggards`):** Sector rotation laggards with disqualifier checks and conviction ratings.
 - **Pipeline Health (`/health`):** Structured log viewer, API connectivity probes, and kill switch status.
+- **Settings & Tax (`/settings`, `/legal`):** Jurisdiction-aware tax settings for execution optimization.
 
 ---
 

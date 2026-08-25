@@ -35,12 +35,18 @@ graph TD
 ## 2. Key Web UI Features (`http://localhost:5000`)
 
 - **Overview (`/`):** Real-time NAV, cash, holdings, trade advisor, and state file ages.
+- **Briefing (`/briefing`):** Executive LLM-generated narrative summarizing pipeline health, macro context, and trade priorities.
+- **Watchlist & Queue (`/watchlist`, `/queue`):** High-conviction monitoring and trade signal staging.
+- **Highlighted (`/highlighted`):** Priority stocks flagged by the models for immediate attention.
+- **Optimization Lab (`/lab`):** Custom portfolio construction lab to experiment with weights and constraints.
+- **Pairs Trading (`/pairs`):** Statistical arbitrage pairs scanning, correlation matrices, and spread analysis.
 - **BT History (`/backtest/history`):** Complete backtest run browser, date range filter, side-by-side metric comparison with winner highlights, equity curve overlay chart (normalised to 100%), alpha IC viewer, and inline note editor.
 - **Rebalance (`/rebalance`):** Weight deltas, trade sizing in EUR, override logger, and trade execution controls.
 - **Risk & Strategy (`/risk`):** Monte Carlo VaR/CVaR, price targets, 1-sigma stop losses, and regime gauges.
 - **ML Research (`/research`):** Rolling Information Coefficient (IC) metrics, model decay alerts, and walk-forward reports.
 - **ETF Divergence (`/divergence`):** Human-in-the-loop scenario labeling interface for ETF-stock divergence signals.
 - **Laggard Screen (`/laggards`):** Sector rotation laggards with disqualifier checks and conviction ratings.
+- **Settings & Tax (`/settings`, `/legal`):** Jurisdiction-aware tax settings for execution optimization.
 
 ---
 
