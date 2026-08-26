@@ -916,6 +916,10 @@ def step_push_signals_to_queue(
     This turns the Review Queue from a purely manual inbox into an active inbox
     populated automatically after each pipeline run.
     """
+    if _is_system_halted():
+        logger.warning("[SOS] System is HALTED — skipping signal push to queue")
+        return
+
     import json, os
     from datetime import datetime as _dt, timedelta as _td
     from engine.db.db import get_session
@@ -1202,6 +1206,18 @@ def _build_risk_summary() -> dict:
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _is_system_halted() -> bool:
+    from engine.db.db import get_session
+    from sqlalchemy import text
+    session = get_session()
+    try:
+        row = session.execute(text("SELECT is_halted FROM system_halt WHERE id = 1")).fetchone()
+        return bool(row[0]) if row else False
+    except Exception:
+        return False
+    finally:
+        session.close()
+
 def run_pipeline(dry_run: bool = False):
     global _step_results
     _step_results = []
@@ -1210,6 +1226,11 @@ def run_pipeline(dry_run: bool = False):
         f"{'='*60}\n  Pipeline: {TODAY} (weekday={WEEKDAY})"
         f" {'[DRY RUN]' if dry_run else ''}\n  Tickers: {len(TICKERS)}\n{'='*60}"
     )
+
+    if _is_system_halted():
+        logger.warning("[SOS] System is HALTED — skipping pipeline run entirely")
+        send_alert("⚠️ Pipeline run skipped — system is in SOS halt state")
+        return
 
     # ── Mirror state files first — ensures shared/state/ is populated even if
     #    regime/PEAD engines haven't run yet (uses last known-good files)

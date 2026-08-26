@@ -347,6 +347,9 @@ html.light-theme ::-webkit-scrollbar-thumb { background: #c0bbb0; }
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
       <span id="theme-icon">☀️</span>
     </button>
+    <button id="sos-btn" class="btn {{ 'halted' if is_system_halted else '' }}" onclick="toggleHalt()" style="padding: 4px 10px; font-weight: bold; border-color: {{ 'var(--accent2)' if is_system_halted else 'var(--border)' }}; color: {{ 'var(--accent2)' if is_system_halted else 'inherit' }};">
+      🛑 SOS
+    </button>
   </div>
 </header>
 
@@ -660,6 +663,29 @@ document.addEventListener('mouseout', e => {
     }
   }
 });
+</script>
+
+<script>
+async function toggleHalt() {
+    const isHalted = document.getElementById('sos-btn').classList.contains('halted');
+    const action = isHalted ? 'resume' : 'halt';
+    const reason = isHalted ? null : prompt("Reason for halt (optional, logged):");
+    if (!isHalted && reason === null) return;  // user cancelled the prompt — don't halt silently
+
+    const confirmed = confirm(
+        isHalted
+            ? "Resume normal pipeline operation?"
+            : "Halt the pipeline? No new rebalance suggestions will be generated until you resume. Existing positions are NOT affected."
+    );
+    if (!confirmed) return;
+
+    await fetch('/api/system_halt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({halt: !isHalted, reason})
+    });
+    location.reload();
+}
 </script>
 
 {% block scripts %}{% endblock %}

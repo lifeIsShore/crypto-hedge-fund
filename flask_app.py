@@ -595,6 +595,27 @@ def rebalance():
     )
 
 
+@app.route("/laggards")
+def laggards():
+    rows = _q("""
+        SELECT ticker, sector, period_return, relative_rank,
+               peer_median_return, catch_up_gap, conviction, disqualifiers, screen_date as date
+        FROM laggard_screen_results
+        WHERE screen_date = (SELECT MAX(screen_date) FROM laggard_screen_results)
+        ORDER BY catch_up_gap DESC
+    """)
+    import json
+    for r in rows:
+        if r.get('disqualifiers'):
+            try:
+                r['disqualifiers'] = json.loads(r['disqualifiers'])
+            except:
+                r['disqualifiers'] = []
+        else:
+            r['disqualifiers'] = []
+    return render_template("laggards.html", candidates=rows, page="laggards")
+
+
 @app.route("/pead")
 def pead():
     state = _load_json(PEAD_STATE_PATH)
@@ -1064,6 +1085,34 @@ def api_pipeline_status():
     return jsonify({"steps": rows, "state_ages": ages})
 
 
+def is_system_halted() -> bool:
+    try:
+        row = _q("SELECT is_halted FROM system_halt WHERE id = 1")
+        return bool(row[0]['is_halted']) if row else False
+    except Exception:
+        return False
+
+@app.context_processor
+def inject_halt_state():
+    return dict(is_system_halted=is_system_halted())
+
+@app.route('/api/system_halt', methods=['POST'])
+@require_auth
+def api_system_halt():
+    data = request.get_json()
+    halt = bool(data.get('halt'))
+    reason = data.get('reason', '')
+    
+    _exec("""
+        UPDATE system_halt SET is_halted = :halt,
+            halted_at = CASE WHEN :halt THEN datetime('now') ELSE NULL END,
+            halted_reason = :reason
+        WHERE id = 1
+    """, {"halt": int(halt), "reason": reason})
+    
+    logging.info(f"System {'HALTED' if halt else 'RESUMED'}: {reason}")
+    return jsonify({"status": "ok", "halted": halt})
+
 @app.route("/api/override", methods=["POST"])
 @require_auth
 def api_override():
@@ -1389,6 +1438,9 @@ def api_log_trade():
     """
     Log a manual transaction directly to the SQLite DB.
     Handles: Buy, Sell, Deposit, Dividend, Fee.
+    """
+    if is_system_halted():
+        return jsonify({"error": "System is HALTED. Cannot log trades."}), 403
 
     Body (JSON):
       action   : 'Buy' | 'Sell' | 'Deposit' | 'Dividend' | 'Fee'

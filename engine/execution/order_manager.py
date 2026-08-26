@@ -109,11 +109,50 @@ def get_regime_scalar() -> float:
         from shared.state_paths import REGIME_STATE_PATH
         with open(REGIME_STATE_PATH) as f:
             state = json.load(f)
-        risk = (state.get('regime_risk', 'Neutral') or 'Neutral').lower()
         return 0.6 if 'risk-off' in risk or 'risk_off' in risk else 1.0
     except Exception as e:
         logger.warning(f"[kelly_sizing] regime read failed, defaulting to 1.0: {e}")
         return 1.0
+
+def get_portfolio_drawdown() -> float:
+    """Computes current portfolio drawdown from all-time high-water mark."""
+    session = get_session()
+    try:
+        row_max = session.execute(text("SELECT MAX(portfolio_value_eur) FROM performance_history")).fetchone()
+        hwm = float(row_max[0]) if row_max and row_max[0] else 0.0
+        
+        row_cur = session.execute(text("SELECT portfolio_value_eur FROM performance_history ORDER BY date DESC LIMIT 1")).fetchone()
+        cur = float(row_cur[0]) if row_cur and row_cur[0] else 0.0
+        
+        if hwm <= 0:
+            return 0.0
+        
+        return (cur - hwm) / hwm
+    except Exception as e:
+        logger.warning(f"[drawdown] failed to compute: {e}")
+        return 0.0
+    finally:
+        session.close()
+
+def _log_drawdown_event(drawdown: float, tier: str, action: str):
+    session = get_session()
+    try:
+        # Only log once per day per tier to avoid spam
+        exists = session.execute(text("""
+            SELECT 1 FROM risk_events 
+            WHERE date = CURRENT_DATE AND event_type = 'drawdown_alert' AND detail LIKE :tier_like
+        """), {"tier_like": f"%{tier}%"}).fetchone()
+        if not exists:
+            session.execute(text("""
+                INSERT INTO risk_events (date, event_type, ticker, detail)
+                VALUES (CURRENT_DATE, 'drawdown_alert', 'PORTFOLIO', :detail)
+            """), {"detail": f"{tier} threshold breached (drawdown {drawdown*100:.1f}%). Action: {action}"})
+            session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Failed to log drawdown event: {e}")
+    finally:
+        session.close()
 
 
 def generate_order_queue(
@@ -131,6 +170,23 @@ def generate_order_queue(
     then (BUY orders only) a Kelly-sizing scalar (J3) and a pre-earnings throttle (J4).
     """
     orders = []
+
+    # Portfolio Drawdown Protocol (J6)
+    drawdown = get_portfolio_drawdown()
+    drawdown_buy_scalar = 1.0
+    pause_buys = False
+    
+    if drawdown <= -0.20:
+        pause_buys = True
+        _log_drawdown_event(drawdown, "Tier 3 (-20%)", "New BUY orders paused")
+        logger.warning(f"[Drawdown Protocol] -20% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs paused.")
+    elif drawdown <= -0.15:
+        drawdown_buy_scalar = 0.5
+        _log_drawdown_event(drawdown, "Tier 2 (-15%)", "New BUY sizing reduced by 50%")
+        logger.warning(f"[Drawdown Protocol] -15% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs scaled by 0.5.")
+    elif drawdown <= -0.10:
+        _log_drawdown_event(drawdown, "Tier 1 (-10%)", "Alert only")
+        logger.info(f"[Drawdown Protocol] -10% threshold breached (drawdown {drawdown*100:.1f}%).")
 
     # J3 — fetch Kelly + regime scalars once, outside the loop
     kelly_scalars = get_kelly_scalars(list(suggested_weights.index)) if apply_kelly_sizing else {}
@@ -181,10 +237,14 @@ def generate_order_queue(
         # target on the way down, which fights risk reduction instead of
         # helping it — especially heading into an unpredictable earnings print.
         action = "BUY" if delta_eur > 0 else "SELL"
+        
+        if action == "BUY" and pause_buys:
+            logger.info(f"[Drawdown Protocol] Skipping BUY order for {ticker} due to portfolio pause.")
+            continue
 
         if action == "BUY" and apply_kelly_sizing:
             k_scalar = kelly_scalars.get(ticker, 0.5)
-            combined_scalar = k_scalar * regime_scalar
+            combined_scalar = k_scalar * regime_scalar * drawdown_buy_scalar
             pre_kelly_eur = abs_delta_eur
             abs_delta_eur = abs_delta_eur * combined_scalar
             if abs_delta_eur < min_trade_eur:
