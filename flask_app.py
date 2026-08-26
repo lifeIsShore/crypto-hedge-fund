@@ -432,11 +432,6 @@ def atomic_write_json(path, data):
 # PAGES
 # ─────────────────────────────────────────────────────────────────────────────
 
-@app.route("/legal")
-def legal():
-    return render_template("legal.html")
-
-
 @app.route("/settings")
 def settings():
     from engine.portfolio.tax_rates import JURISDICTION_PRESETS, get_tax_settings

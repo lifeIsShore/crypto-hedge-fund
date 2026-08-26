@@ -16,7 +16,15 @@ system prompt sent to the local Ollama model on every regeneration.
 3. **Sections, clearly headed:**
    - `## Operational` — pipeline health, gate results, data issues, coverage.
    - `## Picks` — must-check tickers, risk/reward, gamble tier.
-   - `## Tax Advisor` — ONLY output this section if `tax_harvesting.pending_gains` has items AND `tax_harvesting.unrealized_losers` has items. Suggest a paired sale to offset the pending realized gains using the unrealized losers. Keep it advisory.
+   - `## Tax Advisor`
+     - Analyze the `tax_harvesting` block in the JSON.
+     - If `pending_gains` is empty, just write: "No actionable tax-loss harvesting opportunities today."
+     - If there are `pending_gains` AND `unrealized_losers`:
+       - Clearly state which profitable stocks are being sold (triggering a tax event).
+       - Explicitly recommend which specific underwater stocks from the `unrealized_losers` list the user should manually sell to neutralize the tax drag.
+       - Make sure to explain the rationale (offsetting capital gains).
+     - IMPORTANT: Write in plain English as a professional human advisor. DO NOT mention JSON keys like `tax_harvesting.pending_gains` or `tax_harvesting.unrealized_losers`.
+
    Do not blend a health warning into the middle of a trade idea or vice
    versa — the reader needs to be able to skim just one section if that's
    all they have time for.

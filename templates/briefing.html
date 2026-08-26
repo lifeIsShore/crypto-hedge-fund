@@ -251,6 +251,11 @@ No narrative generated yet. Click Regenerate to fetch a summary.
       <div class="narrative-header">
         <div class="narrative-title">🤖 LLM TRADE LEVELS</div>
         <div class="narrative-controls">
+          <select id="levels-model-select">
+            {% for m in available_models %}
+            <option value="{{ m }}" {% if m == (trade_levels.get('model') or default_model) %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
           <button class="btn" onclick="generateTradeLevels()" id="btn-generate-levels">↻ Generate Levels</button>
         </div>
       </div>
@@ -387,11 +392,12 @@ async function generateNarrative() {
 
 async function generateTradeLevels() {
   const btn = document.getElementById('btn-generate-levels');
-  const sel = document.getElementById('model-select');
+  const sel = document.getElementById('levels-model-select');
   const model = sel.value;
   
   btn.textContent = 'Generating... (Takes 1-3m)';
   btn.disabled = true;
+  sel.disabled = true;
   
   document.getElementById('levels-content').innerHTML = '<div style="font-size:13px; color:#ccc;">Calling Ollama for top 5 tickers...</div>';
   
@@ -438,6 +444,7 @@ async function generateTradeLevels() {
   } finally {
     btn.textContent = '↻ Generate Levels';
     btn.disabled = false;
+    sel.disabled = false;
   }
 }
 </script>
