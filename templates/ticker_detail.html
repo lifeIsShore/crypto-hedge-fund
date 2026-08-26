@@ -11,6 +11,11 @@
       <span style="font-size:14px;color:var(--muted);font-weight:400">({{ ticker_names.get(ticker, '') }})</span>
     </h1>
     <span id="action-badge" style="font-size:11px">—</span>
+    {% if earnings_badge %}
+    <span class="tag tag-orange" title="{{ earnings_badge.report_date }} ({{ earnings_badge.report_time or '—' }})">
+      📅 REPORTS {{ earnings_badge.report_date }}
+    </span>
+    {% endif %}
   </div>
   
   <div style="display:flex; align-items:center; gap:12px">
@@ -58,6 +63,34 @@
       {% endif %}
     </div>
   </div>
+
+  {% if momentum_comparison %}
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">MOMENTUM — UNIVERSE VS. SECTOR</span>
+      {% if momentum_comparison.flag %}
+        <span class="panel-badge" style="color:var(--accent2)">⚠ DIVERGENCE</span>
+      {% endif %}
+    </div>
+    <div class="panel-body">
+      <table class="tbl">
+        <tbody>
+          <tr><td style="color:var(--muted)">Universe momentum rank</td><td>{{ '%.2f'|format(momentum_comparison.universe_rank) }}</td></tr>
+          <tr><td style="color:var(--muted)">Sector momentum rank</td><td>{{ '%.2f'|format(momentum_comparison.sector_rank) }}</td></tr>
+        </tbody>
+      </table>
+      {% if momentum_comparison.flag %}
+        <div class="alert alert-warn" style="margin-top:10px">
+          {% if momentum_comparison.divergence > 0 %}
+            Strong within-sector leader, weak vs. whole market — possible sector rotation candidate.
+          {% else %}
+            Weak within its sector despite decent universe-wide rank — a laggard inside a strong group.
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Risk Levels -->
   <div class="panel">

@@ -260,9 +260,12 @@ window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').tex
   } else {
     ptbody.innerHTML = positions.map(p=>{
       const action = sigMap[p.ticker] || 'NEUTRAL';
+      const tickerCell = p.reporting_soon
+        ? `${p.ticker} <span class="tag tag-orange" style="font-size:8px" title="Reports ${p.report_date}">📅</span>`
+        : p.ticker;
       return `<tr style="cursor:pointer" onclick="window.location='/ticker/${p.ticker}'">
         <td style="font-weight:500;color:var(--accent)">
-          ${p.ticker}
+          ${tickerCell}
           <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[p.ticker] || ''})</span>
         </td>
         <td style="color:var(--muted);font-size:10px">${tickerSectors[p.ticker] || '—'}</td>

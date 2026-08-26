@@ -700,14 +700,59 @@ def api_fx_rate():
     })
 
 
+def _get_earnings_badges(tickers: list) -> dict:
+    """Returns {ticker: {'report_date': str, 'report_time': str}}
+    for any of the given tickers reporting within 3 days."""
+    try:
+        from engine.data.earnings_calendar import get_reporting_soon
+    except ImportError:
+        return {}
+    soon = get_reporting_soon(tickers, within_days=3)
+    if not soon:
+        return {}
+    try:
+        placeholders = ','.join([f"'{t}'" for t in soon])
+        rows = _q(f"""
+            SELECT ticker, report_date, report_time FROM earnings_calendar
+            WHERE ticker IN ({placeholders})
+            AND date(report_date) BETWEEN date('now') AND date('now', '+3 days')
+        """)
+        return {r['ticker']: {'report_date': r['report_date'], 'report_time': r['report_time']} for r in rows}
+    except Exception:
+        return {}
+
+def _get_momentum_comparison(ticker: str) -> dict | None:
+    try:
+        row = _q("""
+            SELECT
+                MAX(CASE WHEN feature_name = 'mom_12m' THEN feature_value END) AS universe_rank,
+                MAX(CASE WHEN feature_name = 'sector_mom_12m' THEN feature_value END) AS sector_rank
+            FROM feature_store
+            WHERE ticker = :t AND date = (SELECT MAX(date) FROM feature_store WHERE ticker = :t)
+        """, {'t': ticker})
+        if not row or row[0]['universe_rank'] is None or row[0]['sector_rank'] is None:
+            return None
+        universe_rank = float(row[0]['universe_rank'])
+        sector_rank = float(row[0]['sector_rank'])
+        divergence = sector_rank - universe_rank
+        return {
+            'universe_rank': round(universe_rank, 3),
+            'sector_rank': round(sector_rank, 3),
+            'divergence': round(divergence, 3),
+            'flag': abs(divergence) >= 0.35,
+        }
+    except Exception:
+        return None
+
 @app.route("/api/holdings")
 def api_holdings():
     """Current holdings with ML signal overlay — live reconstruction."""
     positions, cash_eur = _live_positions()
 
-    # Overlay ML signals
+    # Overlay ML signals and earnings badges
     if positions:
-        tickers_sql = ",".join(f"'{p['ticker']}'" for p in positions)
+        tickers = [p['ticker'] for p in positions]
+        tickers_sql = ",".join(f"'{t}'" for t in tickers)
         targets = _q(f"""
             SELECT ticker, up_proba, vol_ann, expected_21d_eur,
                    target_1sigma_eur, stop_1sigma_eur, risk_reward_ratio
@@ -716,6 +761,7 @@ def api_holdings():
               AND ticker IN ({tickers_sql})
         """)
         targets_map = {t["ticker"]: t for t in targets}
+        earnings_badges = _get_earnings_badges(tickers)
         for p in positions:
             sig = targets_map.get(p["ticker"], {})
             p["up_proba"]          = sig.get("up_proba")
@@ -724,6 +770,9 @@ def api_holdings():
             p["target_1sigma_eur"] = sig.get("target_1sigma_eur")
             p["stop_1sigma_eur"]   = sig.get("stop_1sigma_eur")
             p["risk_reward_ratio"] = sig.get("risk_reward_ratio")
+            p["reporting_soon"]    = p["ticker"] in earnings_badges
+            if p["reporting_soon"]:
+                p["report_date"] = earnings_badges[p["ticker"]]["report_date"]
 
     return jsonify({"positions": positions, "cash_eur": cash_eur})
 
@@ -1172,6 +1221,9 @@ def ticker_detail(ticker):
 
     ml = _load_json(ML_STATE_PATH)
     ml_signal = (ml.get("model_signals") or {}).get(ticker, {})
+    
+    earnings_badge = _get_earnings_badges([ticker]).get(ticker)
+    momentum_comparison = _get_momentum_comparison(ticker)
 
     return render_template("ticker_detail.html",
         ticker=ticker,
@@ -1179,6 +1231,8 @@ def ticker_detail(ticker):
         position=position,
         trades_hist=trades_hist,
         ml_signal=ml_signal,
+        earnings_badge=earnings_badge,
+        momentum_comparison=momentum_comparison,
         page="",
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
     )
