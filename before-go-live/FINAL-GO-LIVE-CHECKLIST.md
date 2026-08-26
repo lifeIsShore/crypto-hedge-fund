@@ -64,9 +64,9 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
 
 - [ ] **4.1 Migrate off `yfinance`**
   - Yahoo Finance ToS forbids commercial use. Select and integrate a paid provider (e.g., Polygon.io, EODHD, Financial Modeling Prep) for real-time prices.
-- [ ] **4.2 Resolve Regulatory Risk**
+- [x] **4.2 Resolve Regulatory Risk**
   - Consult legal counsel regarding BaFin/SEC laws around "Investment Advice." Generating personalized target weights for paying customers carries high legal risk. You may need to abstract the output (e.g., selling "model scores" rather than "portfolio allocations").
-- [ ] **4.3 Legal Documents Preparation**
+- [x] **4.3 Legal Documents Preparation**
   - Bring `LEGAL-DOCS-CHECKLIST.md` to a lawyer to draft the actual ToS, Privacy Policy, and Financial Disclaimers.
 - [ ] **4.4 Database Architecture Decision**
   - Review `SAAS-MONETIZATION-AND-SCALE-ARCHITECTURE.md`. Decide if you will stick with SQLite (1 container per user) or migrate to a shared Postgres database before onboarding the first 100 users.

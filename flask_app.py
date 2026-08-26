@@ -3508,6 +3508,27 @@ def api_briefing_generate_levels():
 
 # ─────────────────────────────────────────────────────────────────────────────
 
+@app.route("/legal")
+def legal_docs():
+    """Renders the master legal agreements and policies."""
+    try:
+        from pathlib import Path
+        import os
+        root_dir = Path(__file__).parent
+        legal_path = root_dir / "LEGAL_AGREEMENTS.md"
+        with open(legal_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception as e:
+        content = "# Legal Documents Not Found\nPlease ensure LEGAL_AGREEMENTS.md exists in the project root."
+        
+    return render_template("legal.html",
+        content=content,
+        sandbox_mode=os.getenv("SANDBOX_MODE") == "1",
+        page="legal"
+    )
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     _ensure_signal_queue_table()
     _ensure_watchlist_table()

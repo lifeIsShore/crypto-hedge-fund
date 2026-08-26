@@ -118,6 +118,7 @@ def generate_narrative(briefing_data: dict, model: str = None) -> dict:
         "model": model,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "error": None,
+        "tax_advice": None,
     }
     try:
         raw, metrics = _call_ollama(model, system_prompt, briefing_data)
@@ -126,8 +127,16 @@ def generate_narrative(briefing_data: dict, model: str = None) -> dict:
         narrative = _strip_think_tags(raw)
         if not narrative:
             raise ValueError("Model returned empty response.")
+        
+        tax_advice = None
+        if "## Tax Advisor" in narrative:
+            parts = narrative.split("## Tax Advisor")
+            narrative = parts[0].strip()
+            tax_advice = parts[1].strip()
+            
         result["ok"] = True
         result["narrative"] = narrative
+        result["tax_advice"] = tax_advice
     except urllib.error.URLError as e:
         result["error"] = f"Could not reach Ollama at {OLLAMA_URL} — is it running? ({e})"
     except Exception as e:

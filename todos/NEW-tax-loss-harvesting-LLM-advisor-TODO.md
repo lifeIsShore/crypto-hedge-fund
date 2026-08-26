@@ -25,7 +25,7 @@ We want to expose a **Tax-Loss Harvesting (TLH) Copilot** using the local LLM to
    - It will display the LLM's plain-English explanation of exactly which ticker to sell to offset the tax hit.
 
 ## Next Steps
-- [ ] Update `engine/briefing/data.py` to calculate *Unrealized Losers* and *Pending Realized Gains*.
-- [ ] Create a new prompt `tax_advisor_prompt.md`.
-- [ ] Wire it into `narrator.py` as an optional LLM sub-agent.
-- [ ] Build the UI panel in `briefing.html`.
+- [x] Update `engine/briefing/data.py` to calculate *Unrealized Losers* and *Pending Realized Gains*.
+- [x] Create a new prompt `tax_advisor_prompt.md`. (Done via `narrator_prompt.md`)
+- [x] Wire it into `narrator.py` as an optional LLM sub-agent.
+- [x] Build the UI panel in `briefing.html`.

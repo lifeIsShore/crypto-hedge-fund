@@ -234,6 +234,18 @@ No narrative generated yet. Click Regenerate to fetch a summary.
   <div class="briefing-half">
     <div class="section-title">Decision Support <a href="/highlighted" style="font-size:9px; text-transform:none; float:right; color:var(--accent4); text-decoration:none">View Full →</a></div>
     
+    <!-- Tax Advisor Copilot -->
+    {% if narrative and narrative.get('tax_advice') %}
+    <div class="panel narrative-panel" style="border-left: 3px solid #ff9800; background: rgba(255, 152, 0, 0.05);">
+      <div class="narrative-header" style="border-bottom: 1px solid rgba(255, 152, 0, 0.2);">
+        <div class="narrative-title" style="color: #ff9800;">🛡️ TAX ADVISOR</div>
+      </div>
+      <div class="narrative-body" style="color: #eee;">
+{{ narrative.get('tax_advice') }}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Trade Levels Copilot -->
     <div class="panel narrative-panel">
       <div class="narrative-header">

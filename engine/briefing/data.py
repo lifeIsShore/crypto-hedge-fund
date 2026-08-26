@@ -134,16 +134,63 @@ def briefing_regime():
         return {}
 
 
+def briefing_tax_harvest():
+    try:
+        from engine.risk.circuit_breaker import get_average_entry_prices
+        entry_prices = get_average_entry_prices()
+        
+        # Get current prices from price_targets (today's close)
+        rows = _q("SELECT ticker, current_price_eur FROM price_targets WHERE date = (SELECT MAX(date) FROM price_targets)")
+        prices = {r["ticker"]: r["current_price_eur"] for r in rows}
+        
+        # 1. Calculate Unrealized Losers (from current positions)
+        pos_rows = _q("SELECT ticker, quantity FROM positions_history WHERE date = (SELECT MAX(date) FROM positions_history)")
+        unrealized_losers = []
+        for p in pos_rows:
+            t = p["ticker"]
+            qty = p["quantity"]
+            if t in entry_prices and t in prices and qty > 0:
+                cost_basis = entry_prices[t]
+                current_p = prices[t]
+                if current_p < cost_basis:
+                    loss_eur = (cost_basis - current_p) * qty
+                    unrealized_losers.append({"ticker": t, "loss_eur": round(loss_eur, 2)})
+        
+        # Sort by biggest losers
+        unrealized_losers.sort(key=lambda x: x["loss_eur"], reverse=True)
+        
+        # 2. Calculate Pending Realized Gains (from model outputs that suggest selling)
+        mo_rows = _q("SELECT ticker, current_weight, delta_weight FROM model_outputs WHERE date = (SELECT MAX(date) FROM model_outputs)")
+        pending_gains = []
+        for mo in mo_rows:
+            t = mo["ticker"]
+            if mo["delta_weight"] < -0.01 and t in entry_prices and t in prices:
+                # We are selling a portion (or all) of it. Calculate how many shares we are selling.
+                # delta_weight is negative. We don't have total portfolio value here easily, 
+                # so we can approximate the gain based on the entire position's % gain, and scale by the sell ratio.
+                # Actually, simpler: just flag the ticker and total potential gain if sold completely, or just the % gain.
+                cost_basis = entry_prices[t]
+                current_p = prices[t]
+                if current_p > cost_basis:
+                    gain_pct = (current_p - cost_basis) / cost_basis
+                    pending_gains.append({"ticker": t, "gain_pct": round(gain_pct * 100, 2), "delta_weight": round(mo["delta_weight"], 3)})
+                    
+        return {"pending_gains": pending_gains, "unrealized_losers": unrealized_losers[:5]}
+    except Exception as e:
+        return {"pending_gains": [], "unrealized_losers": []}
+
+
 def gather_all():
     """Everything the /briefing route and the narrator both need, in one call."""
     health = briefing_pipeline_health()
     gate_results = briefing_gate_results()
     must_check, best_risk_reward, gamble_tier = briefing_ticker_picks()
     regime = briefing_regime()
-    return health, gate_results, must_check, best_risk_reward, gamble_tier, regime
+    tax = briefing_tax_harvest()
+    return health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax
 
 
-def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime):
+def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax):
     """Compact form passed to the LLM — keep it small so generation stays fast."""
     def _pick(rows, keys):
         return [{k: r.get(k) for k in keys} for r in rows]
@@ -163,4 +210,5 @@ def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_
             "regime_composite": regime.get("regime_composite"),
             "regime_risk": regime.get("regime_risk"),
         },
+        "tax_harvesting": tax,
     }
