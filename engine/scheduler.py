@@ -757,6 +757,88 @@ def step_performance_log():
     session.close()
     logger.info(f"[performance] Logged: €{total_val:,.2f} | Return: {daily_ret*100:+.2f}%")
 
+
+def _get_held_and_watchlisted_tickers() -> list:
+    from engine.db.db import get_session
+    from sqlalchemy import text
+    session = get_session()
+    try:
+        held = session.execute(text(
+            "SELECT DISTINCT ticker FROM positions_history "
+            "WHERE date = (SELECT MAX(date) FROM positions_history)"
+        )).fetchall()
+        watched = session.execute(text("SELECT DISTINCT ticker FROM watchlist")).fetchall()
+        return sorted({r[0] for r in held} | {r[0] for r in watched})
+    finally:
+        session.close()
+
+
+def step_pead_calendar_trigger():
+    """
+    Daily fast-path check: did any held/watchlisted ticker report earnings in
+    the last 2 days? If so and it has no active PEAD setup yet, run a targeted
+    PEAD screen for just that ticker instead of waiting for Monday's full scan.
+    """
+    from engine.data.earnings_calendar import get_recently_reported
+    from engine.alpha.pead_alpha import PEAD_SETUPS_PATH
+    import pandas as pd
+    import sys
+    import os
+    from shared.config import _PROJECT_ROOT
+
+    watch_tickers = _get_held_and_watchlisted_tickers()
+    if not watch_tickers:
+        return
+
+    reported = get_recently_reported(watch_tickers, within_days=2)
+    if not reported:
+        return
+
+    already_covered = set()
+    if os.path.exists(PEAD_SETUPS_PATH):
+        try:
+            existing = pd.read_csv(PEAD_SETUPS_PATH)
+            if 'entry_date' in existing.columns and 'ticker' in existing.columns:
+                existing['entry_date'] = pd.to_datetime(existing['entry_date'], errors='coerce')
+                recent_cutoff = pd.Timestamp(TODAY) - pd.Timedelta(days=5)
+                already_covered = set(
+                    existing[existing['entry_date'] >= recent_cutoff]['ticker']
+                )
+        except Exception as e:
+            logger.warning(f"[pead_calendar_trigger] Could not read pead_setups.csv: {e}")
+
+    to_screen = list(reported - already_covered)
+    if not to_screen:
+        logger.info(f"[pead_calendar_trigger] {len(reported)} ticker(s) reported "
+                     f"recently, all already covered by an active setup")
+        return
+
+    logger.info(f"[pead_calendar_trigger] Triggering targeted PEAD screen for: {to_screen}")
+
+    pead_dir = os.path.join(_PROJECT_ROOT, 'ml_quant_finance_research',
+                             'quant_research', 'pead_engine')
+    original_dir = os.getcwd()
+    try:
+        os.chdir(pead_dir)
+        if pead_dir not in sys.path:
+            sys.path.insert(0, pead_dir)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "run_engine", os.path.join(pead_dir, "run_engine.py"))
+        run_engine = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(run_engine)
+        run_engine.run_targeted(to_screen)
+        from engine.alpha.pead_alpha import _mirror_pead_to_shared
+        _mirror_pead_to_shared(pead_dir)
+    except Exception as e:
+        logger.error(f"[pead_calendar_trigger] Targeted screen failed (non-fatal, "
+                      f"Monday's full run will still catch it): {e}")
+    finally:
+        os.chdir(original_dir)
+        if pead_dir in sys.path:
+            sys.path.remove(pead_dir)
+
+
 def step_liquidity_classification():
     from engine.data.liquidity_classifier import run_liquidity_classification
     run_liquidity_classification(TICKERS, TODAY)
@@ -1140,6 +1222,7 @@ def run_pipeline(dry_run: bool = False):
     _run_step('2.  Macro regime refresh',    step_regime_refresh,                dry_run)
     _run_step('3.  Feature pipeline',        step_features,                      dry_run)
     _run_step('3b. Earnings calendar',       step_earnings_calendar,             dry_run)  # J4
+    _run_step('3c. PEAD calendar trigger',   step_pead_calendar_trigger,         dry_run)
     _run_step('4.  Alpha: momentum',         lambda: step_alpha('momentum'),     dry_run)
     _run_step('4b. Alpha: sector momentum',  lambda: step_alpha('sector_momentum'), dry_run)  # J5
     _run_step('5.  Alpha: mean reversion',   lambda: step_alpha('mean_reversion'),dry_run)
