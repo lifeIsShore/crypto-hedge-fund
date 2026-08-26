@@ -434,13 +434,13 @@ def main():
     if combined_noise > 0:
         ratio = abs(delta_auc) / combined_noise if combined_noise > 0 else float('inf')
         if ratio < 1.0:
-            print(f"    ⚠ delta is within noise floor (|delta|/seed_std = {ratio:.1f}x) "
+            print(f"    [!] delta is within noise floor (|delta|/seed_std = {ratio:.1f}x) "
                   f"— NOT statistically distinguishable from baseline")
         elif ratio < 2.0:
-            print(f"    ⚠ delta is marginal (|delta|/seed_std = {ratio:.1f}x) "
+            print(f"    [!] delta is marginal (|delta|/seed_std = {ratio:.1f}x) "
                   f"— weak evidence")
         else:
-            print(f"    ✓ delta exceeds noise floor (|delta|/seed_std = {ratio:.1f}x)")
+            print(f"    [+] delta exceeds noise floor (|delta|/seed_std = {ratio:.1f}x)")
 
     # C2: AUC variance stability
     c2 = delta_std <= THRESHOLD_DELTA_STD

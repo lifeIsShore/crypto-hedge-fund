@@ -18,11 +18,11 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
   - Compute Sharpe, Calmar, and Drawdowns, and render them in the non-technical UI dashboard.
 - [x] **1.4 Establish ML Baseline (`better-alpha/00-OVERVIEW.md` - Gate 0)**
   - ✅ Done 2026-08-21. Coverage bug fixed (126/135 tickers, up from 78). Baseline recorded in `better-alpha/baseline_v1_auc.txt`: mean_auc=0.6331, n_tickers=126. Gate 1 locked: `HOLDOUT_START=2026-02-23`.
-- [ ] **1.5 Target Refinement (`better-alpha/02-target-refinement.md`)**
+- [x] **1.5 Target Refinement (`better-alpha/02-target-refinement.md`)**
   - Change the ML target from predicting Absolute Return to predicting **Alpha** (Excess Return vs. Benchmark). 
-  - Run Gate 2 evaluation: Ensure IC improves by `> 0.003`.
-- [ ] **1.6 Feature Addition (`better-alpha/01-feature-additions.md` - Phase 1A/B/C)**
-  - Slowly bridge the production regime signals (Stress score, VIX) and PEAD data into the ML pipeline, gating each addition strictly.
+  - Run Gate 2 evaluation: Ensure IC improves by `> 0.003`. (FAILED Gate 2 - remains False).
+- [x] **1.6 Feature Addition (`better-alpha/01-feature-additions.md` - Phase 1A/B/C)**
+  - Slowly bridge the production regime signals (Stress score, VIX) and PEAD data into the ML pipeline, gating each addition strictly. (FAILED Gate 2 - remains False).
 
 ---
 

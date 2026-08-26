@@ -4,40 +4,34 @@
 
 ## 🚀 NEXT SESSION — START HERE
 
-> **Last updated: 2026-08-25.**
-> ⚠️ **Gate 2 methodology audit complete. Previous gate2_results.csv is INVALIDATED — see session 17b entry below. All Phase 1 families need re-testing with the fixed methodology.**
+> **Last updated: 2026-08-26.**
+> ✅ **Phase 1 ML Testing is Officially Concluded.**
 
 ### Where we are in the plan
 
-Gate 2 methodology audit (2026-08-25) found two confirmed bugs in `gate2_run.py` that invalidate the previous gate2_results.csv: (1) IC column was reading a stale file that never changed — all six "identical IC" values were meaningless, (2) AUC baseline was recorded on full history while Gate 2 runs used holdout-filtered data, creating a systematic ~0.002–0.005 penalty. Three fixes have been applied.
+The 10-hour autonomous `gate2_run.py` multi-seed test has completed. All 6 feature families were rigorously tested against the holdout-adjusted baseline (`AUC: 0.6343 ± 0.0427`). 
 
-### Exact next steps — in order, do not skip
+**Every single Phase 1 feature family FAILED the Gate 2 criteria:**
+- `db_regime`: +0.0000 (No signal)
+- `pead`: +0.0000 (No signal)
+- `earnings`: -0.0000 (No signal)
+- `crosssectional`: -0.0055 (Harmful)
+- `acceleration`: -0.0067 (Harmful)
+- `target_refinement`: -0.0241 (Highly Harmful)
 
-**Step 1 — Record holdout-adjusted baseline** ← START HERE
-```bash
-python before-go-live/better-alpha/gate2_run.py --holdout-baseline
-```
-This runs the pipeline 3x (seeds 42, 123, 7) with holdout filter but NO feature flags, and writes `baseline_v1_auc_holdout.txt`. Takes ~2–3 hours. This gives you:
-- An apples-to-apples AUC baseline for fair Gate 2 comparisons
-- A seed-to-seed noise floor estimate (any delta within this range is noise, not signal)
+The gating system successfully protected the model from overfitting to noise. The core baseline model remains our champion, and all Phase 1 flags in `run_ml_pipeline.py` will permanently remain `False`.
 
-**Step 2 — Re-test ALL Phase 1 families with fixed methodology**
-Because feature building + training across 6 families will take ~9 hours sequentially, you should use the Antigravity `/goal` command to run this overnight.
+### Exact next steps — in order
 
-In the chat interface, run:
-```text
-/goal Run the full Gate 2 tests for all 6 alpha families sequentially using gate2_run.py, wait for them to finish, and generate a final report of the AUC improvements.
-```
-This will autonomously run:
-`python before-go-live/better-alpha/gate2_run.py --family db_regime --n-seeds 3 --force`
-`python before-go-live/better-alpha/gate2_run.py --family pead --n-seeds 3 --force`
-... and so on for `earnings`, `crosssectional`, `acceleration`, and `target_refinement`.
+**Step 1 — Check off Phase 1 from Go-Live Checklist**
+Steps 1.5 and 1.6 on `FINAL-GO-LIVE-CHECKLIST.md` are now resolved (tested and rejected).
 
-**Step 3 — Decide on Phase 1B/1D based on valid data**
-Only after Step 2 results are in. If any family passes, proceed to Gate 3 (2 Saturday live runs). `crosssectional` (-0.005), `acceleration` (-0.006), and especially `target_refinement` (-0.023) likely genuinely failed, but worth re-verifying with the fair baseline.
-
-**Step 4 — Gate 4: Holdout validation** (unchanged)
-The one-shot evaluation on the locked 2026-02-23 → today window. Only done once, after all feature phases have passed Gate 2/3.
+**Step 2 — Begin Phase 2 (Engine & Risk Finalization)**
+We now move to the final non-ML UI/Engine polish tasks from the Go-Live checklist. Select one of the following to build next:
+- **2.1 Ticker Liquidity Tiering** (`before-go-live/NEW-ticker-liquidity-tiering.md`)
+- **2.2 USD Display Toggle** (`before-go-live/NEW-usd-display-toggle.md`)
+- **2.3 Wire the Laggard Screen** (`J7-laggard-screen-wiring.md`)
+- **2.6 Implement Portfolio Drawdown Protocol** (`RISK-POLICY.md`)
 
 ---
 
