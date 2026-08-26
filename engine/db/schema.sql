@@ -423,3 +423,21 @@ CREATE TABLE IF NOT EXISTS saved_portfolios (
     saved_at    TEXT DEFAULT (datetime('now'))
 );
 
+-- ─────────────────────────────────────────────────────────────
+-- TICKER LIQUIDITY TIER
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS ticker_liquidity_tier (
+    date            TEXT    NOT NULL,
+    ticker          TEXT    NOT NULL,
+    tier            TEXT    NOT NULL,   -- 'liquid' | 'thin' | 'unreliable'
+    trading_days_90d INTEGER,           -- days with volume > 0, out of last 90 calendar days
+    avg_range_pct   REAL,               -- avg (high-low)/close over last 30 trading days
+    history_days    INTEGER,            -- total rows available for this ticker
+    days_since_update INTEGER,
+    score           REAL,               -- 0-1 composite, higher = more trustworthy
+    computed_at     TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_liquidity_tier_ticker ON ticker_liquidity_tier (ticker, date);

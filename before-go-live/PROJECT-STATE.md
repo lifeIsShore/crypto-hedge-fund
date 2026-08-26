@@ -4,7 +4,13 @@
 
 ## 🚀 NEXT SESSION — START HERE
 
-> **Last updated: 2026-08-26.**
+> **Last updated: 2026-08-26 (session 18) — wrote 2.4/2.5 planning docs, no code changes (Claude, via Filesystem MCP):**
+> Ahmet noted 2.4 (PEAD Calendar) and 2.5 (UI Badges) were the two Phase 2 checklist items with no backing doc. Read `FINAL-GO-LIVE-CHECKLIST.md`, the J4/J5 archived specs, `pead_alpha.py`, `earnings_calendar.py`, `run_engine.py`/`screener.py`, and `ticker_detail.html`/`overview.html` to ground both docs in the actual code rather than re-describing the checklist bullets. Wrote:
+> - `before-go-live/NEW-pead-calendar-trigger.md` — daily fast-path trigger: a new `step_pead_calendar_trigger()` scheduler step calls the already-built-but-uncalled `get_recently_reported()`, and a new `run_targeted()` in the PEAD engine screens just the flagged tickers same-day instead of waiting for Monday's full scan.
+> - `before-go-live/NEW-ui-badges.md` — two independent display-only additions: an upcoming-earnings badge (reusing `get_reporting_soon()`, already live in `order_manager.py`'s throttle) on the ticker detail header + overview positions table, and a universe-vs-sector momentum divergence panel on ticker detail (reading `mom_12m`/`sector_mom_12m`, both already in `feature_store`).
+> - Updated `FINAL-GO-LIVE-CHECKLIST.md` 2.4/2.5 bullets to point at the new docs, matching the `(before-go-live/NEW-*.md)` pattern already used for 2.1/2.2.
+> Neither doc is implemented yet — planning only, per Ahmet's request. Both are scoped as pure wiring (no new tables, no new signals), consistent with how 2.1–2.3 are scoped.
+
 > ✅ **Phase 1 ML Testing is Officially Concluded.**
 
 ### Where we are in the plan

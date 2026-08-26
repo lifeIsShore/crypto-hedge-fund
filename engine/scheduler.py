@@ -757,6 +757,10 @@ def step_performance_log():
     session.close()
     logger.info(f"[performance] Logged: €{total_val:,.2f} | Return: {daily_ret*100:+.2f}%")
 
+def step_liquidity_classification():
+    from engine.data.liquidity_classifier import run_liquidity_classification
+    run_liquidity_classification(TICKERS, TODAY)
+
 
 def step_laggard_screen():
     """
@@ -1153,6 +1157,7 @@ def run_pipeline(dry_run: bool = False):
     if WEEKDAY == 0:
         _run_step('W1. PEAD weekly refresh', step_pead_refresh, dry_run)
         _run_step('W2. Laggard screen',       step_laggard_screen, dry_run)  # J7
+        _run_step('W3. Liquidity classification', step_liquidity_classification, dry_run)
 
     # ── Weekend steps (Saturday) ──────────────────────────────────────────────
     if WEEKDAY == 5:

@@ -29,15 +29,16 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
 ## PHASE 2: Engine & Risk Finalization (Tying up loose ends)
 *These are components that were half-built or drafted, but never fully wired into the live scheduler or UI.*
 
-- [ ] **2.1 Ticker Liquidity Tiering (`before-go-live/NEW-ticker-liquidity-tiering.md`)**
+- [x] **2.1 Ticker Liquidity Tiering (`before-go-live/NEW-ticker-liquidity-tiering.md`)**
+  - Implement `engine/data/liquidity_classifier.py` and wire it into the `scheduler.py` weekly pipeline.
   - Implement the liquidity filter to prevent the engine from firing BUY signals on highly illiquid or stale `.DE` cross-listings.
 - [ ] **2.2 USD Display Toggle (`before-go-live/NEW-usd-display-toggle.md`)**
   - Add the UI toggle allowing non-EU users to view portfolio values and trades in USD alongside EUR.
 - [ ] **2.3 Wire the Laggard Screen (J7)**
   - The logic exists in `engine/screens/laggard_screen.py`. It needs to be called in `scheduler.py` and displayed in the dashboard UI.
-- [ ] **2.4 Wire PEAD Calendar Trigger**
-  - Connect `pead_alpha.py` to `get_recently_reported()` from the Earnings Calendar module, so it triggers on calendar dates, not just price anomalies.
-- [ ] **2.5 Missing UI Badges**
+- [ ] **2.4 Wire PEAD Calendar Trigger (`before-go-live/NEW-pead-calendar-trigger.md`)**
+  - Connect `pead_alpha.py` / the PEAD engine to `get_recently_reported()` from the Earnings Calendar module, so it triggers on calendar dates, not just price anomalies.
+- [ ] **2.5 Missing UI Badges (`before-go-live/NEW-ui-badges.md`)**
   - Surface the "Upcoming Earnings" flag (from J4) and the Sector Relative rank (from J5) on the Ticker Detail pages and live portfolio view.
 - [ ] **2.6 Implement Portfolio Drawdown Protocol**
   - Review section 2b of `RISK-POLICY.md`. Decide if you want auto-halts at -15% or -20% portfolio drawdowns, and implement the circuit breaker.
