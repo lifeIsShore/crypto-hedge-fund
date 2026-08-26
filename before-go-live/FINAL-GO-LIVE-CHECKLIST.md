@@ -50,11 +50,11 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
 ## PHASE 3: Sandbox End-to-End Verification
 *The paper trading environment must run flawlessly for 2 weeks before real capital is injected.*
 
-- [ ] **3.1 Run a clean `RUN_SANDBOX.bat` execution**
+- [x] **3.1 Run a clean `RUN_SANDBOX.bat` execution**
   - Monitor the console output to ensure Step 11 (Portfolio Construction) and Step 14 (Paper Orders) complete without Python crashes.
-- [ ] **3.2 Verify Constraints in Paper Trades**
+- [x] **3.2 Verify Constraints in Paper Trades**
   - Look at `sandbox_data.db`. Verify that paper orders were correctly scaled down by the Kelly Scalar (J3) and the Earnings Throttle (J4).
-- [ ] **3.3 Reconcile Cash Double-Count**
+- [x] **3.3 Reconcile Cash Double-Count**
   - Run `FIX_SANDBOX_CASH.bat` to fix the historical database bug where cash was deducted twice for paper buys.
 
 ---
