@@ -67,6 +67,35 @@
 
 </div>
 
+
+<!-- LLM Metrics & Cost -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">🤖 LLM KPI & COST TRACKING</span>
+    <span class="panel-badge">OLLAMA</span>
+  </div>
+  <div class="panel-body">
+    {% if not llm_metrics %}
+    <div class="alert alert-info">No LLM metrics logged yet.</div>
+    {% else %}
+    <table class="tbl">
+      <thead><tr><th>PROMPT TYPE</th><th>MODEL</th><th>TOTAL CALLS</th><th>AVG LATENCY</th><th>TOTAL TOKENS</th></tr></thead>
+      <tbody>
+        {% for m in llm_metrics %}
+        <tr>
+          <td style="color:#fff">{{ m.prompt_type }}</td>
+          <td><span class="tag tag-yellow">{{ m.model }}</span></td>
+          <td style="color:var(--accent)">{{ m.total_calls }}</td>
+          <td style="color:var(--muted)">{{ "%.1f"|format((m.avg_latency_ms or 0) / 1000) }}s</td>
+          <td style="color:var(--accent3)">{{ "{:,}".format(m.total_eval_count or 0) }} tkns</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Full pipeline history -->
 <div class="panel" style="margin-top:14px">
   <div class="panel-header">

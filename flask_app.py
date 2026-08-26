@@ -1301,10 +1301,20 @@ def health():
         ORDER BY logged_at DESC
         LIMIT 20
     """)
+    llm_metrics = _q("""
+        SELECT prompt_type, model, 
+               SUM(eval_count) as total_eval_count, 
+               AVG(eval_duration_ms) as avg_latency_ms,
+               COUNT(*) as total_calls
+        FROM llm_metrics
+        GROUP BY prompt_type, model
+        ORDER BY total_calls DESC
+    """)
     ages = state_file_ages()
     return render_template("health.html",
         pipeline=pipeline,
         risk_events=risk_events,
+        llm_metrics=llm_metrics,
         ages=ages,
         page="health",
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -3428,8 +3438,9 @@ def briefing():
         ORDER BY logged_at DESC LIMIT 5
     """)
 
-    from engine.briefing.narrator import load_cached_narrative, AVAILABLE_MODELS, DEFAULT_MODEL
+    from engine.briefing.narrator import load_cached_narrative, load_cached_trade_levels, AVAILABLE_MODELS, DEFAULT_MODEL
     narrative = load_cached_narrative()
+    trade_levels = load_cached_trade_levels()
 
     return render_template("briefing.html",
         health=health,
@@ -3441,6 +3452,7 @@ def briefing():
         ages=ages,
         risk_events=risk_events,
         narrative=narrative,
+        trade_levels=trade_levels,
         available_models=AVAILABLE_MODELS,
         default_model=DEFAULT_MODEL,
         page="briefing",
@@ -3475,6 +3487,22 @@ def api_briefing_generate():
         health, gate_results, must_check, best_risk_reward, gamble_tier, regime
     )
     result = generate_narrative(briefing_data, model=model)
+    return jsonify(result)
+
+
+@app.route("/api/briefing/generate_levels", methods=["POST"])
+@require_auth
+def api_briefing_generate_levels():
+    """Regenerate the trade levels for the top must-check tickers."""
+    from engine.briefing.narrator import generate_trade_levels, AVAILABLE_MODELS, DEFAULT_MODEL
+
+    data = request.get_json(silent=True) or {}
+    model = data.get("model") or DEFAULT_MODEL
+    if model not in AVAILABLE_MODELS:
+        return jsonify({"ok": False, "error": f"Unknown model '{model}'"}), 400
+
+    must_check, _, _ = _briefing_ticker_picks()
+    result = generate_trade_levels(must_check, model=model)
     return jsonify(result)
 
 

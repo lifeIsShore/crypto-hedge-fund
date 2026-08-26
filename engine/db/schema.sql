@@ -441,3 +441,16 @@ CREATE TABLE IF NOT EXISTS ticker_liquidity_tier (
 );
 
 CREATE INDEX IF NOT EXISTS idx_liquidity_tier_ticker ON ticker_liquidity_tier (ticker, date);
+
+-- ─────────────────────────────────────────────────────────────
+-- LLM METRICS
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS llm_metrics (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    prompt_type   TEXT NOT NULL,
+    model         TEXT NOT NULL,
+    eval_count    INTEGER,
+    eval_duration_ms INTEGER,
+    logged_at     TEXT DEFAULT (datetime('now'))
+);
