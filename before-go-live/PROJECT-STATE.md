@@ -4,40 +4,33 @@
 
 ## 🚀 NEXT SESSION — START HERE
 
-> **Last updated: 2026-08-26 (session 18) — wrote 2.4/2.5 planning docs, no code changes (Claude, via Filesystem MCP):**
-> Ahmet noted 2.4 (PEAD Calendar) and 2.5 (UI Badges) were the two Phase 2 checklist items with no backing doc. Read `FINAL-GO-LIVE-CHECKLIST.md`, the J4/J5 archived specs, `pead_alpha.py`, `earnings_calendar.py`, `run_engine.py`/`screener.py`, and `ticker_detail.html`/`overview.html` to ground both docs in the actual code rather than re-describing the checklist bullets. Wrote:
-> - `before-go-live/NEW-pead-calendar-trigger.md` — daily fast-path trigger: a new `step_pead_calendar_trigger()` scheduler step calls the already-built-but-uncalled `get_recently_reported()`, and a new `run_targeted()` in the PEAD engine screens just the flagged tickers same-day instead of waiting for Monday's full scan.
-> - `before-go-live/NEW-ui-badges.md` — two independent display-only additions: an upcoming-earnings badge (reusing `get_reporting_soon()`, already live in `order_manager.py`'s throttle) on the ticker detail header + overview positions table, and a universe-vs-sector momentum divergence panel on ticker detail (reading `mom_12m`/`sector_mom_12m`, both already in `feature_store`).
-> - Updated `FINAL-GO-LIVE-CHECKLIST.md` 2.4/2.5 bullets to point at the new docs, matching the `(before-go-live/NEW-*.md)` pattern already used for 2.1/2.2.
-> Neither doc is implemented yet — planning only, per Ahmet's request. Both are scoped as pure wiring (no new tables, no new signals), consistent with how 2.1–2.3 are scoped.
-
-> ✅ **Phase 1 ML Testing is Officially Concluded.**
+> **Last updated: 2026-08-26 — Completed Phase 2: Engine & Risk Finalization (Antigravity IDE):**
+> 
+> ✅ **Phase 2 is Officially Concluded.**
+> 
+> We have fully implemented all tasks on the Phase 2 checklist (2.1 - 2.7) and wired them into the system:
+> - **2.1 Ticker Liquidity Tiering**
+> - **2.2 USD Display Toggle**
+> - **2.3 Wire the Laggard Screen**
+> - **2.4 Wire PEAD Calendar Trigger**
+> - **2.5 Missing UI Badges**
+> - **2.6 Implement Portfolio Drawdown Protocol**
+> - **2.7 SOS Button**
+>
+> All related spec files have been moved to `before-go-live/archive-implemented/`.
 
 ### Where we are in the plan
 
-The 10-hour autonomous `gate2_run.py` multi-seed test has completed. All 6 feature families were rigorously tested against the holdout-adjusted baseline (`AUC: 0.6343 ± 0.0427`). 
-
-**Every single Phase 1 feature family FAILED the Gate 2 criteria:**
-- `db_regime`: +0.0000 (No signal)
-- `pead`: +0.0000 (No signal)
-- `earnings`: -0.0000 (No signal)
-- `crosssectional`: -0.0055 (Harmful)
-- `acceleration`: -0.0067 (Harmful)
-- `target_refinement`: -0.0241 (Highly Harmful)
-
-The gating system successfully protected the model from overfitting to noise. The core baseline model remains our champion, and all Phase 1 flags in `run_ml_pipeline.py` will permanently remain `False`.
+**Phase 1 ML Testing** has concluded (Baseline is the champion).
+**Phase 2 Engine & Risk** has concluded.
 
 ### Exact next steps — in order
 
-**Step 1 — Check off Phase 1 from Go-Live Checklist**
-Steps 1.5 and 1.6 on `FINAL-GO-LIVE-CHECKLIST.md` are now resolved (tested and rejected).
-
-**Step 2 — Begin Phase 2 (Engine & Risk Finalization)**
-We now move to the final non-ML UI/Engine polish tasks from the Go-Live checklist. Select one of the following to build next:
-- **2.1 Ticker Liquidity Tiering** (`before-go-live/NEW-ticker-liquidity-tiering.md`)
-- **2.2 USD Display Toggle** (`before-go-live/NEW-usd-display-toggle.md`)
-- **2.3 Wire the Laggard Screen** (`J7-laggard-screen-wiring.md`)
-- **2.6 Implement Portfolio Drawdown Protocol** (`RISK-POLICY.md`)
+**Step 1 — Begin Phase 3 (Sandbox End-to-End Verification)**
+We are now ready to verify the entire system in the paper trading environment. Select one of the following to do next from `FINAL-GO-LIVE-CHECKLIST.md`:
+- **3.1 Run a clean `RUN_SANDBOX.bat` execution**
+- **3.2 Verify Constraints in Paper Trades**
+- **3.3 Reconcile Cash Double-Count**
 
 ---
 
