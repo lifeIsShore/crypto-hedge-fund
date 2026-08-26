@@ -1,7 +1,8 @@
 {
   "ok": true,
-  "narrative": "## Operational\n\n- **Pipeline Health**: The pipeline ran successfully on 2026-08-20 with no failed steps.\n- **Data Issues**: There are critical data ingestion issues affecting multiple tickers (18U.DE, 2H1.DE, 2PY.DE, etc.), last seen over two months ago. This stale data could impact model accuracy.\n- **Validation Concerns**: Six price spikes were detected during validation, indicating potential market volatility or data anomalies.\n- **Gate Results**: All feature flags (ENABLE_ACCELERATION_FEATURES, ENABLE_ALPHA_TARGET, etc.) failed. The delta_auc for most was negative or near-zero, suggesting these features do not improve performance.\n\n## Picks\n\n- **Must-Check Tickers**: Top picks include 3V64.DE, ORC.DE, DTE.DE, and others with high up_proba (0.9962 to 0.9776) and favorable risk/reward ratios (1.849 to 2.085).\n- **Best Risk-Reward Options**: Tickers like DTE.DE and AIR.DE offer strong risk/reward profiles with lower volatility (vol_ann: 0.3854, 0.334), making them stable choices.\n- **Gamble Tier**: Higher-risk opportunities include UCB.BR and AMZ.DE, offering moderate success probabilities but with higher volatility (vol_ann: 0.578, 0.5498).",
-  "model": "deepseek-r1:14b",
-  "generated_at": "2026-08-25T03:57:00",
-  "error": null
+  "narrative": "## Operational\n\n- Pipeline ran clean, no failed steps.\n- Data issues: Multiple tickers (3V64.DE, ABEA.DE, ADB.DE, ADS.DE, AIR.DE, ALV.DE, AMD.DE, AMZ.DE, AP2.DE) are stale and last seen 4 days ago. Ensure data ingestion is up-to-date.\n\n## Picks\n\n- **SAP.DE** shows a high conviction with an up-probability of 98% and a risk/reward ratio of 1.96.\n- **UT8.DE** has a strong up-probability at 97.32%, offering a favorable risk/reward ratio of 1.99.",
+  "model": "qwen2.5:3b",
+  "generated_at": "2026-08-26T19:30:20",
+  "error": null,
+  "tax_advice": "Given the presence of both pending gains in `tax_harvesting.pending_gains` and unrealized losses in `tax_harvesting.unrealized_losers`, consider offsetting these positions to minimize tax liabilities. For example, selling **PPFD.SG** could help offset some realized gains while potentially reducing future losses."
 }

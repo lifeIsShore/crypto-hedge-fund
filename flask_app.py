@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-flask_app.py — Hedge Fund Control Tower (Stream 6: Flask rewrite)
+flask_app.py - Hedge Fund Control Tower (Stream 6: Flask rewrite)
 =================================================================
 Single entry point.  Run:
     python flask_app.py
@@ -196,7 +197,7 @@ def _q_execute(sql, params=None):
 
 def _live_positions():
     """
-    Live Reconstruction model — compute current holdings directly from the
+    Live Reconstruction model - compute current holdings directly from the
     trades ledger + latest available prices.  This replaces any read from
     positions_history so the dashboard refreshes the instant a trade is logged.
 
@@ -246,8 +247,8 @@ def _live_positions():
         for ticker, qty in qty_map.items():
             price_data = price_map.get(ticker)
             if not price_data:
-                # DB MISSING — try live fetch from yfinance
-                log.info(f"Price missing for {ticker} in DB — attempting live fallback.")
+                # DB MISSING - try live fetch from yfinance
+                log.info(f"Price missing for {ticker} in DB - attempting live fallback.")
                 price_data = _get_live_price_fallback(ticker)
                 
             raw_price, curr, price_date = price_data
@@ -286,7 +287,7 @@ def _live_positions():
     cash_rows = _q("SELECT cash_eur FROM cash_history ORDER BY date DESC, id DESC LIMIT 1")
     cash_eur  = float(cash_rows[0]["cash_eur"] or 0.0) if cash_rows else 0.0
 
-    # 4. Recalculate portfolio weights — only use positions with known prices
+    # 4. Recalculate portfolio weights - only use positions with known prices
     priced_value = sum(float(p["value_eur"] or 0.0) for p in positions if p["value_eur"] is not None)
     total_eur = priced_value + cash_eur
     if total_eur > 0:
@@ -294,7 +295,7 @@ def _live_positions():
             if p["value_eur"] is not None:
                 p["weight"] = round(p["value_eur"] / total_eur, 6)
             else:
-                p["weight"] = None  # unknown — can't calculate
+                p["weight"] = None  # unknown - can't calculate
 
     # Sort: priced positions first (by value desc), then unpriced at bottom
     positions.sort(key=lambda p: (p["value_eur"] is None, -(p["value_eur"] or 0)))
@@ -308,7 +309,7 @@ def _mc_portfolio(positions, targets_map, n_paths=8000):
         return 0, 0, 0, 0
     port_ret = np.zeros(n_paths)
     t = 21 / 252
-    rng = np.random.default_rng()  # H2 fix: no fixed seed — genuine MC variation for portfolio VaR/CVaR
+    rng = np.random.default_rng()  # H2 fix: no fixed seed - genuine MC variation for portfolio VaR/CVaR
     for p in positions:
         ticker = p["ticker"]
         w = float(p.get("weight", 0))
@@ -326,7 +327,7 @@ def _mc_portfolio(positions, targets_map, n_paths=8000):
 
 
 def _run_scheduled_rebalance():
-    """Background task — runs the unified engine pipeline (engine/scheduler.py).
+    """Background task - runs the unified engine pipeline (engine/scheduler.py).
 
     Replaces the old subprocess call to portfolio/recalculate_engine.py (legacy
     CSV→JSON path that the dashboard never read). The modern scheduler writes
@@ -349,7 +350,7 @@ def start_scheduler():
     so DASHBOARD_ONLY.bat never triggers a background data refresh.
     """
     if os.environ.get("DASHBOARD_ONLY") == "1":
-        log.info("📺 [OBSERVER MODE] Scheduler disabled — running in dashboard-only mode.")
+        log.info("📺 [OBSERVER MODE] Scheduler disabled - running in dashboard-only mode.")
         return None
     scheduler = BackgroundScheduler()
     # Monday at 17:00 CET
@@ -401,7 +402,7 @@ def check_api_connectivity() -> dict:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 results[name] = {"ok": True,  "status": resp.status}
         except urllib.error.HTTPError as e:
-            # FRED returns HTTP 400 for a bad key — that still means the server is UP
+            # FRED returns HTTP 400 for a bad key - that still means the server is UP
             if name == "fred" and e.code in (400, 401, 403):
                 results[name] = {"ok": True, "status": e.code, "note": "API reachable (auth error expected)"}
             else:
@@ -473,7 +474,7 @@ def api_tax_settings_post():
 
 @app.route("/")
 def overview():
-    # Live Reconstruction — reads trades ledger + latest prices, no snapshot needed
+    # Live Reconstruction - reads trades ledger + latest prices, no snapshot needed
     positions, cash_eur = _live_positions()
     total_eur = sum(float(p["value_eur"] or 0.0) for p in positions) + cash_eur
 
@@ -535,7 +536,7 @@ def risk():
         ORDER BY ticker
     """)
 
-    # Live Reconstruction — so MC updates instantly after a trade
+    # Live Reconstruction - so MC updates instantly after a trade
     positions, _ = _live_positions()
     
     regime = _load_json(REGIME_STATE_PATH)
@@ -595,26 +596,6 @@ def rebalance():
     )
 
 
-@app.route("/laggards")
-def laggards():
-    rows = _q("""
-        SELECT ticker, sector, period_return, relative_rank,
-               peer_median_return, catch_up_gap, conviction, disqualifiers, screen_date as date
-        FROM laggard_screen_results
-        WHERE screen_date = (SELECT MAX(screen_date) FROM laggard_screen_results)
-        ORDER BY catch_up_gap DESC
-    """)
-    import json
-    for r in rows:
-        if r.get('disqualifiers'):
-            try:
-                r['disqualifiers'] = json.loads(r['disqualifiers'])
-            except:
-                r['disqualifiers'] = []
-        else:
-            r['disqualifiers'] = []
-    return render_template("laggards.html", candidates=rows, page="laggards")
-
 
 @app.route("/pead")
 def pead():
@@ -661,7 +642,7 @@ def divergence():
 
 @app.route("/laggards")
 def laggards():
-    """J7 — sector rotation laggard screen results (most recent weekly run)."""
+    """J7 - sector rotation laggard screen results (most recent weekly run)."""
     rows = _q("""
         SELECT ticker, sector, period_return, relative_rank, peer_median_return,
                catch_up_gap, conviction, disqualifiers, screen_date
@@ -767,7 +748,7 @@ def _get_momentum_comparison(ticker: str) -> dict | None:
 
 @app.route("/api/holdings")
 def api_holdings():
-    """Current holdings with ML signal overlay — live reconstruction."""
+    """Current holdings with ML signal overlay - live reconstruction."""
     positions, cash_eur = _live_positions()
 
     # Overlay ML signals and earnings badges
@@ -973,7 +954,7 @@ def api_portfolio_mc():
 
     n_paths = 8000
     port_ret = np.zeros(n_paths)
-    rng = np.random.default_rng()  # H2 fix: no fixed seed — genuine MC variation
+    rng = np.random.default_rng()  # H2 fix: no fixed seed - genuine MC variation
     t_val = 21 / 252
 
     for p in positions:
@@ -1197,7 +1178,7 @@ def analytics():
 
 @app.route("/holdings")
 def holdings():
-    # Live Reconstruction — no snapshot dependency
+    # Live Reconstruction - no snapshot dependency
     positions, cash_eur = _live_positions()
 
     # Overlay ML signals from price_targets
@@ -1243,7 +1224,7 @@ def trades():
 
 @app.route("/ticker/<ticker>")
 def ticker_detail(ticker):
-    """Ticker Detail page — ML signal + risk metrics + trade history in one view."""
+    """Ticker Detail page - ML signal + risk metrics + trade history in one view."""
     ticker = ticker.upper()
     target = _q("""
         SELECT * FROM price_targets
@@ -1327,7 +1308,7 @@ def health():
 
 @app.route("/api/positions")
 def api_positions():
-    """Alias: same as /api/holdings but shaped for overview.html — live reconstruction."""
+    """Alias: same as /api/holdings but shaped for overview.html - live reconstruction."""
     try:
         positions, cash_eur = _live_positions()
         total_eur = sum(float(p["value_eur"] or 0.0) for p in positions) + cash_eur
@@ -1348,7 +1329,7 @@ def api_cash():
 
 @app.route("/api/ml")
 def api_ml():
-    """Alias: same as /api/ml_signals — for overview.html compatibility."""
+    """Alias: same as /api/ml_signals - for overview.html compatibility."""
     ml = _load_json(ML_STATE_PATH)
     return jsonify({
         "ensemble":           ml.get("ensemble", {}),
@@ -1448,9 +1429,6 @@ def api_log_trade():
     """
     Log a manual transaction directly to the SQLite DB.
     Handles: Buy, Sell, Deposit, Dividend, Fee.
-    """
-    if is_system_halted():
-        return jsonify({"error": "System is HALTED. Cannot log trades."}), 403
 
     Body (JSON):
       action   : 'Buy' | 'Sell' | 'Deposit' | 'Dividend' | 'Fee'
@@ -1461,6 +1439,9 @@ def api_log_trade():
       notes    : str   (optional)
       fee_eur  : float (optional explicit fee, default 0)
     """
+    if is_system_halted():
+        return jsonify({"error": "System is HALTED. Cannot log trades."}), 403
+
     data = request.get_json(force=True)
     action   = (data.get("action") or "").strip()
     ticker   = (data.get("ticker") or "CASH").strip().upper()
@@ -1552,7 +1533,7 @@ def api_log_trade():
         "date":  trade_date,
         "cash":  round(new_cash, 4),
         "event": event_type,
-        "notes": f"{action} {ticker} — {notes}".strip(" —"),
+        "notes": f"{action} {ticker} - {notes}".strip(" -"),
     })
 
     log.info(f"[TRADE LOGGED] {trade_date} {action} {ticker} qty={qty} price={price} total={total_eur}")
@@ -1599,7 +1580,7 @@ def api_performance():
     """
     Compute full portfolio performance analytics from raw DB data.
     Returns KPIs, daily return series, equity curve, and ledger.
-    All computed server-side — no synthetic data.
+    All computed server-side - no synthetic data.
     """
     import math
 
@@ -1870,7 +1851,7 @@ def api_performance():
         "loss_days":            len(losses),
     }
 
-    # I5: Active Share — rough proxy using ETF weight in the current portfolio
+    # I5: Active Share - rough proxy using ETF weight in the current portfolio
     try:
         from portfolio.src.config import ETF_TICKERS, BENCHMARK_TICKER
         etf_weight = sum(float(p.get("weight") or 0) for p in positions if p.get("ticker") in ETF_TICKERS)
@@ -2016,7 +1997,7 @@ def backtest_file(filename):
 
 @app.route("/backtest/history")
 def backtest_history():
-    """Backtest run history browser — reads runs_index.csv via registry."""
+    """Backtest run history browser - reads runs_index.csv via registry."""
     from backtests.registry import list_runs
     runs = list_runs()
     return render_template('backtest_history.html',
@@ -2535,7 +2516,7 @@ def api_pairs_scan():
             signal = 'NEUTRAL'
             if abs(zscore) >= 2.0: signal = 'LONG_B' if zscore > 0 else 'LONG_A'
 
-            s_a, s_b = TICKER_SECTORS.get(ta, '—'), TICKER_SECTORS.get(tb, '—')
+            s_a, s_b = TICKER_SECTORS.get(ta, '-'), TICKER_SECTORS.get(tb, '-')
             results.append({
                 'ticker_a': ta, 'ticker_b': tb,
                 'label_a': ta.replace('.DE','').replace('.AS',''), 'label_b': tb.replace('.DE','').replace('.AS',''),
@@ -2777,7 +2758,7 @@ def api_lab_delete_portfolio(pid):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SIGNAL QUEUE — DB INIT
+# SIGNAL QUEUE - DB INIT
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _ensure_signal_queue_table():
@@ -2808,13 +2789,13 @@ def _ensure_signal_queue_table():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HIGHLIGHTED TAB — Conviction Scoring
+# HIGHLIGHTED TAB - Conviction Scoring
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _compute_conviction_scores():
     """
     Build scored conviction picks from price_targets + ml_state + regime + PEAD.
-    Returns (longs, shorts) — each a list of dicts sorted by score desc.
+    Returns (longs, shorts) - each a list of dicts sorted by score desc.
     """
     targets = _q("""
         SELECT ticker, current_price_eur, expected_21d_eur,
@@ -3169,7 +3150,7 @@ def api_signal_queue_action():
 
 @app.route("/api/signal_queue/count")
 def api_signal_queue_count():
-    """Quick count of pending signals — used by nav badge."""
+    """Quick count of pending signals - used by nav badge."""
     _ensure_signal_queue_table()
     rows = _q("""
         SELECT COUNT(*) AS n FROM signal_queue
@@ -3402,7 +3383,7 @@ def api_watchlist_count():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BRIEFING  — rollup/digest tab (operational health + decision-support)
+# BRIEFING  - rollup/digest tab (operational health + decision-support)
 # See todos/NEW-briefing-tab-TODO.md for the design brainstorm this implements.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -3534,5 +3515,5 @@ if __name__ == "__main__":
     _ensure_watchlist_table()
     start_scheduler()
     debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
-    log.info(f"Control Tower (Flask) starting — http://localhost:5000 and http://0.0.0.0:5000 (LAN) (debug={debug_mode})")
+    log.info(f"Control Tower (Flask) starting - http://localhost:5000 and http://0.0.0.0:5000 (LAN) (debug={debug_mode})")
     app.run(host="0.0.0.0", port=5000, debug=debug_mode)
