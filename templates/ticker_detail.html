@@ -30,8 +30,8 @@
 <!-- KPI strip -->
 <div class="kpi-strip">
   <div class="kpi neutral"><div class="kpi-label">POSITION</div><div class="kpi-value" id="td-qty">{{ position.quantity|round(0)|int if position else '—' }}</div><div class="kpi-sub">shares held</div></div>
-  <div class="kpi neutral"><div class="kpi-label">CURRENT PRICE</div><div class="kpi-value" id="td-price">{{ '€%.2f'|format(target.current_price_eur|float) if target.current_price_eur else ('€%.2f'|format(position.price|float) if position.price else '—') }}</div><div class="kpi-sub">EUR</div></div>
-  <div class="kpi neutral"><div class="kpi-label">POSITION VALUE</div><div class="kpi-value" id="td-value">{{ '€%.0f'|format(position.value_eur|float) if position.value_eur else '—' }}</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CURRENT PRICE</div><div class="kpi-value" id="td-price" data-eur="{{ target.current_price_eur if target.current_price_eur else (position.price if position.price else '') }}" data-decimals="2">{{ '€%.2f'|format(target.current_price_eur|float) if target.current_price_eur else ('€%.2f'|format(position.price|float) if position.price else '—') }}</div><div class="kpi-sub" data-currency-label>EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">POSITION VALUE</div><div class="kpi-value" id="td-value" data-eur="{{ position.value_eur if position.value_eur else '' }}" data-decimals="2">{{ '€%.0f'|format(position.value_eur|float) if position.value_eur else '—' }}</div><div class="kpi-sub" data-currency-label>EUR</div></div>
   <div class="kpi neutral"><div class="kpi-label">WEIGHT</div><div class="kpi-value" id="td-weight">{{ '%.1f%%'|format(position.weight|float * 100) if position.weight else '—' }}</div><div class="kpi-sub">of portfolio</div></div>
   <div class="kpi neutral"><div class="kpi-label">WIN PROBABILITY</div><div class="kpi-value" id="td-up">{{ '%.1f%%'|format(target.up_proba|float * 100) if target.up_proba else '—' }}</div><div class="kpi-sub">ML up_proba 21d</div></div>
   <div class="kpi neutral"><div class="kpi-label">ANN VOLATILITY</div><div class="kpi-value" id="td-vol">{{ '%.1f%%'|format(target.vol_ann|float * 100) if target.vol_ann else '—' }}</div><div class="kpi-sub">vol_ann</div></div>
@@ -61,21 +61,21 @@
 
   <!-- Risk Levels -->
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">PRICE TARGETS & RISK LEVELS</span><span class="panel-badge">EUR</span></div>
+    <div class="panel-header"><span class="panel-title">PRICE TARGETS & RISK LEVELS</span><span class="panel-badge" data-currency-label>EUR</span></div>
     <div class="panel-body">
       {% if target %}
         <table class="tbl">
           <tbody>
-            <tr><td style="color:var(--muted)">Current Price</td><td style="color:#fff;font-weight:600">€{{ '%.2f'|format(target.current_price_eur|float) if target.current_price_eur else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">Expected 21D</td><td style="color:var(--accent)">€{{ '%.2f'|format(target.expected_21d_eur|float) if target.expected_21d_eur else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">Target (+1σ)</td><td style="color:var(--accent)">€{{ '%.2f'|format(target.target_1sigma_eur|float) if target.target_1sigma_eur else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">Stop (-1σ)</td><td style="color:var(--accent2)">€{{ '%.2f'|format(target.stop_1sigma_eur|float) if target.stop_1sigma_eur else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">Tight Stop</td><td style="color:var(--accent2)">€{{ '%.2f'|format(target.stop_tight_eur|float) if target.stop_tight_eur else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Current Price</td><td style="color:#fff;font-weight:600" data-eur="{{ target.current_price_eur if target.current_price_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(target.current_price_eur|float) if target.current_price_eur else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Expected 21D</td><td style="color:var(--accent)" data-eur="{{ target.expected_21d_eur if target.expected_21d_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(target.expected_21d_eur|float) if target.expected_21d_eur else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Target (+1σ)</td><td style="color:var(--accent)" data-eur="{{ target.target_1sigma_eur if target.target_1sigma_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(target.target_1sigma_eur|float) if target.target_1sigma_eur else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Stop (-1σ)</td><td style="color:var(--accent2)" data-eur="{{ target.stop_1sigma_eur if target.stop_1sigma_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(target.stop_1sigma_eur|float) if target.stop_1sigma_eur else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">Tight Stop</td><td style="color:var(--accent2)" data-eur="{{ target.stop_tight_eur if target.stop_tight_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(target.stop_tight_eur|float) if target.stop_tight_eur else '—' }}</td></tr>
             <tr><td style="color:var(--muted)">Risk/Reward</td><td>{{ '%.2f'|format(target.risk_reward_ratio|float) if target.risk_reward_ratio else '—' }}x</td></tr>
-            <tr><td style="color:var(--muted)">MA 50</td><td>€{{ '%.2f'|format(target.resistance_ma50|float) if target.resistance_ma50 else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">MA 200</td><td>€{{ '%.2f'|format(target.resistance_ma200|float) if target.resistance_ma200 else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">52W High</td><td>€{{ '%.2f'|format(target.high_52w|float) if target.high_52w else '—' }}</td></tr>
-            <tr><td style="color:var(--muted)">52W Low</td><td>€{{ '%.2f'|format(target.low_52w|float) if target.low_52w else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">MA 50</td><td data-eur="{{ target.resistance_ma50 if target.resistance_ma50 else '' }}" data-decimals="2">€{{ '%.2f'|format(target.resistance_ma50|float) if target.resistance_ma50 else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">MA 200</td><td data-eur="{{ target.resistance_ma200 if target.resistance_ma200 else '' }}" data-decimals="2">€{{ '%.2f'|format(target.resistance_ma200|float) if target.resistance_ma200 else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">52W High</td><td data-eur="{{ target.high_52w if target.high_52w else '' }}" data-decimals="2">€{{ '%.2f'|format(target.high_52w|float) if target.high_52w else '—' }}</td></tr>
+            <tr><td style="color:var(--muted)">52W Low</td><td data-eur="{{ target.low_52w if target.low_52w else '' }}" data-decimals="2">€{{ '%.2f'|format(target.low_52w|float) if target.low_52w else '—' }}</td></tr>
           </tbody>
         </table>
       {% else %}
@@ -102,8 +102,8 @@
             <td>{{ t.date or '—' }}</td>
             <td class="{{ 'sig-buy' if t.action == 'BUY' else 'sig-sell' }}">{{ t.action }}</td>
             <td>{{ '%d'|format(t.quantity|int) if t.quantity else '—' }}</td>
-            <td>€{{ '%.2f'|format(t.price_eur|float) if t.price_eur else '—' }}</td>
-            <td>€{{ '%.0f'|format(t.total_eur|float) if t.total_eur else '—' }}</td>
+            <td data-eur="{{ t.price_eur if t.price_eur else '' }}" data-decimals="2">€{{ '%.2f'|format(t.price_eur|float) if t.price_eur else '—' }}</td>
+            <td data-eur="{{ t.total_eur if t.total_eur else '' }}" data-decimals="2">€{{ '%.0f'|format(t.total_eur|float) if t.total_eur else '—' }}</td>
             <td style="color:var(--muted);font-size:10px">{{ t.notes or '—' }}</td>
           </tr>
           {% endfor %}
@@ -262,9 +262,11 @@ async function loadMCChart(){
     `<span style="color:var(--accent)">P(profit): ${data.p_profit}%</span>`,
     `<span style="color:var(--accent)">P(+5%): ${data.p_up5}%</span>`,
     `<span style="color:var(--accent2)">P(-10%): ${data.p_down10}%</span>`,
-    `<span style="color:var(--muted)">VaR5: €${data.var5}</span>`,
-    `<span style="color:var(--muted)">CVaR5: €${data.cvar5}</span>`
+    `<span style="color:var(--muted)">VaR5: <span data-eur="${data.var5}" data-decimals="2">€${data.var5}</span></span>`,
+    `<span style="color:var(--muted)">CVaR5: <span data-eur="${data.cvar5}" data-decimals="2">€${data.cvar5}</span></span>`
   ].join(' &nbsp;··&nbsp; ');
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 loadReturnsChart();

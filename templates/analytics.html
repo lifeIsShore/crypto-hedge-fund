@@ -5,7 +5,7 @@
 
 <!-- KPI strip — populated from /api/performance -->
 <div class="kpi-strip">
-  <div class="kpi good">   <div class="kpi-label">NET P&amp;L</div>    <div class="kpi-value" id="a-pnl">—</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi good">   <div class="kpi-label">NET P&amp;L</div>    <div class="kpi-value" id="a-pnl" data-eur="" data-decimals="2">—</div><div class="kpi-sub" data-currency-label>EUR</div></div>
   <div class="kpi neutral"><div class="kpi-label info-point" data-title="REAL RETURN" data-info="Actual percentage gain/loss since the fund started, accounting for all deposits.">REAL RETURN</div>  <div class="kpi-value" id="a-ret">—</div><div class="kpi-sub">since first deposit</div></div>
   <div class="kpi neutral">
     <div class="kpi-label info-point" data-title="SHARPE RATIO" data-info="A measure of risk-adjusted return. It shows how much excess return you receive for the extra volatility you endure. Higher is better (1.0+ is good).">SHARPE RATIO</div>
@@ -34,7 +34,7 @@
 <div class="grid grid-2" style="margin-top:14px">
 
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">EQUITY CURVE</span><span class="panel-badge" id="eq-badge">PORTFOLIO VALUE €</span></div>
+    <div class="panel-header"><span class="panel-title">EQUITY CURVE</span><span class="panel-badge" id="eq-badge" data-currency-label>PORTFOLIO VALUE €</span></div>
     <div class="panel-body">
       <div class="chart-wrap" style="height:220px"><canvas id="equityChart"></canvas></div>
       <div id="no-equity" class="alert alert-info" style="display:none;margin-top:10px">No equity history yet — log trades to build a curve.</div>
@@ -102,19 +102,19 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div>
           <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">CAPITAL FLOWS</div>
-          <div class="mini-row"><span>Total Deposited</span><span id="bd-dep">—</span></div>
-          <div class="mini-row"><span>Dividends Received</span><span id="bd-div">—</span></div>
-          <div class="mini-row"><span>Fees Paid</span><span style="color:var(--accent2)" id="bd-fee">—</span></div>
+          <div class="mini-row"><span>Total Deposited</span><span id="bd-dep" data-eur="" data-decimals="2">—</span></div>
+          <div class="mini-row"><span>Dividends Received</span><span id="bd-div" data-eur="" data-decimals="2">—</span></div>
+          <div class="mini-row"><span>Fees Paid</span><span style="color:var(--accent2)">−<span id="bd-fee" data-eur="" data-decimals="2">—</span></span></div>
           <div class="mini-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;font-weight:600">
-            <span>Net P&amp;L</span><span id="bd-pnl">—</span>
+            <span>Net P&amp;L</span><span id="bd-pnl" data-eur="" data-decimals="2">—</span>
           </div>
         </div>
         <div>
           <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">PORTFOLIO TODAY</div>
-          <div class="mini-row"><span>Holdings Value</span><span id="bd-hold">—</span></div>
-          <div class="mini-row"><span>Cash Balance</span><span id="bd-cash">—</span></div>
+          <div class="mini-row"><span>Holdings Value</span><span id="bd-hold" data-eur="" data-decimals="2">—</span></div>
+          <div class="mini-row"><span>Cash Balance</span><span id="bd-cash" data-eur="" data-decimals="2">—</span></div>
           <div class="mini-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;font-weight:600">
-            <span>Total AUM</span><span id="bd-aum">—</span>
+            <span>Total AUM</span><span id="bd-aum" data-eur="" data-decimals="2">—</span>
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@
 <div class="grid grid-2" style="margin-top:14px">
 
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">PORTFOLIO ALLOCATION</span><span class="panel-badge">BY VALUE €</span></div>
+    <div class="panel-header"><span class="panel-title">PORTFOLIO ALLOCATION</span><span class="panel-badge" data-currency-label>BY VALUE €</span></div>
     <div class="panel-body">
       <div class="chart-wrap" style="height:220px"><canvas id="allocChart"></canvas></div>
     </div>
@@ -176,8 +176,8 @@
             </td>
             <td style="color:var(--muted);font-size:10px">{{ ticker_sectors.get(p.ticker, '—') }}</td>
             <td>{{ '%d'|format(p.quantity|int) if p.quantity else '—' }}</td>
-            <td>€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
-            <td>€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
+            <td data-eur="{{ p.price if p.price else '' }}" data-decimals="2">€{{ '%.2f'|format(p.price|float) if p.price else '—' }}</td>
+            <td data-eur="{{ p.value_eur if p.value_eur else '' }}" data-decimals="2">€{{ '%.0f'|format(p.value_eur|float) if p.value_eur else '—' }}</td>
             <td>{{ '%.1f%%'|format(p.weight|float * 100) if p.weight else '—' }}</td>
           </tr>
           {% else %}
@@ -263,6 +263,7 @@ async function loadAnalytics() {
   const pnl = k.net_pnl || 0;
   const pnlEl = document.getElementById('a-pnl');
   pnlEl.textContent = fmtEur(pnl);
+  pnlEl.dataset.eur = pnl;
   pnlEl.closest('.kpi').className = 'kpi ' + (pnl >= 0 ? 'good' : 'danger');
 
   const retEl = document.getElementById('a-ret');
@@ -434,14 +435,21 @@ async function loadAnalytics() {
 
   // ── Return breakdown ───────────────────────────────────────────────────
   document.getElementById('bd-dep').textContent  = fmtEur(k.total_deposited);
+  document.getElementById('bd-dep').dataset.eur  = k.total_deposited;
   document.getElementById('bd-div').textContent  = fmtEur(k.total_dividends);
-  document.getElementById('bd-fee').textContent  = '−' + fmtEur(k.total_fees);
+  document.getElementById('bd-div').dataset.eur  = k.total_dividends;
+  document.getElementById('bd-fee').textContent  = fmtEur(k.total_fees);
+  document.getElementById('bd-fee').dataset.eur  = k.total_fees;
   const pnlBd = document.getElementById('bd-pnl');
   pnlBd.textContent   = fmtEur(k.net_pnl);
+  pnlBd.dataset.eur   = k.net_pnl;
   pnlBd.style.color   = (k.net_pnl || 0) >= 0 ? 'var(--accent)' : 'var(--accent2)';
   document.getElementById('bd-hold').textContent = fmtEur(k.holdings_value);
+  document.getElementById('bd-hold').dataset.eur = k.holdings_value;
   document.getElementById('bd-cash').textContent = fmtEur(k.cash_eur);
+  document.getElementById('bd-cash').dataset.eur = k.cash_eur;
   document.getElementById('bd-aum').textContent  = fmtEur(k.current_value);
+  document.getElementById('bd-aum').dataset.eur  = k.current_value;
 
   // ── Streak analysis ────────────────────────────────────────────────────
   document.getElementById('s-win').textContent  = k.best_win_streak  ?? '—';
@@ -478,6 +486,8 @@ async function loadAnalytics() {
       }
     });
   }
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 loadAnalytics();

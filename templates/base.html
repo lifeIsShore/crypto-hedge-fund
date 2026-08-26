@@ -196,6 +196,14 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); }
 .btn-danger { border-color: var(--accent2); color: var(--accent2); }
 .btn-danger:hover { background: var(--accent2); color: var(--bg); }
 
+.currency-pill {
+  background: none; border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px; padding: 1px 8px; cursor: pointer;
+  color: inherit; font-size: 0.75rem; letter-spacing: 0.05em;
+}
+.currency-pill .active { font-weight: 700; text-decoration: underline; }
+.currency-pill .pill-sep { opacity: 0.4; margin: 0 3px; }
+
 /* ── Bar charts (regime) ─────────────────────────────────────────────────── */
 .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .bar-label { font-size: 10px; width: 100px; color: var(--text); flex-shrink: 0; }
@@ -369,7 +377,14 @@ html.light-theme ::-webkit-scrollbar-thumb { background: #c0bbb0; }
 
 <footer>
   <div class="status-item">ENGINE <span>FLASK + SQLITE</span></div>
-  <div class="status-item">CURRENCY <span>EUR</span></div>
+  <div class="status-item" id="currency-toggle-wrap">
+    CURRENCY
+    <button id="currency-toggle" class="currency-pill" title="Toggle display currency">
+      <span id="currency-eur-label" class="active">EUR</span>
+      <span class="pill-sep">/</span>
+      <span id="currency-usd-label">USD</span>
+    </button>
+  </div>
   <div class="status-item">HORIZON <span>21D</span></div>
   <div class="status-item" id="footer-freshness"></div>
   <div class="status-item" style="margin-left:auto">ASSUMPTIONS: lognormal MC · half-Kelly sizing · 7d purge buffer</div>
@@ -484,6 +499,56 @@ function toggleTheme() {
     var isLight = document.documentElement.classList.contains('light-theme');
     var icon = document.getElementById('theme-icon');
     if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+})();
+
+// ── Currency Display Toggle ────────────────────────────────────────────────
+(function() {
+  let EUR_TO_USD = null;
+  let displayCurrency = localStorage.getItem('currency_display') || 'EUR';
+
+  function _fmtEUR(v, decimals) {
+    return v.toFixed(decimals !== undefined ? decimals : 2);
+  }
+  function _fmtUSD(v, decimals) {
+    return (v * (1 / EUR_TO_USD)).toFixed(decimals !== undefined ? decimals : 2);
+  }
+
+  function applyDisplayCurrency(currency) {
+    if (currency === 'USD' && EUR_TO_USD === null) return; 
+
+    document.querySelectorAll('[data-eur]').forEach(el => {
+      const eurVal = parseFloat(el.dataset.eur);
+      if (isNaN(eurVal)) return;
+      const decimals = parseInt(el.dataset.decimals || '2', 10);
+      const prefix   = currency === 'USD' ? '$' : '€';
+      const val      = currency === 'USD' ? _fmtUSD(eurVal, decimals) : _fmtEUR(eurVal, decimals);
+      el.textContent = prefix + val + (currency === 'USD' ? ' ~' : '');
+    });
+
+    document.querySelectorAll('[data-currency-label]').forEach(el => {
+      el.textContent = currency === 'USD' ? 'USD ~' : 'EUR';
+    });
+
+    document.getElementById('currency-eur-label')?.classList.toggle('active', currency === 'EUR');
+    document.getElementById('currency-usd-label')?.classList.toggle('active', currency === 'USD');
+  }
+
+  fetch('/api/fx_rate')
+    .then(r => r.json())
+    .then(data => {
+      EUR_TO_USD = data.USDEUR; 
+      applyDisplayCurrency(displayCurrency);
+    })
+    .catch(() => { });
+
+  document.getElementById('currency-toggle')?.addEventListener('click', () => {
+    displayCurrency = displayCurrency === 'EUR' ? 'USD' : 'EUR';
+    localStorage.setItem('currency_display', displayCurrency);
+    applyDisplayCurrency(displayCurrency);
+  });
+  
+  window.applyDisplayCurrency = applyDisplayCurrency;
+  window.getDisplayCurrency = () => displayCurrency;
 })();
 
 // Global Table Sorter

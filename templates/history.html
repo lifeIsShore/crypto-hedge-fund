@@ -11,8 +11,8 @@
   </div>
   <div class="kpi neutral">
     <div class="kpi-label">CURRENT AUM</div>
-    <div class="kpi-value" id="h-aum">—</div>
-    <div class="kpi-sub">EUR</div>
+    <div class="kpi-value" id="h-aum" data-eur="" data-decimals="2">—</div>
+    <div class="kpi-sub" data-currency-label>EUR</div>
   </div>
   <div class="kpi neutral">
     <div class="kpi-label">MAX DRAWDOWN</div>
@@ -112,9 +112,9 @@
           <th>SECTOR</th>
           <th>ACTION</th>
           <th>QTY</th>
-          <th>PRICE EUR</th>
-          <th>TOTAL EUR</th>
-          <th>FEE EUR</th>
+          <th data-currency-label>PRICE EUR</th>
+          <th data-currency-label>TOTAL EUR</th>
+          <th data-currency-label>FEE EUR</th>
           <th>NOTES</th>
         </tr>
       </thead>
@@ -162,6 +162,7 @@ window.tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
     retEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
     retEl.closest('.kpi').className = 'kpi ' + (ret >= 0 ? 'good' : 'danger');
     document.getElementById('h-aum').textContent = fmtEur(k.current_value);
+    document.getElementById('h-aum').dataset.eur = k.current_value;
     document.getElementById('h-dd').textContent = '-' + ((k.max_drawdown || 0) * 100).toFixed(1) + '%';
     document.getElementById('h-vol').textContent = (k.ann_volatility_pct || 0).toFixed(1) + '%';
     document.getElementById('h-trades').textContent = allLedger.length;
@@ -316,12 +317,13 @@ window.tickerNames = JSON.parse('{{ ticker_names | tojson | safe }}');
         + '<td style="color:var(--muted);font-size:10px">' + (tickerSectors[t.ticker] || '—') + '</td>'
         + '<td style="color:' + (aCol[ac] || 'var(--text)') + ';font-weight:600">' + ac + '</td>'
         + '<td>' + qty + '</td>'
-        + '<td>' + (t.price_eur != null ? fmtEur(t.price_eur) : '—') + '</td>'
-        + '<td style="font-weight:500">' + fmtEur(t.total_eur != null ? t.total_eur : t.value_eur) + '</td>'
-        + '<td style="color:var(--accent2)">' + (t.fee_eur && +t.fee_eur > 0 ? fmtEur(t.fee_eur) : '—') + '</td>'
+        + '<td data-eur="' + (t.price_eur != null ? t.price_eur : '') + '" data-decimals="2">' + (t.price_eur != null ? fmtEur(t.price_eur) : '—') + '</td>'
+        + '<td style="font-weight:500" data-eur="' + (t.total_eur != null ? t.total_eur : t.value_eur) + '" data-decimals="2">' + fmtEur(t.total_eur != null ? t.total_eur : t.value_eur) + '</td>'
+        + '<td style="color:var(--accent2)" data-eur="' + (t.fee_eur && +t.fee_eur > 0 ? t.fee_eur : '') + '" data-decimals="2">' + (t.fee_eur && +t.fee_eur > 0 ? fmtEur(t.fee_eur) : '—') + '</td>'
         + '<td style="color:var(--muted);font-size:10px">' + (t.notes || '—') + '</td>'
         + '</tr>';
     }).join('');
+    if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
   }
 
   function filterLedger() {

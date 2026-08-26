@@ -32,7 +32,7 @@ The steps are ordered strictly by **dependency** and **risk mitigation**. Do not
 - [x] **2.1 Ticker Liquidity Tiering (`before-go-live/NEW-ticker-liquidity-tiering.md`)**
   - Implement `engine/data/liquidity_classifier.py` and wire it into the `scheduler.py` weekly pipeline.
   - Implement the liquidity filter to prevent the engine from firing BUY signals on highly illiquid or stale `.DE` cross-listings.
-- [ ] **2.2 USD Display Toggle (`before-go-live/NEW-usd-display-toggle.md`)**
+- [x] **2.2 USD Display Toggle (`before-go-live/NEW-usd-display-toggle.md`)**
   - Add the UI toggle allowing non-EU users to view portfolio values and trades in USD alongside EUR.
 - [ ] **2.3 Wire the Laggard Screen (J7)**
   - The logic exists in `engine/screens/laggard_screen.py`. It needs to be called in `scheduler.py` and displayed in the dashboard UI.

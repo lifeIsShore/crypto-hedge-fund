@@ -318,7 +318,7 @@
             </div>
           </div>
           <div class="panel">
-            <div class="panel-header"><span class="panel-title">ALLOCATION TABLE</span><span class="panel-badge">EUR VALUES</span></div>
+            <div class="panel-header"><span class="panel-title">ALLOCATION TABLE</span><span class="panel-badge" data-currency-label>EUR VALUES</span></div>
             <div class="panel-body">
               <table class="tbl" id="alloc-table">
                 <thead><tr>
@@ -678,6 +678,8 @@ function renderResults(d) {
   renderMC(d);
   renderCorrelation(d.correlation);
   renderCompare(d);
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 // ── KPI strip (top) ───────────────────────────────────────────────────────────
@@ -724,7 +726,7 @@ function renderWeights(d) {
     return `<tr>
       <td style="color:${PALETTE[i%PALETTE.length]};font-weight:500">${t}<br><span style="font-size:9px;color:var(--muted)">${TICKER_NAMES[t]||''}</span></td>
       <td>${(w*100).toFixed(2)}%</td>
-      <td>€${(+eur).toLocaleString('de-DE')}</td>
+      <td data-eur="${eur}" data-decimals="0">€${(+eur).toLocaleString('de-DE')}</td>
       <td style="color:${retColor}">${ret !== '—' ? (ret >= 0 ? '+' : '') + ret + '%' : '—'}</td>
       <td>${vol !== '—' ? vol + '%' : '—'}</td>
     </tr>`;

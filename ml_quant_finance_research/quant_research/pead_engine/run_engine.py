@@ -117,6 +117,46 @@ def run(
     return state
 
 
+def run_targeted(tickers: list, lookback_days: int = 21) -> dict:
+    """
+    Fast path for run() — screens ONLY the given tickers instead of the full
+    PEAD_UNIVERSE. Called by engine/scheduler.py's daily calendar-trigger step
+    when get_recently_reported() flags a ticker outside the normal Monday cycle.
+
+    Reuses cached regression models (does not refit) and a short earnings
+    lookback (default 21d, vs. the weekly run's 90d) since this only needs to
+    catch the specific event that triggered it, not backfill history.
+    """
+    if not tickers:
+        return {}
+
+    log.info(f"PEAD targeted screen — {len(tickers)} ticker(s): {tickers}")
+
+    prices_df = fetch_prices(tickers, force_refresh=False)
+    earnings_df = fetch_all_earnings(tickers, force_refresh=False)
+    if earnings_df.empty:
+        log.info("  No earnings data for targeted tickers — nothing to screen")
+        return {}
+
+    models = load_regression_models()
+    if not models:
+        log.warning("  No cached regression models — skipping targeted screen "
+                     "(will be caught by next weekly run instead)")
+        return {}
+
+    setups_df = screen_recent_earnings(
+        earnings_df, prices_df, models, lookback_days=lookback_days
+    )
+
+    if not setups_df.empty:
+        _attach_regime_labels(setups_df)
+        save_setups(setups_df)
+        log.info(f"  {len(setups_df)} new setup(s) saved from targeted screen")
+
+    db = load_setups()
+    return write_pead_state(setups_df, db)
+
+
 def _attach_regime_labels(setups_df):
     """
     Attempts to join regime labels from regime_engine output using merge_asof.

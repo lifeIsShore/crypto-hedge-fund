@@ -3,8 +3,8 @@
 
 {% block content %}
 <div id="kpi-strip" class="kpi-strip">
-  <div class="kpi neutral"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">EUR · all positions</div></div>
-  <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="kpi-cash">—</div><div class="kpi-sub" id="kpi-cash-date">—</div></div>
+  <div class="kpi neutral"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="kpi-total" data-eur="" data-decimals="2">—</div><div class="kpi-sub" data-currency-label>EUR · all positions</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="kpi-cash" data-eur="" data-decimals="2">—</div><div class="kpi-sub" id="kpi-cash-date">—</div></div>
   <div class="kpi neutral"><div class="kpi-label">POSITIONS</div><div class="kpi-value" id="kpi-n-pos">—</div><div class="kpi-sub">active holdings</div></div>
   <div class="kpi neutral"><div class="kpi-label">LARGEST HOLDING</div><div class="kpi-value" id="kpi-top">—</div><div class="kpi-sub" id="kpi-top-sub">—</div></div>
   <div class="kpi neutral">
@@ -181,14 +181,16 @@ window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').tex
 
   // KPIs
   document.getElementById('kpi-total').textContent   = fmtEur(total);
+  document.getElementById('kpi-total').dataset.eur   = total;
   document.getElementById('kpi-cash').textContent    = fmtEur(cashRes.cash_eur);
+  document.getElementById('kpi-cash').dataset.eur    = cashRes.cash_eur;
   document.getElementById('kpi-cash-date').textContent = cashRes.date || '—';
   document.getElementById('kpi-n-pos').textContent   = positions.length;
 
   if(positions.length){
     const top = positions[0];
     document.getElementById('kpi-top').textContent    = top.ticker;
-    document.getElementById('kpi-top-sub').textContent= `${fmtEur(top.value_eur)} · ${(+top.weight*100).toFixed(1)}%`;
+    document.getElementById('kpi-top-sub').innerHTML  = `<span data-eur="${top.value_eur}" data-decimals="2">${fmtEur(top.value_eur)}</span> · ${(+top.weight*100).toFixed(1)}%`;
   }
 
   const ens = mlRes.ensemble || {};
@@ -265,8 +267,8 @@ window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').tex
         </td>
         <td style="color:var(--muted);font-size:10px">${tickerSectors[p.ticker] || '—'}</td>
         <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
-        <td>${fmtEur(p.price)}</td>
-        <td>${fmtEur(p.value_eur)}</td>
+        <td data-eur="${p.price}" data-decimals="2">${fmtEur(p.price)}</td>
+        <td data-eur="${p.value_eur}" data-decimals="2">${fmtEur(p.value_eur)}</td>
         <td>${p.weight!=null?((+p.weight)*100).toFixed(1)+'%':'—'}</td>
         <td class="${sigClass(action)}">${sigLabel(action)}</td>
       </tr>`;
@@ -302,7 +304,7 @@ window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').tex
       </td>
       <td class="${t.action==='BUY'?'sig-buy':'sig-sell'}">${t.action}</td>
       <td>${t.quantity!=null?(+t.quantity).toFixed(0):'—'}</td>
-      <td>${fmtEur(t.price_eur)}</td>
+      <td data-eur="${t.price_eur}" data-decimals="2">${fmtEur(t.price_eur)}</td>
     </tr>`).join('');
   }
 
@@ -370,6 +372,7 @@ window.tickerNames = JSON.parse(document.getElementById('ticker-names-data').tex
       </tr>`;
     }).join('');
   }
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 loadOverview();

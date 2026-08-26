@@ -689,6 +689,17 @@ def api_freshness():
     })
 
 
+@app.route("/api/fx_rate")
+def api_fx_rate():
+    """Latest USDEUR and GBPEUR rates for client-side currency display toggle."""
+    return jsonify({
+        "USDEUR": _get_latest_fx_rate("USDEUR"),
+        "GBPEUR": _get_latest_fx_rate("GBPEUR"),
+        "date":   _q("SELECT date FROM fx_rates ORDER BY date DESC LIMIT 1")[0]["date"]
+                  if _q("SELECT date FROM fx_rates ORDER BY date DESC LIMIT 1") else None,
+    })
+
+
 @app.route("/api/holdings")
 def api_holdings():
     """Current holdings with ML signal overlay — live reconstruction."""

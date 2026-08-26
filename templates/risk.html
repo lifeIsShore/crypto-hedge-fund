@@ -22,20 +22,20 @@
 </div>
 
 <div class="kpi-strip" id="ticker-kpi">
-  <div class="kpi neutral"><div class="kpi-label">CURRENT PRICE</div><div class="kpi-value" id="k-price">—</div><div class="kpi-sub">EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CURRENT PRICE</div><div class="kpi-value" id="k-price" data-eur="" data-decimals="2">—</div><div class="kpi-sub" data-currency-label>EUR</div></div>
   <div class="kpi neutral">
     <div class="kpi-label info-point" data-title="EXPECTED VALUE" data-info="The average forecasted price in 21 days based on 10,000 Monte Carlo simulation paths.">EXPECTED 21D</div>
-    <div class="kpi-value" id="k-exp">—</div>
+    <div class="kpi-value" id="k-exp" data-eur="" data-decimals="2">—</div>
     <div class="kpi-sub" id="k-exp-sub">—</div>
   </div>
   <div class="kpi neutral">
     <div class="kpi-label info-point" data-title="UPSIDE TARGET" data-info="The price level at +1 standard deviation. There is a ~16% statistical probability of ending above this level.">TARGET (+1σ)</div>
-    <div class="kpi-value" id="k-tgt">—</div>
+    <div class="kpi-value" id="k-tgt" data-eur="" data-decimals="2">—</div>
     <div class="kpi-sub" id="k-tgt-sub">—</div>
   </div>
   <div class="kpi danger">
     <div class="kpi-label info-point" data-title="DOWNSIDE RISK" data-info="The price level at -1 standard deviation. There is a ~16% statistical probability of ending below this level. Used for stop-loss.">STOP (-1σ)</div>
-    <div class="kpi-value" id="k-stop">—</div>
+    <div class="kpi-value" id="k-stop" data-eur="" data-decimals="2">—</div>
     <div class="kpi-sub" id="k-stop-sub">—</div>
   </div>
   <div class="kpi neutral">
@@ -69,7 +69,7 @@
   </div>
 
   <div class="panel">
-    <div class="panel-header"><span class="panel-title">PRICE LEVELS</span><span class="panel-badge">EUR</span></div>
+    <div class="panel-header"><span class="panel-title">PRICE LEVELS</span><span class="panel-badge" data-currency-label>EUR</span></div>
     <div class="panel-body">
       <table class="tbl" id="levels-table">
         <thead><tr>
@@ -102,7 +102,7 @@
     <div id="port-no-pos" class="alert alert-info" style="display:none">No positions found. Import ledger first.</div>
     <div id="port-risk-content">
       <div class="kpi-strip">
-        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" style="font-size:18px" id="pv-total">—</div></div>
+        <div class="kpi neutral" style="padding:10px"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" style="font-size:18px" id="pv-total" data-eur="" data-decimals="2">—</div></div>
         <div class="kpi danger" style="padding:10px">
           <div class="kpi-label info-point" data-title="VALUE AT RISK (95%)" data-info="The maximum loss expected over 21 days with 95% confidence. 5% chance the loss is worse.">VaR 95% (21D)</div>
           <div class="kpi-value" style="font-size:18px" id="pv-var5">—</div>
@@ -214,11 +214,15 @@ function loadTicker(ticker){
   const exp_pct=cur>0?((exp21-cur)/cur*100):0;
   const up_pct=cur>0?((tgt-cur)/cur*100):0, dn_pct=cur>0?((cur-stop)/cur*100):0;
   document.getElementById('k-price').textContent=fmtEur(cur);
+  document.getElementById('k-price').dataset.eur=cur;
   document.getElementById('k-exp').textContent=fmtEur(exp21);
+  document.getElementById('k-exp').dataset.eur=exp21;
   document.getElementById('k-exp-sub').textContent=fmtPct(exp_pct);
   document.getElementById('k-tgt').textContent=fmtEur(tgt);
+  document.getElementById('k-tgt').dataset.eur=tgt;
   document.getElementById('k-tgt-sub').textContent=`+${up_pct.toFixed(1)}%`;
   document.getElementById('k-stop').textContent=fmtEur(stop);
+  document.getElementById('k-stop').dataset.eur=stop;
   document.getElementById('k-stop-sub').textContent=`-${dn_pct.toFixed(1)}%`;
   document.getElementById('k-rr').textContent=rr.toFixed(2)+'x';
   document.getElementById('k-kelly').textContent=kelly.toFixed(1)+'%';
@@ -253,10 +257,12 @@ function loadTicker(ticker){
   const levels=[{name:'52w High',val:row.high_52w,kind:'resist'},{name:'BB Upper',val:row.resistance_bb_upper,kind:'resist'},{name:'MA 200',val:row.resistance_ma200,kind:'resist'},{name:'MA 50',val:row.resistance_ma50,kind:'resist'},{name:'► Current',val:cur,kind:'current'},{name:'Expected 21d',val:exp21,kind:'target'},{name:'Target (+1σ)',val:tgt,kind:'target'},{name:'Stop (-1σ)',val:stop,kind:'stop'},{name:'BB Lower',val:row.support_bb_lower,kind:'support'},{name:'52w Low',val:row.low_52w,kind:'support'}].filter(l=>l.val!=null&&!isNaN(+l.val)).sort((a,b)=>(+b.val)-(+a.val));
   const kindColor={resist:'var(--accent2)',current:'#fff',target:'var(--accent)',stop:'var(--accent2)',support:'var(--accent4)'};
   const kindIcon={resist:'🔴',current:'⚪',target:'🟢',stop:'❌',support:'🔵'};
-  document.getElementById('levels-tbody').innerHTML=levels.map(l=>{const pct=cur>0?((+l.val-cur)/cur*100):0;return `<tr><td style="color:${kindColor[l.kind]}">${kindIcon[l.kind]} ${l.name}</td><td>${fmtEur(+l.val)}</td><td style="color:${pct>=0?'var(--accent)':'var(--accent2)'}">${fmtPct(pct)}</td></tr>`;}).join('');
-  document.getElementById('sc-buy').textContent=row.support_bb_lower&&row.resistance_ma50?`${fmtEur(row.support_bb_lower)} — ${fmtEur(row.resistance_ma50)}`:'—';
-  document.getElementById('sc-tgt').textContent=`${fmtEur(tgt)} (+${up_pct.toFixed(1)}%)`;
-  document.getElementById('sc-stop').textContent=`${fmtEur(stop)} (-${dn_pct.toFixed(1)}%)`;
+  document.getElementById('levels-tbody').innerHTML=levels.map(l=>{const pct=cur>0?((+l.val-cur)/cur*100):0;return `<tr><td style="color:${kindColor[l.kind]}">${kindIcon[l.kind]} ${l.name}</td><td data-eur="${l.val}" data-decimals="2">${fmtEur(+l.val)}</td><td style="color:${pct>=0?'var(--accent)':'var(--accent2)'}">${fmtPct(pct)}</td></tr>`;}).join('');
+  document.getElementById('sc-buy').innerHTML=row.support_bb_lower&&row.resistance_ma50?`<span data-eur="${row.support_bb_lower}" data-decimals="2">${fmtEur(row.support_bb_lower)}</span> — <span data-eur="${row.resistance_ma50}" data-decimals="2">${fmtEur(row.resistance_ma50)}</span>`:'—';
+  document.getElementById('sc-tgt').innerHTML=`<span data-eur="${tgt}" data-decimals="2">${fmtEur(tgt)}</span> (+${up_pct.toFixed(1)}%)`;
+  document.getElementById('sc-stop').innerHTML=`<span data-eur="${stop}" data-decimals="2">${fmtEur(stop)}</span> (-${dn_pct.toFixed(1)}%)`;
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 function filterTable(q){
@@ -394,11 +400,11 @@ async function loadRisk(){
         ${r.ticker}
         <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[r.ticker] || ''})</span>
       </td>
-      <td>${fmtEur(r.current_price_eur)}</td>
-      <td>${fmtEur(r.expected_21d_eur)}</td>
+      <td data-eur="${r.current_price_eur}" data-decimals="2">${fmtEur(r.current_price_eur)}</td>
+      <td data-eur="${r.expected_21d_eur}" data-decimals="2">${fmtEur(r.expected_21d_eur)}</td>
       <td style="color:${expColor}">${expPctStr}</td>
-      <td>${fmtEur(r.target_1sigma_eur)}</td>
-      <td style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td>
+      <td data-eur="${r.target_1sigma_eur}" data-decimals="2">${fmtEur(r.target_1sigma_eur)}</td>
+      <td data-eur="${r.stop_1sigma_eur}" data-decimals="2" style="color:var(--accent2)">${fmtEur(r.stop_1sigma_eur)}</td>
       <td>${r.risk_reward_ratio!=null?(+r.risk_reward_ratio).toFixed(2)+'x':'—'}</td>
       <td>${r.up_proba!=null?((+r.up_proba)*100).toFixed(1)+'%':'—'}</td>
       <td>${r.kelly_half!=null?r.kelly_half+'%':'—'}</td>
@@ -464,11 +470,14 @@ async function loadRisk(){
         data:{labels:pm.labels.map(e=>e.toFixed(1)+'%'),datasets:[{label:'Portfolio return %',data:pm.counts,backgroundColor:pm.labels.map(e=>e>=0?'rgba(0,229,160,.45)':'rgba(255,77,109,.45)'),borderWidth:0,barPercentage:1,categoryPercentage:1}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8},grid:{display:false}},y:{ticks:{maxTicksLimit:4}}}}
       });
+      if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
     })
     .catch(e=>console.error('portfolio_mc error:', e));
 
   // ── Institutional MC: benchmarks + top holdings ──
   loadInstitutionalMC();
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 async function loadInstitutionalMC() {

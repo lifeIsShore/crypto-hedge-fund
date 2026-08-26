@@ -5,8 +5,8 @@
 
 <div class="kpi-strip">
   <div class="kpi neutral"><div class="kpi-label">TOTAL POSITIONS</div><div class="kpi-value" id="h-n">—</div><div class="kpi-sub">active holdings</div></div>
-  <div class="kpi neutral"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="h-total">—</div><div class="kpi-sub">EUR</div></div>
-  <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="h-cash">—</div><div class="kpi-sub">available EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">PORTFOLIO VALUE</div><div class="kpi-value" id="h-total"><span id="h-total-val" data-eur="" data-decimals="2">—</span><span id="h-total-warn"></span></div><div class="kpi-sub" data-currency-label>EUR</div></div>
+  <div class="kpi neutral"><div class="kpi-label">CASH</div><div class="kpi-value" id="h-cash" data-eur="" data-decimals="2">—</div><div class="kpi-sub" data-currency-label>available EUR</div></div>
   <div class="kpi good">   <div class="kpi-label">BULLISH POSITIONS</div><div class="kpi-value" id="h-bull">—</div><div class="kpi-sub">up_proba &gt; 55%</div></div>
   <div class="kpi danger"> <div class="kpi-label">BEARISH POSITIONS</div><div class="kpi-value" id="h-bear">—</div><div class="kpi-sub">up_proba &lt; 45%</div></div>
 </div>
@@ -93,8 +93,11 @@ async function loadHoldings(){
   const unpriced = positions.filter(p=>p.price_missing);
 
   document.getElementById('h-n').textContent     = positions.length;
-  document.getElementById('h-total').textContent = fmtEur(total) + (unpriced.length ? ' ⚠️' : '');
+  document.getElementById('h-total-val').textContent = fmtEur(total);
+  document.getElementById('h-total-val').dataset.eur = total;
+  document.getElementById('h-total-warn').textContent = unpriced.length ? ' ⚠️' : '';
   document.getElementById('h-cash').textContent  = fmtEur(cash);
+  document.getElementById('h-cash').dataset.eur  = cash;
   document.getElementById('h-bull').textContent  = positions.filter(p=>(+p.up_proba||0)>0.55).length;
   document.getElementById('h-bear').textContent  = positions.filter(p=>(+p.up_proba||0)<0.45).length;
 
@@ -125,12 +128,12 @@ async function loadHoldings(){
 
       <td style="color:var(--muted);font-size:10px">${tickerSectors[p.ticker] || '—'}</td>
       <td>${p.quantity!=null?(+p.quantity).toFixed(0):'—'}</td>
-      <td>${priceCell}</td>
-      <td>${valueCell}</td>
+      <td data-eur="${p.price}" data-decimals="2">${priceCell}</td>
+      <td data-eur="${p.value_eur}" data-decimals="2">${valueCell}</td>
       <td>${weightCell}</td>
-      <td style="color:${(+p.expected_21d_eur||0)>=(+p.price||0)?'var(--accent)':'var(--accent2)'}">${fmtEur(p.expected_21d_eur)}</td>
-      <td style="color:var(--accent)">${fmtEur(p.target_1sigma_eur)}</td>
-      <td style="color:var(--accent2)">${fmtEur(p.stop_1sigma_eur)}</td>
+      <td data-eur="${p.expected_21d_eur}" data-decimals="2" style="color:${(+p.expected_21d_eur||0)>=(+p.price||0)?'var(--accent)':'var(--accent2)'}">${fmtEur(p.expected_21d_eur)}</td>
+      <td data-eur="${p.target_1sigma_eur}" data-decimals="2" style="color:var(--accent)">${fmtEur(p.target_1sigma_eur)}</td>
+      <td data-eur="${p.stop_1sigma_eur}" data-decimals="2" style="color:var(--accent2)">${fmtEur(p.stop_1sigma_eur)}</td>
       <td>${(up*100).toFixed(1)}%</td>
       <td class="${sigClass(action)}">${sigLabel(action)}</td>
     </tr>`;
@@ -146,6 +149,8 @@ async function loadHoldings(){
     } — run the data pipeline to fetch current prices. Portfolio value and weights exclude these positions.`;
     tbody.parentElement.parentElement.insertBefore(banner, tbody.parentElement);
   }
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 async function loadMPT() {
@@ -194,7 +199,7 @@ async function loadMPT() {
       + '<td>' + barHtml + '</td>'
       + '<td>' + expR + '</td>'
       + '<td>' + blR  + '</td>'
-      + '<td>' + valE + '</td>'
+      + '<td data-eur="' + w.value_eur + '" data-decimals="2">' + valE + '</td>'
       + '<td class="' + aClass + '">' + action + '</td>'
       + '</tr>';
   }).join('');
@@ -222,6 +227,8 @@ async function loadMPT() {
       }
     });
   }
+  
+  if (window.applyDisplayCurrency) window.applyDisplayCurrency(window.getDisplayCurrency());
 }
 
 // Initial load
