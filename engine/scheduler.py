@@ -784,7 +784,7 @@ def step_pead_calendar_trigger():
     import pandas as pd
     import sys
     import os
-    from shared.config import _PROJECT_ROOT
+    _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     watch_tickers = _get_held_and_watchlisted_tickers()
     if not watch_tickers:

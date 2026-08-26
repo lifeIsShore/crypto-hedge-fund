@@ -446,6 +446,201 @@ CREATE INDEX IF NOT EXISTS idx_liquidity_tier_ticker ON ticker_liquidity_tier (t
 -- LLM METRICS
 -- ─────────────────────────────────────────────────────────────
 
+    confidence       TEXT,
+    notes            TEXT,
+    checklist_answers TEXT,      -- JSON stored as TEXT
+    outcome_30d      REAL,
+    outcome_90d      REAL,
+    outcome_correct  INTEGER,
+    UNIQUE (ticker, etf_reference, detected_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_div_labels_unlabeled ON divergence_labels (detected_at);
+
+CREATE TABLE IF NOT EXISTS laggard_screen_results (
+    id                 INTEGER     PRIMARY KEY AUTOINCREMENT,
+    screen_date        TEXT        NOT NULL,
+    ticker             TEXT        NOT NULL,
+    sector             TEXT,
+    period_return      REAL,
+    relative_rank      REAL,
+    peer_median_return REAL,       -- J7: added, was missing from original schema
+    catch_up_gap       REAL,
+    conviction         TEXT,
+    disqualifiers      TEXT,       -- J7: added — JSON array of {type, message} objects
+    reviewed           INTEGER     DEFAULT 0,   -- J7: added — manual "seen it" flag for the dashboard
+    notes              TEXT,
+    logged_at          TEXT        DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_laggard_date ON laggard_screen_results (screen_date);
+
+-- ─────────────────────────────────────────────────────────────
+-- REGIME HISTORY  (Stream 5 — SQLite migration)
+-- ─────────────────────────────────────────────────────────────
+
+-- Replaces regime_history.csv. JOINable with signals and price_targets
+-- for regime-stratified hit rate queries.
+CREATE TABLE IF NOT EXISTS regime_history (
+    date               TEXT    NOT NULL,
+    region             TEXT    NOT NULL DEFAULT 'US',
+    regime_risk        TEXT,   -- 'Risk-On' | 'Risk-Off' | 'Neutral'
+    regime_rates       TEXT,   -- 'Easing'  | 'Tightening' | 'Neutral'
+    regime_growth      TEXT,   -- 'Expansion' | 'Slowdown' | 'Contraction' | 'Recovery'
+    regime_composite   TEXT,   -- e.g. 'RiskOn_Easing_Expansion'
+    transition_warning INTEGER DEFAULT 0,
+    ew_active_count    INTEGER DEFAULT 0,
+    vix                REAL,
+    yield_spread       REAL,
+    hy_spread          REAL,
+    fed_funds          REAL,
+    computed_at        TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, region)
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- PEAD SETUPS  (Stream 5 — SQLite migration)
+-- ─────────────────────────────────────────────────────────────
+
+-- Replaces pead_setups.csv. JOINable with regime_history for
+-- regime-stratified PEAD hit rate analysis.
+CREATE TABLE IF NOT EXISTS pead_setups (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker                TEXT    NOT NULL,
+    earnings_date         TEXT    NOT NULL,
+    entry_date            TEXT,
+    direction             TEXT,   -- 'long' | 'short'
+    pead_setup_quality    TEXT,
+    surprise_pct          REAL,
+    underreaction_flag    INTEGER DEFAULT 0,
+    reaction_gap          REAL,
+    drift_21d             REAL,
+    drift_63d             REAL,
+    outcome_label_correct INTEGER,
+    regime_risk           TEXT,
+    regime_growth         TEXT,
+    regime_composite      TEXT,
+    sector                TEXT,
+    created_at            TEXT    DEFAULT (datetime('now')),
+    UNIQUE(ticker, earnings_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pead_setups_ticker ON pead_setups (ticker, earnings_date);
+
+-- ─────────────────────────────────────────────────────────────
+-- RECONCILIATION & DATA QUALITY
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS reconciliation_log (
+    id              INTEGER     PRIMARY KEY AUTOINCREMENT,
+    reconciled_at   TEXT        DEFAULT (datetime('now')),
+    positions_match INTEGER,
+    cash_match      INTEGER,
+    discrepancies   TEXT,       -- JSON as TEXT
+    action_taken    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS data_validation_log (
+    id          INTEGER     PRIMARY KEY AUTOINCREMENT,
+    date        TEXT,
+    ticker      TEXT,
+    issue_type  TEXT,
+    raw_value   REAL,
+    action      TEXT,
+    detail      TEXT,
+    logged_at   TEXT        DEFAULT (datetime('now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- SCHEDULER / PIPELINE AUDIT
+-- ─────────────────────────────────────────────────────────────
+
+-- ─────────────────────────────────────────────────────────────
+-- PERFORMANCE HISTORY  (daily portfolio value + returns)
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS performance_history (
+    date                  TEXT    PRIMARY KEY,
+    portfolio_value_eur   REAL,
+    cash_eur              REAL,
+    invested_eur          REAL,
+    benchmark_value_eur   REAL,   -- e.g. MSCI World ETF proxy
+    daily_return_pct      REAL,
+    cumulative_return_pct REAL,
+    computed_at           TEXT    DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_perf_date ON performance_history (date);
+
+-- ─────────────────────────────────────────────────────────────
+-- SCHEDULER / PIPELINE AUDIT
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+    id           INTEGER     PRIMARY KEY AUTOINCREMENT,
+    run_date     TEXT        NOT NULL,
+    step_name    TEXT        NOT NULL,
+    status       TEXT,
+    duration_sec REAL,
+    error_msg    TEXT,
+    started_at   TEXT        DEFAULT (datetime('now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- PIPELINE LOGS  (structured logs readable by health.html)
+-- Written by all pipeline scripts via log_pipeline_event().
+-- Replaces reading flat .log files from disk.
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS pipeline_logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at   TEXT    DEFAULT (datetime('now')),
+    level       TEXT    NOT NULL DEFAULT 'INFO',  -- INFO | WARNING | ERROR | CRITICAL
+    step_name   TEXT,                              -- e.g. 'data_ingestion', 'ml_pipeline'
+    message     TEXT    NOT NULL,
+    detail      TEXT,                              -- optional JSON payload
+    run_date    TEXT    DEFAULT (date('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_pipeline_logs_date  ON pipeline_logs (run_date, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pipeline_logs_level ON pipeline_logs (level, logged_at DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- PORTFOLIO LAB
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS saved_portfolios (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    tickers     TEXT NOT NULL, -- JSON array of tickers
+    weights     TEXT NOT NULL, -- JSON object of ticker -> weight
+    objective   TEXT,
+    metrics     TEXT,          -- JSON object of metrics
+    saved_at    TEXT DEFAULT (datetime('now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- TICKER LIQUIDITY TIER
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS ticker_liquidity_tier (
+    date            TEXT    NOT NULL,
+    ticker          TEXT    NOT NULL,
+    tier            TEXT    NOT NULL,   -- 'liquid' | 'thin' | 'unreliable'
+    trading_days_90d INTEGER,           -- days with volume > 0, out of last 90 calendar days
+    avg_range_pct   REAL,               -- avg (high-low)/close over last 30 trading days
+    history_days    INTEGER,            -- total rows available for this ticker
+    days_since_update INTEGER,
+    score           REAL,               -- 0-1 composite, higher = more trustworthy
+    computed_at     TEXT    DEFAULT (datetime('now')),
+    PRIMARY KEY (date, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_liquidity_tier_ticker ON ticker_liquidity_tier (ticker, date);
+
+-- ─────────────────────────────────────────────────────────────
+-- LLM METRICS
+-- ─────────────────────────────────────────────────────────────
+
 CREATE TABLE IF NOT EXISTS llm_metrics (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     prompt_type   TEXT NOT NULL,
@@ -454,3 +649,17 @@ CREATE TABLE IF NOT EXISTS llm_metrics (
     eval_duration_ms INTEGER,
     logged_at     TEXT DEFAULT (datetime('now'))
 );
+
+-- ─────────────────────────────────────────────────────────────
+-- TAX SETTINGS
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS tax_settings (
+    id           INTEGER PRIMARY KEY CHECK (id = 1),
+    jurisdiction TEXT NOT NULL DEFAULT 'germany',
+    tax_rate     REAL NOT NULL DEFAULT 0.26375,
+    custom_rate  REAL,
+    updated_at   TEXT DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO tax_settings (id, jurisdiction, tax_rate) VALUES (1, 'germany', 0.26375);

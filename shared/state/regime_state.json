@@ -1,7 +1,7 @@
 {
   "region": "EU",
-  "generated_at": "2026-08-25T09:52:46.916155",
-  "as_of_date": "2026-08-25",
+  "generated_at": "2026-08-26T17:37:36.848239",
+  "as_of_date": "2026-08-26",
   "regime_risk": "Risk-On",
   "regime_rates": "Tightening",
   "regime_growth": "Slowdown",
@@ -9,9 +9,9 @@
   "transition_warning": false,
   "ew_active_count": 0,
   "macro_snapshot": {
-    "vix": 15.74,
+    "vix": 15.55,
     "yield_spread": 0.631,
-    "hy_spread": 2.56,
+    "hy_spread": 2.57,
     "fed_funds": 2.25
   },
   "regime_changed_today": false

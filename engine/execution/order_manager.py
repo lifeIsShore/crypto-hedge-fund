@@ -109,6 +109,7 @@ def get_regime_scalar() -> float:
         from shared.state_paths import REGIME_STATE_PATH
         with open(REGIME_STATE_PATH) as f:
             state = json.load(f)
+        risk = state.get('regime_risk', '').lower()
         return 0.6 if 'risk-off' in risk or 'risk_off' in risk else 1.0
     except Exception as e:
         logger.warning(f"[kelly_sizing] regime read failed, defaulting to 1.0: {e}")
