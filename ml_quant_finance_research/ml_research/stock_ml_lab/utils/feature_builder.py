@@ -31,6 +31,7 @@ def add_price_features(df):
     df["log_ret_1d"] = np.log(c / c.shift(1))
     for w in [21, 63]:
         df[f"vol_{w}d"] = df["log_ret_1d"].rolling(w).std() * np.sqrt(252)
+    df["var_21d"] = df["log_ret_1d"].rolling(21).quantile(0.05)
     for ma in [50, 200]:
         ma_s = c.rolling(ma).mean()
         df[f"price_vs_ma{ma}"] = (c - ma_s) / ma_s
@@ -663,7 +664,7 @@ def build_features(price_df, fundamentals=None, macro_df=None,
     # gaps are handled downstream in run_ml_pipeline.py::drop_uncovered_optional_columns
     # by dropping the column for that ticker, not the row.
     core_prefixes = (
-        "ret_", "log_ret_", "vol_", "price_vs_ma", "dist_52w_", "gap_pct",
+        "ret_", "log_ret_", "vol_", "var_", "price_vs_ma", "dist_52w_", "gap_pct",
         "rel_volume", "volume_trend", "obv_zscore", "vol_price_div_",
         "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
     )

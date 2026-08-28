@@ -27,8 +27,8 @@ def main():
         model = DEFAULT_MODEL
 
     print(f"[briefing] Gathering rollup data...")
-    health, gate_results, must_check, best_risk_reward, gamble_tier, regime = gather_all()
-    payload = narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime)
+    data = gather_all()
+    payload = narrator_payload(*data)
 
     print(f"[briefing] Generating narrative with {model}...")
     result = generate_narrative(payload, model=model)

@@ -97,7 +97,8 @@ def briefing_ticker_picks():
     rows = _q("""
         SELECT pt.ticker, pt.risk_reward_ratio, pt.up_proba, pt.vol_ann,
                pt.kelly_half, pt.current_price_eur, pt.target_1sigma_eur,
-               pt.stop_1sigma_eur, mo.signal_breakdown
+               pt.stop_1sigma_eur, mo.signal_breakdown,
+               mo.bl_return, mo.suggested_weight, mo.current_weight
         FROM price_targets pt
         LEFT JOIN model_outputs mo
                ON mo.ticker = pt.ticker AND mo.date = pt.date
@@ -105,6 +106,19 @@ def briefing_ticker_picks():
           AND pt.risk_reward_ratio IS NOT NULL
           AND pt.up_proba IS NOT NULL
     """)
+
+    # Inject AUC from ml_state.json
+    try:
+        from shared.state_paths import ML_STATE_PATH
+        import json
+        with open(ML_STATE_PATH, encoding="utf-8") as f:
+            ml_state = json.load(f)
+            model_signals = ml_state.get("model_signals", {})
+            for r in rows:
+                sig = model_signals.get(r["ticker"], {})
+                r["auc"] = sig.get("auc")
+    except Exception:
+        pass
 
     must_check = sorted(
         [r for r in rows if r["up_proba"] is not None],
@@ -180,6 +194,53 @@ def briefing_tax_harvest():
         return {"pending_gains": [], "unrealized_losers": []}
 
 
+def briefing_risk_metrics():
+    """Computes VaR and CVaR for the current portfolio via Monte Carlo."""
+    try:
+        from engine.risk.monte_carlo import mc_portfolio
+        
+        # Get live positions (approximate based on latest records)
+        pos_rows = _q("""
+            SELECT ticker, quantity, price as current_price_eur
+            FROM positions_history 
+            WHERE date = (SELECT MAX(date) FROM positions_history)
+        """)
+        
+        # Format positions with value_eur
+        positions = []
+        for p in pos_rows:
+            qty = p.get("quantity") or 0.0
+            price = p.get("current_price_eur") or 0.0
+            positions.append({
+                "ticker": p["ticker"],
+                "value_eur": qty * price,
+                "weight": 0.0
+            })
+            
+        # Calculate weights
+        total_eur = sum(p["value_eur"] for p in positions)
+        if total_eur > 0:
+            for p in positions:
+                p["weight"] = p["value_eur"] / total_eur
+        
+        # Get targets map
+        targets = _q("""
+            SELECT ticker, up_proba, vol_ann 
+            FROM price_targets 
+            WHERE date = (SELECT MAX(date) FROM price_targets)
+        """)
+        targets_map = {t["ticker"]: t for t in targets}
+        
+        var5, cvar5, var1, total_eur = mc_portfolio(positions, targets_map)
+        return {
+            "portfolio_var5_pct": var5,
+            "portfolio_cvar5_pct": cvar5,
+            "portfolio_var1_pct": var1
+        }
+    except Exception as e:
+        return {}
+
+
 def gather_all():
     """Everything the /briefing route and the narrator both need, in one call."""
     health = briefing_pipeline_health()
@@ -187,10 +248,11 @@ def gather_all():
     must_check, best_risk_reward, gamble_tier = briefing_ticker_picks()
     regime = briefing_regime()
     tax = briefing_tax_harvest()
-    return health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax
+    risk = briefing_risk_metrics()
+    return health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax, risk
 
 
-def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax):
+def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_tier, regime, tax, risk):
     """Compact form passed to the LLM — keep it small so generation stays fast."""
     def _pick(rows, keys):
         return [{k: r.get(k) for k in keys} for r in rows]
@@ -203,12 +265,13 @@ def narrator_payload(health, gate_results, must_check, best_risk_reward, gamble_
         "covered": health["covered"],
         "universe_size": health["universe_size"],
         "gate_results": _pick(gate_results, ["flag_name", "delta_ic", "delta_auc", "pass"]),
-        "must_check": _pick(must_check, ["ticker", "up_proba", "risk_reward_ratio", "kelly_half"]),
-        "best_risk_reward": _pick(best_risk_reward, ["ticker", "risk_reward_ratio", "vol_ann"]),
+        "must_check": _pick(must_check, ["ticker", "up_proba", "risk_reward_ratio", "kelly_half", "auc", "bl_return", "suggested_weight", "current_weight"]),
+        "best_risk_reward": _pick(best_risk_reward, ["ticker", "risk_reward_ratio", "vol_ann", "auc"]),
         "gamble_tier": _pick(gamble_tier, ["ticker", "up_proba", "vol_ann"]),
         "regime": {
             "regime_composite": regime.get("regime_composite"),
             "regime_risk": regime.get("regime_risk"),
         },
         "tax_harvesting": tax,
+        "portfolio_risk": risk,
     }

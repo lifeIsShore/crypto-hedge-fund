@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Methodology{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">PIPELINE METHODOLOGY: ALPHA VS RISK</div>
+  </div>
+  <div class="panel-body">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h2 style="margin-bottom: 16px; color: var(--accent);">The Engine vs. The Brakes</h2>
+      <p style="margin-bottom: 16px; line-height: 1.6; color: var(--muted);">
+        The core philosophy of this quantitative pipeline is the strict separation of <strong>Alpha Generation</strong> (predicting what the market will do) from <strong>Risk Management</strong> (deciding how much money to wager on that prediction).
+      </p>
+
+      <h3 style="margin-top: 24px; margin-bottom: 8px; color: var(--text);">1. The Engine (Machine Learning)</h3>
+      <p style="margin-bottom: 16px; line-height: 1.6; color: var(--muted);">
+        The Machine Learning models (XGBoost / LSTM) act as the engine. Their only job is to analyze pure market data (momentum, RSI, volatility, VaR) and output a clean probability: <em>"We are 78% confident this stock will go up."</em> 
+        <br><br>
+        The ML models are intentionally blind to your portfolio size, cash balance, or market regime. They provide unbiased, raw alpha.
+      </p>
+
+      <h3 style="margin-top: 24px; margin-bottom: 8px; color: var(--text);">2. The Brakes (Risk Algorithms)</h3>
+      <p style="margin-bottom: 16px; line-height: 1.6; color: var(--muted);">
+        Once the ML engine gives us a raw probability, three mathematical downstream algorithms take over to protect capital and determine the final trade size. You can think of them as the brakes and steering:
+      </p>
+
+      <div class="grid grid-3" style="margin-top: 20px; margin-bottom: 20px;">
+        <div class="kpi info" style="border: 1px solid var(--border);">
+          <div class="kpi-label" style="color: var(--accent4);">KELLY SIZING</div>
+          <p style="font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 8px;">
+            "Since the ML is 78% confident, the mathematics of probability dictate we shouldn't risk more than 4% of our capital on this single bet."
+          </p>
+        </div>
+        
+        <div class="kpi warn" style="border: 1px solid var(--border);">
+          <div class="kpi-label" style="color: var(--accent3);">BLACK-LITTERMAN</div>
+          <p style="font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 8px;">
+            "Wait, the ML likes this stock, but the broader macro market is currently highly volatile. Let's adjust that 4% down to 3% to be safe."
+          </p>
+        </div>
+
+        <div class="kpi danger" style="border: 1px solid var(--border);">
+          <div class="kpi-label" style="color: var(--accent2);">MONTE CARLO VaR</div>
+          <p style="font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 8px;">
+            "If we buy that 3% allocation, simulating 8,000 future scenarios shows there is a 5% chance our entire portfolio could crash by more than €X by Friday."
+          </p>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 32px; margin-bottom: 8px; color: var(--accent);">Why not put everything in the ML model?</h3>
+      <p style="margin-bottom: 16px; line-height: 1.6; color: var(--muted);">
+        If we tried to feed Kelly or Black-Litterman back into the ML model as input features, it would cause a circular dependency (data leakage). Kelly requires the ML output to calculate the sizing. Furthermore, forcing the ML model to learn both pattern recognition and portfolio sizing simultaneously leads to extreme overfitting. By chaining them sequentially, the statistical models act as a rigid, unhackable shield that safely translates raw ML brainpower into professional, risk-adjusted trade sizes.
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

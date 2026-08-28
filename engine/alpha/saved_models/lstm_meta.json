@@ -1,0 +1,62 @@
+{
+  "18U.DE": {
+    "auc": 0.6,
+    "n_folds": 1,
+    "n_features": 8,
+    "trained_at": "2026-08-29T00:39:02"
+  },
+  "2H1.DE": {
+    "auc": 0.5,
+    "n_folds": 1,
+    "n_features": 8,
+    "trained_at": "2026-08-29T00:39:05"
+  },
+  "2PY.DE": {
+    "auc": 0.5,
+    "n_folds": 1,
+    "n_features": 8,
+    "trained_at": "2026-08-29T00:39:08"
+  },
+  "3V64.DE": {
+    "auc": 0.6434,
+    "n_folds": 4,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:40:25"
+  },
+  "6N0.DE": {
+    "auc": 0.7679,
+    "n_folds": 3,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:40:37"
+  },
+  "6SN.DE": {
+    "auc": 0.7177,
+    "n_folds": 3,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:40:50"
+  },
+  "6SP.DE": {
+    "auc": 0.4613,
+    "n_folds": 3,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:41:03"
+  },
+  "ABBV": {
+    "auc": 0.5059,
+    "n_folds": 4,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:41:17"
+  },
+  "ABE.DE": {
+    "auc": 0.3765,
+    "n_folds": 3,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:41:29"
+  },
+  "ADB.DE": {
+    "auc": 0.5988,
+    "n_folds": 4,
+    "n_features": 8,
+    "trained_at": "2026-08-28T23:41:47"
+  }
+}

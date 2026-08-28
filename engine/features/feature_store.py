@@ -180,6 +180,7 @@ def compute_volatility_features(log_returns: pd.DataFrame) -> pd.DataFrame:
 
     if len(log_returns) >= 21:
         features['vol_21d'] = log_returns.tail(21).std() * np.sqrt(252)
+        features['var_21d'] = log_returns.tail(21).quantile(0.05)
 
     if len(log_returns) >= 63:
         features['vol_63d'] = log_returns.tail(63).std() * np.sqrt(252)
