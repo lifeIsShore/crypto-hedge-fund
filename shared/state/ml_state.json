@@ -1,32 +1,31 @@
 {
   "available": true,
-  "generated_at": "2026-08-26T07:16:43",
+  "generated_at": "2026-08-29T01:18:44",
   "ensemble": {
-    "weighted_score": 0.4091,
-    "median_score": 0.311,
+    "weighted_score": 0.4898,
+    "median_score": 0.4924,
     "verdict": "MIXED",
     "n_tickers": 126,
-    "spread_25_75": 0.5555
+    "spread_25_75": 0.6555
   },
   "model_signals": {
     "APC.DE": {
-      "up_proba_21d": 0.4313,
-      "auc": 0.5163,
-      "last_price": 222.09,
-      "vol_ann": 0.2699,
+      "up_proba_21d": 0.3289,
+      "auc": 0.5906,
+      "last_price": NaN,
+      "vol_ann": 0.2703,
       "sector": "Technology",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
-        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -37,10 +36,10 @@
       ]
     },
     "MSF.DE": {
-      "up_proba_21d": 0.7545,
-      "auc": 0.5982,
-      "last_price": 337.24,
-      "vol_ann": 0.2464,
+      "up_proba_21d": 0.7178,
+      "auc": 0.66,
+      "last_price": NaN,
+      "vol_ann": 0.2517,
       "sector": "Technology",
       "features_used": [
         "ret_63d",
@@ -63,11 +62,38 @@
       ]
     },
     "AMZ.DE": {
-      "up_proba_21d": 0.6695,
-      "auc": 0.6111,
-      "last_price": 176.86,
-      "vol_ann": 0.3225,
+      "up_proba_21d": 0.6942,
+      "auc": 0.6452,
+      "last_price": NaN,
+      "vol_ann": 0.3246,
       "sector": "Ecommerce",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma50",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "NVD.DE": {
+      "up_proba_21d": 0.8278,
+      "auc": 0.5863,
+      "last_price": NaN,
+      "vol_ann": 0.4571,
+      "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
         "ret_63d",
@@ -81,34 +107,6 @@
         "obv_zscore",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "NVD.DE": {
-      "up_proba_21d": 0.902,
-      "auc": 0.5467,
-      "last_price": 160.45,
-      "vol_ann": 0.4614,
-      "sector": "Semiconductors",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma50",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "obv_zscore",
-        "rsi_14",
-        "macd_hist",
-        "macd_signal",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -118,12 +116,13 @@
       ]
     },
     "ABEA.DE": {
-      "up_proba_21d": 0.0785,
-      "auc": 0.59,
-      "last_price": 266.9,
-      "vol_ann": 0.2804,
+      "up_proba_21d": 0.0787,
+      "auc": 0.6632,
+      "last_price": NaN,
+      "vol_ann": 0.283,
       "sector": "Technology",
       "features_used": [
+        "ret_21d",
         "ret_63d",
         "vol_21d",
         "price_vs_ma200",
@@ -142,13 +141,12 @@
       ]
     },
     "FB2A.DE": {
-      "up_proba_21d": 0.2998,
-      "auc": 0.6669,
-      "last_price": 557.16,
-      "vol_ann": 0.364,
+      "up_proba_21d": 0.2904,
+      "auc": 0.6548,
+      "last_price": NaN,
+      "vol_ann": 0.3694,
       "sector": "Technology",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -156,27 +154,23 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
-        "obv_zscore",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
-        "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
         "macro_yield_curve"
       ]
     },
     "TL0.DE": {
-      "up_proba_21d": 0.2547,
-      "auc": 0.5618,
-      "last_price": 348.3,
-      "vol_ann": 0.5468,
+      "up_proba_21d": 0.443,
+      "auc": 0.609,
+      "last_price": NaN,
+      "vol_ann": 0.5434,
       "sector": "Automotive",
       "features_used": [
+        "ret_10d",
         "ret_21d",
         "ret_63d",
         "vol_21d",
@@ -184,9 +178,7 @@
         "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
-        "dist_52w_low",
         "obv_zscore",
-        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -198,13 +190,12 @@
       ]
     },
     "SFC.DE": {
-      "up_proba_21d": 0.1286,
-      "auc": 0.6191,
-      "last_price": 184.22,
-      "vol_ann": 0.3476,
+      "up_proba_21d": 0.4989,
+      "auc": 0.6265,
+      "last_price": 256.0,
+      "vol_ann": 0.3588,
       "sector": "Software",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -214,6 +205,7 @@
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -224,10 +216,10 @@
       ]
     },
     "ADB.DE": {
-      "up_proba_21d": 0.1735,
-      "auc": 0.5697,
-      "last_price": 217.65,
-      "vol_ann": 2.785,
+      "up_proba_21d": 0.1654,
+      "auc": 0.6149,
+      "last_price": NaN,
+      "vol_ann": 2.7288,
       "sector": "Software",
       "features_used": [
         "ret_21d",
@@ -239,9 +231,9 @@
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -251,10 +243,10 @@
       ]
     },
     "NFC.DE": {
-      "up_proba_21d": 0.9665,
-      "auc": 0.6093,
-      "last_price": 66.27,
-      "vol_ann": 0.4856,
+      "up_proba_21d": 0.891,
+      "auc": 0.5854,
+      "last_price": NaN,
+      "vol_ann": 0.4813,
       "sector": "Entertainment",
       "features_used": [
         "ret_21d",
@@ -279,10 +271,10 @@
       ]
     },
     "AMD.DE": {
-      "up_proba_21d": 0.0049,
-      "auc": 0.6732,
-      "last_price": 171.94,
-      "vol_ann": 0.5356,
+      "up_proba_21d": 0.0559,
+      "auc": 0.6543,
+      "last_price": NaN,
+      "vol_ann": 0.5438,
       "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
@@ -293,47 +285,22 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
+        "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
         "macro_yield_curve"
       ]
     },
     "1IN.DE": {
-      "up_proba_21d": 0.1379,
-      "auc": 0.6236,
-      "last_price": 44.11,
-      "vol_ann": 0.3887,
-      "sector": "Semiconductors",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma50",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "macd_hist",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "QCI.DE": {
-      "up_proba_21d": 0.1709,
-      "auc": 0.6185,
-      "last_price": 120.4,
-      "vol_ann": 0.3804,
+      "up_proba_21d": 0.0914,
+      "auc": 0.6728,
+      "last_price": 89.47,
+      "vol_ann": 0.4186,
       "sector": "Semiconductors",
       "features_used": [
         "ret_10d",
@@ -344,25 +311,25 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "rel_volume",
+        "volume_trend",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
-        "macro_yield_2y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
         "macro_yield_curve"
       ]
     },
-    "AP2.DE": {
-      "up_proba_21d": 0.1158,
-      "auc": 0.5885,
-      "last_price": 315.79,
-      "vol_ann": 1.0363,
+    "QCI.DE": {
+      "up_proba_21d": 0.9524,
+      "auc": 0.6338,
+      "last_price": NaN,
+      "vol_ann": 0.3978,
       "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
@@ -374,11 +341,36 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "AP2.DE": {
+      "up_proba_21d": 0.3742,
+      "auc": 0.5391,
+      "last_price": NaN,
+      "vol_ann": 1.0228,
+      "sector": "Semiconductors",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma50",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_signal",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -388,10 +380,36 @@
       ]
     },
     "MTU.DE": {
-      "up_proba_21d": 0.0349,
-      "auc": 0.6157,
-      "last_price": 427.92,
-      "vol_ann": 0.4797,
+      "up_proba_21d": 0.027,
+      "auc": 0.5786,
+      "last_price": 932.86,
+      "vol_ann": 0.507,
+      "sector": "Semiconductors",
+      "features_used": [
+        "ret_10d",
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma50",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "macd_hist",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "TII.DE": {
+      "up_proba_21d": 0.0306,
+      "auc": 0.5093,
+      "last_price": NaN,
+      "vol_ann": 1.0833,
       "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
@@ -402,32 +420,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "macd_signal",
-        "stoch_k",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "TII.DE": {
-      "up_proba_21d": 0.1136,
-      "auc": 0.4773,
-      "last_price": 183.5,
-      "vol_ann": 1.1021,
-      "sector": "Semiconductors",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
@@ -444,10 +436,10 @@
       ]
     },
     "ORC.DE": {
-      "up_proba_21d": 0.0299,
-      "auc": 0.6704,
-      "last_price": 126.7,
-      "vol_ann": 0.3163,
+      "up_proba_21d": 0.9955,
+      "auc": 0.7039,
+      "last_price": NaN,
+      "vol_ann": 0.3315,
       "sector": "Software",
       "features_used": [
         "ret_21d",
@@ -460,26 +452,21 @@
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
-        "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve",
-        "macro_vix_change_5d"
+        "macro_yield_curve"
       ]
     },
     "TSM.DE": {
-      "up_proba_21d": 0.8965,
-      "auc": 0.6174,
-      "last_price": 368.64,
-      "vol_ann": 0.3221,
+      "up_proba_21d": 0.9174,
+      "auc": 0.6503,
+      "last_price": 417.52,
+      "vol_ann": 0.3283,
       "sector": "Semiconductors",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -487,7 +474,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "macd_hist",
         "macd_signal",
@@ -500,13 +486,12 @@
       ]
     },
     "NOW.DE": {
-      "up_proba_21d": 0.7528,
-      "auc": 0.6212,
-      "last_price": 104.27,
-      "vol_ann": 0.3989,
+      "up_proba_21d": 0.4885,
+      "auc": 0.5995,
+      "last_price": 144.71,
+      "vol_ann": 0.4141,
       "sector": "Software",
       "features_used": [
-        "ret_10d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -514,7 +499,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "rel_volume",
         "volume_trend",
         "obv_zscore",
         "rsi_14",
@@ -530,10 +514,10 @@
       ]
     },
     "SNW.DE": {
-      "up_proba_21d": 0.1155,
-      "auc": 0.5808,
-      "last_price": 75.36,
-      "vol_ann": 0.2304,
+      "up_proba_21d": 0.2548,
+      "auc": 0.6645,
+      "last_price": NaN,
+      "vol_ann": 0.2305,
       "sector": "Software",
       "features_used": [
         "ret_63d",
@@ -541,27 +525,24 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "rel_volume",
         "volume_trend",
         "obv_zscore",
-        "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
+        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve",
-        "macro_vix_change_5d"
+        "macro_yield_curve"
       ]
     },
     "UT8.DE": {
-      "up_proba_21d": 0.9732,
-      "auc": 0.6307,
-      "last_price": 63.16,
-      "vol_ann": 0.4886,
+      "up_proba_21d": 0.9698,
+      "auc": 0.5942,
+      "last_price": NaN,
+      "vol_ann": 0.4807,
       "sector": "Transportation",
       "features_used": [
         "ret_21d",
@@ -574,6 +555,7 @@
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
+        "macd_hist",
         "macd_signal",
         "stoch_k",
         "macro_fed_funds",
@@ -585,10 +567,10 @@
       ]
     },
     "PYPL.DE": {
-      "up_proba_21d": 0.8703,
-      "auc": 0.5439,
-      "last_price": 41.39,
-      "vol_ann": 0.3841,
+      "up_proba_21d": 0.9116,
+      "auc": 0.5805,
+      "last_price": 53.66,
+      "vol_ann": 0.3868,
       "sector": "Financials",
       "features_used": [
         "ret_10d",
@@ -614,10 +596,10 @@
       ]
     },
     "SHOP.DE": {
-      "up_proba_21d": 0.2773,
-      "auc": 0.6525,
-      "last_price": 126.2,
-      "vol_ann": 0.6114,
+      "up_proba_21d": 0.0978,
+      "auc": 0.6235,
+      "last_price": 152.9,
+      "vol_ann": 0.6118,
       "sector": "Ecommerce",
       "features_used": [
         "ret_21d",
@@ -628,9 +610,8 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
-        "rsi_14",
-        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_2y",
@@ -641,13 +622,12 @@
       ]
     },
     "SAP.DE": {
-      "up_proba_21d": 0.98,
-      "auc": 0.6032,
-      "last_price": 170.9,
-      "vol_ann": 0.2513,
+      "up_proba_21d": 0.7929,
+      "auc": 0.6428,
+      "last_price": NaN,
+      "vol_ann": 0.2619,
       "sector": "Software",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -655,23 +635,20 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "rsi_14",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve",
-        "macro_vix_change_5d"
+        "macro_yield_curve"
       ]
     },
     "ALV.DE": {
-      "up_proba_21d": 0.8888,
-      "auc": 0.6303,
-      "last_price": 362.52,
-      "vol_ann": 0.2232,
+      "up_proba_21d": 0.1509,
+      "auc": 0.6873,
+      "last_price": NaN,
+      "vol_ann": 0.2216,
       "sector": "Insurance",
       "features_used": [
         "ret_63d",
@@ -680,11 +657,11 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
+        "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
+        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -694,24 +671,23 @@
       ]
     },
     "SIE.DE": {
-      "up_proba_21d": 0.4586,
-      "auc": 0.6546,
-      "last_price": 245.15,
-      "vol_ann": 0.2682,
+      "up_proba_21d": 0.4689,
+      "auc": 0.6495,
+      "last_price": NaN,
+      "vol_ann": 0.2716,
       "sector": "Industrial",
       "features_used": [
+        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -721,23 +697,22 @@
       ]
     },
     "BAYN.DE": {
-      "up_proba_21d": 0.1118,
-      "auc": 0.5858,
-      "last_price": 43.56,
-      "vol_ann": 0.3043,
+      "up_proba_21d": 0.0487,
+      "auc": 0.6105,
+      "last_price": NaN,
+      "vol_ann": 0.3101,
       "sector": "Healthcare",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -747,10 +722,10 @@
       ]
     },
     "BMW.DE": {
-      "up_proba_21d": 0.2188,
-      "auc": 0.604,
-      "last_price": 85.4,
-      "vol_ann": 0.2773,
+      "up_proba_21d": 0.6588,
+      "auc": 0.5756,
+      "last_price": NaN,
+      "vol_ann": 0.278,
       "sector": "Automotive",
       "features_used": [
         "ret_21d",
@@ -775,10 +750,10 @@
       ]
     },
     "DTE.DE": {
-      "up_proba_21d": 0.8867,
-      "auc": 0.5875,
-      "last_price": 31.69,
-      "vol_ann": 0.2085,
+      "up_proba_21d": 0.9863,
+      "auc": 0.6687,
+      "last_price": NaN,
+      "vol_ann": 0.213,
       "sector": "Telecom",
       "features_used": [
         "ret_63d",
@@ -787,10 +762,7 @@
         "price_vs_ma200",
         "dist_52w_low",
         "obv_zscore",
-        "rsi_14",
-        "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -800,10 +772,10 @@
       ]
     },
     "BAS.DE": {
-      "up_proba_21d": 0.3118,
-      "auc": 0.6621,
-      "last_price": 46.88,
-      "vol_ann": 0.2661,
+      "up_proba_21d": 0.0582,
+      "auc": 0.6701,
+      "last_price": NaN,
+      "vol_ann": 0.2655,
       "sector": "Chemicals",
       "features_used": [
         "ret_21d",
@@ -817,7 +789,6 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -827,10 +798,10 @@
       ]
     },
     "MBG.DE": {
-      "up_proba_21d": 0.1413,
-      "auc": 0.5638,
-      "last_price": 55.35,
-      "vol_ann": 0.3004,
+      "up_proba_21d": 0.8515,
+      "auc": 0.6101,
+      "last_price": NaN,
+      "vol_ann": 0.299,
       "sector": "Automotive",
       "features_used": [
         "ret_21d",
@@ -841,12 +812,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
-        "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -856,10 +824,10 @@
       ]
     },
     "ADS.DE": {
-      "up_proba_21d": 0.309,
-      "auc": 0.6115,
-      "last_price": 155.78,
-      "vol_ann": 0.3115,
+      "up_proba_21d": 0.2169,
+      "auc": 0.6309,
+      "last_price": NaN,
+      "vol_ann": 0.3137,
       "sector": "Consumer",
       "features_used": [
         "ret_21d",
@@ -872,9 +840,7 @@
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
-        "macd_hist",
         "macd_signal",
-        "bb_position",
         "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -885,10 +851,10 @@
       ]
     },
     "MUV2.DE": {
-      "up_proba_21d": 0.8764,
-      "auc": 0.5884,
-      "last_price": 517.3,
-      "vol_ann": 0.2312,
+      "up_proba_21d": 0.9109,
+      "auc": 0.6208,
+      "last_price": NaN,
+      "vol_ann": 0.2305,
       "sector": "Insurance",
       "features_used": [
         "ret_63d",
@@ -896,11 +862,9 @@
         "vol_63d",
         "price_vs_ma200",
         "dist_52w_low",
-        "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
         "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -911,20 +875,22 @@
       ]
     },
     "DBK.DE": {
-      "up_proba_21d": 0.702,
-      "auc": 0.6209,
-      "last_price": 29.96,
-      "vol_ann": 0.3774,
+      "up_proba_21d": 0.9245,
+      "auc": 0.6905,
+      "last_price": NaN,
+      "vol_ann": 0.3759,
       "sector": "Financials",
       "features_used": [
+        "ret_10d",
         "ret_63d",
-        "vol_21d",
         "vol_63d",
         "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -935,10 +901,10 @@
       ]
     },
     "ENR.DE": {
-      "up_proba_21d": 0.9284,
-      "auc": 0.5902,
-      "last_price": 164.55,
-      "vol_ann": 0.5017,
+      "up_proba_21d": 0.9812,
+      "auc": 0.4904,
+      "last_price": NaN,
+      "vol_ann": 0.5036,
       "sector": "Energy",
       "features_used": [
         "ret_21d",
@@ -950,7 +916,6 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "rsi_14",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -962,10 +927,10 @@
       ]
     },
     "IFX.DE": {
-      "up_proba_21d": 0.1664,
-      "auc": 0.5908,
-      "last_price": 45.2,
-      "vol_ann": 0.3579,
+      "up_proba_21d": 0.0541,
+      "auc": 0.6121,
+      "last_price": NaN,
+      "vol_ann": 0.3728,
       "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
@@ -974,7 +939,6 @@
         "vol_63d",
         "price_vs_ma50",
         "price_vs_ma200",
-        "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
@@ -983,20 +947,18 @@
         "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
-        "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
         "macro_yield_curve"
       ]
     },
     "VOW3.DE": {
-      "up_proba_21d": 0.9279,
-      "auc": 0.6483,
-      "last_price": 96.09,
-      "vol_ann": 0.3296,
+      "up_proba_21d": 0.6491,
+      "auc": 0.6493,
+      "last_price": NaN,
+      "vol_ann": 0.3284,
       "sector": "Automotive",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -1008,6 +970,7 @@
         "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
+        "macro_yield_10y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
@@ -1015,10 +978,10 @@
       ]
     },
     "RWE.DE": {
-      "up_proba_21d": 0.3083,
-      "auc": 0.613,
-      "last_price": 50.84,
-      "vol_ann": 0.3131,
+      "up_proba_21d": 0.2028,
+      "auc": 0.6934,
+      "last_price": NaN,
+      "vol_ann": 0.3112,
       "sector": "Utilities",
       "features_used": [
         "ret_21d",
@@ -1040,10 +1003,10 @@
       ]
     },
     "CON.DE": {
-      "up_proba_21d": 0.0398,
-      "auc": 0.6629,
-      "last_price": 70.33,
-      "vol_ann": 0.3311,
+      "up_proba_21d": 0.054,
+      "auc": 0.6475,
+      "last_price": NaN,
+      "vol_ann": 0.332,
       "sector": "Automotive",
       "features_used": [
         "ret_21d",
@@ -1054,24 +1017,22 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
-        "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
         "macro_yield_curve"
       ]
     },
     "FRE.DE": {
-      "up_proba_21d": 0.4671,
-      "auc": 0.631,
-      "last_price": 50.65,
-      "vol_ann": 0.2688,
+      "up_proba_21d": 0.9854,
+      "auc": 0.6263,
+      "last_price": NaN,
+      "vol_ann": 0.2681,
       "sector": "Healthcare",
       "features_used": [
         "ret_21d",
@@ -1081,8 +1042,8 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
@@ -1096,10 +1057,10 @@
       ]
     },
     "VNA.DE": {
-      "up_proba_21d": 0.6744,
-      "auc": 0.6311,
-      "last_price": 25.92,
-      "vol_ann": 0.2796,
+      "up_proba_21d": 0.9252,
+      "auc": 0.6833,
+      "last_price": NaN,
+      "vol_ann": 0.2823,
       "sector": "Real Estate",
       "features_used": [
         "ret_21d",
@@ -1113,6 +1074,7 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
+        "bb_position",
         "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -1123,10 +1085,10 @@
       ]
     },
     "HEN3.DE": {
-      "up_proba_21d": 0.172,
-      "auc": 0.5796,
-      "last_price": 79.99,
-      "vol_ann": 0.2018,
+      "up_proba_21d": 0.9243,
+      "auc": 0.6701,
+      "last_price": NaN,
+      "vol_ann": 0.2027,
       "sector": "Consumer",
       "features_used": [
         "ret_63d",
@@ -1134,12 +1096,11 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
+        "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1149,10 +1110,10 @@
       ]
     },
     "BEI.DE": {
-      "up_proba_21d": 0.8779,
-      "auc": 0.6495,
-      "last_price": 105.06,
-      "vol_ann": 0.1967,
+      "up_proba_21d": 0.9456,
+      "auc": 0.6305,
+      "last_price": NaN,
+      "vol_ann": 0.207,
       "sector": "Consumer",
       "features_used": [
         "ret_63d",
@@ -1161,10 +1122,8 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "macd_hist",
+        "rsi_14",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1174,14 +1133,13 @@
       ]
     },
     "ZAL.DE": {
-      "up_proba_21d": 0.0149,
-      "auc": 0.6375,
-      "last_price": 20.69,
-      "vol_ann": 0.4296,
+      "up_proba_21d": 0.0297,
+      "auc": 0.6326,
+      "last_price": NaN,
+      "vol_ann": 0.4298,
       "sector": "Ecommerce",
       "features_used": [
         "ret_10d",
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -1189,11 +1147,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -1203,52 +1159,19 @@
       ]
     },
     "MTX.DE": {
-      "up_proba_21d": 0.6859,
-      "auc": 0.6267,
-      "last_price": 397.44,
-      "vol_ann": 0.32,
+      "up_proba_21d": 0.6685,
+      "auc": 0.5974,
+      "last_price": NaN,
+      "vol_ann": 0.3242,
       "sector": "Industrial",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
-        "macd_signal",
-        "stoch_k",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "NDX1.DE": {
-      "up_proba_21d": 0.6419,
-      "auc": 0.5873,
-      "last_price": 33.98,
-      "vol_ann": 0.4861,
-      "sector": "Renewables",
-      "features_used": [
-        "ret_10d",
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma50",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_hist",
         "macd_signal",
         "bb_position",
         "macro_fed_funds",
@@ -1259,11 +1182,38 @@
         "macro_yield_curve"
       ]
     },
+    "NDX1.DE": {
+      "up_proba_21d": 0.4274,
+      "auc": 0.5672,
+      "last_price": NaN,
+      "vol_ann": 0.4864,
+      "sector": "Renewables",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma50",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "obv_zscore",
+        "rsi_14",
+        "macd_hist",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
     "ARGX.BR": {
-      "up_proba_21d": 0.6317,
-      "auc": 0.6806,
-      "last_price": 722.4,
-      "vol_ann": 0.4379,
+      "up_proba_21d": 0.4002,
+      "auc": 0.6625,
+      "last_price": NaN,
+      "vol_ann": 0.4371,
       "sector": "Biotech",
       "features_used": [
         "ret_21d",
@@ -1275,7 +1225,6 @@
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
-        "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -1286,10 +1235,10 @@
       ]
     },
     "UCB.BR": {
-      "up_proba_21d": 0.6251,
-      "auc": 0.5325,
-      "last_price": 274.37,
-      "vol_ann": 0.2735,
+      "up_proba_21d": 0.7487,
+      "auc": 0.5686,
+      "last_price": NaN,
+      "vol_ann": 0.2776,
       "sector": "Pharma",
       "features_used": [
         "ret_21d",
@@ -1300,6 +1249,7 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -1311,10 +1261,10 @@
       ]
     },
     "SHL.DE": {
-      "up_proba_21d": 0.4196,
-      "auc": 0.6988,
-      "last_price": 42.35,
-      "vol_ann": 0.2568,
+      "up_proba_21d": 0.9186,
+      "auc": 0.6909,
+      "last_price": NaN,
+      "vol_ann": 0.2569,
       "sector": "Healthcare",
       "features_used": [
         "ret_21d",
@@ -1327,7 +1277,6 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -1337,10 +1286,10 @@
       ]
     },
     "COK.DE": {
-      "up_proba_21d": 0.1868,
-      "auc": 0.62,
-      "last_price": 23.12,
-      "vol_ann": 0.3565,
+      "up_proba_21d": 0.6065,
+      "auc": 0.6466,
+      "last_price": NaN,
+      "vol_ann": 0.3563,
       "sector": "Technology",
       "features_used": [
         "ret_21d",
@@ -1354,6 +1303,7 @@
         "obv_zscore",
         "macd_hist",
         "macd_signal",
+        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1363,10 +1313,10 @@
       ]
     },
     "AIR.DE": {
-      "up_proba_21d": 0.146,
-      "auc": 0.6239,
-      "last_price": 186.26,
-      "vol_ann": 0.3392,
+      "up_proba_21d": 0.9868,
+      "auc": 0.5898,
+      "last_price": NaN,
+      "vol_ann": 0.339,
       "sector": "Industrial",
       "features_used": [
         "ret_63d",
@@ -1377,7 +1327,6 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -1388,67 +1337,15 @@
       ]
     },
     "AZN.L": {
-      "up_proba_21d": 0.008,
-      "auc": 0.6924,
-      "last_price": 15268.99,
-      "vol_ann": 0.2457,
+      "up_proba_21d": 0.0087,
+      "auc": 0.6773,
+      "last_price": 11970.0,
+      "vol_ann": 0.2479,
       "sector": "Pharma",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "price_vs_ma200",
-        "dist_52w_low",
-        "obv_zscore",
-        "rsi_14",
-        "macd_hist",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "SHELL.AS": {
-      "up_proba_21d": 0.194,
-      "auc": 0.6278,
-      "last_price": 32.65,
-      "vol_ann": 0.2802,
-      "sector": "Energy",
-      "features_used": [
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "volume_trend",
-        "rsi_14",
-        "macd_hist",
-        "macd_signal",
-        "bb_position",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "TTE.PA": {
-      "up_proba_21d": 0.3966,
-      "auc": 0.6371,
-      "last_price": 63.96,
-      "vol_ann": 0.2656,
-      "sector": "Energy",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
@@ -1465,11 +1362,38 @@
         "macro_yield_curve"
       ]
     },
-    "BP.L": {
-      "up_proba_21d": 0.8054,
-      "auc": 0.5909,
-      "last_price": 467.47,
-      "vol_ann": 0.298,
+    "SHELL.AS": {
+      "up_proba_21d": 0.4943,
+      "auc": 0.6437,
+      "last_price": NaN,
+      "vol_ann": 0.2791,
+      "sector": "Energy",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_hist",
+        "macd_signal",
+        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "TTE.PA": {
+      "up_proba_21d": 0.4905,
+      "auc": 0.6335,
+      "last_price": NaN,
+      "vol_ann": 0.2656,
       "sector": "Energy",
       "features_used": [
         "ret_21d",
@@ -1479,6 +1403,36 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "rel_volume",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_signal",
+        "bb_position",
+        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "BP.L": {
+      "up_proba_21d": 0.8928,
+      "auc": 0.6437,
+      "last_price": 514.5,
+      "vol_ann": 0.3003,
+      "sector": "Energy",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_signal",
@@ -1492,10 +1446,10 @@
       ]
     },
     "ASML.AS": {
-      "up_proba_21d": 0.0746,
-      "auc": 0.6021,
-      "last_price": 1251.32,
-      "vol_ann": 0.3306,
+      "up_proba_21d": 0.8596,
+      "auc": 0.6296,
+      "last_price": NaN,
+      "vol_ann": 0.3375,
       "sector": "Semiconductors",
       "features_used": [
         "ret_21d",
@@ -1517,13 +1471,12 @@
       ]
     },
     "NOV.DE": {
-      "up_proba_21d": 0.0884,
-      "auc": 0.5894,
-      "last_price": 27.4,
-      "vol_ann": 0.3311,
+      "up_proba_21d": 0.4311,
+      "auc": 0.6387,
+      "last_price": NaN,
+      "vol_ann": 0.3441,
       "sector": "Pharma",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -1531,11 +1484,8 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
-        "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1545,13 +1495,12 @@
       ]
     },
     "S92.DE": {
-      "up_proba_21d": 0.5196,
-      "auc": 0.5782,
-      "last_price": 32.3,
-      "vol_ann": 0.6133,
+      "up_proba_21d": 0.2571,
+      "auc": 0.5754,
+      "last_price": NaN,
+      "vol_ann": 0.6193,
       "sector": "Renewables",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -1559,6 +1508,7 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
@@ -1570,10 +1520,10 @@
       ]
     },
     "3V64.DE": {
-      "up_proba_21d": 0.9071,
-      "auc": 0.6512,
-      "last_price": 270.86,
-      "vol_ann": 0.5775,
+      "up_proba_21d": 0.9971,
+      "auc": 0.7369,
+      "last_price": NaN,
+      "vol_ann": 0.5674,
       "sector": "Financials",
       "features_used": [
         "ret_63d",
@@ -1582,7 +1532,11 @@
         "price_vs_ma200",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
+        "macd_hist",
         "macd_signal",
+        "bb_position",
+        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1592,10 +1546,10 @@
       ]
     },
     "CMC.DE": {
-      "up_proba_21d": 0.6773,
-      "auc": 0.6433,
-      "last_price": 258.79,
-      "vol_ann": 0.2666,
+      "up_proba_21d": 0.3672,
+      "auc": 0.6387,
+      "last_price": NaN,
+      "vol_ann": 0.2644,
       "sector": "Financials",
       "features_used": [
         "ret_21d",
@@ -1605,12 +1559,10 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
-        "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -1620,10 +1572,10 @@
       ]
     },
     "NCB.DE": {
-      "up_proba_21d": 0.0856,
-      "auc": 0.5282,
-      "last_price": 44.1,
-      "vol_ann": 0.2997,
+      "up_proba_21d": 0.8952,
+      "auc": 0.5731,
+      "last_price": NaN,
+      "vol_ann": 0.2968,
       "sector": "Financials",
       "features_used": [
         "ret_21d",
@@ -1634,9 +1586,8 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
-        "macd_hist",
+        "rsi_14",
         "macd_signal",
         "bb_position",
         "stoch_k",
@@ -1649,13 +1600,12 @@
       ]
     },
     "GOS.DE": {
-      "up_proba_21d": 0.1798,
-      "auc": 0.6119,
-      "last_price": 770.82,
-      "vol_ann": 0.285,
+      "up_proba_21d": 0.7407,
+      "auc": 0.6195,
+      "last_price": NaN,
+      "vol_ann": 0.2866,
       "sector": "Financials",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -1667,7 +1617,6 @@
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -1677,21 +1626,21 @@
       ]
     },
     "BRYN.DE": {
-      "up_proba_21d": 0.8799,
-      "auc": 0.5814,
-      "last_price": 419.45,
-      "vol_ann": 0.1875,
+      "up_proba_21d": 0.9338,
+      "auc": 0.6539,
+      "last_price": NaN,
+      "vol_ann": 0.1865,
       "sector": "Financials",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "price_vs_ma200",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1701,10 +1650,10 @@
       ]
     },
     "AXP.DE": {
-      "up_proba_21d": 0.5622,
-      "auc": 0.591,
-      "last_price": 344.15,
-      "vol_ann": 0.3003,
+      "up_proba_21d": 0.5828,
+      "auc": 0.5865,
+      "last_price": 333.2,
+      "vol_ann": 0.2995,
       "sector": "Financials",
       "features_used": [
         "ret_21d",
@@ -1714,10 +1663,8 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "rel_volume",
         "volume_trend",
-        "rsi_14",
-        "macd_hist",
+        "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -1728,10 +1675,10 @@
       ]
     },
     "BLQA.DE": {
-      "up_proba_21d": 0.8194,
-      "auc": 0.5935,
-      "last_price": 1081.49,
-      "vol_ann": 0.2675,
+      "up_proba_21d": 0.2999,
+      "auc": 0.6021,
+      "last_price": 1164.48,
+      "vol_ann": 0.2684,
       "sector": "Financials",
       "features_used": [
         "ret_21d",
@@ -1753,39 +1700,17 @@
       ]
     },
     "KO": {
-      "up_proba_21d": 0.0653,
-      "auc": 0.6015,
-      "last_price": 78.79,
-      "vol_ann": 0.1756,
+      "up_proba_21d": 0.1902,
+      "auc": 0.6464,
+      "last_price": 89.66,
+      "vol_ann": 0.1769,
       "sector": "Consumer",
       "features_used": [
-        "vol_21d",
-        "vol_63d",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "MCD": {
-      "up_proba_21d": 0.662,
-      "auc": 0.6041,
-      "last_price": 325.2,
-      "vol_ann": 0.1968,
-      "sector": "Consumer",
-      "features_used": [
-        "ret_63d",
         "vol_21d",
         "vol_63d",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
@@ -1798,11 +1723,55 @@
         "macro_yield_curve"
       ]
     },
+    "MCD": {
+      "up_proba_21d": 0.6536,
+      "auc": 0.6233,
+      "last_price": 265.0,
+      "vol_ann": 0.1972,
+      "sector": "Consumer",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "dist_52w_low",
+        "obv_zscore",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
     "WMT": {
-      "up_proba_21d": 0.1528,
-      "auc": 0.6523,
-      "last_price": 122.5,
-      "vol_ann": 0.2104,
+      "up_proba_21d": 0.4087,
+      "auc": 0.6474,
+      "last_price": 103.09,
+      "vol_ann": 0.2136,
+      "sector": "Consumer",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "obv_zscore",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "HD": {
+      "up_proba_21d": 0.7932,
+      "auc": 0.6499,
+      "last_price": 330.19,
+      "vol_ann": 0.2389,
       "sector": "Consumer",
       "features_used": [
         "ret_63d",
@@ -1815,32 +1784,7 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "HD": {
-      "up_proba_21d": 0.7169,
-      "auc": 0.6241,
-      "last_price": 376.88,
-      "vol_ann": 0.237,
-      "sector": "Consumer",
-      "features_used": [
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_signal",
-        "stoch_k",
+        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1850,17 +1794,16 @@
       ]
     },
     "COST": {
-      "up_proba_21d": 0.8051,
-      "auc": 0.6441,
-      "last_price": 982.28,
-      "vol_ann": 0.2109,
+      "up_proba_21d": 0.9776,
+      "auc": 0.6598,
+      "last_price": 945.47,
+      "vol_ann": 0.2107,
       "sector": "Consumer",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "price_vs_ma200",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
@@ -1876,20 +1819,22 @@
       ]
     },
     "NKE": {
-      "up_proba_21d": 0.8551,
-      "auc": 0.6292,
-      "last_price": 64.39,
-      "vol_ann": 0.3033,
+      "up_proba_21d": 0.296,
+      "auc": 0.6233,
+      "last_price": 39.6,
+      "vol_ann": 0.3069,
       "sector": "Consumer",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
+        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -1901,10 +1846,10 @@
       ]
     },
     "SBUX": {
-      "up_proba_21d": 0.522,
-      "auc": 0.6098,
-      "last_price": 96.37,
-      "vol_ann": 0.2796,
+      "up_proba_21d": 0.3459,
+      "auc": 0.6896,
+      "last_price": 107.85,
+      "vol_ann": 0.2794,
       "sector": "Consumer",
       "features_used": [
         "ret_21d",
@@ -1918,8 +1863,6 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1929,10 +1872,10 @@
       ]
     },
     "DIS": {
-      "up_proba_21d": 0.4759,
-      "auc": 0.5428,
-      "last_price": 104.78,
-      "vol_ann": 0.2741,
+      "up_proba_21d": 0.6068,
+      "auc": 0.5811,
+      "last_price": 108.1,
+      "vol_ann": 0.2736,
       "sector": "Entertainment",
       "features_used": [
         "ret_21d",
@@ -1956,10 +1899,10 @@
       ]
     },
     "LOW": {
-      "up_proba_21d": 0.1192,
-      "auc": 0.6485,
-      "last_price": 277.31,
-      "vol_ann": 0.2758,
+      "up_proba_21d": 0.2676,
+      "auc": 0.6434,
+      "last_price": 208.05,
+      "vol_ann": 0.2771,
       "sector": "Consumer",
       "features_used": [
         "ret_21d",
@@ -1973,7 +1916,6 @@
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -1983,10 +1925,10 @@
       ]
     },
     "UNH": {
-      "up_proba_21d": 0.067,
-      "auc": 0.6924,
-      "last_price": 286.13,
-      "vol_ann": 0.2861,
+      "up_proba_21d": 0.0289,
+      "auc": 0.6561,
+      "last_price": 392.95,
+      "vol_ann": 0.2867,
       "sector": "Healthcare",
       "features_used": [
         "ret_21d",
@@ -1996,9 +1938,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "rel_volume",
         "volume_trend",
         "obv_zscore",
-        "macd_hist",
         "macd_signal",
         "bb_position",
         "macro_fed_funds",
@@ -2010,16 +1952,46 @@
       ]
     },
     "JNJ": {
-      "up_proba_21d": 0.0899,
-      "auc": 0.6251,
-      "last_price": 239.83,
-      "vol_ann": 0.1791,
+      "up_proba_21d": 0.0744,
+      "auc": 0.6447,
+      "last_price": 268.04,
+      "vol_ann": 0.1807,
       "sector": "Healthcare",
       "features_used": [
         "ret_63d",
         "vol_21d",
+        "price_vs_ma200",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
+        "macd_hist",
+        "macd_signal",
+        "bb_position",
+        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "PFE": {
+      "up_proba_21d": 0.0472,
+      "auc": 0.6671,
+      "last_price": 27.96,
+      "vol_ann": 0.2288,
+      "sector": "Healthcare",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -2030,16 +2002,67 @@
         "macro_yield_curve"
       ]
     },
-    "PFE": {
-      "up_proba_21d": 0.1128,
-      "auc": 0.6195,
-      "last_price": 25.77,
-      "vol_ann": 0.2297,
+    "LLY": {
+      "up_proba_21d": 0.1283,
+      "auc": 0.579,
+      "last_price": 1174.61,
+      "vol_ann": 0.2903,
+      "sector": "Healthcare",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_hist",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve",
+        "macro_vix_change_5d"
+      ]
+    },
+    "ABBV": {
+      "up_proba_21d": 0.7038,
+      "auc": 0.548,
+      "last_price": 255.48,
+      "vol_ann": 0.2648,
+      "sector": "Healthcare",
+      "features_used": [
+        "ret_21d",
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "obv_zscore",
+        "macd_signal",
+        "bb_position",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "MRK": {
+      "up_proba_21d": 0.354,
+      "auc": 0.5848,
+      "last_price": 148.35,
+      "vol_ann": 0.2279,
       "sector": "Healthcare",
       "features_used": [
         "ret_63d",
         "vol_21d",
-        "vol_63d",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
@@ -2056,88 +2079,11 @@
         "macro_yield_curve"
       ]
     },
-    "LLY": {
-      "up_proba_21d": 0.1313,
-      "auc": 0.6099,
-      "last_price": 1006.34,
-      "vol_ann": 0.2869,
-      "sector": "Healthcare",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "ABBV": {
-      "up_proba_21d": 0.5131,
-      "auc": 0.5784,
-      "last_price": 221.38,
-      "vol_ann": 0.2645,
-      "sector": "Healthcare",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "obv_zscore",
-        "macd_hist",
-        "macd_signal",
-        "bb_position",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "MRK": {
-      "up_proba_21d": 0.2842,
-      "auc": 0.6538,
-      "last_price": 120.49,
-      "vol_ann": 0.2227,
-      "sector": "Healthcare",
-      "features_used": [
-        "ret_63d",
-        "vol_21d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_hist",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
     "AMGN": {
-      "up_proba_21d": 0.2593,
-      "auc": 0.6867,
-      "last_price": 371.94,
-      "vol_ann": 0.2515,
+      "up_proba_21d": 0.1979,
+      "auc": 0.7156,
+      "last_price": 432.42,
+      "vol_ann": 0.2516,
       "sector": "Healthcare",
       "features_used": [
         "ret_63d",
@@ -2145,8 +2091,8 @@
         "vol_63d",
         "price_vs_ma200",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -2157,10 +2103,10 @@
       ]
     },
     "GILD": {
-      "up_proba_21d": 0.4827,
-      "auc": 0.5934,
-      "last_price": 149.56,
-      "vol_ann": 0.2666,
+      "up_proba_21d": 0.8026,
+      "auc": 0.6146,
+      "last_price": 145.68,
+      "vol_ann": 0.2665,
       "sector": "Biotech",
       "features_used": [
         "ret_63d",
@@ -2169,9 +2115,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
-        "macd_hist",
         "macd_signal",
         "bb_position",
         "stoch_k",
@@ -2184,10 +2130,10 @@
       ]
     },
     "TMO": {
-      "up_proba_21d": 0.0252,
-      "auc": 0.6004,
-      "last_price": 509.91,
-      "vol_ann": 0.2506,
+      "up_proba_21d": 0.0062,
+      "auc": 0.7171,
+      "last_price": 622.18,
+      "vol_ann": 0.2544,
       "sector": "Healthcare",
       "features_used": [
         "ret_63d",
@@ -2196,7 +2142,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -2207,10 +2155,10 @@
       ]
     },
     "BNTX": {
-      "up_proba_21d": 0.5961,
-      "auc": 0.6708,
-      "last_price": 110.14,
-      "vol_ann": 0.772,
+      "up_proba_21d": 0.5722,
+      "auc": 0.7002,
+      "last_price": 102.07,
+      "vol_ann": 0.7569,
       "sector": "Biotech",
       "features_used": [
         "ret_63d",
@@ -2232,13 +2180,12 @@
       ]
     },
     "VRTX": {
-      "up_proba_21d": 0.1682,
-      "auc": 0.6295,
-      "last_price": 476.9,
-      "vol_ann": 0.3651,
+      "up_proba_21d": 0.2085,
+      "auc": 0.5893,
+      "last_price": 541.69,
+      "vol_ann": 0.3627,
       "sector": "Biotech",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -2246,6 +2193,7 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
@@ -2259,12 +2207,13 @@
       ]
     },
     "AXSM": {
-      "up_proba_21d": 0.0179,
-      "auc": 0.6421,
-      "last_price": 183.72,
-      "vol_ann": 0.9342,
+      "up_proba_21d": 0.0242,
+      "auc": 0.6898,
+      "last_price": 199.02,
+      "vol_ann": 0.9159,
       "sector": "Biotech",
       "features_used": [
+        "ret_10d",
         "ret_21d",
         "ret_63d",
         "vol_21d",
@@ -2286,19 +2235,20 @@
       ]
     },
     "NVS": {
-      "up_proba_21d": 0.0221,
-      "auc": 0.6237,
-      "last_price": 157.87,
-      "vol_ann": 0.1888,
+      "up_proba_21d": 0.0175,
+      "auc": 0.6322,
+      "last_price": 153.81,
+      "vol_ann": 0.1908,
       "sector": "Pharma",
       "features_used": [
         "ret_63d",
         "price_vs_ma200",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
-        "rsi_14",
         "macd_hist",
         "macd_signal",
+        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -2308,16 +2258,15 @@
       ]
     },
     "ATAI": {
-      "up_proba_21d": 0.989,
-      "auc": 0.7086,
-      "last_price": 3.88,
-      "vol_ann": 0.8412,
+      "up_proba_21d": 0.963,
+      "auc": 0.6753,
+      "last_price": 7.29,
+      "vol_ann": 0.8421,
       "sector": "Healthcare",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
@@ -2331,41 +2280,15 @@
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve"
+        "macro_yield_curve",
+        "macro_vix_change_5d"
       ]
     },
     "XOM": {
-      "up_proba_21d": 0.0709,
-      "auc": 0.5875,
-      "last_price": 145.35,
-      "vol_ann": 0.2673,
-      "sector": "Energy",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "obv_zscore",
-        "macd_hist",
-        "macd_signal",
-        "bb_position",
-        "stoch_k",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "CVX": {
-      "up_proba_21d": 0.1968,
-      "auc": 0.6218,
-      "last_price": 182.26,
-      "vol_ann": 0.2838,
+      "up_proba_21d": 0.0285,
+      "auc": 0.6455,
+      "last_price": 156.71,
+      "vol_ann": 0.2678,
       "sector": "Energy",
       "features_used": [
         "ret_63d",
@@ -2375,7 +2298,33 @@
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
+        "obv_zscore",
         "rsi_14",
+        "macd_hist",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "CVX": {
+      "up_proba_21d": 0.2726,
+      "auc": 0.7018,
+      "last_price": 201.86,
+      "vol_ann": 0.2827,
+      "sector": "Energy",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "obv_zscore",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -2386,10 +2335,10 @@
       ]
     },
     "NEE": {
-      "up_proba_21d": 0.1487,
-      "auc": 0.6605,
-      "last_price": 90.89,
-      "vol_ann": 0.2401,
+      "up_proba_21d": 0.4716,
+      "auc": 0.769,
+      "last_price": 81.84,
+      "vol_ann": 0.2396,
       "sector": "Utilities",
       "features_used": [
         "ret_63d",
@@ -2398,13 +2347,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
-        "rsi_14",
-        "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -2414,12 +2359,13 @@
       ]
     },
     "FSLR": {
-      "up_proba_21d": 0.4969,
-      "auc": 0.5816,
-      "last_price": 241.88,
-      "vol_ann": 0.4962,
+      "up_proba_21d": 0.3799,
+      "auc": 0.6709,
+      "last_price": 204.46,
+      "vol_ann": 0.4984,
       "sector": "Renewables",
       "features_used": [
+        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -2427,7 +2373,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
@@ -2439,10 +2384,10 @@
       ]
     },
     "CCJ": {
-      "up_proba_21d": 0.7642,
-      "auc": 0.6341,
-      "last_price": 121.35,
-      "vol_ann": 0.4448,
+      "up_proba_21d": 0.6412,
+      "auc": 0.6405,
+      "last_price": 100.01,
+      "vol_ann": 0.4483,
       "sector": "Energy",
       "features_used": [
         "ret_63d",
@@ -2454,7 +2399,6 @@
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
-        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -2465,10 +2409,10 @@
       ]
     },
     "REP.DE": {
-      "up_proba_21d": 0.0751,
-      "auc": 0.5415,
-      "last_price": 17.84,
-      "vol_ann": 0.3359,
+      "up_proba_21d": 0.336,
+      "auc": 0.6262,
+      "last_price": NaN,
+      "vol_ann": 0.3374,
       "sector": "Energy",
       "features_used": [
         "ret_21d",
@@ -2482,6 +2426,57 @@
         "volume_trend",
         "obv_zscore",
         "rsi_14",
+        "macd_signal",
+        "bb_position",
+        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "ENB.DE": {
+      "up_proba_21d": 0.9552,
+      "auc": 0.641,
+      "last_price": 50.2,
+      "vol_ann": 0.2515,
+      "sector": "Energy",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "rel_volume",
+        "volume_trend",
+        "obv_zscore",
+        "macd_hist",
+        "macd_signal",
+        "macro_fed_funds",
+        "macro_yield_10y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve"
+      ]
+    },
+    "EGI.DE": {
+      "up_proba_21d": 0.1317,
+      "auc": 0.6267,
+      "last_price": 28.22,
+      "vol_ann": 0.2581,
+      "sector": "Energy",
+      "features_used": [
+        "ret_63d",
+        "vol_21d",
+        "vol_63d",
+        "price_vs_ma200",
+        "dist_52w_high",
+        "dist_52w_low",
+        "volume_trend",
+        "obv_zscore",
         "macd_hist",
         "macd_signal",
         "bb_position",
@@ -2494,63 +2489,11 @@
         "macro_yield_curve"
       ]
     },
-    "ENB.DE": {
-      "up_proba_21d": 0.8114,
-      "auc": 0.6031,
-      "last_price": 50.18,
-      "vol_ann": 0.254,
-      "sector": "Energy",
-      "features_used": [
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
-        "obv_zscore",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "EGI.DE": {
-      "up_proba_21d": 0.1281,
-      "auc": 0.6283,
-      "last_price": 29.6,
-      "vol_ann": 0.258,
-      "sector": "Energy",
-      "features_used": [
-        "ret_21d",
-        "ret_63d",
-        "vol_21d",
-        "vol_63d",
-        "price_vs_ma200",
-        "dist_52w_high",
-        "dist_52w_low",
-        "rel_volume",
-        "volume_trend",
-        "obv_zscore",
-        "macd_hist",
-        "macd_signal",
-        "macro_fed_funds",
-        "macro_yield_10y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
     "BLM.DE": {
-      "up_proba_21d": 0.6714,
-      "auc": 0.6445,
-      "last_price": 147.55,
-      "vol_ann": 0.9418,
+      "up_proba_21d": 0.5672,
+      "auc": 0.679,
+      "last_price": 210.77,
+      "vol_ann": 0.9581,
       "sector": "Energy",
       "features_used": [
         "ret_63d",
@@ -2561,6 +2504,7 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -2572,12 +2516,13 @@
       ]
     },
     "BEP": {
-      "up_proba_21d": 0.6686,
-      "auc": 0.6215,
-      "last_price": 31.12,
-      "vol_ann": 0.2946,
+      "up_proba_21d": 0.8867,
+      "auc": 0.621,
+      "last_price": 31.73,
+      "vol_ann": 0.2941,
       "sector": "Energy",
       "features_used": [
+        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -2589,8 +2534,8 @@
         "macd_hist",
         "macd_signal",
         "bb_position",
+        "stoch_k",
         "macro_fed_funds",
-        "macro_yield_10y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
@@ -2598,10 +2543,10 @@
       ]
     },
     "RIO": {
-      "up_proba_21d": 0.1014,
-      "auc": 0.5741,
-      "last_price": 92.42,
-      "vol_ann": 0.3167,
+      "up_proba_21d": 0.0631,
+      "auc": 0.567,
+      "last_price": 103.3,
+      "vol_ann": 0.3172,
       "sector": "Mining",
       "features_used": [
         "ret_21d",
@@ -2627,13 +2572,12 @@
       ]
     },
     "ERO": {
-      "up_proba_21d": 0.0012,
-      "auc": 0.5839,
-      "last_price": 30.15,
-      "vol_ann": 0.5497,
+      "up_proba_21d": 0.0057,
+      "auc": 0.5914,
+      "last_price": 38.83,
+      "vol_ann": 0.5574,
       "sector": "Mining",
       "features_used": [
-        "ret_10d",
         "ret_21d",
         "ret_63d",
         "vol_21d",
@@ -2645,7 +2589,9 @@
         "obv_zscore",
         "rsi_14",
         "macd_signal",
+        "stoch_k",
         "macro_fed_funds",
+        "macro_yield_10y",
         "macro_yield_2y",
         "macro_vix",
         "macro_cpi_yoy",
@@ -2654,17 +2600,16 @@
       ]
     },
     "FCX": {
-      "up_proba_21d": 0.2149,
-      "auc": 0.5909,
-      "last_price": 64.04,
-      "vol_ann": 0.5239,
+      "up_proba_21d": 0.0355,
+      "auc": 0.6245,
+      "last_price": 76.45,
+      "vol_ann": 0.5242,
       "sector": "Mining",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
@@ -2679,21 +2624,24 @@
       ]
     },
     "ALB": {
-      "up_proba_21d": 0.2474,
-      "auc": 0.5974,
-      "last_price": 167.58,
-      "vol_ann": 0.4475,
+      "up_proba_21d": 0.1414,
+      "auc": 0.6497,
+      "last_price": 137.36,
+      "vol_ann": 0.4525,
       "sector": "Mining",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
+        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
         "obv_zscore",
+        "rsi_14",
+        "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -2703,29 +2651,31 @@
       ]
     },
     "MIN": {
-      "up_proba_21d": 0.3346,
-      "auc": 0.643,
-      "last_price": 2.5,
-      "vol_ann": 0.099,
+      "up_proba_21d": 0.276,
+      "auc": 0.6276,
+      "last_price": 2.45,
+      "vol_ann": 0.0999,
       "sector": "Mining",
       "features_used": [
         "rel_volume",
         "volume_trend",
         "obv_zscore",
+        "rsi_14",
+        "bb_position",
+        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve",
-        "macro_vix_change_5d"
+        "macro_yield_curve"
       ]
     },
     "C1E.DE": {
-      "up_proba_21d": 0.214,
-      "auc": 0.5985,
-      "last_price": 203.73,
-      "vol_ann": 1.0232,
+      "up_proba_21d": 0.978,
+      "auc": 0.5885,
+      "last_price": 175.78,
+      "vol_ann": 1.0152,
       "sector": "Energy",
       "features_used": [
         "ret_63d",
@@ -2748,21 +2698,21 @@
       ]
     },
     "VO51.DE": {
-      "up_proba_21d": 0.6604,
-      "auc": 0.5947,
-      "last_price": 21.35,
-      "vol_ann": 0.7003,
+      "up_proba_21d": 0.5781,
+      "auc": 0.6128,
+      "last_price": 14.67,
+      "vol_ann": 0.7048,
       "sector": "Energy",
       "features_used": [
         "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
-        "price_vs_ma50",
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
+        "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
@@ -2775,13 +2725,12 @@
       ]
     },
     "U6Z.DE": {
-      "up_proba_21d": 0.0288,
-      "auc": 0.7291,
-      "last_price": 13.53,
-      "vol_ann": 0.5371,
+      "up_proba_21d": 0.0788,
+      "auc": 0.7208,
+      "last_price": NaN,
+      "vol_ann": 0.5461,
       "sector": "Energy",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -2791,9 +2740,9 @@
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
-        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
+        "macro_yield_10y",
         "macro_yield_2y",
         "macro_vix",
         "macro_cpi_yoy",
@@ -2802,10 +2751,10 @@
       ]
     },
     "BA": {
-      "up_proba_21d": 0.583,
-      "auc": 0.6607,
-      "last_price": 232.03,
-      "vol_ann": 0.3863,
+      "up_proba_21d": 0.6266,
+      "auc": 0.6469,
+      "last_price": 209.82,
+      "vol_ann": 0.3854,
       "sector": "Industrial",
       "features_used": [
         "ret_21d",
@@ -2817,7 +2766,7 @@
         "dist_52w_high",
         "dist_52w_low",
         "volume_trend",
-        "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -2829,13 +2778,12 @@
       ]
     },
     "CAT": {
-      "up_proba_21d": 0.8118,
-      "auc": 0.6208,
-      "last_price": 756.89,
-      "vol_ann": 0.2941,
+      "up_proba_21d": 0.8179,
+      "auc": 0.5955,
+      "last_price": 800.25,
+      "vol_ann": 0.301,
       "sector": "Industrial",
       "features_used": [
-        "ret_21d",
         "ret_63d",
         "vol_21d",
         "vol_63d",
@@ -2844,8 +2792,6 @@
         "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
-        "macd_hist",
-        "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -2855,10 +2801,10 @@
       ]
     },
     "LMT": {
-      "up_proba_21d": 0.0333,
-      "auc": 0.5673,
-      "last_price": 650.55,
-      "vol_ann": 0.2242,
+      "up_proba_21d": 0.0555,
+      "auc": 0.6086,
+      "last_price": 563.85,
+      "vol_ann": 0.2281,
       "sector": "Industrial",
       "features_used": [
         "ret_63d",
@@ -2869,8 +2815,10 @@
         "dist_52w_low",
         "rel_volume",
         "volume_trend",
+        "obv_zscore",
+        "rsi_14",
+        "macd_hist",
         "macd_signal",
-        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -2880,10 +2828,10 @@
       ]
     },
     "RTX": {
-      "up_proba_21d": 0.5525,
-      "auc": 0.6118,
-      "last_price": 203.39,
-      "vol_ann": 0.2605,
+      "up_proba_21d": 0.8772,
+      "auc": 0.601,
+      "last_price": 211.71,
+      "vol_ann": 0.2613,
       "sector": "Industrial",
       "features_used": [
         "ret_21d",
@@ -2893,6 +2841,7 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
@@ -2906,10 +2855,10 @@
       ]
     },
     "GE": {
-      "up_proba_21d": 0.8156,
-      "auc": 0.6081,
-      "last_price": 342.29,
-      "vol_ann": 0.3348,
+      "up_proba_21d": 0.7643,
+      "auc": 0.5582,
+      "last_price": 342.58,
+      "vol_ann": 0.3361,
       "sector": "Industrial",
       "features_used": [
         "ret_21d",
@@ -2922,6 +2871,7 @@
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
+        "macd_hist",
         "macd_signal",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -2932,10 +2882,10 @@
       ]
     },
     "HON": {
-      "up_proba_21d": 0.6342,
-      "auc": 0.6007,
-      "last_price": 252.45,
-      "vol_ann": 0.2248,
+      "up_proba_21d": 0.8359,
+      "auc": 0.6232,
+      "last_price": 217.43,
+      "vol_ann": 0.2288,
       "sector": "Industrial",
       "features_used": [
         "ret_63d",
@@ -2943,7 +2893,7 @@
         "vol_63d",
         "price_vs_ma200",
         "dist_52w_low",
-        "obv_zscore",
+        "volume_trend",
         "rsi_14",
         "macd_hist",
         "macd_signal",
@@ -2958,10 +2908,10 @@
       ]
     },
     "UPS": {
-      "up_proba_21d": 0.0144,
-      "auc": 0.6423,
-      "last_price": 112.99,
-      "vol_ann": 0.2554,
+      "up_proba_21d": 0.06,
+      "auc": 0.6971,
+      "last_price": 105.33,
+      "vol_ann": 0.2586,
       "sector": "Transportation",
       "features_used": [
         "ret_63d",
@@ -2970,7 +2920,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "macd_signal",
         "macro_fed_funds",
@@ -2982,10 +2931,10 @@
       ]
     },
     "DE": {
-      "up_proba_21d": 0.7604,
-      "auc": 0.6325,
-      "last_price": 658.85,
-      "vol_ann": 0.2867,
+      "up_proba_21d": 0.7487,
+      "auc": 0.6217,
+      "last_price": 630.33,
+      "vol_ann": 0.2887,
       "sector": "Industrial",
       "features_used": [
         "ret_21d",
@@ -2993,12 +2942,11 @@
         "vol_21d",
         "vol_63d",
         "price_vs_ma200",
-        "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
         "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
@@ -3009,13 +2957,12 @@
       ]
     },
     "RHM.DE": {
-      "up_proba_21d": 0.7766,
-      "auc": 0.5749,
-      "last_price": 1722.78,
-      "vol_ann": 0.3661,
+      "up_proba_21d": 0.9136,
+      "auc": 0.6555,
+      "last_price": NaN,
+      "vol_ann": 0.3737,
       "sector": "Industrial",
       "features_used": [
-        "ret_10d",
         "ret_21d",
         "ret_63d",
         "vol_21d",
@@ -3024,7 +2971,6 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
@@ -3038,24 +2984,20 @@
       ]
     },
     "EUNL.DE": {
-      "up_proba_21d": 0.5,
-      "auc": 0.5,
-      "last_price": 113.76,
-      "vol_ann": 0.1583,
+      "up_proba_21d": 0.3894,
+      "auc": 0.6608,
+      "last_price": NaN,
+      "vol_ann": 0.1567,
       "sector": "ETF",
       "features_used": [
         "vol_21d",
         "dist_52w_low",
-        "rel_volume",
         "volume_trend",
         "obv_zscore",
-        "vol_price_div_up",
-        "vol_price_div_down",
         "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -3066,43 +3008,40 @@
       ]
     },
     "VUSA.DE": {
-      "up_proba_21d": 0.8557,
-      "auc": 0.5498,
-      "last_price": 110.4,
-      "vol_ann": 0.1693,
+      "up_proba_21d": 0.8683,
+      "auc": 0.6163,
+      "last_price": NaN,
+      "vol_ann": 0.1666,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
         "vol_21d",
-        "dist_52w_low",
-        "volume_trend",
-        "obv_zscore",
-        "rsi_14",
-        "macd_hist",
-        "macd_signal",
-        "stoch_k",
-        "macro_fed_funds",
-        "macro_yield_2y",
-        "macro_vix",
-        "macro_cpi_yoy",
-        "macro_dxy",
-        "macro_yield_curve"
-      ]
-    },
-    "VWCE.DE": {
-      "up_proba_21d": 0.7423,
-      "auc": 0.5745,
-      "last_price": 149.88,
-      "vol_ann": 0.1629,
-      "sector": "ETF",
-      "features_used": [
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
+        "macro_fed_funds",
+        "macro_yield_2y",
+        "macro_vix",
+        "macro_cpi_yoy",
+        "macro_dxy",
+        "macro_yield_curve",
+        "macro_vix_change_5d"
+      ]
+    },
+    "VWCE.DE": {
+      "up_proba_21d": 0.9502,
+      "auc": 0.5851,
+      "last_price": NaN,
+      "vol_ann": 0.1604,
+      "sector": "ETF",
+      "features_used": [
+        "dist_52w_low",
+        "obv_zscore",
+        "macd_hist",
+        "macd_signal",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -3112,17 +3051,16 @@
       ]
     },
     "EXS1.DE": {
-      "up_proba_21d": 0.3102,
-      "auc": 0.5754,
-      "last_price": 209.1,
-      "vol_ann": 0.188,
+      "up_proba_21d": 0.7264,
+      "auc": 0.6237,
+      "last_price": NaN,
+      "vol_ann": 0.1879,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "vol_63d",
         "price_vs_ma200",
-        "dist_52w_high",
         "dist_52w_low",
         "obv_zscore",
         "rsi_14",
@@ -3138,10 +3076,10 @@
       ]
     },
     "EXXT.DE": {
-      "up_proba_21d": 0.4031,
-      "auc": 0.6034,
-      "last_price": 205.92,
-      "vol_ann": 0.2123,
+      "up_proba_21d": 0.6227,
+      "auc": 0.5826,
+      "last_price": NaN,
+      "vol_ann": 0.2113,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
@@ -3155,7 +3093,6 @@
         "macd_hist",
         "macd_signal",
         "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -3165,23 +3102,17 @@
       ]
     },
     "SPPW.DE": {
-      "up_proba_21d": 0.6139,
-      "auc": 0.4776,
-      "last_price": 41.59,
-      "vol_ann": 0.1684,
+      "up_proba_21d": 0.9851,
+      "auc": 0.5749,
+      "last_price": NaN,
+      "vol_ann": 0.1651,
       "sector": "ETF",
       "features_used": [
-        "ret_63d",
         "vol_21d",
         "vol_63d",
         "dist_52w_low",
-        "volume_trend",
         "obv_zscore",
-        "rsi_14",
-        "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -3191,10 +3122,10 @@
       ]
     },
     "IS3N.DE": {
-      "up_proba_21d": 0.2896,
-      "auc": 0.5664,
-      "last_price": 43.19,
-      "vol_ann": 0.1866,
+      "up_proba_21d": 0.6522,
+      "auc": 0.6315,
+      "last_price": NaN,
+      "vol_ann": 0.1899,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
@@ -3203,8 +3134,12 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
+        "rsi_14",
+        "macd_hist",
         "macd_signal",
+        "bb_position",
         "macro_fed_funds",
         "macro_yield_10y",
         "macro_vix",
@@ -3214,10 +3149,10 @@
       ]
     },
     "IUSN.DE": {
-      "up_proba_21d": 0.0681,
-      "auc": 0.6415,
-      "last_price": 8.4,
-      "vol_ann": 0.1842,
+      "up_proba_21d": 0.0748,
+      "auc": 0.7272,
+      "last_price": NaN,
+      "vol_ann": 0.1819,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
@@ -3225,7 +3160,9 @@
         "vol_63d",
         "price_vs_ma200",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
+        "rsi_14",
         "macro_fed_funds",
         "macro_yield_2y",
         "macro_vix",
@@ -3235,36 +3172,31 @@
       ]
     },
     "XDWD.DE": {
-      "up_proba_21d": 0.2733,
-      "auc": 0.5206,
-      "last_price": 124.44,
-      "vol_ann": 0.1605,
+      "up_proba_21d": 0.3532,
+      "auc": 0.6201,
+      "last_price": NaN,
+      "vol_ann": 0.1588,
       "sector": "ETF",
       "features_used": [
         "vol_21d",
         "dist_52w_low",
-        "rel_volume",
         "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
         "macd_signal",
-        "bb_position",
-        "stoch_k",
         "macro_fed_funds",
-        "macro_yield_2y",
         "macro_vix",
         "macro_cpi_yoy",
         "macro_dxy",
-        "macro_yield_curve",
-        "macro_vix_change_5d"
+        "macro_yield_curve"
       ]
     },
     "ZPRV.DE": {
-      "up_proba_21d": 0.0105,
-      "auc": 0.6199,
-      "last_price": 72.63,
-      "vol_ann": 0.2334,
+      "up_proba_21d": 0.2314,
+      "auc": 0.6658,
+      "last_price": NaN,
+      "vol_ann": 0.2299,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
@@ -3273,7 +3205,9 @@
         "price_vs_ma200",
         "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
+        "rsi_14",
         "macd_hist",
         "macd_signal",
         "macro_fed_funds",
@@ -3285,18 +3219,18 @@
       ]
     },
     "DBXD.DE": {
-      "up_proba_21d": 0.2763,
-      "auc": 0.6061,
-      "last_price": 236.6,
-      "vol_ann": 0.1879,
+      "up_proba_21d": 0.813,
+      "auc": 0.6413,
+      "last_price": NaN,
+      "vol_ann": 0.1878,
       "sector": "ETF",
       "features_used": [
         "ret_63d",
         "vol_21d",
         "vol_63d",
         "price_vs_ma200",
-        "dist_52w_high",
         "dist_52w_low",
+        "volume_trend",
         "obv_zscore",
         "rsi_14",
         "macd_hist",
@@ -3314,10 +3248,10 @@
   "experiment_summary": {
     "total_runs": 675,
     "best_model": "XGBoost",
-    "best_accuracy": 0.5084,
-    "best_auc": 0.5859,
+    "best_accuracy": 0.5247,
+    "best_auc": 0.6121,
     "best_sharpe": 0.0,
-    "beats_baseline_pct": 0.0,
+    "beats_baseline_pct": 1.0,
     "models_tested": [
       "Baseline_Random",
       "Baseline_Momentum",
@@ -3329,43 +3263,43 @@
   "model_comparison": [
     {
       "model": "Baseline_Random",
-      "acc": 0.5011,
-      "auc": 0.4987,
+      "acc": 0.5044,
+      "auc": 0.5052,
       "sharpe": 0.0,
       "dd": 0.0,
       "beats": false
     },
     {
       "model": "Baseline_Momentum",
-      "acc": 0.5049,
+      "acc": 0.5759,
       "auc": 0.5,
       "sharpe": 0.0,
       "dd": 0.0,
-      "beats": false
+      "beats": true
     },
     {
       "model": "LogisticRegression",
-      "acc": 0.509,
-      "auc": 0.5738,
+      "acc": 0.5359,
+      "auc": 0.5971,
       "sharpe": 0.0,
       "dd": 0.0,
-      "beats": false
+      "beats": true
     },
     {
       "model": "RandomForest",
-      "acc": 0.5085,
-      "auc": 0.5825,
+      "acc": 0.5294,
+      "auc": 0.6049,
       "sharpe": 0.0,
       "dd": 0.0,
-      "beats": false
+      "beats": true
     },
     {
       "model": "XGBoost",
-      "acc": 0.5084,
-      "auc": 0.5859,
+      "acc": 0.5247,
+      "auc": 0.6121,
       "sharpe": 0.0,
       "dd": 0.0,
-      "beats": false
+      "beats": true
     }
   ],
   "scenarios": {
@@ -3373,12 +3307,12 @@
       "bull": {
         "label": "Bull",
         "return_range": [
-          0.0796,
-          0.1859
+          0.0773,
+          0.1858
         ],
         "price_range": [
-          364.09,
-          399.93
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3388,17 +3322,17 @@
           "Signal >60%"
         ],
         "suggested_action": "Enter / Add",
-        "invalidation": "Below 320.38"
+        "invalidation": "Below nan"
       },
       "base": {
         "label": "Base",
         "return_range": [
-          -0.0422,
-          0.0796
+          -0.0467,
+          0.0773
         ],
         "price_range": [
-          323.0,
-          364.09
+          NaN,
+          NaN
         ],
         "probability": 0.5,
         "conditions": [
@@ -3412,12 +3346,12 @@
       "bear": {
         "label": "Bear",
         "return_range": [
-          -0.1218,
-          -0.0422
+          -0.1276,
+          -0.0467
         ],
         "price_range": [
-          296.15,
-          323.0
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3427,20 +3361,20 @@
           "Signal <40%"
         ],
         "suggested_action": "Avoid / Exit",
-        "invalidation": "Above 347.36 for 5 days"
+        "invalidation": "Above nan for 5 days"
       },
       "metadata": {
-        "current_price": 337.2419128417969,
-        "up_probability": 0.7545177340507507,
+        "current_price": NaN,
+        "up_probability": 0.7177733778953552,
         "horizon_days": 21,
         "n_simulations": 2000,
-        "realized_vol_ann": 0.2464275933252189,
+        "realized_vol_ann": 0.251743551820752,
         "percentiles": {
-          "p5": -0.1218,
-          "p25": -0.0422,
-          "p50": 0.0187,
-          "p75": 0.0796,
-          "p95": 0.1859
+          "p5": -0.1276,
+          "p25": -0.0467,
+          "p50": 0.0153,
+          "p75": 0.0773,
+          "p95": 0.1858
         }
       }
     },
@@ -3448,12 +3382,12 @@
       "bull": {
         "label": "Bull",
         "return_range": [
-          0.0528,
-          0.2943
+          0.0961,
+          0.3452
         ],
         "price_range": [
-          366.7,
-          450.8
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3463,17 +3397,17 @@
           "Signal >60%"
         ],
         "suggested_action": "Enter / Add",
-        "invalidation": "Below 330.88"
+        "invalidation": "Below nan"
       },
       "base": {
         "label": "Base",
         "return_range": [
-          -0.1949,
-          0.0528
+          -0.16,
+          0.0961
         ],
         "price_range": [
-          280.42,
-          366.7
+          NaN,
+          NaN
         ],
         "probability": 0.5,
         "conditions": [
@@ -3487,12 +3421,12 @@
       "bear": {
         "label": "Bear",
         "return_range": [
-          -0.3399,
-          -0.1949
+          -0.31,
+          -0.16
         ],
         "price_range": [
-          229.93,
-          280.42
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3502,20 +3436,20 @@
           "Signal <40%"
         ],
         "suggested_action": "Avoid / Exit",
-        "invalidation": "Above 358.75 for 5 days"
+        "invalidation": "Above nan for 5 days"
       },
       "metadata": {
-        "current_price": 348.29998779296875,
-        "up_probability": 0.25467124581336975,
+        "current_price": NaN,
+        "up_probability": 0.4430445730686188,
         "horizon_days": 21,
         "n_simulations": 2000,
-        "realized_vol_ann": 0.5468066815416471,
+        "realized_vol_ann": 0.5434117311336784,
         "percentiles": {
-          "p5": -0.3399,
-          "p25": -0.1949,
-          "p50": -0.0757,
-          "p75": 0.0528,
-          "p95": 0.2943
+          "p5": -0.31,
+          "p25": -0.16,
+          "p50": -0.0366,
+          "p75": 0.0961,
+          "p95": 0.3452
         }
       }
     },
@@ -3523,12 +3457,12 @@
       "bull": {
         "label": "Bull",
         "return_range": [
-          0.0919,
-          0.2349
+          0.0959,
+          0.2404
         ],
         "price_range": [
-          193.11,
-          218.4
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3538,17 +3472,17 @@
           "Signal >60%"
         ],
         "suggested_action": "Enter / Add",
-        "invalidation": "Below 168.02"
+        "invalidation": "Below nan"
       },
       "base": {
         "label": "Base",
         "return_range": [
-          -0.0664,
-          0.0919
+          -0.0639,
+          0.0959
         ],
         "price_range": [
-          165.12,
-          193.11
+          NaN,
+          NaN
         ],
         "probability": 0.5,
         "conditions": [
@@ -3562,12 +3496,12 @@
       "bear": {
         "label": "Bear",
         "return_range": [
-          -0.1674,
-          -0.0664
+          -0.1658,
+          -0.0639
         ],
         "price_range": [
-          147.25,
-          165.12
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3577,20 +3511,20 @@
           "Signal <40%"
         ],
         "suggested_action": "Avoid / Exit",
-        "invalidation": "Above 182.17 for 5 days"
+        "invalidation": "Above nan for 5 days"
       },
       "metadata": {
-        "current_price": 176.86000061035156,
-        "up_probability": 0.6695329546928406,
+        "current_price": NaN,
+        "up_probability": 0.694222092628479,
         "horizon_days": 21,
         "n_simulations": 2000,
-        "realized_vol_ann": 0.32250986828375033,
+        "realized_vol_ann": 0.3246101371870968,
         "percentiles": {
-          "p5": -0.1674,
-          "p25": -0.0664,
-          "p50": 0.0121,
-          "p75": 0.0919,
-          "p95": 0.2349
+          "p5": -0.1658,
+          "p25": -0.0639,
+          "p50": 0.0154,
+          "p75": 0.0959,
+          "p95": 0.2404
         }
       }
     },
@@ -3598,12 +3532,12 @@
       "bull": {
         "label": "Bull",
         "return_range": [
-          0.0463,
-          0.2017
+          0.0455,
+          0.2032
         ],
         "price_range": [
-          582.95,
-          669.57
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3613,17 +3547,17 @@
           "Signal >60%"
         ],
         "suggested_action": "Enter / Add",
-        "invalidation": "Below 529.31"
+        "invalidation": "Below nan"
       },
       "base": {
         "label": "Base",
         "return_range": [
-          -0.124,
-          0.0463
+          -0.127,
+          0.0455
         ],
         "price_range": [
-          488.1,
-          582.95
+          NaN,
+          NaN
         ],
         "probability": 0.5,
         "conditions": [
@@ -3637,12 +3571,12 @@
       "bear": {
         "label": "Bear",
         "return_range": [
-          -0.2309,
-          -0.124
+          -0.2352,
+          -0.127
         ],
         "price_range": [
-          428.54,
-          488.1
+          NaN,
+          NaN
         ],
         "probability": 0.25,
         "conditions": [
@@ -3652,101 +3586,101 @@
           "Signal <40%"
         ],
         "suggested_action": "Avoid / Exit",
-        "invalidation": "Above 573.88 for 5 days"
+        "invalidation": "Above nan for 5 days"
       },
       "metadata": {
-        "current_price": 557.1641235351562,
-        "up_probability": 0.29980823397636414,
+        "current_price": NaN,
+        "up_probability": 0.2904048562049866,
         "horizon_days": 21,
         "n_simulations": 2000,
-        "realized_vol_ann": 0.36396663269031354,
+        "realized_vol_ann": 0.3694241289230095,
         "percentiles": {
-          "p5": -0.2309,
-          "p25": -0.124,
-          "p50": -0.0401,
-          "p75": 0.0463,
-          "p95": 0.2017
+          "p5": -0.2352,
+          "p25": -0.127,
+          "p50": -0.0422,
+          "p75": 0.0455,
+          "p95": 0.2032
         }
       }
     }
   },
   "horizon_accuracy": {
     "5d": {
-      "LogisticRegression": 0.501,
-      "RandomForest": 0.5005,
-      "XGBoost": 0.5004
+      "LogisticRegression": 0.5279,
+      "RandomForest": 0.5214,
+      "XGBoost": 0.5167
     },
     "21d": {
-      "LogisticRegression": 0.509,
-      "RandomForest": 0.5085,
-      "XGBoost": 0.5084
+      "LogisticRegression": 0.5359,
+      "RandomForest": 0.5294,
+      "XGBoost": 0.5247
     },
     "63d": {
-      "LogisticRegression": 0.505,
-      "RandomForest": 0.5045,
-      "XGBoost": 0.5044
+      "LogisticRegression": 0.5319,
+      "RandomForest": 0.5254,
+      "XGBoost": 0.5207
     }
   },
   "feature_importance": [
     {
+      "feature": "macro_yield_2y",
+      "importance": 0.0793
+    },
+    {
       "feature": "macro_cpi_yoy",
-      "importance": 0.0713
+      "importance": 0.0743
     },
     {
       "feature": "dist_52w_low",
-      "importance": 0.065
-    },
-    {
-      "feature": "vol_63d",
-      "importance": 0.0634
-    },
-    {
-      "feature": "macro_yield_10y",
-      "importance": 0.0633
+      "importance": 0.0701
     },
     {
       "feature": "macro_fed_funds",
-      "importance": 0.0626
+      "importance": 0.0651
     },
     {
-      "feature": "macro_dxy",
-      "importance": 0.0621
-    },
-    {
-      "feature": "macro_yield_curve",
+      "feature": "vol_63d",
       "importance": 0.0612
     },
     {
-      "feature": "macro_yield_2y",
-      "importance": 0.0591
+      "feature": "macro_dxy",
+      "importance": 0.0609
     },
     {
       "feature": "price_vs_ma200",
-      "importance": 0.0581
+      "importance": 0.0606
     },
     {
-      "feature": "vol_21d",
-      "importance": 0.0506
+      "feature": "macro_yield_curve",
+      "importance": 0.0604
+    },
+    {
+      "feature": "macro_yield_10y",
+      "importance": 0.053
     },
     {
       "feature": "dist_52w_high",
-      "importance": 0.0462
+      "importance": 0.0502
     },
     {
       "feature": "ret_63d",
-      "importance": 0.0446
+      "importance": 0.0468
+    },
+    {
+      "feature": "vol_21d",
+      "importance": 0.0461
     },
     {
       "feature": "macd_signal",
-      "importance": 0.0434
+      "importance": 0.0418
     },
     {
       "feature": "macro_vix",
-      "importance": 0.0403
+      "importance": 0.0378
     },
     {
       "feature": "obv_zscore",
-      "importance": 0.035
+      "importance": 0.0361
     }
   ],
   "feature_flags": {
@@ -3755,6 +3689,6 @@
     "ENABLE_EARNINGS_CALENDAR_FEATURES": false,
     "ENABLE_CROSSSECTIONAL_FEATURES": false,
     "ENABLE_ACCELERATION_FEATURES": false,
-    "ENABLE_ALPHA_TARGET": true
+    "ENABLE_ALPHA_TARGET": false
   }
 }

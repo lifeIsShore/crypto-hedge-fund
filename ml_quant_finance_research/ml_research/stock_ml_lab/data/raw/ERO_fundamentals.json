@@ -1,12 +1,12 @@
 {
-  "trailingPE": 12.21017,
-  "priceToBook": 3.0958316,
-  "enterpriseToEbitda": 8.188,
+  "trailingPE": 13.162712,
+  "priceToBook": 3.3373444,
+  "enterpriseToEbitda": 8.954,
   "revenueGrowth": 0.739,
   "grossMargins": 0.42992002,
   "operatingMargins": 0.37643,
   "debtToEquity": 47.066,
   "freeCashflow": 47039876,
-  "marketCap": 3756980736,
-  "fetched_at": "2026-08-21T03:24:19.555906"
+  "marketCap": 4050071296,
+  "fetched_at": "2026-08-29T00:48:41.577730"
 }
