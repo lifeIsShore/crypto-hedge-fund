@@ -54,7 +54,8 @@ SCENARIO_TICKERS = ["MSF.DE", "TL0.DE", "AMZ.DE", "FB2A.DE"]   # Xetra versions 
 MODELS = {
     "Baseline_Random":    None,   # coin-flip
     "Baseline_Momentum":  None,   # yesterday's direction
-    "LogisticRegression": "lr",
+    "Ridge_LR":           "ridge",
+    "Lasso_LR":           "lasso",
     "RandomForest":       "rf",
     "XGBoost":            "xgb",
 }
@@ -72,6 +73,7 @@ ENABLE_EARNINGS_CALENDAR_FEATURES = False   # Phase 1A
 ENABLE_CROSSSECTIONAL_FEATURES    = False   # Phase 1B
 ENABLE_ACCELERATION_FEATURES      = False   # Phase 1B
 ENABLE_ALPHA_TARGET               = False   # Phase 1D
+ENABLE_STATIONARY_ONLY            = False   # Phase 2
 
 # ── Gate 1: holdout start (from holdout_config.txt, locked by gate1_holdout.py) ─
 # All training data is filtered to dates strictly before HOLDOUT_START until Gate 4
@@ -95,6 +97,8 @@ _g2_parser.add_argument('--enable-earnings',  action='store_true')
 _g2_parser.add_argument('--enable-crosssectional', action='store_true')
 _g2_parser.add_argument('--enable-acceleration',   action='store_true')
 _g2_parser.add_argument('--enable-alpha-target',   action='store_true')
+_g2_parser.add_argument('--enable-stationary-only', action='store_true')
+_g2_parser.add_argument('--enable-regularized-models', action='store_true')
 _g2_parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for all models (default: 42). '
                              'Used by gate2_run.py --n-seeds for variance estimation.')
@@ -107,12 +111,13 @@ if _g2_args.enable_earnings:    ENABLE_EARNINGS_CALENDAR_FEATURES = True
 if _g2_args.enable_crosssectional: ENABLE_CROSSSECTIONAL_FEATURES = True
 if _g2_args.enable_acceleration:   ENABLE_ACCELERATION_FEATURES   = True
 if _g2_args.enable_alpha_target:   ENABLE_ALPHA_TARGET            = True
+if _g2_args.enable_stationary_only: ENABLE_STATIONARY_ONLY        = True
 if any(v for k, v in vars(_g2_args).items() if k != 'seed'):
     log.info(
         f"Gate 2 CLI overrides active: db_regime={ENABLE_DB_REGIME_FEATURES}, "
         f"pead={ENABLE_PEAD_FEATURES}, earnings={ENABLE_EARNINGS_CALENDAR_FEATURES}, "
         f"crosssectional={ENABLE_CROSSSECTIONAL_FEATURES}, acceleration={ENABLE_ACCELERATION_FEATURES}, "
-        f"alpha_target={ENABLE_ALPHA_TARGET}"
+        f"alpha_target={ENABLE_ALPHA_TARGET}, stationary_only={ENABLE_STATIONARY_ONLY}"
     )
 
 # Module-level seed — used by make_model() and run_baseline_random().
@@ -185,27 +190,33 @@ FEATURE_CORR_THRESHOLD     = 0.95   # drop one of any pair above this
 FEATURE_VAR_THRESHOLD      = 0.005  # drop near-constant features
 
 def make_model(key):
-    if key == "lr":
+    if key == "ridge":
         from sklearn.linear_model import LogisticRegression
         from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import StandardScaler
         return Pipeline([("sc", StandardScaler()),
-                         ("clf", LogisticRegression(max_iter=500, C=0.1, random_state=RANDOM_SEED))])
+                         ("clf", LogisticRegression(max_iter=1000, penalty='l2', solver='lbfgs', C=0.1, random_state=RANDOM_SEED))])
+    if key == "lasso":
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        return Pipeline([("sc", StandardScaler()),
+                         ("clf", LogisticRegression(max_iter=1000, penalty='l1', solver='saga', C=0.01, random_state=RANDOM_SEED))])
     if key == "rf":
         from sklearn.ensemble import RandomForestClassifier
-        return RandomForestClassifier(n_estimators=200, max_depth=6,
+        return RandomForestClassifier(n_estimators=100, max_depth=3,
                                       min_samples_leaf=20, random_state=RANDOM_SEED, n_jobs=-1)
     if key == "xgb":
         try:
             from xgboost import XGBClassifier
-            return XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.05,
-                                 subsample=0.8, colsample_bytree=0.8,
+            return XGBClassifier(n_estimators=100, max_depth=2, learning_rate=0.05,
+                                 reg_alpha=1.0, subsample=0.8, colsample_bytree=0.8,
                                  eval_metric="logloss", random_state=RANDOM_SEED,
                                  verbosity=0, use_label_encoder=False)
         except ImportError:
             log.warning("XGBoost not installed; using RandomForest instead")
             from sklearn.ensemble import RandomForestClassifier
-            return RandomForestClassifier(n_estimators=200, max_depth=6, random_state=RANDOM_SEED, n_jobs=-1)
+            return RandomForestClassifier(n_estimators=100, max_depth=3, min_samples_leaf=20, random_state=RANDOM_SEED, n_jobs=-1)
     raise ValueError(f"Unknown model key: {key}")
 
 
@@ -404,7 +415,7 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_feature
         )
 
     best_proba = 0.5
-    for mn in ["XGBoost", "RandomForest", "LogisticRegression"]:
+    for mn in ["XGBoost", "RandomForest", "Ridge_LR", "Lasso_LR"]:
         if mn in last_proba:
             best_proba = last_proba[mn]
             break
@@ -459,7 +470,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
 
     model_comparison = []
     for mname in ["Baseline_Random", "Baseline_Momentum",
-                  "LogisticRegression", "RandomForest", "XGBoost"]:
+                  "Ridge_LR", "Lasso_LR", "RandomForest", "XGBoost"]:
         if mname not in all_model_names:
             continue
         accs, aucs, sharpes, dds = [], [], [], []
@@ -522,7 +533,7 @@ def build_ml_state(ticker_results, prices, scenario_tickers):
             log.warning(f"Scenario engine failed for {ticker}: {e}")
 
     horizon_accuracy = {"5d": {}, "21d": {}, "63d": {}}
-    for mname in ["LogisticRegression", "RandomForest", "XGBoost"]:
+    for mname in ["Ridge_LR", "Lasso_LR", "RandomForest", "XGBoost"]:
         vals_21 = []
         for res in ticker_results.values():
             if res and mname in res["model_results"]:

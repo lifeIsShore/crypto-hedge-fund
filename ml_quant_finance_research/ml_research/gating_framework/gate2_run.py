@@ -59,7 +59,7 @@ import numpy as np
 import pandas as pd
 
 HERE   = os.path.dirname(os.path.abspath(__file__))
-ROOT   = os.path.normpath(os.path.join(HERE, '..', '..'))
+ROOT   = os.path.normpath(os.path.join(HERE, '..', '..', '..'))
 ML_LAB = os.path.join(ROOT, 'ml_quant_finance_research', 'ml_research', 'stock_ml_lab')
 
 BASELINE_FILE          = os.path.join(HERE, 'baseline_v1_auc.txt')
@@ -75,6 +75,8 @@ FAMILY_FLAG_MAP = {
     'crosssectional': 'ENABLE_CROSSSECTIONAL_FEATURES',
     'acceleration':   'ENABLE_ACCELERATION_FEATURES',
     'target_refinement': 'ENABLE_ALPHA_TARGET',
+    'stationary_only': 'ENABLE_STATIONARY_ONLY',
+    'regularized_models': 'ENABLE_REGULARIZED_MODELS',
 }
 CLI_FLAG_MAP = {
     'db_regime': '--enable-db-regime',
@@ -83,6 +85,8 @@ CLI_FLAG_MAP = {
     'crosssectional': '--enable-crosssectional',
     'acceleration':   '--enable-acceleration',
     'target_refinement': '--enable-alpha-target',
+    'stationary_only': '--enable-stationary-only',
+    'regularized_models': '--enable-regularized-models',
 }
 
 # Gate 2 thresholds (from 00-OVERVIEW.md)
@@ -308,8 +312,8 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '--family',
-        choices=['db_regime', 'pead', 'earnings', 'crosssectional', 'acceleration', 'target_refinement'],
-        help="Feature family to test (e.g., db_regime, pead, earnings, crosssectional, acceleration, target_refinement)"
+        choices=['db_regime', 'pead', 'earnings', 'crosssectional', 'acceleration', 'target_refinement', 'stationary_only', 'regularized_models'],
+        help="Feature family to test"
     )
     group.add_argument(
         '--holdout-baseline', action='store_true', dest='holdout_baseline',

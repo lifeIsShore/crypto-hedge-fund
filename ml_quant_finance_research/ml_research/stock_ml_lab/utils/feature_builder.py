@@ -62,10 +62,13 @@ def add_technical_features(df):
     df["rsi_14"] = 100 - (100 / (1 + rs))   # standard Wilder RSI: 0–100
     ema12  = c.ewm(span=12, adjust=False).mean()
     ema26  = c.ewm(span=26, adjust=False).mean()
-    macd   = ema12 - ema26
-    signal = macd.ewm(span=9, adjust=False).mean()
-    df["macd_hist"]   = macd - signal
-    df["macd_signal"] = signal
+    macd_raw   = ema12 - ema26
+    signal_raw = macd_raw.ewm(span=9, adjust=False).mean()
+    
+    # STATIONARY MACD: Convert absolute dollars to percentages
+    df["macd_pct"]        = macd_raw / (ema26 + 1e-9)
+    df["macd_hist_pct"]   = (macd_raw - signal_raw) / (ema26 + 1e-9)
+    df["macd_signal_pct"] = signal_raw / (ema26 + 1e-9)
     ma20, std20 = c.rolling(20).mean(), c.rolling(20).std()
     df["bb_position"] = (c - (ma20 - 2 * std20)) / (4 * std20 + 1e-9)
     tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
@@ -83,7 +86,6 @@ def add_fundamental_features(df, fundamentals):
         "grossMargins":       "fund_gross_margin",
         "operatingMargins":   "fund_op_margin",
         "debtToEquity":       "fund_de",
-        "freeCashflow":       "fund_fcf",
     }
     for k, col in mapping.items():
         val = fundamentals.get(k)
