@@ -1,0 +1,8 @@
+{
+  "run_id": "20260829_120045",
+  "completed_at": "2026-08-29T11:03:50.904611+00:00",
+  "elapsed_sec": 3784.7,
+  "n_result_rows": 922,
+  "git_commit": "ac4f491",
+  "note": "phase1-ic-gate-log-fix"
+}

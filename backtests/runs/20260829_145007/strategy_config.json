@@ -1,0 +1,47 @@
+{
+  "run_id": "20260829_145007",
+  "run_timestamp": "2026-08-29T12:50:07.397458+00:00",
+  "backtest_start": "auto",
+  "backtest_end": "auto",
+  "git_commit": "ac4f491",
+  "initial_capital": 10000.0,
+  "benchmark": "EUNL.DE",
+  "warmup_days": 273,
+  "rebal_weekday": 0,
+  "alphas_active": [
+    {
+      "name": "momentum",
+      "confidence": 0.05,
+      "return_scale": 0.04
+    },
+    {
+      "name": "sector_momentum",
+      "confidence": 0.04,
+      "return_scale": 0.03
+    },
+    {
+      "name": "mean_reversion",
+      "confidence": 0.03,
+      "return_scale": 0.02
+    },
+    {
+      "name": "vol_timing",
+      "confidence": 0.03,
+      "return_scale": 0.02
+    }
+  ],
+  "optimizer_params": {
+    "max_position": 0.1,
+    "turnover_penalty": 0.002,
+    "slippage_pct": 0.0005,
+    "tau": 0.05,
+    "risk_aversion": 2.5
+  },
+  "risk_free_rate": 0.04,
+  "ic_gate": {
+    "enabled": true,
+    "min_ic": 0.0,
+    "window": 63,
+    "note": "models with rolling Spearman IC < min_ic are excluded from BL views"
+  }
+}

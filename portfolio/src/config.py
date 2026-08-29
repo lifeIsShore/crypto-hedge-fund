@@ -395,7 +395,7 @@ ASSET_UNIVERSE = [
     'RWE.DE', 'CON.DE', 'FRE.DE', 'VNA.DE', 'HEN3.DE', 'BEI.DE', 'ZAL.DE', 
     'MTX.DE', 'NDX1.DE', 'ARGX.DE', 'UCB.DE', 'SHL.DE', 
     'COK.DE', 'AIR.DE', 'ZEGB.DE', 'R6C0.DE', 'TOTB.DE', 'BPE5.DE', 'ASME.DE', 
-    'NOV.DE', 'S92.DE',
+    'S92.DE',
 
     # --- Financials & Consumer ---
     '3V64.DE', 'CMC.DE', 'NCB.DE', 'GOS.DE', 'DWD.DE', 'BRYN.DE', 'AXP.DE', 

@@ -1,0 +1,6 @@
+run_id,timestamp,backtest_start,backtest_end,n_days,n_years,sharpe_port,cagr_port,mdd_port,sortino_port,calmar_port,info_ratio,alpha_annualised,total_return_port,total_return_bench,alphas,git_commit,notes
+20260829_012854,2026-08-28T23:28:56.728046+00:00,2023-01-23,2026-08-18,921,3.65,1.423,0.2466,-0.1813,2.073,1.36,0.921,0.0873,1.2378,0.7871,momentum+sector_momentum+mean_reversion+vol_timing,ac4f491,var_21d deployed
+20260829_094256,2026-08-29T07:42:56.852156+00:00,2023-01-23,2026-08-18,921,3.65,1.462,0.2601,-0.1849,2.142,1.407,1.07,0.0969,1.3278,0.7871,momentum+sector_momentum+mean_reversion+vol_timing,ac4f491,phase1-ic-gate-enabled
+20260829_114528,2026-08-29T09:45:28.213331+00:00,2023-01-23,2026-08-18,921,3.65,1.462,0.2601,-0.1849,2.142,1.407,1.07,0.0969,1.3278,0.7871,momentum+sector_momentum+mean_reversion+vol_timing,ac4f491, phase1-ic-gate-enabled-retry
+20260829_120045,2026-08-29T10:00:46.076942+00:00,2023-01-23,2026-08-18,921,3.65,1.462,0.2601,-0.1849,2.142,1.407,1.07,0.0969,1.3278,0.7871,momentum+sector_momentum+mean_reversion+vol_timing,ac4f491,phase1-ic-gate-log-fix
+20260829_151151,2026-08-29T13:11:51.889461+00:00,2023-01-23,2026-08-18,921,3.65,1.462,0.2601,-0.1849,2.142,1.407,1.07,0.0969,1.3278,0.7871,momentum+sector_momentum+mean_reversion+vol_timing,ac4f491,phase1-ic-gate-unicode-fix

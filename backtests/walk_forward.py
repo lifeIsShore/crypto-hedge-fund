@@ -211,6 +211,50 @@ def compute_covariance(prices_slice: pd.DataFrame, tickers: list):
     return cov, valid_tickers
 
 
+# ── Backtest IC Gate ─────────────────────────────────────────────────────────
+# Tracks per-model rolling Spearman IC during the simulation (no DB required).
+# Any model whose rolling IC drops below MIN_BACKTEST_IC is excluded from BL
+# views that step — its signal is not passed to Black-Litterman.
+# This mirrors the live `is_live_approved()` gate in engine/alpha/base.py.
+
+MIN_BACKTEST_IC = 0.0   # block any model with strictly negative rolling IC
+
+
+class BacktestICTracker:
+    """
+    Tracks per-model rolling Spearman IC during walk-forward simulation.
+    IC = Spearman rank correlation between predicted signal and realised 1-step return.
+    Updated once per rebalancing step after realised returns become known.
+    """
+    def __init__(self, window: int = 63):
+        self.window = window
+        self._history: dict = {}   # model_name -> [(signal, return), ...]
+
+    def update(self, model_name: str, signals: pd.Series, fwd_returns: pd.Series):
+        """Append (signal, realised_return) pairs for common tickers."""
+        common = signals.index.intersection(fwd_returns.index)
+        if len(common) < 3:
+            return
+        pairs = list(zip(signals[common].values, fwd_returns[common].values))
+        self._history.setdefault(model_name, []).extend(pairs)
+        # Keep only the most recent `window` observations
+        self._history[model_name] = self._history[model_name][-self.window:]
+
+    def rolling_ic(self, model_name: str) -> float:
+        """Spearman IC for model_name over the last window obs, or 0.05 if too few."""
+        from scipy.stats import spearmanr
+        pairs = self._history.get(model_name, [])
+        if len(pairs) < 10:
+            return 0.05   # insufficient history — give benefit of the doubt
+        signals_arr, returns_arr = zip(*pairs)
+        ic, _ = spearmanr(signals_arr, returns_arr)
+        return float(ic) if not np.isnan(ic) else 0.05
+
+    def is_approved(self, model_name: str) -> bool:
+        """True if model's rolling IC >= MIN_BACKTEST_IC."""
+        return self.rolling_ic(model_name) >= MIN_BACKTEST_IC
+
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 def run_walk_forward(start_date: str = None, end_date: str = None) -> pd.DataFrame:
@@ -255,6 +299,7 @@ def run_walk_forward(start_date: str = None, end_date: str = None) -> pd.DataFra
     benchmark_value = INITIAL_CAPITAL
     current_weights = pd.Series(0.0, index=tickers)
     results = []
+    ic_tracker = BacktestICTracker(window=63)   # rolling IC gate (mirrors live is_live_approved)
 
     for i, t in enumerate(backtest_dates):
         # Only rebalance on Mondays (or first date)
@@ -297,11 +342,29 @@ def run_walk_forward(start_date: str = None, end_date: str = None) -> pd.DataFra
                 )
 
                 try:
+                    # ── IC Gate: filter out models with negative rolling IC ──
+                    # After 10+ observations, any model with IC < 0 is excluded.
+                    # In the first ~10 rebal steps, all models pass (benefit of doubt).
+                    filtered_signals = signals_df[signals_df['ticker'].isin(valid_tickers)].copy()
+                    if not filtered_signals.empty:
+                        blocked_models = [
+                            m for m in filtered_signals['model_name'].unique()
+                            if not ic_tracker.is_approved(m)
+                        ]
+                        if blocked_models:
+                            logger.debug(
+                                f"[{t.date()}] IC gate blocked: {blocked_models} "
+                                f"(ICs: { {m: round(ic_tracker.rolling_ic(m), 4) for m in blocked_models} })"
+                            )
+                            filtered_signals = filtered_signals[
+                                ~filtered_signals['model_name'].isin(blocked_models)
+                            ]
+
                     views = build_bl_views_calibrated(
-                        signals_df=signals_df[signals_df['ticker'].isin(valid_tickers)],
+                        signals_df=filtered_signals,
                         tickers=valid_tickers,
                         cov_matrix=cov_matrix,
-                        models_dict=None,   # no live-approval gating in backtest
+                        models_dict=None,
                         tau=0.05,
                     )
 
@@ -323,6 +386,27 @@ def run_walk_forward(start_date: str = None, end_date: str = None) -> pd.DataFra
                         apply_tax_penalty=False, # no tax drag in backtest
                     )
                     current_weights = new_weights.reindex(tickers, fill_value=0.0)
+
+                    # ── Feed realised returns back into IC tracker ─────────────
+                    # Uses next-period prices to compute actual 1-step returns,
+                    # then updates the rolling IC for each model.
+                    if not signals_df.empty and prices_next is not None:
+                        realised = pd.Series(dtype=float)
+                        for ticker in valid_tickers:
+                            p0 = float(prices_t[ticker].iloc[-1]) if ticker in prices_t.columns else None
+                            p1_val = (
+                                prices.loc[t_next, ticker]
+                                if t_next in prices.index and ticker in prices.columns
+                                else None
+                            )
+                            if p0 and p0 > 0 and p1_val is not None and not pd.isna(p1_val):
+                                realised[ticker] = float(p1_val) / p0 - 1.0
+                        for model_name in signals_df['model_name'].unique():
+                            model_sigs = (
+                                signals_df[signals_df['model_name'] == model_name]
+                                .set_index('ticker')['expected_return']
+                            )
+                            ic_tracker.update(model_name, model_sigs, realised)
 
                 except Exception as e:
                     logger.warning(f"[{t.date()}] BL/optimizer error: {e} — keeping prior weights")
@@ -368,6 +452,14 @@ def run_walk_forward(start_date: str = None, end_date: str = None) -> pd.DataFra
         if i % 50 == 0:
             logger.info(f"[{t.date()}] portfolio={portfolio_value:,.0f} "
                         f"benchmark={benchmark_value:,.0f}")
+
+    # ── IC Gate summary ───────────────────────────────────────────────────────
+    _IC_MODELS = ['mean_reversion', 'momentum', 'sector_momentum', 'vol_timing', 'ml_model']
+    print("\n-- Rolling IC Summary (last 63 rebalancing steps) --")
+    for _m in _IC_MODELS:
+        _ic = ic_tracker.rolling_ic(_m)
+        _status = "[APPROVED]" if ic_tracker.is_approved(_m) else "[BLOCKED]"
+        print(f"  {_m:<22} IC={_ic:+.4f}  {_status}")
 
     df = pd.DataFrame(results)
     df['date'] = pd.to_datetime(df['date'])
@@ -423,6 +515,12 @@ def _build_strategy_config(
             'risk_aversion':   2.5,
         },
         'risk_free_rate': 0.04,
+        'ic_gate': {
+            'enabled':    True,
+            'min_ic':     MIN_BACKTEST_IC,
+            'window':     63,
+            'note':       'models with rolling Spearman IC < min_ic are excluded from BL views',
+        },
     }
 
 
@@ -441,6 +539,11 @@ if __name__ == '__main__':
     run_id     = args.run_id or generate_run_id()
     run_dir    = get_run_dir(run_id)
     git_commit = _get_git_commit()
+
+    # Add file handler to logger for this run
+    file_handler = logging.FileHandler(run_dir / 'run.log', mode='w', encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    logger.addHandler(file_handler)
 
     logger.info(f"Run ID: {run_id}  |  Output dir: {run_dir}")
 
