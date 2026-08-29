@@ -77,6 +77,7 @@ FAMILY_FLAG_MAP = {
     'target_refinement': 'ENABLE_ALPHA_TARGET',
     'stationary_only': 'ENABLE_STATIONARY_ONLY',
     'regularized_models': 'ENABLE_REGULARIZED_MODELS',
+    'short_volume': 'ENABLE_SHORT_VOLUME_FEATURES',
 }
 CLI_FLAG_MAP = {
     'db_regime': '--enable-db-regime',
@@ -87,6 +88,7 @@ CLI_FLAG_MAP = {
     'target_refinement': '--enable-alpha-target',
     'stationary_only': '--enable-stationary-only',
     'regularized_models': '--enable-regularized-models',
+    'short_volume': '--enable-short-volume',
 }
 
 # Gate 2 thresholds (from 00-OVERVIEW.md)
@@ -312,7 +314,8 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '--family',
-        choices=['db_regime', 'pead', 'earnings', 'crosssectional', 'acceleration', 'target_refinement', 'stationary_only', 'regularized_models'],
+        choices=['db_regime', 'pead', 'earnings', 'crosssectional', 'acceleration',
+                 'target_refinement', 'stationary_only', 'regularized_models', 'short_volume'],
         help="Feature family to test"
     )
     group.add_argument(

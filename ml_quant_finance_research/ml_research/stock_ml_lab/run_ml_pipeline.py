@@ -74,6 +74,7 @@ ENABLE_CROSSSECTIONAL_FEATURES    = False   # Phase 1B
 ENABLE_ACCELERATION_FEATURES      = False   # Phase 1B
 ENABLE_ALPHA_TARGET               = False   # Phase 1D
 ENABLE_STATIONARY_ONLY            = False   # Phase 2
+ENABLE_SHORT_VOLUME_FEATURES      = False   # Phase 4 — FINRA daily short volume
 
 # ── Gate 1: holdout start (from holdout_config.txt, locked by gate1_holdout.py) ─
 # All training data is filtered to dates strictly before HOLDOUT_START until Gate 4
@@ -99,6 +100,7 @@ _g2_parser.add_argument('--enable-acceleration',   action='store_true')
 _g2_parser.add_argument('--enable-alpha-target',   action='store_true')
 _g2_parser.add_argument('--enable-stationary-only', action='store_true')
 _g2_parser.add_argument('--enable-regularized-models', action='store_true')
+_g2_parser.add_argument('--enable-short-volume', action='store_true')
 _g2_parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for all models (default: 42). '
                              'Used by gate2_run.py --n-seeds for variance estimation.')
@@ -112,6 +114,7 @@ if _g2_args.enable_crosssectional: ENABLE_CROSSSECTIONAL_FEATURES = True
 if _g2_args.enable_acceleration:   ENABLE_ACCELERATION_FEATURES   = True
 if _g2_args.enable_alpha_target:   ENABLE_ALPHA_TARGET            = True
 if _g2_args.enable_stationary_only: ENABLE_STATIONARY_ONLY        = True
+if _g2_args.enable_short_volume:    ENABLE_SHORT_VOLUME_FEATURES  = True
 if any(v for k, v in vars(_g2_args).items() if k != 'seed'):
     log.info(
         f"Gate 2 CLI overrides active: db_regime={ENABLE_DB_REGIME_FEATURES}, "
@@ -159,7 +162,7 @@ CORE_FEATURE_PREFIXES = (
     "rsi_", "macd_", "bb_position", "atr_norm", "stoch_k",
     "cs_ret_", "cs_vol_", "cs_sector_excess_", "ret_accel_", "vol_regime", "bb_width", "rsi_momentum"
 )
-OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_", "db_")   # db_ added Phase 1A
+OPTIONAL_FEATURE_PREFIXES = ("fund_", "opt_", "macro_", "db_", "sv_")   # sv_ added Phase 4
 
 
 def is_core_feature(col: str) -> bool:
@@ -262,7 +265,8 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None, benchmark_df=None, prebuilt_features=None):
+def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None,
+               benchmark_df=None, prebuilt_features=None, sv_data=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
     
@@ -271,21 +275,38 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_feature
     else:
         log.info(f"  [{ticker}] Building features…")
         try:
+            # Resolve US ticker for FINRA short volume lookup via TICKER_MAPPING
+            sv_features_df = None
+            if ENABLE_SHORT_VOLUME_FEATURES and sv_data is not None:
+                from utils.finra_short_volume import compute_short_volume_features
+                # Try direct match first, then US mapping
+                try:
+                    from utils.data_loader import TICKER_MAPPING
+                except Exception:
+                    TICKER_MAPPING = {}
+                us_ticker = TICKER_MAPPING.get(ticker, ticker)
+                sv_ts = sv_data.get(us_ticker)
+                if sv_ts is not None and not sv_ts.empty:
+                    sv_features_df = compute_short_volume_features(
+                        sv_ts, price_index=prices[ticker].index, ticker=ticker
+                    )
+
             feat_df = build_features(
             prices[ticker],
             fundamentals=fundamentals.get(ticker),
             macro_df=macro,
             options_dict=options_dict,
             horizons=HORIZONS,
-            ticker=ticker,                                       # NEW — Phase 1A
-            cs_cache=cs_features_cache if ENABLE_CROSSSECTIONAL_FEATURES else None, # NEW — Phase 1B
-            enable_db_regime=ENABLE_DB_REGIME_FEATURES,           # NEW — Phase 1A
-            enable_pead=ENABLE_PEAD_FEATURES,                     # NEW — Phase 1A
-            enable_earnings=ENABLE_EARNINGS_CALENDAR_FEATURES,    # NEW — Phase 1A
-            enable_crosssectional=ENABLE_CROSSSECTIONAL_FEATURES, # NEW — Phase 1B
-            enable_acceleration=ENABLE_ACCELERATION_FEATURES,     # NEW — Phase 1B
-            benchmark_df=benchmark_df,                            # NEW — Phase 1D
-            enable_alpha_target=ENABLE_ALPHA_TARGET               # NEW — Phase 1D
+            ticker=ticker,
+            cs_cache=cs_features_cache if ENABLE_CROSSSECTIONAL_FEATURES else None,
+            enable_db_regime=ENABLE_DB_REGIME_FEATURES,
+            enable_pead=ENABLE_PEAD_FEATURES,
+            enable_earnings=ENABLE_EARNINGS_CALENDAR_FEATURES,
+            enable_crosssectional=ENABLE_CROSSSECTIONAL_FEATURES,
+            enable_acceleration=ENABLE_ACCELERATION_FEATURES,
+            benchmark_df=benchmark_df,
+            enable_alpha_target=ENABLE_ALPHA_TARGET,
+            sv_features_df=sv_features_df,
         )
         except Exception as e:
             log.warning(f"  [{ticker}] Feature build failed: {e}")
@@ -653,6 +674,31 @@ def main():
         log.warning(f"  Options fetch failed ({e}); continuing without options features")
         options_all = {}
 
+    # ── 1d-ii. FINRA Short Volume (Phase 4) ──────────────────────────────────
+    sv_data_all = {}
+    if ENABLE_SHORT_VOLUME_FEATURES:
+        log.info("Step 1d-ii — Fetching FINRA short volume (US tickers via TICKER_MAPPING)…")
+        try:
+            from utils.finra_short_volume import fetch_short_volume_series
+            try:
+                from utils.data_loader import TICKER_MAPPING
+            except Exception:
+                TICKER_MAPPING = {}
+            # Collect unique US tickers (direct US + mapped US equivalents for EU tickers)
+            us_tickers_needed = set()
+            for t in prices:
+                us_eq = TICKER_MAPPING.get(t, t)
+                # US tickers have no '.' exchange suffix, or are in the mapping values
+                if '.' not in us_eq or us_eq == t:
+                    us_tickers_needed.add(us_eq)
+            log.info(f"  Fetching FINRA sv for {len(us_tickers_needed)} unique US tickers…")
+            for us_t in us_tickers_needed:
+                sv_data_all[us_t] = fetch_short_volume_series(us_t)
+            log.info(f"  FINRA sv fetch complete: {sum(1 for v in sv_data_all.values() if not v.empty)}/{len(us_tickers_needed)} had data")
+        except Exception as e:
+            log.warning(f"  FINRA short volume fetch failed ({e}); continuing without sv features")
+            sv_data_all = {}
+
     # ── 1e. Phase 1B precomputations ──────────────────────
     cs_features_cache = {}
     if ENABLE_CROSSSECTIONAL_FEATURES:
@@ -717,7 +763,10 @@ def main():
     
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all, cs_features_cache=cs_features_cache, benchmark_df=benchmark_df, prebuilt_features=prebuilt_features)
+        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all,
+                            cs_features_cache=cs_features_cache, benchmark_df=benchmark_df,
+                            prebuilt_features=prebuilt_features,
+                            sv_data=sv_data_all if ENABLE_SHORT_VOLUME_FEATURES else None)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 

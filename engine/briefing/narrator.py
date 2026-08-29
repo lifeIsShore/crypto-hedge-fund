@@ -33,6 +33,8 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 # editorializing in the "thinking" phase, which works against the
 # no-generic-filler goal. Left available for comparison, not the default.
 AVAILABLE_MODELS = [
+    "deepseek-v3.1:671b-cloud",
+    "qwen3-coder:480b-cloud",
     "qwen3:8b",
     "llama3.1:8b",
     "qwen2.5-coder:14b",
@@ -40,7 +42,8 @@ AVAILABLE_MODELS = [
     "deepseek-r1:8b",
     "deepseek-r1:14b",
 ]
-DEFAULT_MODEL = "qwen3:8b"
+CLOUD_MODEL = "deepseek-v3.1:671b-cloud"
+DEFAULT_LOCAL_MODEL = "qwen3:8b"
 
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
@@ -110,37 +113,55 @@ def generate_narrative(briefing_data: dict, model: str = None) -> dict:
 
     Returns dict: {ok, narrative, model, generated_at, error}
     """
-    model = model or DEFAULT_MODEL
+    primary_model = model or CLOUD_MODEL
+    fallback_model = DEFAULT_LOCAL_MODEL
+    
     system_prompt = _load_prompt()
     result = {
         "ok": False,
         "narrative": "",
-        "model": model,
+        "model": primary_model,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "error": None,
         "tax_advice": None,
     }
-    try:
-        raw, metrics = _call_ollama(model, system_prompt, briefing_data)
-        _log_llm_metrics("briefing_narrative", model, metrics)
+    
+    # Architecture: Try primary (usually cloud), fallback to local if quota exhausted/unavailable
+    models_to_try = [primary_model]
+    if primary_model != fallback_model:
+        models_to_try.append(fallback_model)
         
-        narrative = _strip_think_tags(raw)
-        if not narrative:
-            raise ValueError("Model returned empty response.")
-        
-        tax_advice = None
-        if "## Tax Advisor" in narrative:
-            parts = narrative.split("## Tax Advisor")
-            narrative = parts[0].strip()
-            tax_advice = parts[1].strip()
+    for attempt_model in models_to_try:
+        try:
+            raw, metrics = _call_ollama(attempt_model, system_prompt, briefing_data)
+            _log_llm_metrics("briefing_narrative", attempt_model, metrics)
             
-        result["ok"] = True
-        result["narrative"] = narrative
-        result["tax_advice"] = tax_advice
-    except urllib.error.URLError as e:
-        result["error"] = f"Could not reach Ollama at {OLLAMA_URL} — is it running? ({e})"
-    except Exception as e:
-        result["error"] = str(e)
+            narrative = _strip_think_tags(raw)
+            if not narrative:
+                raise ValueError("Model returned empty response.")
+            
+            tax_advice = None
+            if "## Tax Advisor" in narrative:
+                parts = narrative.split("## Tax Advisor")
+                narrative = parts[0].strip()
+                tax_advice = parts[1].strip()
+                
+            result["ok"] = True
+            result["narrative"] = narrative
+            result["tax_advice"] = tax_advice
+            result["model"] = attempt_model
+            result["error"] = None # clear any prior errors
+            break # Success, stop trying models
+            
+        except urllib.error.URLError as e:
+            result["error"] = f"Could not reach Ollama at {OLLAMA_URL} — is it running? ({e})"
+        except urllib.error.HTTPError as e:
+            result["error"] = f"HTTP Error from Ollama (possibly Cloud quota exhausted or model not pulled): {e}"
+        except Exception as e:
+            result["error"] = str(e)
+            
+        if attempt_model != models_to_try[-1]:
+            print(f"[WARN] Failed with {attempt_model}, falling back to {fallback_model}...")
 
     _write_cache(result)
     return result

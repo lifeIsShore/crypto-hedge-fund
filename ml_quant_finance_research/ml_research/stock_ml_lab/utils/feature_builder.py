@@ -6,8 +6,9 @@ Feature families:
   3. Technical (RSI, MACD, Bollinger, ATR, Stochastic)
   4. Fundamental (PE, PB, EV/EBITDA, margins, FCF)
   5. Macro (Fed funds, CPI, yield curve, DXY)
-  6. Options (ATM IV, put/call ratio, skew, IV-RV spread)  ← NEW
-  7. Short interest (short % float, days-to-cover, change)  ← NEW
+  6. Options (ATM IV, put/call ratio, skew, IV-RV spread)
+  7. Short interest via yfinance (short % float, days-to-cover, change)
+  8. FINRA short volume (daily sv_ratio, z-score, momentum)  ← Phase 4
 
 Feature selection (runs once after the first RF fold):
   - Variance threshold: drop near-constant features
@@ -128,6 +129,55 @@ def add_options_features(df, options_dict: dict):
             df[col_name] = np.nan
         else:
             df[col_name] = float(val)
+    return df
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURE FAMILY 8 — FINRA Short Volume (Phase 4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def add_short_volume_features(df: pd.DataFrame, sv_features_df: pd.DataFrame,
+                               ticker: str = "") -> pd.DataFrame:
+    """
+    Merges precomputed FINRA short volume features into the main feature DataFrame.
+
+    sv_features_df: output of finra_short_volume.compute_short_volume_features()
+                    — a DataFrame indexed by Date with columns:
+                      sv_short_ratio, sv_short_ratio_5d, sv_short_ratio_z21,
+                      sv_short_ratio_chg5, sv_rel_short_vol
+
+    All columns are prefixed 'sv_' — treated as OPTIONAL by the pipeline
+    (drop_uncovered_optional_columns will remove them if all NaN for a ticker).
+
+    LOOKAHEAD PROTECTION: sv_features already represents T-day data that is
+    published next-day by FINRA. We apply a 1-day lag here to be safe.
+    """
+    SV_COLS = [
+        "sv_short_ratio",
+        "sv_short_ratio_5d",
+        "sv_short_ratio_z21",
+        "sv_short_ratio_chg5",
+        "sv_rel_short_vol",
+    ]
+    # Initialise all sv_ columns to NaN — graceful if sv_features_df is empty
+    for col in SV_COLS:
+        df[col] = np.nan
+
+    if sv_features_df is None or sv_features_df.empty:
+        return df
+
+    # Reindex to ML DataFrame's dates, forward-fill gaps (weekends / holidays)
+    aligned = sv_features_df.reindex(df.index, method="ffill", limit=5)
+
+    # 1-day lag: FINRA publishes T+1, so we shift to avoid any same-day lookahead
+    aligned = aligned.shift(1)
+
+    for col in SV_COLS:
+        if col in aligned.columns:
+            df[col] = aligned[col].values
+
+    n_filled = df["sv_short_ratio"].notna().sum()
+    log.debug(f"[FINRA] {ticker}: {n_filled}/{len(df)} rows filled with short volume")
     return df
 
 
@@ -584,41 +634,43 @@ def get_feature_selection_report(X: pd.DataFrame, importance_dict: dict = None) 
 
 def build_features(price_df, fundamentals=None, macro_df=None,
                    options_dict=None, horizons=None,
-                   ticker=None,                          # NEW — Phase 1A
-                   cs_cache=None,                        # NEW — Phase 1B
-                   enable_db_regime=False,                # NEW — Phase 1A
-                   enable_pead=False,                      # NEW — Phase 1A
-                   enable_earnings=False,                  # NEW — Phase 1A
-                   enable_crosssectional=False,            # NEW — Phase 1B
-                   enable_acceleration=False,              # NEW — Phase 1B
-                   benchmark_df=None,                      # NEW — Phase 1D
-                   enable_alpha_target=False):             # NEW — Phase 1D
+                   ticker=None,                          # Phase 1A
+                   cs_cache=None,                        # Phase 1B
+                   enable_db_regime=False,               # Phase 1A
+                   enable_pead=False,                    # Phase 1A
+                   enable_earnings=False,                # Phase 1A
+                   enable_crosssectional=False,          # Phase 1B
+                   enable_acceleration=False,            # Phase 1B
+                   benchmark_df=None,                    # Phase 1D
+                   enable_alpha_target=False,            # Phase 1D
+                   sv_features_df=None):                 # Phase 4 — FINRA short volume
     """
     Builds all feature families for one ticker.
 
     Args:
-        price_df:     OHLCV DataFrame (yfinance format)
-        fundamentals: dict from fetch_fundamentals()
-        macro_df:     macro DataFrame from fetch_macro_data()
-        options_dict: dict from options_scraper.fetch_options_features()  ← NEW
-        horizons:     list of prediction horizons in days
-        ticker:              current ticker symbol; required if enable_pead
-                             or enable_earnings is True.                    ← Phase 1A
-        cs_cache:            precomputed cross-sectional matrices           ← Phase 1B
-        enable_db_regime:    if True, calls add_db_regime_features().       ← Phase 1A
-        enable_pead:         if True, calls add_pead_features(). Requires
-                             ticker to be set.                              ← Phase 1A
-        enable_earnings:     if True, calls add_earnings_calendar_features().
-                             Requires ticker to be set.                     ← Phase 1A
-        enable_crosssectional: if True, calls add_crosssectional_features() ← Phase 1B
-        enable_acceleration:   if True, calls add_acceleration_features()   ← Phase 1B
+        price_df:         OHLCV DataFrame (yfinance format)
+        fundamentals:     dict from fetch_fundamentals()
+        macro_df:         macro DataFrame from fetch_macro_data()
+        options_dict:     dict from options_scraper.fetch_options_features()
+        horizons:         list of prediction horizons in days
+        ticker:           current ticker symbol (required for PEAD/Earnings/CS)
+        cs_cache:         precomputed cross-sectional matrices
+        enable_db_regime: if True, adds DB regime features
+        enable_pead:      if True, adds PEAD features
+        enable_earnings:  if True, adds earnings calendar features
+        enable_crosssectional: if True, adds cross-sectional features
+        enable_acceleration:   if True, adds momentum acceleration features
+        benchmark_df:     benchmark price df for alpha target
+        enable_alpha_target:   if True, uses alpha-vs-benchmark target
+        sv_features_df:   precomputed FINRA short volume DataFrame (Phase 4)
+                          — indexed by Date, output of
+                            finra_short_volume.compute_short_volume_features()
 
     Returns:
         DataFrame with all features + target columns.
 
-    All Phase 1A/B flags default to False, preserving exact prior behaviour
-    (baseline_v1) when the caller passes none of them. See
-    before-go-live/better-alpha/01-feature-additions.md.
+    All Phase flags default to False, preserving exact prior behaviour
+    (baseline_v1) when the caller passes none of them.
     """
     if horizons is None:
         horizons = [5, 21, 63]
@@ -632,6 +684,8 @@ def build_features(price_df, fundamentals=None, macro_df=None,
         df = add_macro_features(df, macro_df)
     if options_dict:
         df = add_options_features(df, options_dict)
+    if sv_features_df is not None:                       # Phase 4 — FINRA short volume
+        df = add_short_volume_features(df, sv_features_df, ticker=ticker or "")
     if enable_db_regime:
         df = add_db_regime_features(df)
     if enable_pead:
