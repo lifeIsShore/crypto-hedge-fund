@@ -173,6 +173,12 @@ def step_ingest():
     except Exception as e:
         logger.warning(f"[ingest] On-chain metric ingestion failed (non-fatal): {e}")
 
+    try:
+        from engine.data.sentiment_scraper import run_sentiment_ingestion
+        run_sentiment_ingestion()
+    except Exception as e:
+        logger.warning(f"[ingest] Sentiment ingestion failed (non-fatal): {e}")
+
 
 def _mirror_all_state_files():
     """

@@ -237,3 +237,23 @@ def fetch_onchain_data():
     except Exception as e:
         log.warning(f"Failed to load onchain metrics from DB: {e}")
         return pd.DataFrame()
+
+def fetch_sentiment_data():
+    """
+    Fetches daily sentiment scores from the `crypto_sentiment` table.
+    """
+    import sqlite3
+    DB_PATH = _ROOT / "engine" / "db" / "hedge_fund.db"
+    if not DB_PATH.exists():
+        return pd.DataFrame()
+        
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query("SELECT date as Date, sentiment_score FROM crypto_sentiment ORDER BY date", conn)
+        df['Date'] = pd.to_datetime(df['Date']).dt.date
+        df = df.set_index('Date')
+        conn.close()
+        return df
+    except Exception as e:
+        log.warning(f"Failed to load crypto_sentiment table: {e}")
+        return pd.DataFrame()

@@ -212,8 +212,8 @@ def add_acceleration_features(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def add_alternative_features(df: pd.DataFrame, funding_rates_df: pd.DataFrame = None, onchain_df: pd.DataFrame = None) -> pd.DataFrame:
-    """Integrates alternative crypto data like funding rates and onchain metrics."""
+def add_alternative_features(df: pd.DataFrame, funding_rates_df: pd.DataFrame = None, onchain_df: pd.DataFrame = None, sentiment_df: pd.DataFrame = None) -> pd.DataFrame:
+    """Integrates alternative crypto data like funding rates, onchain metrics, and sentiment."""
     if funding_rates_df is not None and not funding_rates_df.empty:
         # Join funding rates
         df = df.join(funding_rates_df, how='left')
@@ -241,6 +241,14 @@ def add_alternative_features(df: pd.DataFrame, funding_rates_df: pd.DataFrame = 
         if 'stablecoin_mcap' in df.columns:
             df['stablecoin_inflow_30d'] = df['stablecoin_mcap'].pct_change(30)
             df['stablecoin_inflow_zscore'] = (df['stablecoin_inflow_30d'] - df['stablecoin_inflow_30d'].rolling(90).mean()) / (df['stablecoin_inflow_30d'].rolling(90).std() + 1e-9)
+            
+    if sentiment_df is not None and not sentiment_df.empty:
+        # Join sentiment
+        df = df.join(sentiment_df, how='left')
+        df['sentiment_score'] = df['sentiment_score'].ffill(limit=3).fillna(0)  # Neutral fallback
+        
+        if 'sentiment_score' in df.columns:
+            df['sentiment_momentum_3d'] = df['sentiment_score'] - df['sentiment_score'].shift(3)
             
     return df
 
@@ -356,7 +364,8 @@ def build_features(price_df, fundamentals=None, macro_df=None,
                    enable_alpha_target=False,
                    sv_features_df=None,
                    funding_rates_df=None,
-                   onchain_df=None):
+                   onchain_df=None,
+                   sentiment_df=None):
     
     if horizons is None:
         horizons = [5, 21, 63]
@@ -377,7 +386,7 @@ def build_features(price_df, fundamentals=None, macro_df=None,
     if enable_acceleration:
         df = add_acceleration_features(df)
         
-    df = add_alternative_features(df, funding_rates_df, onchain_df)
+    df = add_alternative_features(df, funding_rates_df, onchain_df, sentiment_df)
         
     df = add_target(df, horizons=horizons, benchmark_df=benchmark_df, enable_alpha_target=enable_alpha_target)
 
