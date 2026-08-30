@@ -79,8 +79,9 @@ function renderSignal(d) {
 
 // ── HOLDINGS ──────────────────────────────────────────
 const ASSET_COLORS = {
-  'APC.DE':'var(--accent)', 'MSF.DE':'var(--blue)', 'SAP.DE':'var(--amber)',
-  'ALV.DE':'#a78bfa', 'EUNL.DE':'var(--accent)', 'AMZN':'var(--amber)', 'TSLA':'var(--red)'
+  'BTC/EUR':'#f7931a', 'ETH/EUR':'#627eea', 'SOL/EUR':'#14f195',
+  'BNB/EUR':'#f3ba2f', 'XRP/EUR':'#23292f', 'DOGE/EUR':'#c2a633', 'ADA/EUR':'#0033ad',
+  'TRX/EUR':'#ff0013', 'LINK/EUR':'#2a5ada', 'DOT/EUR':'#e6007a'
 };
 
 function renderHoldings(d) {
@@ -280,7 +281,7 @@ window.METRICS = {
   sharpe:    { title:'Sharpe Ratio',             formula:'(Annualised Return − Risk-Free Rate)\n÷ Annualised Volatility\n\nRF Rate: 2.0% p.a.\nAnnualisation: √252',   meaning:'How much return you earn per unit of total risk.',                                              importance:'Separates skill from luck.',           target:'> 1.0 Good · > 2.0 Excellent' },
   calmar:    { title:'Calmar Ratio',              formula:'Annualised Return\n÷ |Maximum Drawdown|',                                                                      meaning:'Return earned per 1% of maximum loss endured.',                                                importance:'Critical for psychological resilience.', target:'> 0.5 Acceptable · > 1.0 Strong' },
   maxdd:     { title:'Maximum Drawdown',          formula:'(Trough Value − Peak Value)\n÷ Peak Value × 100',                                                              meaning:'Largest % drop from an all-time high before recovering.',                                       importance:'Most psychologically important metric.', target:'< −15% Acceptable · < −10% Excellent' },
-  info:      { title:'Information Ratio',         formula:'(Portfolio Return − Benchmark Return)\n÷ Tracking Error\n\nBenchmark: MSCI World (EUNL.DE)',                   meaning:'Whether active rebalancing beats a passive index hold.',                                        importance:'Answers: "Am I better than just buying EUNL.DE?"', target:'> 0.2 Beating benchmark · > 0.5 Strong alpha' },
+  info:      { title:'Information Ratio',         formula:'(Portfolio Return − Benchmark Return)\n÷ Tracking Error\n\nBenchmark: Bitcoin (BTC/EUR)',                   meaning:'Whether active rebalancing beats a passive index hold.',                                        importance:'Answers: "Am I better than just buying BTC/EUR?"', target:'> 0.2 Beating benchmark · > 0.5 Strong alpha' },
   profit:    { title:'Profit Factor',             formula:'Σ Winning Trades\n÷ |Σ Losing Trades|',                                                                       meaning:'Euros made per euro lost on closed trades.',                                                    importance:'Simple edge measurement.',             target:'> 1.5 Winning edge · > 2.0 Professional' },
   return:    { title:'Portfolio Return % (Real)', formula:'Net P&L / Total Deposited × 100\n\nBased on actual ledger cash flows',                                        meaning:'Your honest % gain or loss on capital deposited, after all fees.',                              importance:'This is your true return.',            target:'> 5% annually · > 10% Strong' },
   current:   { title:'Current Value',             formula:'Cash + Σ (Shares × Current Price)',                                                                            meaning:'Total market value of your portfolio right now.',                                               importance:'Your actual wealth number.',           target:'Track month-on-month growth.' },

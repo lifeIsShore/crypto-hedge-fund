@@ -19,7 +19,7 @@
   <span style="color:var(--border)">·</span>
   <span>{{ equity_meta.days }} trading days</span>
   <span style="color:var(--border)">·</span>
-  <span style="color:var(--muted)">vs MSCI World (EUNL.DE)</span>
+  <span style="color:var(--muted)">vs Bitcoin (BTC/EUR)</span>
 </div>
 {% else %}
 <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;
@@ -87,13 +87,13 @@
   <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
     <div class="kpi-label info-point"
          data-title="VS BENCHMARK"
-         data-info="Annual excess return vs iShares MSCI World (EUNL.DE). This tells you whether the strategy added value above simply buying the market.">
+         data-info="Annual excess return vs Bitcoin (BTC/EUR). This tells you whether the strategy added value above simply buying the market.">
       VS BENCHMARK
     </div>
     <div class="kpi-value" style="color:{% if excess_cagr >= 0 %}var(--accent){% else %}var(--accent2){% endif %};font-size:22px;margin:6px 0">
       {% if excess_cagr >= 0 %}+{% endif %}{{ "%.1f"|format(excess_cagr * 100) }}%
     </div>
-    <div class="kpi-sub">annual excess vs EUNL.DE · {{ "%.1f"|format(cagr_p * 100) }}% vs {{ "%.1f"|format(cagr_b * 100) }}% benchmark</div>
+    <div class="kpi-sub">annual excess vs BTC/EUR · {{ "%.1f"|format(cagr_p * 100) }}% vs {{ "%.1f"|format(cagr_b * 100) }}% benchmark</div>
   </div>
 
   <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px">
@@ -417,7 +417,7 @@
               fill: false,
             },
             {
-              label: 'MSCI World (EUNL.DE)',
+              label: 'Bitcoin (BTC/EUR)',
               data: data.benchmark,
               borderColor: mutedColor,
               borderWidth: 1,

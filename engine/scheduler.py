@@ -50,7 +50,7 @@ try:
     TICKERS = ASSET_UNIVERSE
 except Exception as e:
     logger.error(f"Could not import ASSET_UNIVERSE from portfolio/src/config.py: {e}")
-    TICKERS = ['APC.DE', 'MSF.DE', 'NVDA', 'SAP.DE', 'EUNL.DE']
+    TICKERS = ['BTC/EUR', 'ETH/EUR', 'SOL/EUR', 'BNB/EUR', 'XRP/EUR']
 
 TODAY   = str(datetime.date.today())
 WEEKDAY = datetime.date.today().weekday()   # 0=Mon, 5=Sat, 6=Sun

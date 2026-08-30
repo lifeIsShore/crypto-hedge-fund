@@ -523,7 +523,7 @@ function renderOverlayChart() {
   const bb = first.benchmark[0] || 1;
   if (first.benchmark.length > 0) {
     datasets.push({
-      label: 'Benchmark (EUNL.DE)',
+      label: 'Benchmark (BTC/EUR)',
       data: first.benchmark.map(v => +((v / bb * 100).toFixed(2))),
       borderColor: MUTED, borderWidth: 1, borderDash: [4,3],
       pointRadius: 0, tension: 0.1, fill: false,
