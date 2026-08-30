@@ -29,17 +29,15 @@ from sqlalchemy import text
 logger = logging.getLogger(__name__)
 
 # Hard stop thresholds — configurable, document changes in TUNING-LOG.md
-STOP_LOSS_INDIVIDUAL = -0.15   # -15% from average cost basis (individual stocks)
-STOP_LOSS_ETF        = -0.12   # -12% for broad-market ETFs (lower vol, tighter stop)
+STOP_LOSS_INDIVIDUAL = -0.35   # -35% from average cost basis (individual altcoins)
+STOP_LOSS_ETF        = -0.25   # -25% for anchor assets (BTC/ETH) (lower vol, tighter stop)
 
 # Broad-market ETF suffixes / known ETF tickers that get the tighter threshold
 _ETF_SUFFIXES = ('.DE',)   # refined below by known-ETF check
 
-# Known ETF tickers (from portfolio/src/config.py ETF_TICKERS)
+# Anchor crypto assets that get the tighter "ETF-like" threshold
 _KNOWN_ETF_TICKERS = frozenset([
-    'EUNL.DE', 'VUSA.DE', 'VWCE.DE', 'EXS1.DE', 'EXXT.DE',
-    'SPPW.DE', 'IS3N.DE', 'IUSN.DE', 'XDWD.DE', 'ZPRV.DE',
-    'DBXD.DE', 'PPFD.SG', 'SLV',
+    'BTC/EUR', 'ETH/EUR',
 ])
 
 

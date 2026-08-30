@@ -177,17 +177,17 @@ def generate_order_queue(
     drawdown_buy_scalar = 1.0
     pause_buys = False
     
-    if drawdown <= -0.20:
+    if drawdown <= -0.40:
         pause_buys = True
-        _log_drawdown_event(drawdown, "Tier 3 (-20%)", "New BUY orders paused")
-        logger.warning(f"[Drawdown Protocol] -20% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs paused.")
-    elif drawdown <= -0.15:
+        _log_drawdown_event(drawdown, "Tier 3 (-40%)", "New BUY orders paused")
+        logger.warning(f"[Drawdown Protocol] -40% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs paused.")
+    elif drawdown <= -0.30:
         drawdown_buy_scalar = 0.5
-        _log_drawdown_event(drawdown, "Tier 2 (-15%)", "New BUY sizing reduced by 50%")
-        logger.warning(f"[Drawdown Protocol] -15% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs scaled by 0.5.")
-    elif drawdown <= -0.10:
-        _log_drawdown_event(drawdown, "Tier 1 (-10%)", "Alert only")
-        logger.info(f"[Drawdown Protocol] -10% threshold breached (drawdown {drawdown*100:.1f}%).")
+        _log_drawdown_event(drawdown, "Tier 2 (-30%)", "New BUY sizing reduced by 50%")
+        logger.warning(f"[Drawdown Protocol] -30% threshold breached (drawdown {drawdown*100:.1f}%). New BUYs scaled by 0.5.")
+    elif drawdown <= -0.20:
+        _log_drawdown_event(drawdown, "Tier 1 (-20%)", "Alert only")
+        logger.info(f"[Drawdown Protocol] -20% threshold breached (drawdown {drawdown*100:.1f}%).")
 
     # J3 — fetch Kelly + regime scalars once, outside the loop
     kelly_scalars = get_kelly_scalars(list(suggested_weights.index)) if apply_kelly_sizing else {}

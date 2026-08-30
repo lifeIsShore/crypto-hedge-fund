@@ -161,6 +161,12 @@ def step_ingest():
     logger.info(f"[ingest] Fetching from {from_date} (incremental, overlap={INCREMENTAL_OVERLAP_DAYS}d)")
     run_ingestion(TICKERS, from_date, TODAY)
 
+    try:
+        from engine.data.funding_rates import run_funding_rate_ingestion
+        run_funding_rate_ingestion(TICKERS)
+    except Exception as e:
+        logger.warning(f"[ingest] Funding rate ingestion failed (non-fatal): {e}")
+
 
 def _mirror_all_state_files():
     """
@@ -840,6 +846,32 @@ def step_pead_calendar_trigger():
         os.chdir(original_dir)
         if pead_dir in sys.path:
             sys.path.remove(pead_dir)
+
+
+def step_reconciliation():
+    """Stream 15 — reconcile Binance CCXT balances with DB state."""
+    from engine.reconciliation.state_reconciler import reconcile
+    from engine.reconciliation.ccxt_balances import get_binance_balances
+    import os
+    
+    # If in sandbox mode, we can skip live balance fetching to prevent false mismatch errors
+    if os.getenv("SANDBOX_MODE") == "1":
+        logger.info("[reconciliation] SKIPPED — LIVE BALANCE UNAVAILABLE (Sandbox Mode)")
+        return
+        
+    try:
+        broker_positions, broker_cash = get_binance_balances()
+        if not broker_positions and broker_cash == 0.0:
+            logger.warning("[reconciliation] CCXT returned empty balances or missing API keys.")
+        else:
+            res = reconcile(broker_positions, broker_cash)
+            if res.get('clean'):
+                logger.info("[reconciliation] CLEAN — DB matches Binance")
+            else:
+                logger.warning(f"[reconciliation] Discrepancies found: {len(res.get('discrepancies', []))}")
+                
+    except Exception as e:
+        logger.error(f"[reconciliation] Failed: {e}")
 
 
 def step_liquidity_classification():
