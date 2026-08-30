@@ -499,13 +499,12 @@ def step_portfolio_construction():
     from engine.alpha.sector_momentum import SectorMomentumAlpha
     from engine.alpha.mean_reversion  import MeanReversionAlpha
     from engine.alpha.vol_timing      import VolTimingAlpha
-    from engine.alpha.pead_alpha      import PEADAlpha
     from engine.alpha.ml_alpha        import MLAlpha
     from portfolio.src.config         import TICKER_SECTORS
     models_dict = {
         'momentum': MomentumAlpha(), 'sector_momentum': SectorMomentumAlpha(),  # J5
         'mean_reversion': MeanReversionAlpha(),
-        'vol_timing': VolTimingAlpha(), 'pead': PEADAlpha(), 'ml_model': MLAlpha(),
+        'vol_timing': VolTimingAlpha(), 'ml_model': MLAlpha(),
     }
 
     mu_bl, signal_breakdown = run_black_litterman(

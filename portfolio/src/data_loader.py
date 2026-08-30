@@ -77,7 +77,7 @@ def validate_data(prices_df, max_daily_move=0.30):
     if not anomalies.empty:
         # WARNING only — do NOT raise. These are legitimate market events.
         logging.warning(
-            f"\u26a0\ufe0f  Large moves (>{max_daily_move*100:.0f}%) flagged in "
+            f"WARNING: Large moves (>{max_daily_move*100:.0f}%) flagged in "
             f"{list(anomalies.index)} \u2014 engine will continue. "
             "Inspect manually if you suspect an unadjusted split."
         )
@@ -93,7 +93,7 @@ def _drop_dead_columns(prices: pd.DataFrame) -> pd.DataFrame:
     """
     dead = [c for c in prices.columns if prices[c].isna().all()]
     if dead:
-        logging.warning(f"\u26a0\ufe0f  Dropping {len(dead)} all-NaN ticker(s): {dead}")
+        logging.warning(f"WARNING: Dropping {len(dead)} all-NaN ticker(s): {dead}")
         prices = prices.drop(columns=dead)
     return prices
 
@@ -111,25 +111,29 @@ def fetch_historical(tickers, lookback_days=504, cache_path='data/historical_pri
     logging.info(f"Fetching data for {len(tickers)} assets from Yahoo Finance...")
 
     try:
+        # Convert crypto tickers with '/' to Yahoo format '-'
+        yf_tickers = [t.replace('/', '-') for t in tickers]
+        yf_to_orig = {t.replace('/', '-'): t for t in tickers}
+        
         # 1. Try bulk download first (fastest)
         data = yf.download(
-            tickers,
+            yf_tickers,
             start=start_date.strftime('%Y-%m-%d'),
             end=end_date.strftime('%Y-%m-%d'),
             auto_adjust=True,
             progress=False,
         )
 
-        if data.empty or (len(tickers) > 1 and 'Close' not in data.columns):
+        if data.empty or (len(yf_tickers) > 1 and 'Close' not in data.columns):
             logging.warning("Bulk download failed or returned empty. Falling back to individual fetches.")
             prices = pd.DataFrame()
         else:
-            prices = pd.DataFrame({tickers[0]: data['Close']}) if len(tickers) == 1 else data['Close']
+            prices = pd.DataFrame({yf_tickers[0]: data['Close']}) if len(yf_tickers) == 1 else data['Close']
 
         # 2. If bulk failed or some tickers are missing, try individual fetches for those missing
-        if prices.empty or len(prices.columns) < len(tickers):
+        if prices.empty or len(prices.columns) < len(yf_tickers):
             active_cols = list(prices.columns) if not prices.empty else []
-            missing = [t for t in tickers if t not in active_cols]
+            missing = [t for t in yf_tickers if t not in active_cols]
             
             for ticker in missing:
                 try:
@@ -141,6 +145,9 @@ def fetch_historical(tickers, lookback_days=504, cache_path='data/historical_pri
                         logging.info(f"  [{ticker}] Fetched individually")
                 except Exception as e:
                     logging.warning(f"  [{ticker}] Individual fetch failed: {e}")
+
+        # Rename columns back to original format with '/'
+        prices = prices.rename(columns=yf_to_orig)
 
         # Reindex to our expected universe (missing tickers become all-NaN)
         prices = prices.reindex(columns=tickers)

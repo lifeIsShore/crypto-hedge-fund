@@ -105,7 +105,9 @@ def compute_momentum_features(prices: pd.DataFrame) -> pd.DataFrame:
     for name, lookback in windows.items():
         required_len = lookback + skip
         if len(prices) < required_len:
-            logger.debug(f"Not enough history for {name} (need {required_len}, have {len(prices)})")
+            logger.debug(f"Not enough history for {name} (need {required_len}, have {len(prices)}). Defaulting to 0.5")
+            # Provide neutral 0.5 rank for missing data
+            features[name] = pd.Series(0.5, index=prices.columns)
             continue
         raw    = prices.shift(skip) / prices.shift(lookback + skip) - 1
         latest = raw.iloc[-1].dropna()
@@ -116,6 +118,8 @@ def compute_momentum_features(prices: pd.DataFrame) -> pd.DataFrame:
 
     result = pd.DataFrame(features)
     result.index.name = 'ticker'
+    # Fill any remaining NaNs with 0.5 (neutral)
+    result = result.fillna(0.5)
     return result
 
 

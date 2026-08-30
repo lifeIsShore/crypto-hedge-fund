@@ -199,5 +199,5 @@ if __name__ == "__main__":
     try:
         recalculate()
     except Exception as e:
-        logging.error(f"❌ Engine recalculation failed: {e}")
+        logging.error(f"Engine recalculation failed: {e}")
         exit(1)

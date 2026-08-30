@@ -11,25 +11,25 @@ import os
 
 def main():
     print("\n" + "="*60)
-    print("🚀 TRADE REPUBLIC QUANT ENGINE - DASHBOARD")
+    print("TRADE REPUBLIC QUANT ENGINE - DASHBOARD")
     print("="*60)
     
     # Step 1: Initialize engine
-    print("\n📊 Initializing engine...")
-    result = subprocess.run(['python', 'recalculate_engine.py'], capture_output=True, text=True, encoding='utf-8')
+    print("\nInitializing engine...")
+    result = subprocess.run(['python', 'recalculate_engine.py'], capture_output=True, text=True, errors='replace')
     if result.returncode != 0:
-        print(f"❌ Engine initialization failed:\n{result.stderr}")
+        print(f"Engine initialization failed:\n{result.stderr}")
         return 1
-    print("✅ Engine initialized")
+    print("Engine initialized")
     
     # Step 2: Start server
-    print("\n🌐 Starting Flask server...\n")
+    print("\nStarting Flask server...\n")
     time.sleep(1)
     
     try:
         subprocess.run(['python', 'server.py'])
     except KeyboardInterrupt:
-        print("\n\n👋 Dashboard stopped.")
+        print("\n\nDashboard stopped.")
         return 0
     
     return 0
