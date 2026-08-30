@@ -592,8 +592,30 @@ def step_portfolio_construction():
         total_portfolio_eur=portfolio_value,
     )
     logger.info(f"[portfolio] {len(orders)} orders (portfolio=€{portfolio_value:,.0f})")
+    
+    # Pre-Trade Tax Awareness Check (Task 9)
+    try:
+        from engine.risk.pre_trade import check_tax_awareness
+        check_tax_awareness(orders)
+    except Exception as e:
+        logger.error(f"[tax_awareness] check failed: {e}")
+
+    order_dicts = []
     for o in orders:
         logger.info(f"  {o.action:4s} {o.ticker:12s} €{o.value_eur:>8.2f}")
+        order_dicts.append({"ticker": o.ticker, "action": o.action, "value_eur": o.value_eur, "order_id": o.order_id, "state": o.state.value, "notes": o.notes})
+        
+    # Save to state for manual execution via UI
+    import json
+    from shared.state_paths import STATE_DIR
+    import os
+    queue_path = os.path.join(STATE_DIR, "order_queue.json")
+    try:
+        import datetime
+        with open(queue_path, "w") as f:
+            json.dump({"orders": order_dicts, "generated_at": datetime.datetime.now().isoformat(), "portfolio_value": portfolio_value}, f)
+    except Exception as e:
+        logger.error(f"Failed to save order_queue.json: {e}")
 
     if os.getenv("SANDBOX_MODE") == "1":
         from engine.execution.paper_trader import execute_paper_orders
@@ -894,6 +916,14 @@ def step_lstm_train():
         logger.info(f"[lstm_train] {passed}/{len(summary)} tickers above AUC gate")
     except Exception as e:
         logger.error(f"[lstm_train] Training failed: {e}")
+
+def step_reconciliation():
+    """Daily — compare internal tax_lots with Binance API balance."""
+    try:
+        from engine.execution.reconciliation import run_reconciliation
+        run_reconciliation()
+    except Exception as e:
+        logger.error(f"[reconciliation] Failed: {e}")
 
 
 def step_push_signals_to_queue(
@@ -1242,13 +1272,10 @@ def run_pipeline(dry_run: bool = False):
     _run_step('1.  Data ingestion',          step_ingest,                        dry_run)
     _run_step('2.  Macro regime refresh',    step_regime_refresh,                dry_run)
     _run_step('3.  Feature pipeline',        step_features,                      dry_run)
-    _run_step('3b. Earnings calendar',       step_earnings_calendar,             dry_run)  # J4
-    _run_step('3c. PEAD calendar trigger',   step_pead_calendar_trigger,         dry_run)
     _run_step('4.  Alpha: momentum',         lambda: step_alpha('momentum'),     dry_run)
     _run_step('4b. Alpha: sector momentum',  lambda: step_alpha('sector_momentum'), dry_run)  # J5
     _run_step('5.  Alpha: mean reversion',   lambda: step_alpha('mean_reversion'),dry_run)
     _run_step('6.  Alpha: vol timing',       lambda: step_alpha('vol_timing'),   dry_run)
-    _run_step('7.  Alpha: PEAD signals',     lambda: step_alpha('pead'),         dry_run)
     _run_step('8.  Alpha: ML signals',       lambda: step_alpha('ml_model'),     dry_run)
     _run_step('9.  ETF divergence scan',     step_divergence_scan,               dry_run)
     _run_step('10. Outcome fill',            step_outcome_fill,                  dry_run)
@@ -1256,17 +1283,11 @@ def run_pipeline(dry_run: bool = False):
     _run_step('12. Price targets',           step_price_targets,                 dry_run)  # Stream 3
     _run_step('13. Performance logging',      step_performance_log,               dry_run)
     _run_step('14. Signal queue push',         step_push_signals_to_queue,         dry_run)
+    _run_step('15. Daily reconciliation',      step_reconciliation,                dry_run)
 
-    # ── Weekly steps (Monday) ─────────────────────────────────────────────────
-    if WEEKDAY == 0:
-        _run_step('W1. PEAD weekly refresh', step_pead_refresh, dry_run)
-        _run_step('W2. Laggard screen',       step_laggard_screen, dry_run)  # J7
-        _run_step('W3. Liquidity classification', step_liquidity_classification, dry_run)
-
-    # ── Weekend steps (Saturday) ──────────────────────────────────────────────
-    if WEEKDAY == 5:
-        _run_step('WE1. ML pipeline refresh', step_ml_refresh,  dry_run)
-        _run_step('WE2. LSTM train all',       step_lstm_train,  dry_run)
+    _run_step('16. Liquidity classification', step_liquidity_classification, dry_run)
+    _run_step('17. ML pipeline refresh',      step_ml_refresh,  dry_run)
+    _run_step('18. LSTM train all',           step_lstm_train,  dry_run)
 
     logger.info(f"{'='*60}\n  Pipeline complete: {TODAY}\n{'='*60}")
 

@@ -1,0 +1,4 @@
+ledger_id,timestamp_utc,timestamp_local,asset,quantity,direction,transaction_type,fiat_value_eur,price_eur,fee_asset,fee_quantity,fee_eur,exchange,symbol,order_id,trade_id,source_event_id,is_internal_transfer,wallet_from,wallet_to,tx_hash
+1,2025-07-26T16:23:42.820000,,BTC,0.1,BUY,TRADE,6000.0,60000.0,BNB,0.0001,5.0,binance,,,,1,0,,,
+2,2026-05-22T16:23:42.820000,,BTC,0.05,BUY,TRADE,4000.0,80000.0,BNB,5e-05,2.75,binance,,,,2,0,,,
+3,2026-08-30T16:23:42.820000,,BTC,0.12,SELL,TRADE,10800.0,90000.0,EUR,10.8,10.8,binance,,,,3,0,,,

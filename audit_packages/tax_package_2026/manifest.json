@@ -1,0 +1,11 @@
+{
+  "tax_year": 2026,
+  "exchange": "Binance",
+  "generated_at": "2026-08-30T14:23:42.915159Z",
+  "records": 3,
+  "disposals": 2,
+  "total_taxable_gains_eur": 198.2,
+  "total_taxable_losses_eur": 0,
+  "net_taxable_eur": 198.2,
+  "tax_free_long_term_gains_eur": 2991.0
+}

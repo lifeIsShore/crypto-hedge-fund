@@ -32,6 +32,21 @@
   </div>
 </div>
 
+<!-- ── Daily Reconciliation ─────────────────────────────────────────────── -->
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">⚖️ DAILY RECONCILIATION</span>
+    <span class="panel-badge" id="recon-badge">LOADING…</span>
+  </div>
+  <div class="panel-body">
+    <div id="recon-alert" style="margin-bottom:12px"></div>
+    <table class="tbl" id="recon-tbl">
+      <thead><tr><th>ASSET</th><th>INTERNAL DB QTY</th><th>BINANCE API QTY</th><th>DELTA (€)</th></tr></thead>
+      <tbody id="recon-tbody"><tr><td colspan="4" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="grid grid-2" style="margin-top:14px">
 
   <!-- State file freshness -->
@@ -387,6 +402,73 @@ async function loadHealth(){
   }
 }
 
+async function loadReconciliation() {
+  const reconBadge = document.getElementById('recon-badge');
+  const reconAlert = document.getElementById('recon-alert');
+  const reconTbody = document.getElementById('recon-tbody');
+  
+  let res;
+  try { res = await fetch('/api/reconciliation').then(r=>r.json()); }
+  catch(e) {
+    reconBadge.textContent = 'API ERROR';
+    reconBadge.style.background = 'rgba(255,77,109,.2)';
+    reconBadge.style.color = 'var(--accent2)';
+    reconTbody.innerHTML = `<tr><td colspan="4" style="color:var(--accent2)">Could not reach endpoint: ${e.message}</td></tr>`;
+    return;
+  }
+  
+  if (Object.keys(res).length === 0 || !res.status) {
+    reconBadge.textContent = 'NO DATA';
+    reconTbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted)">No reconciliation state found. Run the scheduler.</td></tr>`;
+    return;
+  }
+  
+  reconBadge.textContent = res.status;
+  if (res.status.includes('PASSED')) {
+    reconBadge.style.background = 'rgba(0,229,160,.15)';
+    reconBadge.style.color = 'var(--accent)';
+    reconAlert.innerHTML = '<div class="alert alert-ok">✅ Ledger perfectly synced with Binance.</div>';
+  } else if (res.status.includes('SKIPPED')) {
+    reconBadge.style.background = 'rgba(245, 166, 35, 0.15)';
+    reconBadge.style.color = 'var(--accent3)';
+    reconAlert.innerHTML = `<div class="alert alert-warn">⚠️ ${res.status}. Sandbox mode active.</div>`;
+    reconTbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted)">Live balances cannot be fetched in Sandbox Mode.</td></tr>`;
+    return;
+  } else {
+    reconBadge.style.background = 'rgba(255,77,109,.2)';
+    reconBadge.style.color = 'var(--accent2)';
+    reconAlert.innerHTML = '<div class="alert alert-warn">🚨 <strong>DISCREPANCY DETECTED</strong>: Mismatch between internal ledger and Binance API.</div>';
+  }
+  
+  let rows = [];
+  const discs = res.discrepancies || [];
+  const matched = res.matched || [];
+  
+  discs.forEach(d => {
+    rows.push(`<tr>
+      <td style="color:#fff; font-weight:600">${d.asset}</td>
+      <td>${d.internal_qty.toFixed(6)}</td>
+      <td>${d.live_qty.toFixed(6)}</td>
+      <td style="color:var(--accent2)">€${d.delta_eur.toFixed(2)}</td>
+    </tr>`);
+  });
+  
+  matched.forEach(m => {
+    rows.push(`<tr>
+      <td style="color:var(--muted)">${m.asset}</td>
+      <td style="color:var(--muted)">${m.qty.toFixed(6)}</td>
+      <td style="color:var(--muted)">${m.qty.toFixed(6)}</td>
+      <td style="color:var(--accent)">€${m.delta_eur.toFixed(2)}</td>
+    </tr>`);
+  });
+  
+  if (rows.length === 0) {
+    reconTbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted)">No balances found.</td></tr>`;
+  } else {
+    reconTbody.innerHTML = rows.join('');
+  }
+}
+
 function toggleRun(idx){
   const el = document.getElementById(`run-${idx}`);
   if(!el) return;
@@ -447,5 +529,6 @@ function filterLogs(level){
 loadHealth();
 checkConnectivity();
 loadLogs('ALL');
+loadReconciliation();
 </script>
 {% endblock %}

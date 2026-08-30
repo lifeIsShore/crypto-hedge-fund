@@ -1,47 +1,30 @@
-"""data_loader.py — Fetch price/macro/fundamental data.
-Raw data never modified after download.
-
-Stream 2 / Stream 7: Universe expanded to ~90 tickers matching
-portfolio/src/config.py ASSET_UNIVERSE. European tickers (.DE/.AS/.PA/.L)
-are fetched via yfinance; missing Adj Close falls back to Close silently.
+"""data_loader.py — Fetch price/macro data for crypto ML pipeline.
 """
 import os, json, logging, time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
+import asyncio
+import ccxt.async_support as ccxt
 
-# Bug fix (2026-08-20): price-cache parquet files used to be cached forever
-# once written (even a bad/short initial fetch, e.g. a delisted-ticker
-# fallback that only returned 21 rows). Since force_refresh defaulted to
-# False everywhere and was never flipped, ~43% of tickers were permanently
-# stuck skipping ML training run after run. A TTL forces periodic refetches
-# without requiring callers to remember force_refresh=True.
 PRICE_CACHE_TTL_DAYS = 7
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# UNIVERSE  (Single Source of Truth: syncs with portfolio/src/config.py)
-# ─────────────────────────────────────────────────────────────────────────────
 import sys
-from pathlib import Path
 
-# Resolve repo root and add to sys.path to import central config
 _HERE = Path(__file__).resolve()
-_ROOT = _HERE.parents[4]  # ml_research/stock_ml_lab/utils/data_loader.py -> root
+_ROOT = _HERE.parents[4]  
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 try:
-    from portfolio.src.config import ASSET_UNIVERSE, TICKER_SECTORS, TICKER_MAPPING
-    # Create the UNIVERSE dict expected by the ML pipeline (ticker -> sector)
+    from portfolio.src.config import ASSET_UNIVERSE, TICKER_SECTORS
     UNIVERSE = {t: TICKER_SECTORS.get(t, "Unknown") for t in ASSET_UNIVERSE}
 except ImportError:
-    log.error("Could not import central config from portfolio.src.config. Check PYTHONPATH.")
-    # Fallback to empty if absolutely necessary, but this should error in production
+    log.error("Could not import central config from portfolio.src.config.")
     UNIVERSE = {}
-    TICKER_MAPPING = {}
 
 MACRO_SERIES = {
     "fed_funds":  "FEDFUNDS",
@@ -56,29 +39,47 @@ RAW_DIR = Path(__file__).parent.parent / "data" / "raw"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PRICE DATA
-# ─────────────────────────────────────────────────────────────────────────────
+async def _fetch_ccxt_single(exchange, ticker, start_date_str, end_date_str):
+    from_ts = int(pd.Timestamp(start_date_str).timestamp() * 1000)
+    to_ts = int(pd.Timestamp(end_date_str).timestamp() * 1000)
+    
+    limit = 1000
+    all_ohlcv = []
+    current_ts = from_ts
+    
+    while current_ts < to_ts:
+        try:
+            ohlcv = await exchange.fetch_ohlcv(ticker, timeframe='1d', since=current_ts, limit=limit)
+            if not ohlcv:
+                break
+            all_ohlcv.extend(ohlcv)
+            current_ts = ohlcv[-1][0] + 1
+        except Exception as e:
+            log.warning(f"CCXT fetch error for {ticker}: {e}")
+            break
+            
+    if not all_ohlcv:
+        return pd.DataFrame()
+        
+    df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    df['Date'] = pd.to_datetime(df['timestamp'], unit='ms').dt.date
+    df['Adj Close'] = df['Close']
+    df = df.set_index('Date')
+    df = df[['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
+    return df
+
 
 def fetch_price_data(tickers=None, start="2014-01-01", end=None, force_refresh=False):
-    """
-    Fetches adjusted closing prices from yfinance for each ticker.
-
-    European tickers (.DE, .AS, .PA, .L) are fetched natively.
-    If 'Adj Close' is missing (some European feeds), falls back to 'Close' silently.
-    Dead tickers (no data) are skipped with a warning.
-
-    Returns: dict {ticker: DataFrame(OHLCV + Adj Close)}
-    """
-    import yfinance as yf
     if tickers is None:
         tickers = list(UNIVERSE.keys())
     if end is None:
         end = datetime.today().strftime("%Y-%m-%d")
 
     result = {}
+    tickers_to_fetch = []
+    
     for ticker in tickers:
-        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
+        safe_name = ticker.replace("/", "_")
         out_path = RAW_DIR / f"{safe_name}_prices.parquet"
 
         cache_fresh = False
@@ -88,61 +89,32 @@ def fetch_price_data(tickers=None, start="2014-01-01", end=None, force_refresh=F
 
         if cache_fresh and not force_refresh:
             result[ticker] = pd.read_parquet(out_path)
-            continue
-        elif out_path.exists() and not force_refresh:
-            log.info(f"[{ticker}] Cache stale (>{PRICE_CACHE_TTL_DAYS}d old) — refetching")
+        else:
+            tickers_to_fetch.append(ticker)
 
-        log.info(f"[{ticker}] Fetching {start} → {end}")
-        try:
-            raw = yf.download(ticker, start=start, end=end,
-                              auto_adjust=False, progress=False)
-        except Exception as e:
-            log.warning(f"[{ticker}] Download error: {e} — skipped")
-            continue
+    if tickers_to_fetch:
+        async def fetch_missing():
+            exchange = ccxt.binance({'enableRateLimit': True})
+            try:
+                for t in tickers_to_fetch:
+                    log.info(f"[{t}] Fetching {start} → {end} from Binance")
+                    df = await _fetch_ccxt_single(exchange, t, start, end)
+                    if not df.empty:
+                        safe_name = t.replace("/", "_")
+                        out_path = RAW_DIR / f"{safe_name}_prices.parquet"
+                        df.to_parquet(out_path)
+                        result[t] = df
+                        log.info(f"[{t}] {len(df)} rows saved")
+                    else:
+                        log.warning(f"[{t}] No data returned — skipped")
+            finally:
+                await exchange.close()
 
-        if raw.empty:
-            # Fallback logic
-            fallback = TICKER_MAPPING.get(ticker)
-            if fallback and fallback != ticker:
-                log.info(f"[{ticker}] Primary failed — trying fallback: {fallback}")
-                try:
-                    raw = yf.download(fallback, start=start, end=end,
-                                      auto_adjust=False, progress=False)
-                except Exception as e:
-                    log.warning(f"[{ticker}] Fallback {fallback} also failed: {e}")
-            
-            if raw.empty:
-                log.warning(f"[{ticker}] No data returned (even after fallback) — skipped")
-                continue
-
-        # Handle yfinance multi-level column output
-        if isinstance(raw.columns, pd.MultiIndex):
-            raw.columns = raw.columns.get_level_values(0)
-
-        # Ensure Adj Close exists — fall back to Close for European tickers
-        if "Adj Close" not in raw.columns:
-            if "Close" in raw.columns:
-                raw["Adj Close"] = raw["Close"]
-                log.debug(f"[{ticker}] No Adj Close — using Close as fallback")
-            else:
-                log.warning(f"[{ticker}] Missing both Close and Adj Close — skipped")
-                continue
-
-        cols_available = [c for c in ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
-                          if c in raw.columns]
-        df = raw[cols_available].copy()
-        df.index.name = "Date"
-        df.to_parquet(out_path)
-        result[ticker] = df
-        log.info(f"[{ticker}] {len(df)} rows saved")
+        asyncio.run(fetch_missing())
 
     log.info(f"fetch_price_data complete: {len(result)}/{len(tickers)} tickers loaded")
     return result
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MACRO DATA
-# ─────────────────────────────────────────────────────────────────────────────
 
 def fetch_macro_data(start="2014-01-01", end=None, force_refresh=False):
     import pandas_datareader.data as web
@@ -176,127 +148,22 @@ def fetch_macro_data(start="2014-01-01", end=None, force_refresh=False):
     return macro
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FUNDAMENTALS
-# ─────────────────────────────────────────────────────────────────────────────
-
-FUNDAMENTALS_CACHE_TTL_DAYS = 7  # same rationale as PRICE_CACHE_TTL_DAYS
-
-# Bug fix (2026-08-20): known ETFs structurally have no PE/PB/EV-EBITDA —
-# attempting the fetch for them isn't a failure, it's a non-applicable
-# feature family. Skipping it avoids wasted API calls and, more importantly,
-# keeps the coverage log below meaningful (real gaps vs. expected N/A).
-try:
-    from portfolio.src.config import ETF_TICKERS
-except ImportError:
-    ETF_TICKERS = []
-
-
-def fetch_fundamentals(tickers=None, force_refresh=False):
-    import yfinance as yf
-
-    if tickers is None:
-        tickers = list(UNIVERSE.keys())
-
-    FIELDS = [
-        "trailingPE", "priceToBook", "enterpriseToEbitda", "revenueGrowth",
-        "grossMargins", "operatingMargins", "debtToEquity", "freeCashflow", "marketCap",
-    ]
-
-    result = {}
-    n_covered, n_empty, n_etf_skipped = 0, 0, 0
-
-    for ticker in tickers:
-        if ticker in ETF_TICKERS:
-            result[ticker] = {}
-            n_etf_skipped += 1
-            continue
-
-        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
-        out_path = RAW_DIR / f"{safe_name}_fundamentals.json"
-
-        # Bug fix (2026-08-20): this cache had no TTL — identical to the price-cache
-        # bug fixed the same day. A ticker whose fetch once returned a sparse/empty
-        # record (info had a 'symbol' but no real fundamentals fields — see the
-        # fallback-trigger fix below) got that empty result cached FOREVER, which
-        # then silently wiped 100% of that ticker's ML training rows every run
-        # (see run_ml_pipeline.py::run_ticker's zero-tolerance dropna).
-        cache_fresh = False
-        if out_path.exists():
-            age_days = (time.time() - out_path.stat().st_mtime) / 86400
-            cache_fresh = age_days < FUNDAMENTALS_CACHE_TTL_DAYS
-
-        if cache_fresh and not force_refresh:
-            with open(out_path) as f:
-                data = json.load(f)
-            result[ticker] = data
-            if any(data.get(k) is not None for k in FIELDS):
-                n_covered += 1
-            else:
-                n_empty += 1
-            continue
-
-        try:
-            info = yf.Ticker(ticker).info
-            data = {k: info.get(k) for k in FIELDS} if info else {}
-
-            # Bug fix (2026-08-20): the old fallback trigger only fired if
-            # 'symbol' was entirely missing from the response. Many .DE
-            # cross-listings return a valid 'symbol' but None for every
-            # fundamentals field we actually want — that case never
-            # triggered the fallback before, and got cached as a
-            # permanently-empty record. Now: fall back whenever every
-            # wanted field is empty, not just when the whole response is.
-            if not any(v is not None for v in data.values()):
-                fallback = TICKER_MAPPING.get(ticker)
-                if fallback and fallback != ticker:
-                    log.info(f"[{ticker}] Fundamentals empty — trying fallback: {fallback}")
-                    info = yf.Ticker(fallback).info
-                    data = {k: info.get(k) for k in FIELDS} if info else {}
-
-            data["fetched_at"] = datetime.today().isoformat()
-            with open(out_path, "w") as f:
-                json.dump(data, f, indent=2)
-            result[ticker] = data
-
-            if any(data.get(k) is not None for k in FIELDS):
-                n_covered += 1
-            else:
-                n_empty += 1
-                log.info(f"[{ticker}] Fundamentals unavailable even after fallback — "
-                         f"will train without fund_* features for this ticker")
-        except Exception as e:
-            log.warning(f"[{ticker}] fundamentals: {e}")
-            result[ticker] = {}
-            n_empty += 1
-
-    log.info(f"fetch_fundamentals complete: {n_covered} covered, {n_empty} empty/unavailable, "
-             f"{n_etf_skipped} ETFs skipped (of {len(tickers)} tickers)")
-    return result
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# DATA SUMMARY
-# ─────────────────────────────────────────────────────────────────────────────
-
 def get_data_summary(tickers=None):
     if tickers is None:
         tickers = list(UNIVERSE.keys())
     rows = []
     for ticker in tickers:
-        safe_name = ticker.replace("/", "_").replace("CON.DE", "CONT.DE")
+        safe_name = ticker.replace("/", "_")
         pp = RAW_DIR / f"{safe_name}_prices.parquet"
-        fp = RAW_DIR / f"{safe_name}_fundamentals.json"
         row = {"ticker": ticker, "sector": UNIVERSE.get(ticker, "?")}
         if pp.exists():
             df = pd.read_parquet(pp)
             row.update({
                 "price_rows":  len(df),
-                "price_start": str(df.index[0].date()),
-                "price_end":   str(df.index[-1].date()),
+                "price_start": str(df.index[0]),
+                "price_end":   str(df.index[-1]),
             })
         else:
             row.update({"price_rows": 0, "price_start": "---", "price_end": "---"})
-        row["has_fundamentals"] = fp.exists()
         rows.append(row)
     return pd.DataFrame(rows)

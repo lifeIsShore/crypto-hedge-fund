@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Tax Engine{% endblock %}
+{% block content %}
+
+<div class="kpi-strip">
+  <div class="kpi {% if net_taxable > 0 %}warn{% elif net_taxable < 0 %}good{% else %}neutral{% endif %}">
+    <div class="kpi-label">NET TAXABLE GAINS ({{ tax_year }})</div>
+    <div class="kpi-value" data-eur="{{ net_taxable }}"></div>
+    <div class="kpi-sub">Subject to short-term capital gains tax</div>
+  </div>
+  <div class="kpi {% if tax_free_gains > 0 %}good{% else %}neutral{% endif %}">
+    <div class="kpi-label">TAX-FREE GAINS (> 365 DAYS)</div>
+    <div class="kpi-value" data-eur="{{ tax_free_gains }}"></div>
+    <div class="kpi-sub">Exempt under German BMF rules</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">TOTAL DISPOSALS</div>
+    <div class="kpi-value">{{ disposals|length }}</div>
+    <div class="kpi-sub">Sales events this year</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">OPEN LOTS</div>
+    <div class="kpi-value">{{ lots|length }}</div>
+    <div class="kpi-sub">Currently tracking in queue</div>
+  </div>
+</div>
+
+<div class="grid grid-2-1">
+  <!-- Left Column: Disposals & Lots -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">DISPOSALS ({{ tax_year }})</div>
+      </div>
+      <div class="panel-body" style="padding:0; max-height: 400px; overflow-y: auto;">
+        <table class="tbl" id="tbl-disposals">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0, 'tbl-disposals')">DATE</th>
+              <th onclick="sortTable(1, 'tbl-disposals')">ASSET</th>
+              <th onclick="sortTable(2, 'tbl-disposals', 'num')">QTY</th>
+              <th onclick="sortTable(3, 'tbl-disposals', 'num')">GAIN/LOSS</th>
+              <th onclick="sortTable(4, 'tbl-disposals', 'num')">HOLDING (DAYS)</th>
+              <th onclick="sortTable(5, 'tbl-disposals')">CATEGORY</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in disposals %}
+            <tr>
+              <td>{{ d.disposal_timestamp[:10] }}</td>
+              <td class="info-point" data-info="Sold via {{ d.method_used }}">{{ d.asset }}</td>
+              <td>{{ "%.4f"|format(d.quantity) }}</td>
+              <td style="color: {% if d.gain_loss_eur > 0 %}var(--accent){% elif d.gain_loss_eur < 0 %}var(--accent2){% else %}inherit{% endif %}">
+                <span data-eur="{{ d.gain_loss_eur }}"></span>
+              </td>
+              <td>{{ d.holding_period_days }}</td>
+              <td>
+                {% if d.tax_category == 'TAX_FREE_LONG_TERM' %}
+                  <span class="tag tag-green">TAX FREE</span>
+                {% elif d.tax_category == 'TAXABLE' %}
+                  <span class="tag tag-yellow">TAXABLE</span>
+                {% else %}
+                  <span class="tag tag-muted">{{ d.tax_category }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No disposals recorded for {{ tax_year }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+      <div class="panel-header">
+        <div class="panel-title">OPEN LOTS (FIFO QUEUE)</div>
+      </div>
+      <div class="panel-body" style="padding:0; max-height: 400px; overflow-y: auto;">
+        <table class="tbl" id="tbl-lots">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0, 'tbl-lots')">ACQUIRED</th>
+              <th onclick="sortTable(1, 'tbl-lots')">ASSET</th>
+              <th onclick="sortTable(2, 'tbl-lots', 'num')">REMAINING QTY</th>
+              <th onclick="sortTable(3, 'tbl-lots', 'num')">COST BASIS</th>
+              <th onclick="sortTable(4, 'tbl-lots', 'num')">HELD FOR</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lot in lots %}
+            <tr>
+              <td>{{ lot.acquisition_timestamp[:10] }}</td>
+              <td>{{ lot.asset }}</td>
+              <td>{{ "%.4f"|format(lot.quantity_remaining) }} <span style="color:var(--muted); font-size:9px;">/ {{ "%.4f"|format(lot.quantity_original) }}</span></td>
+              <td><span data-eur="{{ lot.acquisition_cost_eur * (lot.quantity_remaining / lot.quantity_original) }}"></span></td>
+              <td>{{ lot.holding_period_days }} days</td>
+              <td>
+                {% if lot.holding_period_days > 365 %}
+                  <span class="tag tag-green">✓ TAX FREE</span>
+                {% else %}
+                  <span class="tag tag-red">⚠ {{ 365 - lot.holding_period_days }} days left</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No open lots found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Charts & LLM Summary -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">TAX ASSISTANT SUMMARY</div>
+        <div class="panel-badge" style="color: var(--accent4); border-color: var(--accent4);">AI AGENT</div>
+      </div>
+      <div class="panel-body" style="line-height: 1.6;">
+        <p style="color: var(--text); margin-bottom: 10px;">
+          <em>Generating AI tax analysis based on current ledger...</em>
+        </p>
+        <div id="llm-summary">
+          <div class="alert alert-info">
+            <strong>System Prompt:</strong> You currently have <strong><span data-eur="{{ net_taxable }}"></span></strong> in short-term taxable gains for {{ tax_year }}. You also successfully harvested <strong><span data-eur="{{ tax_free_gains }}"></span></strong> in tax-free long-term gains.
+          </div>
+          <p style="color: var(--muted); font-size: 11px;">
+            Actionable Advice: Check your open lots queue. You have assets approaching the 365-day mark. Avoid selling these to prevent triggering short-term capital gains tax.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+      <div class="panel-header">
+        <div class="panel-title">REALIZED GAINS / LOSSES</div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-wrap" style="height: 250px;">
+          <canvas id="gainsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    applyDisplayCurrency(getDisplayCurrency());
+    
+    // Process chart data from disposals
+    const disposals = {{ disposals | tojson | safe }};
+    
+    // Group by month
+    const monthlyData = {};
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    months.forEach(m => monthlyData[m] = { taxable: 0, taxFree: 0 });
+    
+    disposals.forEach(d => {
+        const date = new Date(d.disposal_timestamp);
+        const monthName = months[date.getMonth()];
+        if(d.tax_category === 'TAXABLE') {
+            monthlyData[monthName].taxable += d.gain_loss_eur;
+        } else if (d.tax_category === 'TAX_FREE_LONG_TERM') {
+            monthlyData[monthName].taxFree += d.gain_loss_eur;
+        }
+    });
+
+    const labels = [];
+    const taxableData = [];
+    const taxFreeData = [];
+    
+    months.forEach(m => {
+        if(monthlyData[m].taxable !== 0 || monthlyData[m].taxFree !== 0) {
+            labels.push(m);
+            taxableData.push(monthlyData[m].taxable);
+            taxFreeData.push(monthlyData[m].taxFree);
+        }
+    });
+
+    const ctx = document.getElementById('gainsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.length > 0 ? labels : ['No Data'],
+            datasets: [
+                {
+                    label: 'Taxable Gains/Losses',
+                    data: labels.length > 0 ? taxableData : [0],
+                    backgroundColor: 'rgba(245, 166, 35, 0.5)',
+                    borderColor: '#f5a623',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Tax-Free Gains',
+                    data: labels.length > 0 ? taxFreeData : [0],
+                    backgroundColor: 'rgba(0, 229, 160, 0.5)',
+                    borderColor: '#00e5a0',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: Chart.defaults.borderColor }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

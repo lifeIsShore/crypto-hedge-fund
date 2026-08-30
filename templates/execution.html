@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Live Execution Queue{% endblock %}
+
+{% block extra_head %}
+<style>
+.queue-row td { vertical-align: middle; }
+.queue-row:hover { background: rgba(255,255,255,.025) !important; }
+
+/* ── Action button group in table ────────────────────────────────────────── */
+.btn-execute {
+  padding: 8px 16px; font-size: 11px; letter-spacing: .08em;
+  background: var(--accent); color: var(--bg); border: none; border-radius: 4px;
+  cursor: pointer; font-weight: bold; transition: opacity 0.2s;
+}
+.btn-execute:hover { opacity: 0.8; }
+.btn-execute:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.status-badge {
+    padding: 3px 8px; font-size: 9px; font-weight: 600; border-radius: 3px; letter-spacing: 0.05em;
+}
+.status-created { background: rgba(245, 166, 35, 0.1); color: var(--accent3); border: 1px solid var(--accent3); }
+.status-confirmed { background: rgba(0, 229, 160, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+.status-failed { background: rgba(255, 77, 109, 0.1); color: var(--accent2); border: 1px solid var(--accent2); }
+
+.kpi.sandbox { border-left-color: var(--accent3); background: rgba(245, 166, 35, 0.05); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-strip">
+  <div class="kpi {% if sandbox_mode %}sandbox{% else %}good{% endif %}">
+    <div class="kpi-label">EXECUTION MODE</div>
+    <div class="kpi-value">{% if sandbox_mode %}SANDBOX{% else %}LIVE{% endif %}</div>
+    <div class="kpi-sub">{% if sandbox_mode %}Paper trading only (no API hit){% else %}⚠️ Real funds at risk on Binance API{% endif %}</div>
+  </div>
+  <div class="kpi neutral">
+    <div class="kpi-label">QUEUE STATUS</div>
+    <div class="kpi-value" id="kpi-count">—</div>
+    <div class="kpi-sub">Orders pending execution</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px">
+  <div class="panel-header">
+    <span class="panel-title">EXECUTION QUEUE</span>
+    <span class="panel-badge" id="generated-at">GENERATED: —</span>
+  </div>
+  
+  <div class="panel-body">
+    <div id="no-queue" class="alert alert-info" style="display:none">
+      No active order queue found. Run the scheduler pipeline to generate trades.
+    </div>
+
+    <table class="tbl" id="queue-tbl" style="display:none">
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>ACTION</th>
+          <th>TARGET VALUE (€)</th>
+          <th>STATUS</th>
+          <th>NOTES / WARNINGS</th>
+        </tr>
+      </thead>
+      <tbody id="queue-tbody">
+      </tbody>
+    </table>
+
+    <div style="margin-top: 20px; text-align: right;" id="execute-actions">
+        <button id="btn-submit" class="btn-execute" onclick="executeQueue()">🚀 SUBMIT TO BINANCE</button>
+    </div>
+    
+    <div id="exec-feedback" style="margin-top: 10px; font-size: 11px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadQueue() {
+    const res = await fetch('/api/order_queue').then(r => r.json()).catch(() => ({}));
+    const orders = res.orders || [];
+    
+    document.getElementById('kpi-count').textContent = orders.length;
+    if (res.generated_at) {
+        document.getElementById('generated-at').textContent = "GENERATED: " + new Date(res.generated_at).toLocaleString();
+    }
+    
+    const tbody = document.getElementById('queue-tbody');
+    const tbl = document.getElementById('queue-tbl');
+    const nodata = document.getElementById('no-queue');
+    const actions = document.getElementById('execute-actions');
+    
+    if (!orders.length) {
+        nodata.style.display = 'block';
+        tbl.style.display = 'none';
+        actions.style.display = 'none';
+        return;
+    }
+    
+    nodata.style.display = 'none';
+    tbl.style.display = 'table';
+    actions.style.display = 'block';
+    
+    let allExecuted = true;
+
+    tbody.innerHTML = orders.map(o => {
+        let statusCls = 'status-created';
+        if (o.state === 'CONFIRMED') statusCls = 'status-confirmed';
+        else if (o.state === 'FAILED') statusCls = 'status-failed';
+        else if (o.state === 'SKIPPED') statusCls = 'status-created';
+        
+        if (o.state === 'CREATED') allExecuted = false;
+        
+        let rowStyle = '';
+        let notesHtml = o.notes || '—';
+        if (notesHtml.includes('TAX WARNING') || notesHtml.includes('Short-term disposal')) {
+            rowStyle = 'border-left: 3px solid var(--accent2); background: rgba(255, 77, 109, 0.05);';
+            notesHtml = `<span style="color:var(--accent2); font-weight:600;">${notesHtml}</span>`;
+        }
+
+        return `<tr style="${rowStyle}">
+            <td style="font-weight: 500; color: #fff;">${o.ticker}</td>
+            <td><span class="tag ${o.action === 'BUY' ? 'tag-green' : 'tag-red'}">${o.action}</span></td>
+            <td>€${o.value_eur.toFixed(2)}</td>
+            <td><span class="status-badge ${statusCls}">${o.state}</span></td>
+            <td style="font-size: 11px;">${notesHtml}</td>
+        </tr>`;
+    }).join('');
+    
+    if (allExecuted) {
+        document.getElementById('btn-submit').disabled = true;
+        document.getElementById('btn-submit').textContent = "ALL ORDERS EXECUTED";
+    }
+}
+
+async function executeQueue() {
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.textContent = "EXECUTING...";
+    document.getElementById('exec-feedback').innerHTML = "<span style='color:var(--muted)'>Transmitting orders to broker...</span>";
+    
+    const res = await fetch('/api/execute_queue', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Dashboard-Token': localStorage.getItem('dashboardToken') || ''
+        },
+        body: JSON.stringify({})
+    }).then(r => r.json()).catch(() => ({ok: false, error: "Network error"}));
+    
+    if (res.ok) {
+        let successCount = 0;
+        let failCount = 0;
+        res.results.forEach(r => {
+            if (r.result.status === 'filled') successCount++;
+            else failCount++;
+        });
+        document.getElementById('exec-feedback').innerHTML = `<span style='color:var(--accent)'>✅ Execution complete. ${successCount} filled, ${failCount} failed.</span>`;
+        await loadQueue();
+    } else {
+        document.getElementById('exec-feedback').innerHTML = `<span style='color:var(--accent2)'>❌ Execution failed: ${res.error || "Unknown error"}</span>`;
+        btn.disabled = false;
+        btn.textContent = "🚀 SUBMIT TO BINANCE";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadQueue);
+</script>
+{% endblock %}

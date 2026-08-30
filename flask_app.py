@@ -581,69 +581,51 @@ def rebalance():
 
 
 
-@app.route("/pead")
-def pead():
-    state = _load_json(PEAD_STATE_PATH)
-
-    # Try SQLite first; fall back to CSV
-    history = _q("""
-        SELECT ticker, earnings_date, direction, pead_setup_quality,
-               surprise_pct, drift_21d, outcome_label_correct, regime_composite
-        FROM pead_setups
-        ORDER BY earnings_date DESC
-        LIMIT 60
+@app.route("/tax")
+def tax():
+    import datetime
+    current_year = datetime.datetime.now().year
+    
+    # Get all disposals for current year
+    disposals = _q("""
+        SELECT disposal_id, asset, disposal_timestamp, quantity, sale_value_eur, 
+               sale_fee_eur, acquisition_timestamp, acquisition_cost_eur, 
+               holding_period_days, gain_loss_eur, tax_category, method_used
+        FROM tax_disposals
+        WHERE tax_year = :ty
+        ORDER BY disposal_timestamp DESC
+    """, {'ty': current_year})
+    
+    # Get open lots
+    lots = _q("""
+        SELECT lot_id, asset, acquisition_timestamp, quantity_original, quantity_remaining,
+               acquisition_cost_eur, wallet, method
+        FROM tax_lots
+        WHERE quantity_remaining > 0
+        ORDER BY acquisition_timestamp ASC
     """)
-    if not history and PEAD_SETUPS_PATH and Path(PEAD_SETUPS_PATH).exists():
-        import csv
-        with open(PEAD_SETUPS_PATH, newline="") as f:
-            reader = csv.DictReader(f)
-            history = list(reader)[:60]
+    
+    # Add holding days to lots
+    now = datetime.datetime.now()
+    for lot in lots:
+        acq_ts = datetime.datetime.fromisoformat(lot['acquisition_timestamp'])
+        lot['holding_period_days'] = (now - acq_ts).days
+        
+    total_taxable_gains = sum(d['gain_loss_eur'] for d in disposals if d['gain_loss_eur'] > 0 and d['tax_category'] == 'TAXABLE')
+    total_taxable_losses = sum(d['gain_loss_eur'] for d in disposals if d['gain_loss_eur'] < 0 and d['tax_category'] == 'TAXABLE')
+    tax_free_gains = sum(d['gain_loss_eur'] for d in disposals if d['gain_loss_eur'] > 0 and d['tax_category'] == 'TAX_FREE_LONG_TERM')
+    net_taxable = total_taxable_gains + total_taxable_losses
 
-    return render_template("pead.html",
-        state=state,
-        history=history,
-        page="pead",
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-    )
-
-
-@app.route("/divergence")
-def divergence():
-    rows = _q("""
-        SELECT id, ticker, etf_reference, detected_at,
-               etf_return_pct, stock_return_pct, divergence_pct, scenario_label
-        FROM divergence_labels
-        WHERE scenario_label IS NULL
-        ORDER BY detected_at DESC
-        LIMIT 30
-    """)
-    return render_template("divergence.html",
-        rows=rows,
-        page="divergence",
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-    )
-
-
-@app.route("/laggards")
-def laggards():
-    """J7 - sector rotation laggard screen results (most recent weekly run)."""
-    rows = _q("""
-        SELECT ticker, sector, period_return, relative_rank, peer_median_return,
-               catch_up_gap, conviction, disqualifiers, screen_date
-        FROM laggard_screen_results
-        WHERE screen_date = (SELECT MAX(screen_date) FROM laggard_screen_results)
-        ORDER BY catch_up_gap DESC
-    """)
-    import json as _json
-    for r in rows:
-        try:
-            r['disqualifiers'] = _json.loads(r.get('disqualifiers') or '[]')
-        except Exception:
-            r['disqualifiers'] = []
-    return render_template("laggards.html",
-        rows=rows,
-        page="laggards",
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+    return render_template("tax.html",
+        disposals=disposals,
+        lots=lots,
+        total_taxable_gains=total_taxable_gains,
+        total_taxable_losses=total_taxable_losses,
+        tax_free_gains=tax_free_gains,
+        net_taxable=net_taxable,
+        tax_year=current_year,
+        page="tax",
+        now=now.strftime("%Y-%m-%d %H:%M")
     )
 
 
@@ -1425,6 +1407,68 @@ def api_log_trade():
     """
     if is_system_halted():
         return jsonify({"error": "System is HALTED. Cannot log trades."}), 403
+
+@app.route("/execution")
+def route_execution():
+    return render_template("execution.html", page="execution")
+
+@app.route("/api/order_queue")
+def api_order_queue():
+    from shared.state_paths import STATE_DIR
+    import os
+    queue_path = os.path.join(STATE_DIR, "order_queue.json")
+    data = _load_json(queue_path)
+    return jsonify(data)
+
+@app.route("/api/reconciliation")
+def api_reconciliation():
+    from shared.state_paths import STATE_DIR
+    import os
+    recon_path = os.path.join(STATE_DIR, "reconciliation.json")
+    data = _load_json(recon_path)
+    return jsonify(data)
+
+@app.route("/api/execute_queue", methods=["POST"])
+@require_auth
+def api_execute_queue():
+    if is_system_halted():
+        return jsonify({"error": "System is HALTED. Cannot execute."}), 403
+        
+    from shared.state_paths import STATE_DIR
+    import os
+    queue_path = os.path.join(STATE_DIR, "order_queue.json")
+    data = _load_json(queue_path)
+    orders = data.get("orders", [])
+    if not orders:
+        return jsonify({"ok": False, "error": "Queue is empty."})
+        
+    from engine.execution.broker import broker
+    from engine.execution.order_manager import Order, OrderState
+    
+    results = []
+    for o_dict in orders:
+        if o_dict.get("state") != "CREATED":
+            continue
+            
+        order = Order(
+            ticker=o_dict["ticker"],
+            action=o_dict["action"],
+            value_eur=o_dict["value_eur"],
+            order_id=o_dict["order_id"]
+        )
+        # Execute
+        res = broker.execute_market_order(order)
+        results.append({"ticker": order.ticker, "action": order.action, "result": res})
+        o_dict["state"] = order.state.value
+
+    # Save back to mark as CONFIRMED/FAILED
+    try:
+        with open(queue_path, "w") as f:
+            json.dump({"orders": orders, "generated_at": data.get("generated_at"), "last_executed": datetime.now().isoformat()}, f)
+    except Exception as e:
+        log.error(f"Failed to save executed queue state: {e}")
+        
+    return jsonify({"ok": True, "results": results})
 
     data = request.get_json(force=True)
     action   = (data.get("action") or "").strip()

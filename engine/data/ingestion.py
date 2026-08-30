@@ -7,503 +7,91 @@ _ROOT = os.path.normpath(os.path.join(_HERE, '..', '..'))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from portfolio.src.config import ASSET_UNIVERSE, TICKER_MAPPING
+from portfolio.src.config import ASSET_UNIVERSE
 
-# Load .env if present
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
+
 """
-Production data ingestion pipeline.
-Primary source:  Polygon.io (requires POLYGON_API_KEY env var)
-Fallback source: yfinance (existing data_loader.py logic)
-
-FX conversion is applied BEFORE writing to the DB:
-  All prices stored in the DB are EUR-equivalent.
-  Downstream code (features, optimizer, risk) never needs to re-convert.
-
-EUR suffix map (same as portfolio/src/data_loader.py):
-  .DE  → Xetra/Frankfurt — already EUR
-  .AS  → Amsterdam Euronext — already EUR
-  .PA  → Paris Euronext — already EUR
-  .L   → London — GBP → multiply by GBPEUR rate
-  (no suffix) → US tickers — USD → multiply by USDEUR rate
+Production crypto data ingestion pipeline.
+Primary source: CCXT (Binance)
 """
 
 import asyncio
-import aiohttp
 import pandas as pd
-import numpy as np
-import yfinance as yf
-import os
+import ccxt.async_support as ccxt
 import logging
 from datetime import datetime, timedelta
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
-# FX suffix detection (mirrors portfolio/src/data_loader.py)
-EUR_SUFFIXES = ('.DE', '.AS', '.PA', '.SG')
-GBP_SUFFIXES = ('.L',)
-
-POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
-# Emergency FX fallbacks — only used when all APIs fail.
-FALLBACK_USDEUR = float(os.getenv('FALLBACK_USDEUR', '0.92'))
-FALLBACK_GBPEUR = float(os.getenv('FALLBACK_GBPEUR', '1.17'))
-
-# API Keys for backups (loaded from .env)
-API_KEYS = {
-    'twelvedata':   os.getenv('TWELVEDATA_API_KEY', ''),
-    'alphavantage': os.getenv('ALPHAVANTAGE_API_KEY', ''),
-    'finnhub':      os.getenv('FINNHUB_API_KEY', '')
-}
-
-def fetch_fx_history(from_date: str, to_date: str) -> dict:
-    """
-    Fetches daily USD→EUR and GBP→EUR rates.
-    Tries yfinance (Primary) -> TwelveData (Backup 1) -> AlphaVantage (Backup 2) -> Finnhub (Backup 3)
-    Returns: {'USDEUR': {date_str: rate}, 'GBPEUR': {date_str: rate}}
-    """
-    rates = {'USDEUR': {}, 'GBPEUR': {}}
-    pairs = {
-        'USDEUR': ('EURUSD=X', True),    # invert
-        'GBPEUR': ('GBPEUR=X', False),   # direct
-    }
-
-    for name, (pair, invert) in pairs.items():
-        # 1. Try yfinance
-        try:
-            data = yf.download(pair, start=from_date, end=to_date, auto_adjust=True, progress=False)
-            if not data.empty:
-                # Handle MultiIndex and extract 'Close'
-                if isinstance(data.columns, pd.MultiIndex):
-                    series = data.xs('Close', axis=1, level=0)
-                else:
-                    series = data['Close']
-                
-                # Squeeze to handle redundant dimensions, but ensure we have a Series/DataFrame
-                if isinstance(series, pd.DataFrame) and series.shape[1] == 1:
-                    series = series.iloc[:, 0]
-                
-                if hasattr(series, 'dropna'):
-                    series = series.dropna()
-                
-                if invert: series = 1 / series
-                
-                if isinstance(series, (float, np.float64)):
-                    # Handle scalar case if squeeze was too aggressive
-                    rates[name][from_date] = float(series)
-                else:
-                    for date_idx, val in series.items():
-                        rates[name][str(date_idx.date())] = float(val)
-                logger.info(f"FX fetched from yfinance: {name}")
-                continue
-        except Exception as e:
-            logger.warning(f"yfinance FX failed for {name}: {e}")
-
-        # 2. Try Twelve Data Backup
-        try:
-            symbol = "EUR/USD" if name == "USDEUR" else "GBP/EUR"
-            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&start_date={from_date}&end_date={to_date}&apikey={API_KEYS['twelvedata']}"
-            import requests
-            resp = requests.get(url).json()
-            if resp.get('status') == 'ok':
-                for val in resp.get('values', []):
-                    dt = val['datetime']
-                    rate = float(val['close'])
-                    if name == "USDEUR": rate = 1 / rate
-                    rates[name][dt] = rate
-                logger.info(f"FX fetched from TwelveData: {name}")
-                continue
-        except Exception as e:
-            logger.warning(f"TwelveData FX failed: {e}")
-
-        # 3. Try AlphaVantage Backup
-        try:
-            from_sym = "USD" if name == "USDEUR" else "GBP"
-            url = f"https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_sym}&to_symbol=EUR&apikey={API_KEYS['alphavantage']}"
-            resp = requests.get(url).json()
-            time_series = resp.get('Time Series FX (Daily)', {})
-            if time_series:
-                for dt, vals in time_series.items():
-                    # AlphaVantage returns last 100 days, filter by range
-                    if from_date <= dt <= to_date:
-                        rates[name][dt] = float(vals['4. close'])
-                logger.info(f"FX fetched from AlphaVantage: {name}")
-                continue
-        except Exception as e:
-            logger.warning(f"AlphaVantage FX failed: {e}")
-
-        # 4. Try Finnhub Backup
-        try:
-            # Finnhub uses OANDA symbols for FX candles
-            symbol = "OANDA:EUR_USD" if name == "USDEUR" else "OANDA:GBP_EUR"
-            from_ts = int(pd.Timestamp(from_date).timestamp())
-            to_ts = int(pd.Timestamp(to_date).timestamp())
-            url = f"https://finnhub.io/api/v1/forex/candle?symbol={symbol}&resolution=D&from={from_ts}&to={to_ts}&token={API_KEYS['finnhub']}"
-            resp = requests.get(url).json()
-            if resp.get('s') == 'ok':
-                for t, c in zip(resp['t'], resp['c']):
-                    dt = str(pd.Timestamp(t, unit='s').date())
-                    rate = float(c)
-                    if name == "USDEUR": rate = 1 / rate
-                    rates[name][dt] = rate
-                logger.info(f"FX fetched from Finnhub: {name}")
-                continue
-        except Exception as e:
-            logger.warning(f"Finnhub FX failed: {e}")
-
-    # Persist to fx_rates table
-    _persist_fx_rates(rates)
-    return rates
-
-
-def _persist_fx_rates(rates: dict):
-    """
-    Writes fetched FX rates to the fx_rates table.
-    Safe to run multiple times — upserts on (date, pair).
-    Stream 1: enables FX history queries from dashboard and regime engine.
-    """
+async def _fetch_ccxt_single(exchange: ccxt.Exchange, ticker: str, from_ts: int, to_ts: int) -> pd.DataFrame:
+    """Fetch history from CCXT exchange."""
     try:
-        from engine.db.db import get_session
-        from sqlalchemy import text
-
-        session = get_session()
-        count = 0
-        try:
-            for pair_name, date_rate_map in rates.items():
-                for date_str, rate in date_rate_map.items():
-                    session.execute(text("""
-                        INSERT INTO fx_rates (date, pair, rate, source)
-                        VALUES (:date, :pair, :rate, 'yfinance')
-                        ON CONFLICT (date, pair) DO UPDATE SET
-                            rate   = :rate,
-                            source = 'yfinance'
-                    """), {'date': date_str, 'pair': pair_name, 'rate': rate})
-                    count += 1
-            session.commit()
-            logger.info(f"FX rates persisted: {count} rows across {len(rates)} pairs")
-        except Exception as e:
-            session.rollback()
-            logger.warning(f"FX rate persistence failed: {e}")
-        finally:
-            session.close()
+        # Binance uses milliseconds for timestamps
+        limit = 1000
+        all_ohlcv = []
+        current_ts = from_ts
+        
+        while current_ts < to_ts:
+            ohlcv = await exchange.fetch_ohlcv(ticker, timeframe='1d', since=current_ts, limit=limit)
+            if not ohlcv:
+                break
+            all_ohlcv.extend(ohlcv)
+            # update current_ts to the last fetched timestamp + 1 ms to get next batch
+            current_ts = ohlcv[-1][0] + 1
+        
+        if not all_ohlcv:
+            return pd.DataFrame()
+            
+        df = pd.DataFrame(all_ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['date'] = pd.to_datetime(df['timestamp'], unit='ms').dt.date
+        df['ticker'] = ticker
+        df['adj_close'] = df['close']  # Crypto has no splits/dividends
+        df['source'] = 'ccxt_binance'
+        df['currency'] = 'EUR' if 'EUR' in ticker else 'USDT'
+        
+        # filter by range exactly
+        from_date = pd.to_datetime(from_ts, unit='ms').date()
+        to_date = pd.to_datetime(to_ts, unit='ms').date()
+        df = df[(df['date'] >= from_date) & (df['date'] <= to_date)]
+        
+        return df[['date', 'ticker', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'currency', 'source']]
+        
     except Exception as e:
-        logger.warning(f"Could not persist FX rates: {e}")
-
-
-def apply_fx_conversion(df: pd.DataFrame, fx_rates: dict) -> pd.DataFrame:
-    """
-    Converts non-EUR prices to EUR using daily FX rates.
-    Applied BEFORE persisting to DB — DB always stores EUR.
-    """
-    if df.empty:
-        return df
-
-    df = df.copy()
-    usd_eur_map = fx_rates.get('USDEUR', {})
-    gbp_eur_map = fx_rates.get('GBPEUR', {})
-    price_cols = ['open', 'high', 'low', 'close', 'adj_close']
-
-    for i, row in df.iterrows():
-        ticker   = row['ticker']
-        date_str = str(row['date'])
-
-        if any(ticker.endswith(s) for s in EUR_SUFFIXES):
-            continue  # Already EUR
-
-        elif any(ticker.endswith(s) for s in GBP_SUFFIXES):
-            rate = gbp_eur_map.get(date_str, FALLBACK_GBPEUR)
-        else:
-            # USD (no suffix)
-            rate = usd_eur_map.get(date_str, FALLBACK_USDEUR)
-
-        for col in price_cols:
-            if col in df.columns and pd.notna(df.at[i, col]):
-                val = float(df.at[i, col])
-                # UK stocks are in pence, convert to GBP first
-                if any(ticker.endswith(s) for s in GBP_SUFFIXES):
-                    val = val / 100.0
-                df.at[i, col] = val * rate
-
-    df['currency'] = 'EUR'
-    return df
-
-
-def _log_fx_fallback(pair_name: str, error: str):
-    try:
-        from engine.db.db import get_session
-        from sqlalchemy import text
-        session = get_session()
-        session.execute(text("""
-            INSERT INTO data_validation_log
-                (date, ticker, issue_type, raw_value, action, detail)
-            VALUES (CURRENT_DATE, :ticker, 'fx_fallback', NULL, 'fallback_used', :detail)
-        """), {'ticker': pair_name, 'detail': error[:200]})
-        session.commit()
-        session.close()
-    except Exception:
-        pass
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# POLYGON.IO PRIMARY SOURCE
-# ─────────────────────────────────────────────────────────────────────────────
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-async def _fetch_polygon_single(
-    http_session: aiohttp.ClientSession,
-    ticker: str,
-    from_date: str,
-    to_date: str,
-) -> pd.DataFrame:
-    """Fetch one ticker from Polygon adjusted OHLCV endpoint."""
-    url = (
-        f'https://api.polygon.io/v2/aggs/ticker/{ticker}'
-        f'/range/1/day/{from_date}/{to_date}'
-    )
-    params = {
-        'adjusted': 'true',
-        'sort':     'asc',
-        'limit':    '50000',
-        'apiKey':   POLYGON_API_KEY,
-    }
-    async with http_session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=60)) as resp:
-        data = await resp.json()
-
-    if data.get('status') not in ('OK', 'DELAYED') or not data.get('results'):
-        raise ValueError(f"Polygon: no results for {ticker} — status={data.get('status')}")
-
-    rows = []
-    for r in data['results']:
-        rows.append({
-            'date':      pd.Timestamp(r['t'], unit='ms').date(),
-            'ticker':    ticker,
-            'open':      r.get('o'),
-            'high':      r.get('h'),
-            'low':       r.get('l'),
-            'close':     r['c'],
-            'volume':    r.get('v'),
-            'adj_close': r['c'],   # Polygon returns adjusted prices when adjusted=true
-            'source':    'polygon',
-        })
-    return pd.DataFrame(rows)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# BACKUP STOCK SOURCES (TwelveData & Finnhub)
-# ─────────────────────────────────────────────────────────────────────────────
-
-async def _fetch_twelvedata_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
-    """Fetch history from TwelveData (Backup 1)."""
-    api_key = API_KEYS['twelvedata']
-    if not api_key: return pd.DataFrame()
-    
-    url = f"https://api.twelvedata.com/time_series?symbol={ticker}&interval=1day&start_date={from_date}&end_date={to_date}&apikey={api_key}"
-    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-        data = await resp.json()
-    
-    if data.get('status') != 'ok' or not data.get('values'):
-        return pd.DataFrame()
-    
-    rows = []
-    for v in data['values']:
-        rows.append({
-            'date':      pd.to_datetime(v['datetime']).date(),
-            'ticker':    ticker,
-            'open':      float(v['open']),
-            'high':      float(v['high']),
-            'low':       float(v['low']),
-            'close':     float(v['close']),
-            'volume':    int(v['volume']) if v.get('volume') else None,
-            'adj_close': float(v['close']),
-            'source':    'twelvedata',
-        })
-    return pd.DataFrame(rows)
-
-
-async def _fetch_finnhub_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
-    """Fetch history from Finnhub (Backup 2)."""
-    api_key = API_KEYS['finnhub']
-    if not api_key: return pd.DataFrame()
-    
-    from_ts = int(pd.Timestamp(from_date).timestamp())
-    to_ts = int(pd.Timestamp(to_date).timestamp())
-    url = f"https://finnhub.io/api/v1/stock/candle?symbol={ticker}&resolution=D&from={from_ts}&to={to_ts}&token={api_key}"
-    
-    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-        data = await resp.json()
-    
-    if data.get('s') != 'ok':
-        return pd.DataFrame()
-    
-    rows = []
-    for t, o, h, l, c, v in zip(data['t'], data['o'], data['h'], data['l'], data['c'], data['v']):
-        rows.append({
-            'date':      pd.Timestamp(t, unit='s').date(),
-            'ticker':    ticker,
-            'open':      float(o),
-            'high':      float(h),
-            'low':       float(l),
-            'close':     float(c),
-            'volume':    int(v),
-            'adj_close': float(c),
-            'source':    'finnhub',
-        })
-    return pd.DataFrame(rows)
-
-
-async def _fetch_alphavantage_single(http_session: aiohttp.ClientSession, ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
-    """Fetch history from AlphaVantage (Deep Backup)."""
-    api_key = API_KEYS['alphavantage']
-    if not api_key: return pd.DataFrame()
-    
-    # Using TIME_SERIES_DAILY_ADJUSTED for stock history
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={api_key}"
-    async with http_session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-        data = await resp.json()
-    
-    time_series = data.get('Time Series (Daily)', {})
-    if not time_series:
-        return pd.DataFrame()
-    
-    rows = []
-    for dt, v in time_series.items():
-        if from_date <= dt <= to_date:
-            rows.append({
-                'date':      pd.to_datetime(dt).date(),
-                'ticker':    ticker,
-                'open':      float(v['1. open']),
-                'high':      float(v['2. high']),
-                'low':       float(v['3. low']),
-                'close':     float(v['4. close']),
-                'volume':    int(v['6. volume']),
-                'adj_close': float(v['5. adjusted close']),
-                'source':    'alphavantage',
-            })
-    return pd.DataFrame(rows)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# YFINANCE FALLBACK SOURCE
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _fetch_yfinance_single(ticker: str, from_date: str, to_date: str) -> pd.DataFrame:
-    """
-    Fallback: uses existing yfinance logic (same as portfolio/src/data_loader.py).
-    Returns same column structure as Polygon fetch.
-    """
-    try:
-        raw = yf.download(
-            ticker, start=from_date, end=to_date,
-            auto_adjust=True, progress=False,
-        )
-    except Exception as e:
-        logger.error(f"yfinance failed for {ticker}: {e}")
+        logger.error(f"CCXT fetch failed for {ticker}: {e}")
         return pd.DataFrame()
 
-    if raw.empty:
-        return pd.DataFrame()
-
-    raw = raw.reset_index()
-    # Handle multi-level columns from yfinance
-    if hasattr(raw.columns, 'levels'):
-        raw.columns = [c[0] if isinstance(c, tuple) else c for c in raw.columns]
-
-    raw.columns = [str(c).lower().replace(' ', '_') for c in raw.columns]
-
-    rows = []
-    for _, row in raw.iterrows():
-        rows.append({
-            'date':      row['date'].date() if hasattr(row['date'], 'date') else row['date'],
-            'ticker':    ticker,
-            'open':      row.get('open'),
-            'high':      row.get('high'),
-            'low':       row.get('low'),
-            'close':     row.get('close'),
-            'volume':    int(row['volume']) if pd.notna(row.get('volume')) else None,
-            'adj_close': row.get('close'),
-            'source':    'yfinance',
-        })
-    return pd.DataFrame(rows)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ASYNC ORCHESTRATOR
-# ─────────────────────────────────────────────────────────────────────────────
 
 async def _fetch_all_async(tickers: list, from_date: str, to_date: str) -> pd.DataFrame:
-    """
-    Async multi-ticker fetch with per-ticker Polygon→TwelveData→Finnhub→yfinance fallback.
-    Now includes a secondary fallback to a US ticker if the primary (Xetra) fails.
-    """
+    from_ts = int(pd.Timestamp(from_date).timestamp() * 1000)
+    to_ts = int(pd.Timestamp(to_date).timestamp() * 1000)
+    
     frames = []
-    use_polygon = bool(POLYGON_API_KEY)
-
-    async with aiohttp.ClientSession() as http_session:
+    exchange = ccxt.binance({
+        'enableRateLimit': True,
+    })
+    
+    try:
         for ticker in tickers:
-            df = pd.DataFrame()
-            
-            # 1. Try Primary Ticker (Yahoo Finance & Polygon)
-            try:
-                df = _fetch_yfinance_single(ticker, from_date, to_date)
-                if df.empty and use_polygon:
-                    df = await _fetch_polygon_single(http_session, ticker, from_date, to_date)
-            except Exception as e:
-                logger.warning(f"Primary fetch failed for {ticker}: {e}")
-
-            # 2. Try Fallback Ticker (yfinance -> Backups)
-            if df.empty and ticker in TICKER_MAPPING:
-                fallback_ticker = TICKER_MAPPING[ticker]
-                logger.info(f"Primary {ticker} failed/empty — trying fallback: {fallback_ticker}")
-                try:
-                    # Try Yahoo for US version
-                    df = _fetch_yfinance_single(fallback_ticker, from_date, to_date)
-                    
-                    # Try Backups for US version (these are more likely to succeed than for .DE)
-                    if df.empty:
-                        df = await _fetch_twelvedata_single(http_session, fallback_ticker, from_date, to_date)
-                    if df.empty:
-                        df = await _fetch_finnhub_single(http_session, fallback_ticker, from_date, to_date)
-                    if df.empty:
-                        df = await _fetch_alphavantage_single(http_session, fallback_ticker, from_date, to_date)
-                    
-                    if not df.empty:
-                        df['ticker'] = ticker  # Tag with original
-                        logger.info(f"Successfully fetched fallback data for {ticker} via {fallback_ticker}")
-                except Exception as e:
-                    logger.warning(f"Fallback fetch failed for {fallback_ticker}: {e}")
-
-            # 3. Final Backup for Primary (if no fallback exists or fallback also failed)
-            if df.empty:
-                try:
-                    df = await _fetch_twelvedata_single(http_session, ticker, from_date, to_date)
-                    if df.empty:
-                        df = await _fetch_finnhub_single(http_session, ticker, from_date, to_date)
-                except Exception:
-                    pass
-
+            df = await _fetch_ccxt_single(exchange, ticker, from_ts, to_ts)
             if not df.empty:
                 frames.append(df)
+                logger.info(f"Successfully fetched {len(df)} rows for {ticker} from Binance")
             else:
-                logger.warning(f"All sources failed for {ticker} — skipped")
+                logger.warning(f"Failed to fetch {ticker} from Binance")
+    finally:
+        await exchange.close()
 
     if not frames:
         return pd.DataFrame()
     return pd.concat(frames, ignore_index=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DB PERSISTENCE
-# ─────────────────────────────────────────────────────────────────────────────
-
 def persist_prices(df: pd.DataFrame):
-    """
-    Upserts EUR-converted price rows into the prices table.
-    ON CONFLICT: updates adj_close and source (handles data corrections).
-    """
     if df.empty:
         logger.warning("persist_prices: empty DataFrame — nothing to write")
         return
@@ -511,9 +99,6 @@ def persist_prices(df: pd.DataFrame):
     from engine.db.db import get_session
     from sqlalchemy import text
 
-    # Drop rows where close or adj_close is NaN — these violate the NOT NULL
-    # constraint and usually come from yfinance returning volume-only rows for
-    # tickers that had no trading activity on a given day (e.g. DBXD.DE).
     before = len(df)
     df = df[df['close'].notna() & df['adj_close'].notna()].copy()
     dropped = before - len(df)
@@ -547,7 +132,7 @@ def persist_prices(df: pd.DataFrame):
                 'volume':    row.get('volume'),
                 'adj_close': row.get('adj_close'),
                 'currency':  row.get('currency', 'EUR'),
-                'source':    row.get('source', 'unknown'),
+                'source':    row.get('source', 'ccxt_binance'),
             })
             count += 1
 
@@ -561,46 +146,23 @@ def persist_prices(df: pd.DataFrame):
         session.close()
 
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PUBLIC ENTRY POINT
-# ─────────────────────────────────────────────────────────────────────────────
-
 def run_ingestion(
     tickers: list,
     from_date: str,
     to_date: str,
-    apply_fx: bool = True,
+    apply_fx: bool = False, # Unused now for crypto
 ) -> pd.DataFrame:
-    """
-    Full ingestion pipeline:
-      1. Fetch OHLCV from Polygon (fallback: yfinance)
-      2. Validate prices (spike filter, zero-price filter)
-      3. Apply FX conversion → all prices in EUR
-      4. Persist prices to DB
-      5. Persist FX rates to fx_rates table (Stream 1)
-
-    Args:
-        tickers:   list of ticker strings
-        from_date: 'YYYY-MM-DD'
-        to_date:   'YYYY-MM-DD'
-        apply_fx:  set False only for testing (skips FX conversion)
-
-    Returns:
-        EUR-converted, validated DataFrame (same as what was persisted).
-    """
+    
     logger.info(
         f"Ingestion starting: {len(tickers)} tickers, "
-        f"{from_date} → {to_date}, polygon={'yes' if POLYGON_API_KEY else 'no (yfinance only)'}"
+        f"{from_date} → {to_date} via CCXT Binance"
     )
 
-    # Step 1: Fetch
     df_raw = asyncio.run(_fetch_all_async(tickers, from_date, to_date))
     if df_raw.empty:
-        logger.error("Ingestion: no data returned from any source")
+        logger.error("Ingestion: no data returned from Binance")
         return pd.DataFrame()
 
-    # Step 2: Validate
     from engine.data.validation import validate_prices
     df_clean = validate_prices(df_raw)
 
@@ -608,20 +170,11 @@ def run_ingestion(
         logger.error("Ingestion: all rows rejected by validation")
         return pd.DataFrame()
 
-    # Step 3 + 5: FX conversion (also persists rates to fx_rates table)
-    if apply_fx:
-        fx_rates = fetch_fx_history(from_date, to_date)
-        df_eur = apply_fx_conversion(df_clean, fx_rates)
-    else:
-        df_eur = df_clean
-        df_eur['currency'] = 'EUR'
+    persist_prices(df_clean)
 
-    # Step 4: Persist prices
-    persist_prices(df_eur)
+    logger.info(f"Ingestion complete: {len(df_clean)} rows persisted.")
 
-    logger.info(f"Ingestion complete: {len(df_eur)} rows persisted.")
-
-    # Step 6: Post-ingestion staleness check (B5) — warn on tickers with data gaps
+    # Staleness check
     try:
         from engine.data.validation import check_staleness
         from engine.db.db import get_session
@@ -629,7 +182,6 @@ def run_ingestion(
 
         session = get_session()
         try:
-            # Only check staleness for the tickers in our active universe
             if not tickers:
                 rows = []
             else:
@@ -648,52 +200,25 @@ def run_ingestion(
                 {"ticker": r[0], "date": r[1]}
                 for r in rows
             ])
-            stale_list = check_staleness(stale_df, max_gap_days=3)
+            # Crypto is 24/7 so a gap > 1 day is stale
+            stale_list = check_staleness(stale_df, max_gap_days=2)
 
             if stale_list:
                 stale_tickers = [s["ticker"] for s in stale_list]
                 logger.warning(
-                    f"\u26a0\ufe0f  STALE DATA DETECTED: {len(stale_list)} tickers \u2014 {stale_tickers}"
+                    f"⚠️  STALE DATA DETECTED: {len(stale_list)} tickers — {stale_tickers}"
                 )
-                session2 = get_session()
-                try:
-                    for s in stale_list:
-                        session2.execute(_text("""
-                            INSERT INTO pipeline_logs (level, step_name, message, detail, run_date)
-                            VALUES ('CRITICAL', 'data_ingestion', :msg, :detail, date('now'))
-                        """), {
-                            "msg": f"STALE: {s['ticker']} last seen {s['last_date']} ({s['gap_days']} days ago)",
-                            "detail": str(s),
-                        })
-                    session2.commit()
-                finally:
-                    session2.close()
-
-                session3 = get_session()
-                try:
-                    for s in stale_list:
-                        session3.execute(_text("""
-                            INSERT INTO risk_events (date, event_type, ticker, detail)
-                            VALUES (CURRENT_DATE, 'stale_data', :ticker, :detail)
-                        """), {
-                            "ticker": s["ticker"],
-                            "detail": f"Data {s['gap_days']} days stale (last: {s['last_date']})",
-                        })
-                    session3.commit()
-                finally:
-                    session3.close()
             else:
-                logger.info("\u2705 Staleness check: all tickers fresh.")
+                logger.info("✅ Staleness check: all tickers fresh.")
     except Exception as e:
         logger.warning(f"Staleness check failed (non-fatal): {e}")
 
-    return df_eur
-
+    return df_clean
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('tickers', nargs='*', help='Tickers to ingest (defaults to config universe)')
+    parser.add_argument('tickers', nargs='*', help='Tickers to ingest')
     parser.add_argument('--days', type=int, default=30, help='Days of history to fetch')
     args = parser.parse_args()
 
@@ -701,9 +226,7 @@ if __name__ == '__main__':
     today = str(date.today())
     start_date = str(date.today() - timedelta(days=args.days))
 
-    # Use CLI args if provided, otherwise the full config universe
     tickers_to_run = args.tickers if args.tickers else ASSET_UNIVERSE
-
     logging.basicConfig(level=logging.INFO)
     result = run_ingestion(tickers_to_run, start_date, today)
-    print(f"\nResult: {len(result)} rows, tickers: {result['ticker'].unique().tolist()}")
+    print(f"\nResult: {len(result)} rows, tickers: {result['ticker'].unique().tolist() if not result.empty else []}")

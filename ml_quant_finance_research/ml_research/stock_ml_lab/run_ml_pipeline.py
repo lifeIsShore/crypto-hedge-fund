@@ -38,7 +38,7 @@ OUTPUT_JSON_LEGACY = ROOT_DIR / "portfolio" / "data" / "ml_state.json"
 # Ensure imports can find local utils and central config
 sys.path.insert(0, str(ROOT_DIR))
 
-from utils.data_loader     import fetch_price_data, fetch_macro_data, fetch_fundamentals, UNIVERSE
+from utils.data_loader     import fetch_price_data, fetch_macro_data, UNIVERSE
 from utils.feature_builder import build_features, select_features, get_feature_selection_report
 from utils.evaluator       import walk_forward_splits, evaluate_fold, log_experiment
 from utils.scenario_engine import generate_scenarios, ensemble_sentiment
@@ -265,7 +265,7 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_features_cache=None,
+def run_ticker(ticker, prices, macro, options_all=None, cs_features_cache=None,
                benchmark_df=None, prebuilt_features=None, sv_data=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
@@ -293,7 +293,7 @@ def run_ticker(ticker, prices, macro, fundamentals, options_all=None, cs_feature
 
             feat_df = build_features(
             prices[ticker],
-            fundamentals=fundamentals.get(ticker),
+            fundamentals=None,
             macro_df=macro,
             options_dict=options_dict,
             horizons=HORIZONS,
@@ -653,12 +653,7 @@ def main():
         log.warning(f"  Macro load failed ({e}); continuing without macro features")
         macro = None
 
-    log.info("Step 1c — Loading fundamentals…")
-    try:
-        fundamentals = fetch_fundamentals(force_refresh=False)
-    except Exception as e:
-        log.warning(f"  Fundamentals load failed ({e}); continuing without them")
-        fundamentals = {t: {} for t in prices}
+    fundamentals = {t: {} for t in prices}
 
     log.info("Step 1d — Fetching options & short interest (free via yfinance)…")
     try:
@@ -763,7 +758,7 @@ def main():
     
     for ticker in prices:
         log.info(f"  ── {ticker} ──")
-        result = run_ticker(ticker, prices, macro, fundamentals, options_all=options_all,
+        result = run_ticker(ticker, prices, macro, options_all=options_all,
                             cs_features_cache=cs_features_cache, benchmark_df=benchmark_df,
                             prebuilt_features=prebuilt_features,
                             sv_data=sv_data_all if ENABLE_SHORT_VOLUME_FEATURES else None)

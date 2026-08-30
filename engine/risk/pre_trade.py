@@ -74,3 +74,91 @@ def run_pre_trade_checks(suggested_weights: pd.Series, sector_map: dict = None) 
     session.close()
 
     return result
+
+def check_tax_awareness(orders: list):
+    """
+    Simulates FIFO lot consumption for SELL orders.
+    Warns if the sale will trigger a short-term capital gain (<365 days).
+    Modifies order.notes in place.
+    """
+    from engine.db.db import get_session
+    from sqlalchemy import text
+    from datetime import datetime
+    
+    session = get_session()
+    try:
+        for order in orders:
+            if order.action != 'SELL':
+                continue
+                
+            # Get latest price to estimate quantity
+            price_row = session.execute(
+                text("SELECT adj_close FROM prices WHERE ticker = :t ORDER BY date DESC LIMIT 1"),
+                {"t": order.ticker}
+            ).fetchone()
+            
+            if not price_row:
+                continue
+                
+            price_eur = float(price_row[0])
+            qty_to_sell = order.value_eur / price_eur
+            
+            # Fetch active lots (FIFO)
+            asset_base = order.ticker.split('/')[0]
+            lots = session.execute(
+                text("""
+                    SELECT lot_id, quantity_original, quantity_remaining, acquisition_cost_eur, acquisition_timestamp
+                    FROM tax_lots
+                    WHERE asset = :asset AND quantity_remaining > 0
+                    ORDER BY acquisition_timestamp ASC
+                """),
+                {"asset": asset_base}
+            ).fetchall()
+            
+            remaining_to_sell = qty_to_sell
+            short_term_gain = 0.0
+            total_st_qty = 0.0
+            min_holding_days = 9999
+            
+            now = datetime.now()
+            
+            for lot in lots:
+                if remaining_to_sell <= 0:
+                    break
+                    
+                lot_id, qty_orig, qty_rem, cost_eur, acq_ts_str = lot
+                acq_ts = datetime.fromisoformat(acq_ts_str)
+                holding_days = (now - acq_ts).days
+                
+                consume_qty = min(remaining_to_sell, qty_rem)
+                
+                if holding_days < 365:
+                    # Short-term disposal detected
+                    cost_basis_chunk = (consume_qty / qty_orig) * cost_eur
+                    sale_value_chunk = consume_qty * price_eur
+                    gain_chunk = sale_value_chunk - cost_basis_chunk
+                    
+                    short_term_gain += gain_chunk
+                    total_st_qty += consume_qty
+                    min_holding_days = min(min_holding_days, holding_days)
+                
+                remaining_to_sell -= consume_qty
+                
+            if total_st_qty > 0 and short_term_gain > 0:
+                est_tax = short_term_gain * 0.25  # Roughly 25% placeholder for tax impact
+                warn_msg = (
+                    f"⚠️ Short-term disposal | "
+                    f"Est. gain: €{short_term_gain:.0f} | "
+                    f"Est. tax impact: €{est_tax:.0f} | "
+                    f"Holding: {min_holding_days} days"
+                )
+                logger.warning(f"[tax_awareness] {order.ticker} - {warn_msg}")
+                if order.notes:
+                    order.notes += " | " + warn_msg
+                else:
+                    order.notes = warn_msg
+                    
+    except Exception as e:
+        logger.error(f"[tax_awareness] Failed: {e}")
+    finally:
+        session.close()
