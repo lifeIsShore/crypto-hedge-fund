@@ -1333,61 +1333,6 @@ def api_rebalance():
     return jsonify({"suggestions": suggestions})
 
 
-@app.route("/api/pead")
-def api_pead():
-    """PEAD state + history for pead.html."""
-    state = _load_json(PEAD_STATE_PATH)
-    history = _q("""
-        SELECT ticker, earnings_date, direction, pead_setup_quality,
-               surprise_pct, drift_21d, outcome_label_correct, regime_composite
-        FROM pead_setups
-        ORDER BY earnings_date DESC
-        LIMIT 60
-    """)
-    # Derive active windows (entries within last 7 days)
-    active = _q("""
-        SELECT ticker, earnings_date AS entry_date, direction, pead_setup_quality AS quality,
-               surprise_pct, regime_composite
-        FROM pead_setups
-        WHERE earnings_date >= date('now', '-60 days')
-        ORDER BY earnings_date DESC
-    """)
-
-    # Fallback to CSV if DB is empty
-    if not history and PEAD_SETUPS_PATH and Path(PEAD_SETUPS_PATH).exists():
-        import csv
-        try:
-            with open(PEAD_SETUPS_PATH, newline="", encoding="utf-8") as f:
-                reader = list(csv.DictReader(f))
-                # Map CSV names to what frontend expects
-                for r in reader:
-                    r['quality'] = r.get('pead_setup_quality')
-                    r['entry_date'] = r.get('entry_date')
-                
-                history = reader[:60]
-                
-                # Filter active for CSV fallback
-                today = datetime.now()
-                cutoff = today - timedelta(days=21)
-                active = [
-                    r for r in reader 
-                    if r.get('entry_date') and datetime.strptime(r['entry_date'], '%Y-%m-%d') >= cutoff
-                ]
-        except Exception as e:
-            log.warning(f"CSV fallback failed in /api/pead: {e}")
-
-    performance = state.get("performance", {})
-    by_quality  = state.get("by_quality", {})
-    by_regime   = state.get("by_regime", {})
-    return jsonify({
-        "performance":  performance,
-        "by_quality":   by_quality,
-        "by_regime":    by_regime,
-        "active_setups": active,
-        "db_history":   history,
-        "generated_at": state.get("generated_at", ""),
-    })
-
 
 @app.route("/api/log_trade", methods=["POST"])
 @require_auth

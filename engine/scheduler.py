@@ -352,7 +352,6 @@ def step_alpha(model_name: str):
     from engine.alpha.sector_momentum  import SectorMomentumAlpha
     from engine.alpha.mean_reversion   import MeanReversionAlpha
     from engine.alpha.vol_timing       import VolTimingAlpha
-    from engine.alpha.pead_alpha       import PEADAlpha
     from engine.alpha.ml_alpha         import MLAlpha
 
     model_map = {
@@ -360,7 +359,6 @@ def step_alpha(model_name: str):
         'sector_momentum': SectorMomentumAlpha(),   # J5
         'mean_reversion':  MeanReversionAlpha(),
         'vol_timing':      VolTimingAlpha(),
-        'pead':            PEADAlpha(),
         'ml_model':        MLAlpha(),
     }
     model = model_map[model_name]
@@ -370,18 +368,6 @@ def step_alpha(model_name: str):
         logger.info(f"[{model_name}] {len(signals)} signals persisted")
     else:
         logger.info(f"[{model_name}] No signals generated")
-
-
-def step_divergence_scan():
-    from engine.screens.etf_divergence import detect_divergences, save_divergence_events
-    divergences = detect_divergences(TODAY)
-    save_divergence_events(divergences)
-    logger.info(f"ETF divergence scan: {len(divergences)} events found")
-
-
-def step_outcome_fill():
-    from engine.screens.etf_divergence import fill_outcome_data
-    fill_outcome_data()
 
 
 def step_portfolio_construction():
@@ -638,11 +624,6 @@ def step_price_targets():
     from engine.analysis.price_targets import run_price_targets
     targets = run_price_targets(TICKERS, TODAY)
     logger.info(f"[price_targets] {len(targets)} targets computed")
-
-
-def step_pead_refresh():
-    from engine.alpha.pead_alpha import run_pead_engine_weekly
-    run_pead_engine_weekly()
 
 
 def step_ml_refresh():
@@ -1024,27 +1005,10 @@ def step_push_signals_to_queue(
     regime_mult_s = 1.2 if 'risk-off' in regime_risk else 0.7 if 'risk-on' in regime_risk else 1.0
     transition    = bool(reg.get('transition_warning', False))
 
-    # ── Load PEAD active setups ──────────────────────────────────────────────
-    session = get_session()
-    try:
-        pead_rows = session.execute(text("""
-            SELECT ticker, direction, pead_setup_quality
-            FROM pead_setups
-            WHERE earnings_date >= date('now', '-60 days')
-            ORDER BY earnings_date DESC
-        """)).fetchall()
-        pead_map = {}
-        for r in pead_rows:
-            t = r[0]
-            if t not in pead_map:
-                pead_map[t] = {'direction': r[1], 'pead_setup_quality': r[2]}
-    finally:
-        session.close()
-
     expires_at = (_dt.now() + _td(days=expiry_days)).strftime('%Y-%m-%d %H:%M:%S')
     cutoff     = (_dt.now() - _td(days=expiry_days)).strftime('%Y-%m-%d %H:%M:%S')
 
-    pushed_long = pushed_short = pushed_pead = already_exists = 0
+    pushed_long = pushed_short = already_exists = 0
 
     def _already_pending(ticker, signal_type, cutoff_ts):
         """True if a pending entry for this ticker+signal_type exists within cutoff."""
@@ -1094,19 +1058,12 @@ def step_push_signals_to_queue(
         if auc < auc_gate:
             continue
 
-        # PEAD boost
-        pead_info = pead_map.get(ticker)
-        pead_boost = 1.0
-        if pead_info:
-            q = (pead_info.get('pead_setup_quality') or '').upper()
-            pead_boost = 1.15 if q == 'HIGH' else 1.08 if q == 'MEDIUM' else 1.03
-
         vol_pct   = vol_ann * 100
         vol_score = 1.1 if 15 <= vol_pct <= 40 else 0.8 if vol_pct > 60 else 1.0
 
         # ── Long signal ──────────────────────────────────────────────────────
         if up_proba >= 0.54:
-            conv = up_proba * auc * (1 + rr_ratio) * regime_mult_l * pead_boost * vol_score
+            conv = up_proba * auc * (1 + rr_ratio) * regime_mult_l * vol_score
             if conv >= long_conv_threshold:
                 if _already_pending(ticker, 'BUY', cutoff):
                     already_exists += 1
@@ -1118,8 +1075,7 @@ def step_push_signals_to_queue(
                     pushed_long += 1
 
         # ── Short signal (regime-gated) ──────────────────────────────────────
-        is_bearish_pead = pead_info and (pead_info.get('direction') or '').lower() in ('bearish', 'bear')
-        show_short = ('risk-off' in regime_risk or transition or up_proba <= 0.38 or is_bearish_pead)
+        show_short = ('risk-off' in regime_risk or transition or up_proba <= 0.38)
         if up_proba <= 0.40 and show_short:
             bear_proba = 1.0 - up_proba
             short_cover = float(row.get('support_bb_lower') or 0)
@@ -1128,7 +1084,7 @@ def step_push_signals_to_queue(
                 (cur - short_cover) / (short_stop - cur) if (short_stop > cur and short_cover > 0) else rr_ratio * 0.8,
                 5.0
             ))
-            short_score = bear_proba * auc * rr_short * regime_mult_s * pead_boost
+            short_score = bear_proba * auc * rr_short * regime_mult_s
             if short_score >= short_conv_threshold:
                 if _already_pending(ticker, 'SHORT', cutoff):
                     already_exists += 1
@@ -1139,31 +1095,9 @@ def step_push_signals_to_queue(
                                    round(vol_ann, 4), 'pipeline')
                     pushed_short += 1
 
-    # ── Auto-push PEAD setups (regardless of conviction) ────────────────────
-    for ticker, pead_info in pead_map.items():
-        direction = (pead_info.get('direction') or '').lower()
-        sig_type  = 'BUY' if direction in ('bullish', 'bull') else 'SHORT'
-        q         = (pead_info.get('pead_setup_quality') or '').upper()
-        pead_conv = 0.50 + (0.10 if q == 'HIGH' else 0.05 if q == 'MEDIUM' else 0.0)
-        source    = 'pead'
-
-        # Only push if we have some price data
-        pt_match = next((r for r in targets if r['ticker'] == ticker), None)
-        if pt_match:
-            cur  = float(pt_match.get('current_price_eur') or 0)
-            auc  = float((ml_signals.get(ticker) or {}).get('auc') or 0)
-            if _already_pending(ticker, sig_type, cutoff):
-                already_exists += 1
-                continue
-            _insert_signal(ticker, sig_type, pead_conv, None,
-                           None, round(auc, 4) if auc else None, None,
-                           round(cur, 2) if cur else None, None, None,
-                           None, source)
-            pushed_pead += 1
-
     logger.info(
-        f"[signal_push] Pushed {pushed_long} long / {pushed_short} short / "
-        f"{pushed_pead} PEAD signals — {already_exists} already pending (skipped)"
+        f"[signal_push] Pushed {pushed_long} long / {pushed_short} short "
+        f"— {already_exists} already pending (skipped)"
     )
 
 
@@ -1277,8 +1211,6 @@ def run_pipeline(dry_run: bool = False):
     _run_step('5.  Alpha: mean reversion',   lambda: step_alpha('mean_reversion'),dry_run)
     _run_step('6.  Alpha: vol timing',       lambda: step_alpha('vol_timing'),   dry_run)
     _run_step('8.  Alpha: ML signals',       lambda: step_alpha('ml_model'),     dry_run)
-    _run_step('9.  ETF divergence scan',     step_divergence_scan,               dry_run)
-    _run_step('10. Outcome fill',            step_outcome_fill,                  dry_run)
     _run_step('11. Portfolio construction',  step_portfolio_construction,        dry_run)
     _run_step('12. Price targets',           step_price_targets,                 dry_run)  # Stream 3
     _run_step('13. Performance logging',      step_performance_log,               dry_run)

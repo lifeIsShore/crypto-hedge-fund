@@ -61,7 +61,6 @@
   <div class="panel-body">
     <div class="grid grid-4">
       <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="COMPOSITE LAGGARD SCREEN" data-info="Strategy identifying stocks that are falling behind their sector peers despite positive macro.">LAGGARD SCREEN</div><div class="kpi-value" id="rel-lag" style="font-size:16px">—</div></div>
-      <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="PEAD SETUPS" data-info="Identifying stocks with earnings-based price momentum (Post-Earnings Announcement Drift).">PEAD SETUPS</div><div class="kpi-value" id="rel-pead" style="font-size:16px">—</div></div>
       <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="SHORT SQUEEZE" data-info="Identifying stocks with high short interest vulnerable to rapid upward moves.">SHORT SQUEEZE</div><div class="kpi-value" id="rel-sq" style="font-size:16px">—</div></div>
       <div class="kpi neutral" style="padding:12px"><div class="kpi-label info-point" data-title="CORR BREAK" data-info="Correlation Break: Detecting stocks moving independently of their usual market links.">CORR BREAK</div><div class="kpi-value" id="rel-cb" style="font-size:16px">—</div></div>
     </div>
@@ -83,14 +82,14 @@
 {% block scripts %}
 <script>
 const GUIDANCE = {
-  'Expansion|Risk-On':{lag:'HIGH',pead:'HIGH',sq:'HIGH',cb:'HIGH'},
-  'Expansion|Neutral':{lag:'HIGH',pead:'HIGH',sq:'MED',cb:'HIGH'},
-  'Slowdown|Neutral':{lag:'MOD',pead:'MOD',sq:'MED',cb:'AVOID'},
-  'Slowdown|Risk-On':{lag:'MOD',pead:'HIGH',sq:'MED',cb:'MOD'},
-  'Slowdown|Risk-Off':{lag:'LOW',pead:'LOW',sq:'AVOID',cb:'AVOID'},
-  'Contraction|Risk-Off':{lag:'AVOID',pead:'LOW',sq:'AVOID',cb:'AVOID'},
-  'Recovery|Risk-On':{lag:'HIGH',pead:'MOD',sq:'HIGH',cb:'HIGH'},
-  'Recovery|Neutral':{lag:'HIGH',pead:'MOD',sq:'MOD',cb:'MOD'},
+  'Expansion|Risk-On':{lag:'HIGH',sq:'HIGH',cb:'HIGH'},
+  'Expansion|Neutral':{lag:'HIGH',sq:'MED',cb:'HIGH'},
+  'Slowdown|Neutral':{lag:'MOD',sq:'MED',cb:'AVOID'},
+  'Slowdown|Risk-On':{lag:'MOD',sq:'MED',cb:'MOD'},
+  'Slowdown|Risk-Off':{lag:'LOW',sq:'AVOID',cb:'AVOID'},
+  'Contraction|Risk-Off':{lag:'AVOID',sq:'AVOID',cb:'AVOID'},
+  'Recovery|Risk-On':{lag:'HIGH',sq:'HIGH',cb:'HIGH'},
+  'Recovery|Neutral':{lag:'HIGH',sq:'MOD',cb:'MOD'},
 };
 const REL_COLOR={'HIGH':'var(--accent)','MOD':'var(--accent3)','MED':'var(--accent3)','LOW':'var(--accent2)','AVOID':'var(--accent2)','UNKNOWN':'var(--muted)'};
 let regDistChart = null;
@@ -165,10 +164,10 @@ async function loadRegime(region = 'US'){
     el.style.color=active?'var(--accent2)':'var(--accent)';
   });
   const key=`${growth}|${risk}`;
-  const rel=GUIDANCE[key]||{lag:'UNKNOWN',pead:'UNKNOWN',sq:'UNKNOWN',cb:'UNKNOWN'};
+  const rel=GUIDANCE[key]||{lag:'UNKNOWN',sq:'UNKNOWN',cb:'UNKNOWN'};
   const relIcon={'HIGH':'🟢','MOD':'🟡','MED':'🟡','LOW':'🔴','AVOID':'⛔','UNKNOWN':'❓'};
   document.getElementById('rel-badge').textContent=`${growth} · ${risk}`;
-  [['rel-lag',rel.lag],['rel-pead',rel.pead],['rel-sq',rel.sq],['rel-cb',rel.cb]].forEach(([id,v])=>{
+  [['rel-lag',rel.lag],['rel-sq',rel.sq],['rel-cb',rel.cb]].forEach(([id,v])=>{
     const el=document.getElementById(id); el.textContent=`${relIcon[v]||'?'} ${v}`; el.style.color=REL_COLOR[v]||'var(--muted)';
   });
   const hist=(data.history||[]).slice(0,30);

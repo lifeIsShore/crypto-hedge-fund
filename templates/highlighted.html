@@ -75,7 +75,6 @@
   font-size: 8px; letter-spacing: .08em; padding: 2px 6px;
   background: rgba(255,255,255,.05); color: var(--muted);
 }
-.card-tag.pead    { background: rgba(0,229,160,.1);  color: var(--accent);  }
 .card-tag.regime  { background: rgba(245,166,35,.1); color: var(--accent3); }
 .card-tag.warning { background: rgba(255,77,109,.1); color: var(--accent2); }
 .card-tag.strong  { background: rgba(100,149,237,.1);color: var(--accent4); }
@@ -201,7 +200,7 @@
   <span class="section-hdr-count" id="long-count">0</span>
 </div>
 <div style="font-size:10px; color:var(--muted); margin-bottom:4px">
-  Ranked by: <code>up_proba × AUC × (1 + R:R) × regime_mult × pead_boost × vol_score</code>
+  Ranked by: <code>up_proba × AUC × (1 + R:R) × regime_mult × vol_score</code>
   &nbsp;·&nbsp; AUC gate ≥ 0.53 &nbsp;·&nbsp; up_proba ≥ 54%
 </div>
 <div class="picks-grid" id="long-cards">
@@ -257,7 +256,6 @@ function convTierClass(tier) {
 }
 function tagClass(tag) {
   const t = tag.toLowerCase();
-  if (t.includes('pead'))        return 'pead';
   if (t.includes('risk-off') || t.includes('transition') || t.includes('warning')) return 'warning';
   if (t.includes('risk-on'))     return 'regime';
   if (t.includes('strong') || t.includes('high')) return 'strong';

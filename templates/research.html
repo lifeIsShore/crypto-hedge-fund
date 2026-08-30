@@ -70,53 +70,7 @@
 
 </div>
 
-<!-- PEAD Setups -->
-<div class="panel" style="margin-top:14px">
-  <div class="panel-header">
-    <span class="panel-title info-point" data-title="PEAD SETUPS" data-info="Stocks exhibiting strong momentum following positive/negative earnings surprises (Post-Earnings Announcement Drift).">PEAD SETUPS — POST-EARNINGS DRIFT</span>
-    <span class="panel-badge">ACTIVE + HISTORICAL</span>
-  </div>
-  <div class="panel-body">
-    <div class="kpi-strip" id="pead-kpi" style="margin-bottom:14px">
-      <div class="kpi neutral" style="padding:10px"><div class="kpi-label">TOTAL SETUPS</div><div class="kpi-value" style="font-size:18px" id="pead-total">—</div></div>
-      <div class="kpi good"    style="padding:10px"><div class="kpi-label">21D HIT RATE</div><div class="kpi-value" style="font-size:18px" id="pead-hr">—</div></div>
-      <div class="kpi neutral" style="padding:10px"><div class="kpi-label">AVG 21D DRIFT</div><div class="kpi-value" style="font-size:18px" id="pead-drift">—</div></div>
-      <div class="kpi warn"    style="padding:10px"><div class="kpi-label">ACTIVE</div><div class="kpi-value" style="font-size:18px" id="pead-active">—</div></div>
-    </div>
 
-    <div id="pead-active-section">
-      <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">ACTIVE ENTRY WINDOWS</div>
-      <table class="tbl" id="pead-active-tbl">
-        <thead><tr>
-          <th onclick="sortTable(0,'pead-active-tbl','str')">TICKER</th>
-          <th onclick="sortTable(1,'pead-active-tbl','str')">DIRECTION</th>
-          <th onclick="sortTable(2,'pead-active-tbl','str')">QUALITY</th>
-          <th onclick="sortTable(3,'pead-active-tbl','num')">SURPRISE %</th>
-          <th onclick="sortTable(4,'pead-active-tbl','str')">ENTRY DATE</th>
-          <th onclick="sortTable(5,'pead-active-tbl','str')">UNDERREACTION</th>
-          <th onclick="sortTable(6,'pead-active-tbl','str')">REGIME</th>
-        </tr></thead>
-        <tbody id="pead-active-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
-      </table>
-    </div>
-
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-      <div class="info-point" data-title="HISTORICAL SETUPS" data-info="Audit trail of previous earnings setups and their eventual outcome." style="font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">HISTORICAL SETUPS (LAST 50)</div>
-      <table class="tbl" id="pead-hist-tbl">
-        <thead><tr>
-          <th onclick="sortTable(0,'pead-hist-tbl','str')">EARNINGS DATE</th>
-          <th onclick="sortTable(1,'pead-hist-tbl','str')">TICKER</th>
-          <th onclick="sortTable(2,'pead-hist-tbl','str')">DIRECTION</th>
-          <th onclick="sortTable(3,'pead-hist-tbl','num')">SURPRISE %</th>
-          <th onclick="sortTable(4,'pead-hist-tbl','num')">DRIFT 21D</th>
-          <th onclick="sortTable(5,'pead-hist-tbl','str')">CORRECT</th>
-          <th onclick="sortTable(6,'pead-hist-tbl','str')">REGIME</th>
-        </tr></thead>
-        <tbody id="pead-hist-tbody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
 {% endblock %}
 
@@ -141,9 +95,8 @@ function filterSigs(q){
 }
 
 async function loadResearch(){
-  const [mlRes, peadRes] = await Promise.all([
+  const [mlRes] = await Promise.all([
     fetch('/api/ml_signals').then(r=>r.json()).catch(()=>({})),
-    fetch('/api/pead').then(r=>r.json()).catch(()=>({})),
   ]);
 
   if(!mlRes.ensemble){
@@ -226,50 +179,7 @@ async function loadResearch(){
     });
   }
 
-  const perf = peadRes.performance || {};
-  document.getElementById('pead-total').textContent = perf.total_setups || '—';
-  document.getElementById('pead-hr').textContent    = perf.overall_hit_rate_21d!=null?((+perf.overall_hit_rate_21d)*100).toFixed(1)+'%':'—';
-  document.getElementById('pead-drift').textContent = perf.overall_avg_drift_21d!=null?((+perf.overall_avg_drift_21d)>=0?'+':'')+((+perf.overall_avg_drift_21d)).toFixed(2)+'%':'—';
 
-  const active = peadRes.active_setups || [];
-  document.getElementById('pead-active').textContent = active.length;
-
-  const atbody = document.getElementById('pead-active-tbody');
-  if(!active.length){
-    atbody.innerHTML='<tr><td colspan="7" style="color:var(--muted)">No active entry windows today.</td></tr>';
-  } else {
-    atbody.innerHTML = active.map(s=>`<tr>
-      <td style="font-weight:500;color:#fff">
-        ${s.ticker}
-        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[s.ticker] || ''})</span>
-      </td>
-      <td class="${s.direction==='bullish'?'sig-buy':'sig-sell'}">${s.direction==='bullish'?'🟢 BULL':'🔴 BEAR'}</td>
-      <td>${s.quality==='HIGH'?'🔥 HIGH':s.quality==='MEDIUM'?'⭐ MEDIUM':'LOW'}</td>
-      <td style="color:${(+s.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${s.surprise_pct!=null?fmtPct(+s.surprise_pct):'—'}</td>
-      <td>${s.entry_date||'—'}</td>
-      <td>${s.underreaction?'⚠️ YES':'No'}</td>
-      <td>${s.regime_composite||'—'}</td>
-    </tr>`).join('');
-  }
-
-  const hist = peadRes.db_history || [];
-  const htbody = document.getElementById('pead-hist-tbody');
-  if(!hist.length){
-    htbody.innerHTML='<tr><td colspan="7" style="color:var(--muted)">No historical data yet.</td></tr>';
-  } else {
-    htbody.innerHTML = hist.slice(0,50).map(h=>`<tr>
-      <td>${h.earnings_date||'—'}</td>
-      <td style="font-weight:500;color:#fff">
-        ${h.ticker}
-        <br><span style="font-size:9px;color:var(--muted);font-weight:400">(${tickerNames[h.ticker] || ''})</span>
-      </td>
-      <td class="${h.direction==='long'||h.direction==='bullish'?'sig-buy':'sig-sell'}">${h.direction||'—'}</td>
-      <td style="color:${(+h.surprise_pct||0)>=0?'var(--accent)':'var(--accent2)'}">${h.surprise_pct!=null?fmtPct(+h.surprise_pct):'—'}</td>
-      <td style="color:${(+h.drift_21d||0)>=0?'var(--accent)':'var(--accent2)'}">${h.drift_21d!=null?fmtPct(+h.drift_21d):'—'}</td>
-      <td>${h.outcome_label_correct!=null?(['❌','✅'][+h.outcome_label_correct]||'—'):'—'}</td>
-      <td style="color:var(--muted)">${h.regime_composite||'—'}</td>
-    </tr>`).join('');
-  }
 }
 
 loadResearch();
