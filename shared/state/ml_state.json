@@ -1,6 +1,6 @@
 {
   "available": true,
-  "generated_at": "2026-08-30T16:49:09",
+  "generated_at": "2026-08-30T17:32:43",
   "ensemble": {
     "weighted_score": 0.5373,
     "median_score": 0.5329,
@@ -317,7 +317,308 @@
       "beats": false
     }
   ],
-  "scenarios": {},
+  "scenarios": {
+    "BTC/EUR": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.1151,
+          0.341
+        ],
+        "price_range": [
+          76043.97,
+          91444.4
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 64782.68"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.1218,
+          0.1151
+        ],
+        "price_range": [
+          59887.59,
+          76043.97
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.2633,
+          -0.1218
+        ],
+        "price_range": [
+          50239.66,
+          59887.59
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 70238.06 for 5 days"
+      },
+      "metadata": {
+        "current_price": 68192.29,
+        "up_probability": 0.5703054070472717,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.48953278009884027,
+        "percentiles": {
+          "p5": -0.2633,
+          "p25": -0.1218,
+          "p50": -0.0068,
+          "p75": 0.1151,
+          "p95": 0.341
+        }
+      }
+    },
+    "ETH/EUR": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.1707,
+          0.4952
+        ],
+        "price_range": [
+          2504.55,
+          3198.71
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 2032.33"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.1526,
+          0.1707
+        ],
+        "price_range": [
+          1812.82,
+          2504.55
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.3355,
+          -0.1526
+        ],
+        "price_range": [
+          1421.59,
+          1812.82
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 2203.47 for 5 days"
+      },
+      "metadata": {
+        "current_price": 2139.29,
+        "up_probability": 0.6338450312614441,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.6603348563508616,
+        "percentiles": {
+          "p5": -0.3355,
+          "p25": -0.1526,
+          "p50": 0.0,
+          "p75": 0.1707,
+          "p95": 0.4952
+        }
+      }
+    },
+    "SOL/EUR": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.1246,
+          0.5129
+        ],
+        "price_range": [
+          104.15,
+          140.11
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 87.98"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.2424,
+          0.1246
+        ],
+        "price_range": [
+          70.16,
+          104.15
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.4412,
+          -0.2424
+        ],
+        "price_range": [
+          51.75,
+          70.16
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 95.39 for 5 days"
+      },
+      "metadata": {
+        "current_price": 92.61,
+        "up_probability": 0.4213627278804779,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.8029266532320578,
+        "percentiles": {
+          "p5": -0.4412,
+          "p25": -0.2424,
+          "p50": -0.0729,
+          "p75": 0.1246,
+          "p95": 0.5129
+        }
+      }
+    },
+    "BNB/EUR": {
+      "bull": {
+        "label": "Bull",
+        "return_range": [
+          0.1399,
+          0.4676
+        ],
+        "price_range": [
+          688.5,
+          886.39
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings beat consensus",
+          "Macro tailwinds",
+          "Sector inflow",
+          "Signal >60%"
+        ],
+        "suggested_action": "Enter / Add",
+        "invalidation": "Below 573.79"
+      },
+      "base": {
+        "label": "Base",
+        "return_range": [
+          -0.1845,
+          0.1399
+        ],
+        "price_range": [
+          492.53,
+          688.5
+        ],
+        "probability": 0.5,
+        "conditions": [
+          "In-line earnings",
+          "Stable macro",
+          "No catalyst"
+        ],
+        "suggested_action": "Hold / Wait",
+        "invalidation": "Break above bull or below bear"
+      },
+      "bear": {
+        "label": "Bear",
+        "return_range": [
+          -0.3669,
+          -0.1845
+        ],
+        "price_range": [
+          382.39,
+          492.53
+        ],
+        "probability": 0.25,
+        "conditions": [
+          "Earnings miss",
+          "Macro headwinds",
+          "Risk-off regime",
+          "Signal <40%"
+        ],
+        "suggested_action": "Avoid / Exit",
+        "invalidation": "Above 622.11 for 5 days"
+      },
+      "metadata": {
+        "current_price": 603.99,
+        "up_probability": 0.5175780653953552,
+        "horizon_days": 21,
+        "n_simulations": 2000,
+        "realized_vol_ann": 0.6823510338683814,
+        "percentiles": {
+          "p5": -0.3669,
+          "p25": -0.1845,
+          "p50": -0.0319,
+          "p75": 0.1399,
+          "p95": 0.4676
+        }
+      }
+    }
+  },
   "horizon_accuracy": {
     "5d": {
       "Ridge_LR": 0.5347,

@@ -167,3 +167,73 @@ def get_data_summary(tickers=None):
             row.update({"price_rows": 0, "price_start": "---", "price_end": "---"})
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def fetch_funding_rate_data(tickers=None):
+    """
+    Fetches the perpetual funding rates from the main SQLite DB 
+    which was populated by engine/data/funding_rates.py.
+    Returns a dictionary: {ticker: DataFrame(index=Date, columns=['funding_rate'])}
+    """
+    from sqlalchemy import create_engine
+    import sqlite3
+    
+    # Path to main hedge fund DB
+    DB_PATH = _ROOT / "engine" / "db" / "hedge_fund.db"
+    
+    if not tickers:
+        tickers = list(UNIVERSE.keys())
+        
+    result = {}
+    if not DB_PATH.exists():
+        log.warning(f"DB not found at {DB_PATH}. Cannot load funding rates.")
+        return result
+        
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        query = f"SELECT date as Date, ticker, funding_rate FROM funding_rates"
+        df = pd.read_sql_query(query, conn)
+        df['Date'] = pd.to_datetime(df['Date']).dt.date
+        
+        for ticker in tickers:
+            df_t = df[df['ticker'] == ticker].copy()
+            if not df_t.empty:
+                df_t = df_t.set_index('Date')
+                result[ticker] = df_t[['funding_rate']]
+            else:
+                result[ticker] = pd.DataFrame(columns=['funding_rate'])
+                
+        conn.close()
+    except Exception as e:
+        log.warning(f"Failed to load funding rates from DB: {e}")
+        
+    return result
+
+def fetch_onchain_data():
+    """
+    Fetches the daily on-chain metrics (TVL, Stablecoin Mcap) from the SQLite DB.
+    Returns a DataFrame indexed by Date.
+    """
+    from sqlalchemy import create_engine
+    import sqlite3
+    
+    DB_PATH = _ROOT / "engine" / "db" / "hedge_fund.db"
+    
+    if not DB_PATH.exists():
+        log.warning(f"DB not found at {DB_PATH}. Cannot load onchain metrics.")
+        return pd.DataFrame()
+        
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        query = "SELECT date as Date, total_tvl, stablecoin_mcap FROM onchain_metrics ORDER BY date"
+        df = pd.read_sql_query(query, conn)
+        df['Date'] = pd.to_datetime(df['Date']).dt.date
+        df = df.set_index('Date')
+        
+        # Forward fill any gaps
+        df = df.ffill()
+        conn.close()
+        return df
+    except Exception as e:
+        log.warning(f"Failed to load onchain metrics from DB: {e}")
+        return pd.DataFrame()

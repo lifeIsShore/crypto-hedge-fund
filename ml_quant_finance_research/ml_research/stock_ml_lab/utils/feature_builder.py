@@ -212,6 +212,38 @@ def add_acceleration_features(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
+def add_alternative_features(df: pd.DataFrame, funding_rates_df: pd.DataFrame = None, onchain_df: pd.DataFrame = None) -> pd.DataFrame:
+    """Integrates alternative crypto data like funding rates and onchain metrics."""
+    if funding_rates_df is not None and not funding_rates_df.empty:
+        # Join funding rates
+        df = df.join(funding_rates_df, how='left')
+        df['funding_rate'] = df['funding_rate'].ffill(limit=3)
+    
+    # Derived features
+    if 'funding_rate' in df.columns:
+        df['funding_rate_3d_avg'] = df['funding_rate'].rolling(3).mean()
+        df['funding_rate_zscore'] = (df['funding_rate'] - df['funding_rate'].rolling(21).mean()) / (df['funding_rate'].rolling(21).std() + 1e-9)
+        # Extreme funding flag: Highly positive (longs paying shorts) often precedes long squeezes
+        df['extreme_funding_flag'] = (df['funding_rate_zscore'] > 2.0).astype(int) - (df['funding_rate_zscore'] < -2.0).astype(int)
+        
+    if onchain_df is not None and not onchain_df.empty:
+        # Join onchain
+        df = df.join(onchain_df, how='left')
+        df['total_tvl'] = df['total_tvl'].ffill(limit=7)
+        df['stablecoin_mcap'] = df['stablecoin_mcap'].ffill(limit=7)
+        
+        # TVL Momentum
+        if 'total_tvl' in df.columns:
+            df['tvl_momentum_5d'] = df['total_tvl'].pct_change(5)
+            df['tvl_momentum_21d'] = df['total_tvl'].pct_change(21)
+            
+        # Stablecoin Inflows (z-score)
+        if 'stablecoin_mcap' in df.columns:
+            df['stablecoin_inflow_30d'] = df['stablecoin_mcap'].pct_change(30)
+            df['stablecoin_inflow_zscore'] = (df['stablecoin_inflow_30d'] - df['stablecoin_inflow_30d'].rolling(90).mean()) / (df['stablecoin_inflow_30d'].rolling(90).std() + 1e-9)
+            
+    return df
+
 
 def add_target(df, horizons=None, benchmark_df=None, enable_alpha_target=False):
     if horizons is None:
@@ -322,7 +354,9 @@ def build_features(price_df, fundamentals=None, macro_df=None,
                    enable_acceleration=False,
                    benchmark_df=None,
                    enable_alpha_target=False,
-                   sv_features_df=None):
+                   sv_features_df=None,
+                   funding_rates_df=None,
+                   onchain_df=None):
     
     if horizons is None:
         horizons = [5, 21, 63]
@@ -342,6 +376,8 @@ def build_features(price_df, fundamentals=None, macro_df=None,
             df = add_crosssectional_features(df, ticker, cs_cache)
     if enable_acceleration:
         df = add_acceleration_features(df)
+        
+    df = add_alternative_features(df, funding_rates_df, onchain_df)
         
     df = add_target(df, horizons=horizons, benchmark_df=benchmark_df, enable_alpha_target=enable_alpha_target)
 

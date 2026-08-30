@@ -38,7 +38,7 @@ OUTPUT_JSON_LEGACY = ROOT_DIR / "portfolio" / "data" / "ml_state.json"
 # Ensure imports can find local utils and central config
 sys.path.insert(0, str(ROOT_DIR))
 
-from utils.data_loader     import fetch_price_data, fetch_macro_data, UNIVERSE
+from utils.data_loader     import fetch_price_data, fetch_macro_data, fetch_funding_rate_data, fetch_onchain_data, UNIVERSE
 from utils.feature_builder import build_features, select_features, get_feature_selection_report
 from utils.evaluator       import walk_forward_splits, evaluate_fold, log_experiment
 from utils.scenario_engine import generate_scenarios, ensemble_sentiment
@@ -266,7 +266,8 @@ def run_baseline_momentum(X_val, y_val, prices_val=None):
 
 # ─────────────────────────────────────────────────────────────────────────────
 def run_ticker(ticker, prices, macro, options_all=None, cs_features_cache=None,
-               benchmark_df=None, prebuilt_features=None, sv_data=None):
+               benchmark_df=None, prebuilt_features=None, sv_data=None, funding_rates=None,
+               onchain_data=None):
     """Train all models on one ticker for PRIMARY_HOR. Returns metrics + last proba."""
     options_dict = (options_all or {}).get(ticker, {})
     
@@ -307,6 +308,8 @@ def run_ticker(ticker, prices, macro, options_all=None, cs_features_cache=None,
             benchmark_df=benchmark_df,
             enable_alpha_target=ENABLE_ALPHA_TARGET,
             sv_features_df=sv_features_df,
+            funding_rates_df=funding_rates.get(ticker) if funding_rates else None,
+            onchain_df=onchain_data,
         )
         except Exception as e:
             log.warning(f"  [{ticker}] Feature build failed: {e}")
@@ -653,6 +656,22 @@ def main():
         log.warning(f"  Macro load failed ({e}); continuing without macro features")
         macro = None
 
+    log.info("Step 1c — Loading crypto alternative data (funding rates)…")
+    try:
+        funding_rates = fetch_funding_rate_data()
+        log.info(f"  Funding rates loaded for {len([k for k,v in funding_rates.items() if not v.empty])} tickers")
+    except Exception as e:
+        log.warning(f"  Funding rate load failed ({e}); continuing without alternative features")
+        funding_rates = None
+
+    log.info("Step 1d — Loading crypto onchain data (TVL, Stablecoins)…")
+    try:
+        onchain_data = fetch_onchain_data()
+        log.info(f"  Onchain data loaded: {len(onchain_data)} rows")
+    except Exception as e:
+        log.warning(f"  Onchain load failed ({e}); continuing without onchain features")
+        onchain_data = None
+
     fundamentals = {t: {} for t in prices}
 
     log.info("Step 1d — Fetching options & short interest (free via yfinance)…")
@@ -736,7 +755,7 @@ def main():
     flags_tuple = (
         ENABLE_DB_REGIME_FEATURES, ENABLE_PEAD_FEATURES, ENABLE_EARNINGS_CALENDAR_FEATURES,
         ENABLE_CROSSSECTIONAL_FEATURES, ENABLE_ACCELERATION_FEATURES, ENABLE_ALPHA_TARGET,
-        str(HOLDOUT_START)
+        str(HOLDOUT_START), "Phase2_OnChain_V1"
     )
     cache_key = hashlib.md5(str(flags_tuple).encode()).hexdigest()
     cache_dir = Path("C:/Users/ahmty/Desktop/hedge-fund/shared/state/feature_cache")
@@ -761,7 +780,9 @@ def main():
         result = run_ticker(ticker, prices, macro, options_all=options_all,
                             cs_features_cache=cs_features_cache, benchmark_df=benchmark_df,
                             prebuilt_features=prebuilt_features,
-                            sv_data=sv_data_all if ENABLE_SHORT_VOLUME_FEATURES else None)
+                            sv_data=sv_data_all if ENABLE_SHORT_VOLUME_FEATURES else None,
+                            funding_rates=funding_rates,
+                            onchain_data=onchain_data)
         ticker_results[ticker] = result
         log.info(f"  [{ticker}] {'OK' if result else 'SKIPPED'}")
 

@@ -167,6 +167,12 @@ def step_ingest():
     except Exception as e:
         logger.warning(f"[ingest] Funding rate ingestion failed (non-fatal): {e}")
 
+    try:
+        from engine.data.onchain_metrics import run_onchain_ingestion
+        run_onchain_ingestion()
+    except Exception as e:
+        logger.warning(f"[ingest] On-chain metric ingestion failed (non-fatal): {e}")
+
 
 def _mirror_all_state_files():
     """

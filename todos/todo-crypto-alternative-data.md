@@ -30,6 +30,6 @@ Crypto is highly reflexivity-driven by retail sentiment.
 *Potential Providers:* LunarCrush, Santiment, GitHub API, OpenAI/LLM sentiment analysis on scraped news.
 
 ## Implementation Roadmap
-1. **Phase 1 (Easy Wins):** Integrate Funding Rates and Open Interest via Coinglass or CCXT. These are numerical, easily structured, and highly predictive of short-term volatility.
-2. **Phase 2 (On-Chain):** Integrate CryptoQuant or Glassnode API for Exchange Inflows/Outflows. Add this as a new feature to the `feature_store`.
+1. **[x] Phase 1 (Easy Wins):** Integrate Funding Rates and Open Interest via CCXT. Added `fetch_funding_rates` via CCXT in `engine/data/funding_rates.py` and connected them into `feature_builder.py` as alternative ML features.
+2. **[x] Phase 2 (On-Chain):** Integrated free DeFiLlama API for TVL and Stablecoin inflows. Added `onchain_metrics.py` ingestion and wired it into `feature_builder.py`.
 3. **Phase 3 (NLP/Social):** Build a scheduled scraper for CryptoPanic or X, parse headlines using a small local LLM, and generate a daily sentiment score for the portfolio optimizer.
