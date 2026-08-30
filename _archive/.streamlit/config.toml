@@ -1,6 +1,0 @@
-[server]
-headless = false
-
-[runner]
-# Ensure imports resolve from the project root
-pythonPath = "C:/Users/ahmty/Desktop/hedge-fund"
